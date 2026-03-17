@@ -128,6 +128,7 @@ export default function DashboardPage() {
   const emptyOrg = { name:'', inn:'', director_name:'', bank_name:'', bank_account:'', mfo:'', address:'' }
   const emptyCp  = { name:'', inn:'', director_name:'', bank_name:'', bank_account:'', mfo:'', address:'', phone:'', qqsreg:'' }
   const emptyContract = {
+    id: '' as string,
     contract_number:'', contract_date: new Date().toISOString().split('T')[0],
     contract_type:'oldi_sotdi', amount:'', organization_id:'', counterparty_id:'',
     status:'draft', content:'', city:'Toshkent', product_name:'', spec_items: [] as SpecItem[],
