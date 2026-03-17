@@ -35,7 +35,7 @@ type Contract = {
   organization_id: string; counterparty_id: string
   organizations?: Org; counterparties?: Counterparty; created_at: string
   content?: string; city?: string; product_name?: string
-  spec_items?: SpecItem[]
+  spec_items?: SpecItem[]; qqs_enabled?: boolean; qqs_rate?: number
 }
 type SpecItem = {
   nomi: string; birlik: string; miqdori: number; narxi: number
