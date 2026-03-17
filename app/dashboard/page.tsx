@@ -1397,21 +1397,29 @@ export default function DashboardPage() {
                           <td className="px-4 py-3.5">
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
                               <button onClick={()=>{setViewContract(c);setModal('viewContract')}}
-                                className="p-1.5 bg-gray-700 hover:bg-gray-600 rounded text-xs" title="Ko'rish">👁</button>
-                              <button onClick={()=>copyContract(c)}
-                                className="p-1.5 bg-blue-900 hover:bg-blue-800 rounded text-xs" title="Nusxa">📋</button>
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs font-medium text-gray-200 transition" title="Ko'rish">
+                                👁 <span>Ko'rish</span>
+                              </button>
                               <button onClick={()=>generatePDF(c)}
-                                className="p-1.5 bg-emerald-800 hover:bg-emerald-700 rounded text-xs" title="PDF">📥</button>
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-800 hover:bg-emerald-700 rounded-lg text-xs font-medium text-white transition" title="PDF">
+                                📥 <span>PDF</span>
+                              </button>
                               {c.status !== 'completed' && c.status !== 'cancelled' && (
                                 <button onClick={()=>updateStatus(c.id,'completed')}
-                                  className="p-1.5 bg-emerald-900 hover:bg-emerald-700 rounded text-xs" title="Bajarilgan deb belgilash">✓</button>
+                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-800 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition" title="Bajarilgan">
+                                  ✓ <span>Bajarildi</span>
+                                </button>
                               )}
                               {c.status !== 'cancelled' && (
                                 <button onClick={()=>updateStatus(c.id,'cancelled')}
-                                  className="p-1.5 bg-orange-900 hover:bg-orange-700 rounded text-xs" title="Bekor qilingan deb belgilash">✕</button>
+                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-orange-900 hover:bg-orange-700 rounded-lg text-xs font-medium text-white transition" title="Bekor qilingan">
+                                  ✕ <span>Bekor</span>
+                                </button>
                               )}
                               <button onClick={()=>deleteContract(c.id)}
-                                className="p-1.5 bg-red-900 hover:bg-red-800 rounded text-xs" title="O'chirish">🗑</button>
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-red-900 hover:bg-red-800 rounded-lg text-xs font-medium text-white transition" title="O'chirish">
+                                🗑 <span>O'chirish</span>
+                              </button>
                             </div>
                           </td>
                         </tr>
