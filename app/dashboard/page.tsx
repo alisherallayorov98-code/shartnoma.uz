@@ -2391,6 +2391,8 @@ export default function DashboardPage() {
                       product_name: viewContract.product_name || '',
                       content: viewContract.content || '',
                       spec_items: viewContract.spec_items || [],
+                      qqs_enabled: viewContract.qqs_enabled || false,
+                      qqs_rate: viewContract.qqs_rate || 12,
                     })
                     setModal('contract')
                   }, 100)
