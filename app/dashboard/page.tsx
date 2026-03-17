@@ -566,7 +566,7 @@ export default function DashboardPage() {
       amount: parseFloat(contractForm.amount)||0,
       organization_id: contractForm.organization_id || null,
       counterparty_id: contractForm.counterparty_id || null,
-      status: contractForm.status,
+      status: contractForm.id ? contractForm.status : 'active',
       content: contractForm.content,
       city: contractForm.city,
       product_name: contractForm.product_name || null,
@@ -1389,13 +1389,9 @@ export default function DashboardPage() {
                           <td className="px-4 py-3.5 text-sm text-white max-w-[120px] truncate">{c.counterparties?.name||'—'}</td>
                           <td className="px-4 py-3.5 text-sm font-medium whitespace-nowrap">{c.amount?.toLocaleString()} so'm</td>
                           <td className="px-4 py-3.5">
-                            <select value={c.status} onChange={e=>updateStatus(c.id,e.target.value)}
-                              className={`text-xs px-2.5 py-1 rounded-full border-0 cursor-pointer focus:outline-none font-medium ${STATUSES[c.status as keyof typeof STATUSES]?.bg} ${STATUSES[c.status as keyof typeof STATUSES]?.text}`}>
-                              <option value="draft">Qoralama</option>
-                              <option value="active">Faol</option>
-                              <option value="completed">Bajarilgan</option>
-                              <option value="cancelled">Bekor qilingan</option>
-                            </select>
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUSES[c.status as keyof typeof STATUSES]?.bg} ${STATUSES[c.status as keyof typeof STATUSES]?.text}`}>
+                              {STATUSES[c.status as keyof typeof STATUSES]?.label || c.status}
+                            </span>
                           </td>
                           <td className="px-4 py-3.5">
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
@@ -1405,6 +1401,14 @@ export default function DashboardPage() {
                                 className="p-1.5 bg-blue-900 hover:bg-blue-800 rounded text-xs" title="Nusxa">📋</button>
                               <button onClick={()=>generatePDF(c)}
                                 className="p-1.5 bg-emerald-800 hover:bg-emerald-700 rounded text-xs" title="PDF">📥</button>
+                              {c.status !== 'completed' && c.status !== 'cancelled' && (
+                                <button onClick={()=>updateStatus(c.id,'completed')}
+                                  className="p-1.5 bg-emerald-900 hover:bg-emerald-700 rounded text-xs" title="Bajarilgan deb belgilash">✓</button>
+                              )}
+                              {c.status !== 'cancelled' && (
+                                <button onClick={()=>updateStatus(c.id,'cancelled')}
+                                  className="p-1.5 bg-orange-900 hover:bg-orange-700 rounded text-xs" title="Bekor qilingan deb belgilash">✕</button>
+                              )}
                               <button onClick={()=>deleteContract(c.id)}
                                 className="p-1.5 bg-red-900 hover:bg-red-800 rounded text-xs" title="O'chirish">🗑</button>
                             </div>
@@ -3414,16 +3418,6 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                     <input type="number" className={inp} placeholder="5000000"
                       value={form.amount}
                       onChange={e => handleFieldChange('amount', e.target.value)}/>
-                  </div>
-                  <div>
-                    <label className={lbl}>Holat</label>
-                    <select className={inp} value={form.status}
-                      onChange={e => handleFieldChange('status', e.target.value)}>
-                      <option value="draft">Qoralama</option>
-                      <option value="active">Faol</option>
-                      <option value="completed">Bajarilgan</option>
-                      <option value="cancelled">Bekor qilingan</option>
-                    </select>
                   </div>
                 </div>
 
