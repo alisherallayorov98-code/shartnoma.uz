@@ -927,15 +927,18 @@ export default function DashboardPage() {
 
     // ── 1. SARLAVHA ──
     let y = mT
-    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(0,0,0)
-    doc.text(safe(`${ctName.toUpperCase()} No${c.contract_number}`), pageW/2, y, {align:'center'})
-    y += 9
+    const F = 'times'
+    doc.setFont(F,'bold'); doc.setFontSize(14); doc.setTextColor(0,0,0)
+    doc.text(safe(`${ctName.toUpperCase()}`), pageW/2, y, {align:'center'}); y += 7
+    doc.setFont(F,'bold'); doc.setFontSize(13)
+    doc.text(safe(`No ${c.contract_number}`), pageW/2, y, {align:'center'}); y += 10
 
     // ── 2. SHAHAR + SANA ──
-    doc.setFont('helvetica','normal'); doc.setFontSize(10)
+    doc.setFont(F,'normal'); doc.setFontSize(12)
     doc.text(safe(`${c.city || 'Toshkent'} shahri`), mL, y)
     doc.text(safe(fmtDate(c.contract_date)), pageW-mR, y, {align:'right'})
-    y += 10
+    y += 3
+    doc.setDrawColor(180,180,180); doc.line(mL, y, pageW-mR, y); y += 6
 
     // ── 3. TOMONLAR KIRISH MATNI ──
     const orgName = safe(org?.name || '___')
@@ -943,7 +946,7 @@ export default function DashboardPage() {
     const orgDir  = safe(org?.director_name || '___')
     const cpDir   = safe(cp?.director_name  || '___')
     const intro = safe(`"${orgName}", keyingi o'rinlarda "Sotuvchi" sifatida, Direktor ${orgDir} vakilligi asosida bir tomondan va "${cpName}", keyingi o'rinlarda "Xaridor" sifatida, Direktor ${cpDir} vakilligi asosida ikkinchi tomondan ushbu shartnomani tuzdilar:`)
-    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(0,0,0)
+    doc.setFont(F,'italic'); doc.setFontSize(11); doc.setTextColor(30,30,30)
     const introLines = doc.splitTextToSize(intro, cW) as string[]
     for (const line of introLines) {
       if (y > pageH-mB-20) { doc.addPage(); y = mT }
@@ -954,11 +957,8 @@ export default function DashboardPage() {
     // ── 4. ASOSIY MATN ──
     const content = c.content || ''
     if (content) {
-      // Contentdan eski sarlavha va rekvizitlar qismini olib tashlaymiz
       const allLines = content.split('\n')
-      // Birinchi "1." bilan boshlanadigan qatorgacha skip
       const firstNumIdx = allLines.findIndex(l => /^1\.\s/.test(l.trim()))
-      // "TOMONLARNING REKVIZIT" dan keyingi qatorlarni skip
       const rekvIdx = allLines.findIndex(l => /TOMONLARNING REKVIZIT|^BUYURTMACHI:|^IJROCHI:/.test(l.trim()))
       const start = firstNumIdx >= 0 ? firstNumIdx : 0
       const end   = rekvIdx    >= 0 ? rekvIdx    : allLines.length
@@ -966,95 +966,82 @@ export default function DashboardPage() {
 
       for (const rawLine of bodyLines) {
         const trimmed = safe(rawLine.trim())
-        if (!trimmed) { y += 2.5; continue }
-        const isBoldHead = /^[1-9]\d*\.\s+[A-Z]/.test(trimmed) && !/^\d+\.\d+/.test(trimmed)
-        const isAllCaps  = /^[A-Z\s'\-]{7,}$/.test(trimmed)
+        if (!trimmed) { y += 2; continue }
+        const isSectionHead = /^[1-9]\d*\.\s+[A-Z']/.test(trimmed) && !/^\d+\.\d+/.test(trimmed)
         if (y > pageH-mB-12) { doc.addPage(); y = mT }
-        if (isBoldHead || isAllCaps) {
-          y += 2
-          doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0)
+        if (isSectionHead) {
+          y += 3
+          doc.setFont(F,'bold'); doc.setFontSize(12); doc.setTextColor(0,0,0)
           doc.text(trimmed, pageW/2, y, {align:'center'})
           y += 7
         } else {
           const isSubItem = /^\d+\.\d+/.test(trimmed)
-          const indent = isSubItem ? mL+5 : mL
-          const ww = cW - (isSubItem ? 5 : 0)
-          doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(0,0,0)
+          const isDash = trimmed.startsWith('-') || trimmed.startsWith('—')
+          const indent = isSubItem ? mL+6 : isDash ? mL+8 : mL
+          const ww = cW - (isSubItem||isDash ? 8 : 0)
+          doc.setFont(F,'normal'); doc.setFontSize(12); doc.setTextColor(0,0,0)
           const wrapped = doc.splitTextToSize(trimmed, ww) as string[]
           for (const wl of wrapped) {
             if (y > pageH-mB-12) { doc.addPage(); y = mT }
             doc.text(wl as string, indent, y); y += 5.5
           }
+          y += 0.5
         }
       }
     }
 
-    // ── 5. SPESIFIKATSIYA ──
+    // ── 5. SPESIFIKATSIYA — ALOHIDA SAHIFA ──
     if ((c.spec_items||[]).length > 0) {
-      if (y > pageH-60) { doc.addPage(); y = mT }
-      y = drawSpecTable(y + 5)
+      doc.addPage(); y = mT
+      y = drawSpecTable(y)
     }
 
-    // ── 6. REKVIZITLAR JADVALI ──
+    // ── 6. REKVIZITLAR — ALOHIDA SAHIFA ──
+    doc.addPage(); y = mT
     const colW = cW / 2
-    const rekvizitlar = [
-      { label:'Nomi:',   left: orgName,                          right: cpName,                          bold: true  },
-      { label:'Manzil:', left: safe(org?.address||'-'),          right: safe(cp?.address||'-'),          bold: false },
-      { label:'H/r:',    left: safe(org?.bank_account||'-'),     right: safe(cp?.bank_account||'-'),     bold: false },
-      { label:'Bank:',   left: safe(org?.bank_name||'-'),        right: safe(cp?.bank_name||'-'),        bold: false },
-      { label:'MFO:',    left: safe(org?.mfo||'-'),              right: safe(cp?.mfo||'-'),              bold: false },
-      { label:'INN:',    left: safe(org?.inn||'-'),              right: safe(cp?.inn||'-'),              bold: false },
-      { label:'Rahbar:', left: orgDir,                           right: cpDir,                           bold: true  },
-    ]
-    const estimatedH = 12 + rekvizitlar.length * 8 + 25
-    if (y > pageH - mB - estimatedH) { doc.addPage(); y = mT }
-    y += 6
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0)
+    doc.setFont(F,'bold'); doc.setFontSize(13); doc.setTextColor(0,0,0)
     doc.text("TOMONLARNING REKVIZITLARI VA IMZOLARI", pageW/2, y, {align:'center'})
-    y += 7
-    // Header row
-    doc.setFillColor(235,238,245); doc.setDrawColor(170,170,170)
-    doc.rect(mL, y, colW, 7, 'F'); doc.rect(mL+colW, y, colW, 7, 'F')
-    doc.rect(mL, y, cW, 7, 'S'); doc.line(mL+colW, y, mL+colW, y+7)
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(0,0,0)
-    doc.text('SOTUVCHI', mL+colW/2, y+4.5, {align:'center'})
-    doc.text('XARIDOR',  mL+colW+colW/2, y+4.5, {align:'center'})
-    y += 7
-    // Data rows
-    for (const row of rekvizitlar) {
-      const rH = 8
-      doc.setDrawColor(190,190,190)
-      doc.rect(mL, y, colW, rH); doc.rect(mL+colW, y, colW, rH)
-      // Label (small gray)
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(130,130,130)
-      doc.text(row.label, mL+2, y+3)
-      doc.text(row.label, mL+colW+2, y+3)
-      // Value
-      doc.setFontSize(row.bold ? 9 : 8.5)
-      doc.setFont('helvetica', row.bold ? 'bold' : 'normal'); doc.setTextColor(0,0,0)
-      const lv = doc.splitTextToSize(String(row.left),  colW-18)[0] as string
-      const rv = doc.splitTextToSize(String(row.right), colW-18)[0] as string
-      doc.text(lv, mL+18, y+6.5)
-      doc.text(rv, mL+colW+18, y+6.5)
-      y += rH
-    }
+    y += 3; doc.setDrawColor(0,0,0); doc.line(mL, y, pageW-mR, y); y += 8
 
-    // ── 7. IMZO QISMI ──
-    y += 6
-    if (y > pageH-mB-30) { doc.addPage(); y = mT }
-    // Two signature lines
-    const sigW = colW - 10
-    doc.setDrawColor(80,80,80)
-    doc.line(mL, y, mL+sigW, y)
-    doc.line(mL+colW+5, y, mL+colW+5+sigW, y)
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(60,60,60)
-    doc.text(`/ ${orgDir}`, mL+sigW+1, y)
-    doc.text(`/ ${cpDir}`,  mL+colW+5+sigW+1, y)
+    const rekvizitlar = [
+      { label:'Nomi:',   left: orgName,                      right: cpName,                      bold: true  },
+      { label:'Manzil:', left: safe(org?.address||'-'),      right: safe(cp?.address||'-'),      bold: false },
+      { label:'H/r:',    left: safe(org?.bank_account||'-'), right: safe(cp?.bank_account||'-'), bold: false },
+      { label:'Bank:',   left: safe(org?.bank_name||'-'),    right: safe(cp?.bank_name||'-'),    bold: false },
+      { label:'MFO:',    left: safe(org?.mfo||'-'),          right: safe(cp?.mfo||'-'),          bold: false },
+      { label:'INN:',    left: safe(org?.inn||'-'),          right: safe(cp?.inn||'-'),          bold: false },
+      { label:'Rahbar:', left: orgDir,                       right: cpDir,                       bold: true  },
+    ]
+    // Header
+    doc.setFillColor(230,233,240); doc.setDrawColor(120,120,120)
+    doc.rect(mL, y, colW, 8, 'FD'); doc.rect(mL+colW, y, colW, 8, 'FD')
+    doc.line(mL+colW, y, mL+colW, y+8)
+    doc.setFont(F,'bold'); doc.setFontSize(11); doc.setTextColor(0,0,0)
+    doc.text('SOTUVCHI', mL+colW/2, y+5.5, {align:'center'})
+    doc.text('XARIDOR',  mL+colW*1.5, y+5.5, {align:'center'})
+    y += 8
+    for (const row of rekvizitlar) {
+      const cellH = 9
+      doc.setDrawColor(160,160,160)
+      doc.rect(mL, y, colW, cellH); doc.rect(mL+colW, y, colW, cellH)
+      doc.setFont(F,'normal'); doc.setFontSize(8); doc.setTextColor(110,110,110)
+      doc.text(row.label, mL+2, y+3.5); doc.text(row.label, mL+colW+2, y+3.5)
+      doc.setFont(F, row.bold?'bold':'normal'); doc.setFontSize(row.bold?11:10); doc.setTextColor(0,0,0)
+      const lv = doc.splitTextToSize(String(row.left),  colW-20)[0] as string
+      const rv = doc.splitTextToSize(String(row.right), colW-20)[0] as string
+      doc.text(lv, mL+20, y+7.5); doc.text(rv, mL+colW+20, y+7.5)
+      y += cellH
+    }
+    // Imzo
+    y += 10
+    const sigW = colW - 15
+    doc.setDrawColor(60,60,60)
+    doc.line(mL, y, mL+sigW, y); doc.line(mL+colW+5, y, mL+colW+5+sigW, y)
+    doc.setFont(F,'normal'); doc.setFontSize(10); doc.setTextColor(50,50,50)
+    doc.text(`/ ${orgDir}`, mL+sigW+2, y); doc.text(`/ ${cpDir}`, mL+colW+5+sigW+2, y)
     y += 5
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120)
-    doc.text('M.O.', mL+10, y)
-    doc.text('M.O.', mL+colW+15, y)
-    // Images
+    doc.setFont(F,'normal'); doc.setFontSize(9); doc.setTextColor(120,120,120)
+    doc.text('M.O.', mL+12, y); doc.text('M.O.', mL+colW+17, y)
     try {
       if (signB64) doc.addImage(signB64,'PNG', mL, y-15, 30, 15)
       if (stampB64) doc.addImage(stampB64,'PNG', mL+5, y-10, 25, 25)
