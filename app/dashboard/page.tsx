@@ -2346,6 +2346,7 @@ export default function DashboardPage() {
           inp={inp}
           lbl={lbl}
           onCpAdded={async (cp) => { await loadCps(); setContractForm((f: any) => ({...f, counterparty_id: cp.id})) }}
+          customTemplates={customTemplates}
         />
       )}
 
@@ -2907,16 +2908,18 @@ const QQS_OPTIONS_GLOBAL = [
 ]
 
 // ─── Contract Modal ───────────────────────────────────────
-function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp, lbl, onCpAdded }: {
+function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp, lbl, onCpAdded, customTemplates }: {
   orgs: Org[]; cps: Counterparty[]
   form: any; setForm: (f: any) => void
   onSave: (e: React.FormEvent) => void
   onClose: () => void; saving: boolean
   inp: string; lbl: string
   onCpAdded: (cp: Counterparty) => void
+  customTemplates: AppTemplate[]
 }) {
   const [step, setStep] = useState<1|2|3|4>(1)
   const [useTemplate, setUseTemplate] = useState(true)
+  const [selectedTplId, setSelectedTplId] = useState<string>('')
   const [structure, setStructure] = useState<ContractStructure>({ bolimlar: [] })
   const [specItems, setSpecItems] = useState<SpecItem[]>(form.spec_items || [])
   const [barchaQqs, setBarchaQqs] = useState('')
@@ -3029,6 +3032,73 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
   const currentExtraFields = EXTRA_FIELDS_CONFIG[form.contract_type] || []
   const hasExtraFields = currentExtraFields.length > 0
 
+  // Templates matching current contract type
+  const allTpls = [...DEFAULT_TEMPLATES, ...customTemplates]
+  const matchingTpls = allTpls.filter(t => t.type === form.contract_type)
+
+  // Auto-select first template when type or list changes
+  useEffect(() => {
+    const first = allTpls.find(t => t.type === form.contract_type)
+    setSelectedTplId(first?.id || '')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.contract_type, customTemplates.length])
+
+  function applyTplPlaceholders(content: string, ex: Record<string, string>): string {
+    const { org, cp } = buildOrgCp(form)
+    const amount = parseFloat(form.amount) || 0
+    const fmt = (n: number) => new Intl.NumberFormat('uz-UZ').format(n)
+    let t = content
+    t = t.replaceAll('{{RAQAM}}', form.contract_number || '___')
+    t = t.replaceAll('{{SANA}}', form.contract_date || '___')
+    t = t.replaceAll('{{SHAHAR}}', form.city || 'Toshkent')
+    t = t.replaceAll('{{BUYURTMACHI}}', org?.name || '___')
+    t = t.replaceAll('{{BUYURTMACHI_RAHBAR}}', org?.director_name || '___')
+    t = t.replaceAll('{{BUYURTMACHI_INN}}', org?.inn || '___')
+    t = t.replaceAll('{{IJROCHI}}', cp?.name || '___')
+    t = t.replaceAll('{{IJROCHI_RAHBAR}}', cp?.director_name || '___')
+    t = t.replaceAll('{{IJROCHI_INN}}', cp?.inn || '___')
+    t = t.replaceAll('{{SUMMA}}', amount ? fmt(amount) : '___')
+    t = t.replaceAll('{{SUMMA_MATN}}', amount ? numberToWords(amount) : '___')
+    // extra fields
+    Object.entries(ex).forEach(([k, v]) => {
+      t = t.replaceAll(`{{${k.toUpperCase()}}}`, v || '___')
+    })
+    return t
+  }
+
+  function textToStructure(text: string): ContractStructure {
+    const lines = text.split('\n')
+    const bolimlar: { sarlavha: string; bandlar: { matn: string }[] }[] = []
+    let cur: { sarlavha: string; bandlar: { matn: string }[] } | null = null
+    let buf = ''
+    const flush = () => {
+      if (buf.trim() && cur) { cur.bandlar.push({ matn: buf.trim() }); buf = '' }
+    }
+    for (const line of lines) {
+      const isSection = /^\d+\. \S/.test(line) && !/^\d+\.\d+/.test(line)
+      const isBand = /^\d+\.\d+\. /.test(line)
+      if (isSection) {
+        flush()
+        const title = line.replace(/^\d+\. /, '').trim()
+        cur = { sarlavha: title, bandlar: [] }
+        bolimlar.push(cur)
+      } else if (isBand) {
+        flush()
+        const bandText = line.replace(/^\d+\.\d+\. /, '').trim()
+        if (cur) cur.bandlar.push({ matn: bandText })
+      } else if (line.trim()) {
+        if (cur) buf += (buf ? '\n' : '') + line.trim()
+      } else {
+        flush()
+      }
+    }
+    flush()
+    if (!bolimlar.length) {
+      return { bolimlar: [{ sarlavha: 'SHARTNOMA MATNI', bandlar: [{ matn: text.trim() }] }] }
+    }
+    return { bolimlar }
+  }
+
   function calcItem(item: SpecItem): SpecItem {
     const asosiy = item.miqdori * item.narxi
     const foiz = item.qqs_foiz === 'siz' ? 0 : parseFloat(item.qqs_foiz || '0')
@@ -3103,28 +3173,27 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
 
   function loadTemplateAndGoToBolimlar() {
     if (useTemplate) {
-      const { org, cp } = buildOrgCp(form)
-      const amount = parseFloat(form.amount) || 0
-      const tplData = {
-        contract_number: form.contract_number,
-        contract_date: form.contract_date,
-        city: form.city || 'Toshkent',
-        org_name: org?.name, org_inn: org?.inn, org_director: org?.director_name,
-        cp_name: cp?.name, cp_inn: cp?.inn, cp_director: cp?.director_name,
-        amount, amount_text: numberToWords(amount),
-        extra: extraFields,
+      const tpl = allTpls.find(t => t.id === selectedTplId)
+      if (tpl) {
+        const processed = applyTplPlaceholders(tpl.content, extraFields)
+        const s = textToStructure(processed)
+        setStructure(s)
+        setForm({ ...form, content: processed })
+      } else {
+        // fallback to contractStructures
+        const { org, cp } = buildOrgCp(form)
+        const amount = parseFloat(form.amount) || 0
+        const s = getStructure(form.contract_type, {
+          contract_number: form.contract_number, contract_date: form.contract_date,
+          city: form.city || 'Toshkent',
+          org_name: org?.name, org_inn: org?.inn, org_director: org?.director_name,
+          cp_name: cp?.name, cp_inn: cp?.inn, cp_director: cp?.director_name,
+          amount, amount_text: numberToWords(amount), extra: extraFields,
+        })
+        setStructure(s)
+        const typeName = CONTRACT_TYPE_NAMES[form.contract_type as keyof typeof CONTRACT_TYPE_NAMES] || form.contract_type
+        setForm({ ...form, content: structureToText(s, { type_name: typeName, number: form.contract_number, date: form.contract_date, city: form.city || 'Toshkent', org, cp }) })
       }
-      const s = getStructure(form.contract_type, tplData)
-      setStructure(s)
-      const typeName = CONTRACT_TYPE_NAMES[form.contract_type as keyof typeof CONTRACT_TYPE_NAMES] || form.contract_type
-      const text = structureToText(s, {
-        type_name: typeName,
-        number: form.contract_number,
-        date: form.contract_date,
-        city: form.city || 'Toshkent',
-        org, cp,
-      })
-      setForm({ ...form, content: text })
     } else {
       setStructure(EMPTY_STRUCTURE)
       setForm({ ...form, content: '' })
@@ -3464,6 +3533,37 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                       </div>
                     </button>
                   </div>
+
+                  {/* Template list */}
+                  {useTemplate && matchingTpls.length > 0 && (
+                    <div className="mt-3 space-y-1.5">
+                      <p className="text-xs text-gray-500 mb-2">Shablon tanlang:</p>
+                      {matchingTpls.map(tpl => (
+                        <button key={tpl.id} type="button"
+                          onClick={() => setSelectedTplId(tpl.id)}
+                          className={`w-full flex items-start gap-3 p-2.5 rounded-lg border text-left transition ${
+                            selectedTplId === tpl.id
+                              ? 'border-blue-500 bg-blue-900/20'
+                              : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/60'
+                          }`}>
+                          <span className="text-lg flex-shrink-0 mt-0.5">{tpl.icon}</span>
+                          <div className="min-w-0">
+                            <div className={`text-xs font-medium truncate ${selectedTplId === tpl.id ? 'text-blue-300' : 'text-gray-300'}`}>
+                              {tpl.name}
+                              {!tpl.isDefault && <span className="ml-1.5 text-xs text-emerald-400">(sizniki)</span>}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{tpl.description}</div>
+                          </div>
+                          {selectedTplId === tpl.id && (
+                            <span className="text-blue-400 flex-shrink-0 mt-0.5">✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {useTemplate && matchingTpls.length === 0 && form.contract_type && (
+                    <p className="text-xs text-gray-500 mt-3 text-center">Bu shartnoma turi uchun shablon topilmadi</p>
+                  )}
                 </div>
 
                 <button type="button" onClick={goToStep2}
