@@ -3340,7 +3340,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                   2. Qo&apos;shimcha
                 </button>
               )}
-              <button type="button" onClick={() => setStep(3)}
+              <button type="button" onClick={() => { if (structure.bolimlar.length === 0) { loadTemplateAndGoToBolimlar() } else { setStep(3) } }}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition ${step===3 ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
                 {hasExtraFields ? '3.' : '2.'} Bo&apos;limlar
               </button>
