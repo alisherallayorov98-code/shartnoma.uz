@@ -2351,58 +2351,118 @@ export default function DashboardPage() {
       )}
 
       {modal==='viewContract' && viewContract && (
-        <Modal title={`Shartnoma #${viewContract.contract_number}`} onClose={()=>setModal(null)} wide>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                ['Raqam',`#${viewContract.contract_number}`],
-                ['Sana',viewContract.contract_date],
-                ['Tur',CONTRACT_TYPES[viewContract.contract_type]],
-                ['Summa',`${viewContract.amount?.toLocaleString()} so'm`],
-                ['Holat',STATUSES[viewContract.status as keyof typeof STATUSES]?.label],
-              ].map(([l,v])=>(
-                <div key={l} className="bg-gray-800 rounded-lg p-3">
-                  <div className="text-xs text-gray-500 mb-1">{l}</div>
-                  <div className="text-white font-medium text-sm">{v}</div>
+        <div className="fixed inset-0 z-50 flex flex-col bg-gray-950">
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-800 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <button onClick={()=>setModal(null)}
+                className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition text-lg">
+                ←
+              </button>
+              <div>
+                <div className="text-white font-semibold text-sm">
+                  Shartnoma #{viewContract.contract_number}
                 </div>
-              ))}
+                <div className="text-xs text-gray-500">
+                  {CONTRACT_TYPES[viewContract.contract_type]} · {viewContract.contract_date}
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {viewContract.organizations && (
-                <div className="bg-gray-800 rounded-xl p-4">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">Buyurtmachi</div>
-                  <div className="text-white font-semibold text-sm">{viewContract.organizations.name}</div>
-                  <div className="text-gray-400 text-xs mt-1 space-y-0.5">
-                    <div>STR: {viewContract.organizations.inn}</div>
-                    <div>Rahbar: {viewContract.organizations.director_name}</div>
-                    <div>Bank: {viewContract.organizations.bank_name}</div>
-                  </div>
-                </div>
-              )}
-              {viewContract.counterparties && (
-                <div className="bg-gray-800 rounded-xl p-4">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-2">Ijrochi</div>
-                  <div className="text-white font-semibold text-sm">{viewContract.counterparties.name}</div>
-                  <div className="text-gray-400 text-xs mt-1 space-y-0.5">
-                    <div>STR: {viewContract.counterparties.inn}</div>
-                    <div>Rahbar: {viewContract.counterparties.director_name}</div>
-                    <div>Bank: {viewContract.counterparties.bank_name}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="flex gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setModal(null)
+                  setTimeout(() => {
+                    setContractForm({
+                      id: viewContract.id,
+                      contract_number: viewContract.contract_number,
+                      contract_date: viewContract.contract_date,
+                      contract_type: viewContract.contract_type,
+                      city: viewContract.city || 'Toshkent',
+                      organization_id: viewContract.organization_id,
+                      counterparty_id: viewContract.counterparty_id,
+                      amount: viewContract.amount?.toString() || '',
+                      status: viewContract.status,
+                      product_name: viewContract.product_name || '',
+                      content: viewContract.content || '',
+                      spec_items: viewContract.spec_items || [],
+                    })
+                    setModal('contract')
+                  }, 100)
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">
+                ✎ Tahrirlash
+              </button>
               <button onClick={()=>copyContract(viewContract)}
-                className="flex-1 bg-blue-800 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
-                📋 Nusxa olish
+                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition">
+                📋 Nusxa
               </button>
               <button onClick={()=>generatePDF(viewContract)}
-                className="flex-1 bg-emerald-700 hover:bg-emerald-600 text-white py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2">
-                📥 PDF yuklab olish
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition">
+                📥 PDF
+              </button>
+              <button onClick={()=>setModal(null)}
+                className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition text-xl leading-none">
+                ×
               </button>
             </div>
           </div>
-        </Modal>
+
+          {/* A4 preview area */}
+          <div className="flex-1 overflow-y-auto bg-gray-900 py-8 px-4">
+            <div className="mx-auto"
+              style={{ width: '794px', maxWidth: '100%' }}>
+              {/* A4 paper */}
+              <div className="bg-white shadow-2xl mx-auto"
+                style={{
+                  width: '794px', minHeight: '1123px',
+                  padding: '72px 80px',
+                  fontFamily: '"Times New Roman", Times, serif',
+                  fontSize: '13px', lineHeight: '1.7',
+                  color: '#111', boxSizing: 'border-box',
+                }}>
+                {viewContract.content ? (
+                  viewContract.content.split('\n').map((line, i) => {
+                    const isSectionHeader = /^\d+\. [^\d]/.test(line) && !/^\d+\.\d+/.test(line)
+                    const isBand = /^\d+\.\d+\. /.test(line)
+                    const isTitle = i < 5 && line.trim() && !isSectionHeader && !isBand && line === line.toUpperCase()
+                    const isDash = line.trim().startsWith('—')
+                    if (!line.trim()) return <div key={i} style={{ height: '0.6em' }} />
+                    if (isTitle) return (
+                      <div key={i} style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '14px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {line}
+                      </div>
+                    )
+                    if (isSectionHeader) return (
+                      <div key={i} style={{ fontWeight: 'bold', marginTop: '18px', marginBottom: '6px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                        {line}
+                      </div>
+                    )
+                    if (isBand) return (
+                      <div key={i} style={{ marginBottom: '4px', paddingLeft: '8px' }}>
+                        {line}
+                      </div>
+                    )
+                    if (isDash) return (
+                      <div key={i} style={{ marginBottom: '2px', paddingLeft: '16px' }}>
+                        {line}
+                      </div>
+                    )
+                    return (
+                      <div key={i} style={{ marginBottom: '4px' }}>
+                        {line}
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div style={{ color: '#999', textAlign: 'center', marginTop: '60px', fontSize: '14px' }}>
+                    Shartnoma matni mavjud emas
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ─── SPEC MODAL ─── */}
