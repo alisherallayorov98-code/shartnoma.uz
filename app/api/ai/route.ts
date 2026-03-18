@@ -105,9 +105,17 @@ ${content}`,
     })
 
     const raw = (message.content[0] as { type: string; text: string }).text.trim()
-    // JSON ni ajratib olish (ba'zan Claude ```json ... ``` bilan o'raydi)
-    const jsonMatch = raw.match(/```json\s*([\s\S]*?)```/) || raw.match(/```\s*([\s\S]*?)```/)
-    const jsonStr = jsonMatch ? jsonMatch[1].trim() : raw
+    // JSON ni ajratib olish — ``` bloklarini olib tashlaymiz
+    let jsonStr = raw
+    const fenced = raw.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
+    if (fenced) {
+      jsonStr = fenced[1].trim()
+    } else {
+      // { } chegaralarini topib olamiz
+      const start = raw.indexOf('{')
+      const end   = raw.lastIndexOf('}')
+      if (start !== -1 && end !== -1) jsonStr = raw.slice(start, end + 1)
+    }
     const result = JSON.parse(jsonStr)
 
     return NextResponse.json({ result })
