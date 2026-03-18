@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase'
 import { CONTRACT_TEMPLATES, CONTRACT_TYPE_NAMES, fillTemplate } from '@/lib/contractTemplates'
 import { getStructure, structureToText, numberToWords, ContractStructure } from '@/lib/contractStructures'
 import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
+import { useLang } from '@/lib/LanguageContext'
+import { t, tr, LANG_LABELS, type Lang } from '@/lib/i18n'
 
 // ─── Types ───────────────────────────────────────────────
 type Org = {
@@ -77,18 +79,20 @@ const CONTRACT_TYPES: Record<string, string> = {
   boshqa: 'Boshqa',
 }
 const FREE_LIMIT = 5
-const NAV = [
-  { key: 'overview',        icon: '▣',  label: "Umumiy ko'rinish" },
-  { key: 'contracts',       icon: '📄', label: 'Shartnomalar' },
-  { key: 'specifications',  icon: '📋', label: 'Spesifikatsiyalar' },
-  { key: 'shablonlar',      icon: '📑', label: 'Shablonlar' },
-  { key: 'counterparties',  icon: '🤝', label: 'Kontragentlar' },
-  { key: 'profile',         icon: '👤', label: 'Profil' },
+const NAV_KEYS = [
+  { key: 'overview',        icon: '▣'  },
+  { key: 'contracts',       icon: '📄' },
+  { key: 'specifications',  icon: '📋' },
+  { key: 'shablonlar',      icon: '📑' },
+  { key: 'counterparties',  icon: '🤝' },
+  { key: 'profile',         icon: '👤' },
 ]
 
 // ─── Main Component ───────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter()
+  const { lang, setLang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const [tab, setTab] = useState('overview')
   const [userEmail, setUserEmail] = useState('')
   const [userId, setUserId] = useState('')
@@ -1446,13 +1450,13 @@ export default function DashboardPage() {
 
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-1 mt-2 overflow-hidden">
-          {NAV.map(item => (
+          {NAV_KEYS.map(item => (
             <button key={item.key} onClick={() => setTab(item.key)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
                 tab===item.key ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
               }`}>
               <span className="text-base flex-shrink-0">{item.icon}</span>
-              {sidebarOpen && <span className="flex-1 text-left font-medium">{item.label}</span>}
+              {sidebarOpen && <span className="flex-1 text-left font-medium">{T(t.nav[item.key as keyof typeof t.nav])}</span>}
               {sidebarOpen && item.key==='contracts' && (
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab===item.key?'bg-blue-500':'bg-gray-700 text-gray-400'}`}>
                   {contracts.length}
@@ -1462,18 +1466,30 @@ export default function DashboardPage() {
           ))}
         </nav>
 
+        {/* Til tanlash */}
+        {sidebarOpen && (
+          <div className="px-3 pb-1 flex gap-1">
+            {(['uz','oz','ru'] as Lang[]).map(l => (
+              <button key={l} onClick={() => setLang(l)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition ${lang===l ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+                {LANG_LABELS[l]}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* User */}
         <div className="p-3 border-t border-gray-800 space-y-2">
           {sidebarOpen && (
             <div className="px-3 py-2 rounded-lg bg-gray-800">
-              <div className="text-xs text-gray-500">Hisob</div>
+              <div className="text-xs text-gray-500">{T(t.profile.account)}</div>
               <div className="text-sm text-white truncate font-medium mt-0.5">{userEmail}</div>
             </div>
           )}
           <button onClick={logout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition">
             <span className="flex-shrink-0">🚪</span>
-            {sidebarOpen && <span>Chiqish</span>}
+            {sidebarOpen && <span>{T(t.nav.logout)}</span>}
           </button>
         </div>
       </aside>
@@ -1489,7 +1505,7 @@ export default function DashboardPage() {
             </svg>
           </button>
           <h1 className="text-base font-semibold flex-1">
-            {tab==='organizations' ? 'Tashkilotlarim' : NAV.find(n=>n.key===tab)?.label}
+            {tab==='organizations' ? T(t.orgs.title) : T(t.nav[tab as keyof typeof t.nav] || t.nav.overview)}
           </h1>
           {tab==='shablonlar' && (
             <button
