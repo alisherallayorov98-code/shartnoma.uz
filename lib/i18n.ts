@@ -177,7 +177,24 @@ export const t = {
     error:       { uz: 'Xatolik yuz berdi',                oz: 'Хатолик юз берди',                ru: 'Произошла ошибка' },
     limitReached:{ uz: 'Limit to\'ldi. Tarifni yangilang.',oz: 'Лимит тўлди. Тарифни янгиланг.', ru: 'Лимит исчерпан. Обновите тариф.' },
     noOrgs:      { uz: 'Avval tashkilot qo\'shing',        oz: 'Аввал ташкилот қўшинг',          ru: 'Сначала добавьте организацию' },
-    loading:     { uz: 'Yuklanmoqda…',                     oz: 'Юкланмоқда…',                    ru: 'Загрузка…' },
+    loading:          { uz: 'Yuklanmoqda…',                          oz: 'Юкланмоқда…',                        ru: 'Загрузка…' },
+    tplNameRequired:  { uz: 'Shablon nomi kiriting!',                oz: 'Шаблон номи киритинг!',               ru: 'Введите название шаблона!' },
+    tplContentReq:    { uz: 'Shablon matni kiriting!',               oz: 'Шаблон матни киритинг!',              ru: 'Введите текст шаблона!' },
+    deleteTplConfirm: { uz: "Shablonni o'chirishni tasdiqlaysizmi?", oz: 'Шаблонни ўчиришни тасдиқлайсизми?',  ru: 'Удалить этот шаблон?' },
+    deleteCpConfirm:  { uz: "Kontragentni o'chirishni tasdiqlaysizmi?", oz: 'Контрагентни ўчиришни тасдиқлайсизми?', ru: 'Удалить контрагента?' },
+    deleteSpecConfirm:{ uz: "Spesifikatsiyani o'chirishni tasdiqlaysizmi?", oz: 'Спесификацияни ўчиришни тасдиқлайсизми?', ru: 'Удалить спецификацию?' },
+    addItem:          { uz: "Kamida 1 ta mahsulot/xizmat qo'shing!", oz: 'Камида 1 та маҳсулот/хизмат қўшинг!', ru: 'Добавьте хотя бы 1 товар/услугу!' },
+    uploadError:      { uz: 'Yuklash xatosi',                        oz: 'Юклаш хатоси',                        ru: 'Ошибка загрузки' },
+    errorPrefix:      { uz: 'Xato',                                  oz: 'Хато',                                ru: 'Ошибка' },
+    profileSaved:     { uz: 'Profil saqlandi ✓',                     oz: 'Профил сақланди ✓',                   ru: 'Профиль сохранён ✓' },
+    saved:            { uz: 'Saqlandi ✓',                            oz: 'Сақланди ✓',                          ru: 'Сохранено ✓' },
+    pwdChanged:       { uz: "Parol muvaffaqiyatli o'zgartirildi ✓",  oz: 'Парол муваффақиятли ўзгартирилди ✓',  ru: 'Пароль успешно изменён ✓' },
+    pwdMismatch:      { uz: 'Parollar mos kelmaydi',                 oz: 'Паролlar мос келмайди',               ru: 'Пароли не совпадают' },
+    pwdShort:         { uz: "Parol kamida 8 belgi bo'lishi kerak",   oz: 'Парол камида 8 белги бўлиши керак',   ru: 'Пароль должен быть не менее 8 символов' },
+    innInvalid:       { uz: "INN 9 raqamdan iborat bo'lishi kerak",  oz: 'ИНН 9 рақамдан иборат бўлиши керак',  ru: 'ИНН должен состоять из 9 цифр' },
+    mfoInvalid:       { uz: "MFO 5 raqamdan iborat bo'lishi kerak",  oz: 'МФО 5 рақамдан иборат бўлиши керак',  ru: 'МФО должен состоять из 5 цифр' },
+    accountInvalid:   { uz: "Hisob raqam 20 raqamdan iborat bo'lishi kerak", oz: 'Ҳисоб рақам 20 рақамдан иборат бўлиши керак', ru: 'Расчётный счёт должен состоять из 20 цифр' },
+    nameRequired:     { uz: "Nomi kiritilmagan",                      oz: 'Номи киритилмаган',                   ru: 'Название не введено' },
   },
 
   // ── PDF/Word hujjat ──────────────────────────────────────────
@@ -208,6 +225,11 @@ export const t = {
     qqsBilan:     { uz: "QQS bilan jami:",           oz: "ҚҚС билан жами:",          ru: "Итого с НДС:" },
     jami:         { uz: "Jami:",                     oz: "Жами:",                    ru: "Итого:" },
     sozBilan:     { uz: "So'z bilan:",               oz: "Сўз билан:",               ru: "Прописью:" },
+    som:           { uz: "so'm",                     oz: "so'm",                     ru: 'сум' },
+    qqssiz:        { uz: 'QQSsiz',                   oz: 'ҚҚСсиз',                  ru: 'Без НДС' },
+    qqsCol:        { uz: 'QQS%',                     oz: 'ҚҚС%',                    ru: 'НДС%' },
+    qqsSum:        { uz: 'QQS summa',                oz: 'ҚҚС суммаси',              ru: 'НДС сумма' },
+    productService:{ uz: 'Mahsulot/xizmat nomi',     oz: 'Маҳсулот/хизмат номи',    ru: 'Наименование товара/услуги' },
     intro: {
 
       oldi_sotdi: {
@@ -416,6 +438,38 @@ export const t = {
     goToSections:{ uz: 'Bo\'limlarga o\'tish →',       oz: 'Бўлимларга ўтиш →',         ru: 'Перейти к разделам →' },
     loadAndEdit: { uz: 'Shablonni yuklash va tahrirlash →', oz: 'Шаблонni юклаш ва таҳрирлаш →', ru: 'Загрузить шаблон и редактировать →' },
     openEmpty:   { uz: 'Bo\'sh tuzilmani ochish →',   oz: 'Бўш тузилмани очиш →',      ru: 'Открыть пустую структуру →' },
+  },
+
+  // ── Login sahifasi ───────────────────────────────────────────
+  login: {
+    title:      { uz: 'Kirish',                        oz: 'Кириш',                       ru: 'Войти' },
+    subtitle:   { uz: 'Hisobingizga kiring',           oz: 'Ҳисобингизга киринг',         ru: 'Войдите в аккаунт' },
+    googleBtn:  { uz: 'Google orqali kirish',          oz: 'Google орқали кириш',         ru: 'Войти через Google' },
+    or:         { uz: 'yoki',                          oz: 'ёки',                         ru: 'или' },
+    password:   { uz: 'Parol',                         oz: 'Парол',                       ru: 'Пароль' },
+    submit:     { uz: 'Kirish',                        oz: 'Кириш',                       ru: 'Войти' },
+    error:      { uz: 'Email yoki parol noto\'g\'ri',  oz: 'Email ёки парол нотўғри',     ru: 'Неверный email или пароль' },
+    noAccount:  { uz: 'Hisob yo\'qmi?',               oz: 'Ҳисоб йўқми?',               ru: 'Нет аккаунта?' },
+    signupLink: { uz: 'Ro\'yxatdan o\'tish',           oz: 'Рўйхатдан ўтиш',             ru: 'Зарегистрироваться' },
+  },
+
+  // ── Signup sahifasi ──────────────────────────────────────────
+  signup: {
+    title:       { uz: 'Ro\'yxatdan o\'tish',          oz: 'Рўйхатдан ўтиш',             ru: 'Регистрация' },
+    subtitle:    { uz: 'Bepul hisob oching',           oz: 'Бепул ҳисоб очинг',          ru: 'Создайте бесплатный аккаунт' },
+    googleBtn:   { uz: 'Google orqali ro\'yxatdan o\'tish', oz: 'Google орқали рўйхатдан ўтиш', ru: 'Зарегистрироваться через Google' },
+    or:          { uz: 'yoki',                         oz: 'ёки',                         ru: 'или' },
+    password:    { uz: 'Parol',                        oz: 'Парол',                       ru: 'Пароль' },
+    passwordHint:{ uz: 'Kamida 8 belgi',               oz: 'Камида 8 белги',              ru: 'Минимум 8 символов' },
+    confirmPw:   { uz: 'Parolni tasdiqlang',           oz: 'Паролни тасдиқланг',          ru: 'Подтвердите пароль' },
+    mismatch:    { uz: 'Parollar mos kelmadi',         oz: 'Паролlar мос келмади',        ru: 'Пароли не совпадают' },
+    shortPass:   { uz: 'Parol kamida 8 belgi bo\'lishi kerak', oz: 'Парол камида 8 белги бўлиши керак', ru: 'Пароль должен быть не менее 8 символов' },
+    submit:      { uz: 'Ro\'yxatdan o\'tish',          oz: 'Рўйхатдан ўтиш',             ru: 'Зарегистрироваться' },
+    hasAccount:  { uz: 'Hisob bormi?',                oz: 'Ҳисоб борми?',               ru: 'Уже есть аккаунт?' },
+    loginLink:   { uz: 'Kirish',                       oz: 'Кириш',                       ru: 'Войти' },
+    verifyTitle: { uz: 'Emailni tasdiqlang',           oz: 'Электрон поч. тасдиқланг',   ru: 'Подтвердите email' },
+    verifyText:  { uz: 'manziliga tasdiqlash xati yuborildi. Emailingizni tekshiring.', oz: 'манзилига тасдиқлаш хати юборилди. Электрон почтангизни текширинг.', ru: 'было отправлено письмо для подтверждения. Проверьте почту.' },
+    goLogin:     { uz: 'Kirishga o\'tish →',           oz: 'Киришга ўтиш →',             ru: 'Перейти ко входу →' },
   },
 } as const
 

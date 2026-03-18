@@ -4,9 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { useLang } from '@/lib/LanguageContext'
+import { t, tr, LANG_LABELS, type Lang } from '@/lib/i18n'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { lang, setLang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,7 +23,7 @@ export default function LoginPage() {
     setError('')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError('Email yoki parol noto\'g\'ri')
+      setError(T(t.login.error))
     } else {
       router.push('/dashboard')
     }
@@ -37,10 +42,28 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
+
+        {/* Til tanlash */}
+        <div className="flex justify-end gap-1 mb-4">
+          {(Object.keys(LANG_LABELS) as Lang[]).map(l => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className={`px-3 py-1 text-xs rounded-lg transition ${
+                lang === l
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:text-white'
+              }`}
+            >
+              {LANG_LABELS[l]}
+            </button>
+          ))}
+        </div>
+
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold text-blue-400">Shartnoma.uz</Link>
-          <h1 className="text-2xl font-bold text-white mt-4">Kirish</h1>
-          <p className="text-gray-400 mt-2">Hisobingizga kiring</p>
+          <h1 className="text-2xl font-bold text-white mt-4">{T(t.login.title)}</h1>
+          <p className="text-gray-400 mt-2">{T(t.login.subtitle)}</p>
         </div>
 
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-8">
@@ -60,12 +83,12 @@ export default function LoginPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Google orqali kirish
+            {T(t.login.googleBtn)}
           </button>
 
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 h-px bg-gray-700"></div>
-            <span className="text-gray-500 text-sm">yoki</span>
+            <span className="text-gray-500 text-sm">{T(t.login.or)}</span>
             <div className="flex-1 h-px bg-gray-700"></div>
           </div>
 
@@ -82,7 +105,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Parol</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">{T(t.login.password)}</label>
               <input
                 type="password"
                 value={password}
@@ -97,14 +120,14 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition"
             >
-              {loading ? 'Yuklanmoqda...' : 'Kirish'}
+              {loading ? T(t.btn.loading) : T(t.login.submit)}
             </button>
           </form>
 
           <p className="text-center text-gray-400 text-sm mt-6">
-            Hisob yo'qmi?{' '}
+            {T(t.login.noAccount)}{' '}
             <Link href="/signup" className="text-blue-400 hover:text-blue-300">
-              Ro'yxatdan o'tish
+              {T(t.login.signupLink)}
             </Link>
           </p>
         </div>

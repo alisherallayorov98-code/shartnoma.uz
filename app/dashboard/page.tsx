@@ -162,6 +162,24 @@ export default function DashboardPage() {
   const stampRef = useRef<HTMLInputElement>(null)
   const signatureRef = useRef<HTMLInputElement>(null)
   const avatarRef = useRef<HTMLInputElement>(null)
+  const wordImportRef = useRef<HTMLInputElement>(null)
+  const [wordImporting, setWordImporting] = useState(false)
+
+  type AiAnalysis = {
+    baho: string
+    umumiy: string
+    kuchli_tomonlar: string[]
+    zaif_tomonlar: string[]
+    yuridik_xatarlar: { daraja: string; tavsif: string }[]
+    tavsiyalar: string[]
+    grammatika_xatolari: string[]
+  }
+  const [aiModal, setAiModal] = useState(false)
+  const [aiContract, setAiContract] = useState<Contract | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState<AiAnalysis | null>(null)
+  const [aiError, setAiError] = useState('')
+  const [aiTab, setAiTab] = useState<'tahlil'|'grammatika'>('tahlil')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [avatarUploading, setAvatarUploading] = useState(false)
 
@@ -177,7 +195,8 @@ export default function DashboardPage() {
   }
 
   async function loadOrgs() {
-    const { data } = await supabase.from('organizations').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('organizations').select('*').order('created_at', { ascending: false })
+    if (error) { console.error('loadOrgs:', error.message); return }
     const list = data || []
     setOrgs(list)
     if (list.length > 0) {
@@ -188,7 +207,8 @@ export default function DashboardPage() {
   }
 
   async function loadBankAccounts(orgId: string) {
-    const { data } = await supabase.from('bank_accounts').select('*').eq('organization_id', orgId).order('is_default', { ascending: false })
+    const { data, error } = await supabase.from('bank_accounts').select('*').eq('organization_id', orgId).order('is_default', { ascending: false })
+    if (error) { console.error('loadBankAccounts:', error.message); return }
     setBankAccounts(data || [])
   }
 
@@ -199,26 +219,30 @@ export default function DashboardPage() {
   }
 
   async function loadCps() {
-    const { data } = await supabase.from('counterparties').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('counterparties').select('*').order('created_at', { ascending: false })
+    if (error) { console.error('loadCps:', error.message); return }
     setCps(data || [])
   }
 
   async function loadContracts() {
-    const { data } = await supabase.from('contracts').select('*, organizations(*), counterparties(*)').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('contracts').select('*, organizations(*), counterparties(*)').order('created_at', { ascending: false })
+    if (error) { console.error('loadContracts:', error.message); return }
     setContracts(data || [])
   }
 
   async function loadSpecs(orgId: string) {
-    const { data } = await supabase.from('specifications')
+    const { data, error } = await supabase.from('specifications')
       .select('*, contracts(contract_number, contract_date, counterparties(name))')
       .eq('organization_id', orgId)
       .order('created_at', { ascending: false })
+    if (error) { console.error('loadSpecs:', error.message); return }
     setSpecs(data || [])
   }
 
   async function loadCustomTemplates(orgId: string) {
-    const { data } = await supabase.from('custom_templates')
+    const { data, error } = await supabase.from('custom_templates')
       .select('*').eq('organization_id', orgId).order('created_at', { ascending: false })
+    if (error) { console.error('loadCustomTemplates:', error.message); return }
     setCustomTemplates((data || []).map((t: any) => ({
       id: t.id, type: t.type, name: t.name,
       description: t.description || '', content: t.content,
@@ -229,8 +253,8 @@ export default function DashboardPage() {
   async function saveCustomTemplate(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
     if (!activeOrg) return
-    if (!customTplForm.name.trim()) { alert("Shablon nomi kiriting!"); setSaving(false); return }
-    if (!customTplForm.content.trim()) { alert("Shablon matni kiriting!"); setSaving(false); return }
+    if (!customTplForm.name.trim()) { alert(T(t.msg.tplNameRequired)); setSaving(false); return }
+    if (!customTplForm.content.trim()) { alert(T(t.msg.tplContentReq)); setSaving(false); return }
     const payload = {
       organization_id: activeOrg.id,
       type: customTplForm.type,
@@ -238,17 +262,22 @@ export default function DashboardPage() {
       description: customTplForm.description,
       content: customTplForm.content,
     }
+    let dbErr = null
     if (editingCustomTemplate) {
-      await supabase.from('custom_templates').update(payload).eq('id', editingCustomTemplate.id)
+      const { error } = await supabase.from('custom_templates').update(payload).eq('id', editingCustomTemplate.id)
+      dbErr = error
     } else {
-      await supabase.from('custom_templates').insert(payload)
+      const { error } = await supabase.from('custom_templates').insert(payload)
+      dbErr = error
     }
-    setSaving(false); setCustomTemplateModal(false); setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl)
+    setSaving(false)
+    if (dbErr) { alert(`${T(t.msg.errorPrefix)}: ${dbErr.message}`); return }
+    setCustomTemplateModal(false); setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl)
     loadCustomTemplates(activeOrg.id)
   }
 
   async function deleteCustomTemplate(id: string) {
-    if (!confirm("Shablonni o'chirishni tasdiqlaysizmi?")) return
+    if (!confirm(T(t.msg.deleteTplConfirm))) return
     await supabase.from('custom_templates').delete().eq('id', id)
     if (activeOrg) loadCustomTemplates(activeOrg.id)
   }
@@ -284,8 +313,9 @@ export default function DashboardPage() {
     e.preventDefault()
     if (!activeOrg) return
     setOrgExtSaving(true); setOrgExtMsg('')
-    await supabase.from('organizations').update(orgExtForm).eq('id', activeOrg.id)
-    setOrgExtMsg('Saqlandi ✓'); setOrgExtSaving(false)
+    const { error: orgErr } = await supabase.from('organizations').update(orgExtForm).eq('id', activeOrg.id)
+    if (orgErr) { setOrgExtMsg(`${T(t.msg.errorPrefix)}: ${orgErr.message}`); setOrgExtSaving(false); return }
+    setOrgExtMsg(T(t.msg.saved)); setOrgExtSaving(false)
     setTimeout(() => setOrgExtMsg(''), 3000)
     loadOrgs()
   }
@@ -315,6 +345,10 @@ export default function DashboardPage() {
   // ── Save org ──
   async function saveOrg(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
+    if (!orgForm.name.trim()) { alert(T(t.msg.nameRequired)); setSaving(false); return }
+    if (orgForm.inn && !/^\d{9}$/.test(orgForm.inn)) { alert(T(t.msg.innInvalid)); setSaving(false); return }
+    if (orgForm.mfo && !/^\d{5}$/.test(orgForm.mfo)) { alert(T(t.msg.mfoInvalid)); setSaving(false); return }
+    if (orgForm.bank_account && !/^\d{20}$/.test(orgForm.bank_account)) { alert(T(t.msg.accountInvalid)); setSaving(false); return }
     const { data: { session } } = await supabase.auth.getSession()
     const { data: newOrg } = await supabase.from('organizations').insert({ ...orgForm, user_id: session!.user.id }).select().single()
     if (newOrg) {
@@ -330,19 +364,28 @@ export default function DashboardPage() {
 
   async function saveCp(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
+    if (!cpForm.name.trim()) { alert(T(t.msg.nameRequired)); setSaving(false); return }
+    if (cpForm.inn && !/^\d{9}$/.test(cpForm.inn)) { alert(T(t.msg.innInvalid)); setSaving(false); return }
+    if (cpForm.mfo && !/^\d{5}$/.test(cpForm.mfo)) { alert(T(t.msg.mfoInvalid)); setSaving(false); return }
+    if (cpForm.bank_account && !/^\d{20}$/.test(cpForm.bank_account)) { alert(T(t.msg.accountInvalid)); setSaving(false); return }
     const { data: { session } } = await supabase.auth.getSession()
+    let cpErr = null
     if (editingCp) {
-      await supabase.from('counterparties').update(cpForm).eq('id', editingCp.id)
-      setEditingCp(null)
+      const { error } = await supabase.from('counterparties').update(cpForm).eq('id', editingCp.id)
+      cpErr = error; setEditingCp(null)
     } else {
-      await supabase.from('counterparties').insert({ ...cpForm, user_id: session!.user.id })
+      const { error } = await supabase.from('counterparties').insert({ ...cpForm, user_id: session!.user.id })
+      cpErr = error
     }
-    setModal(null); setCpForm(emptyCp); setSaving(false); loadCps()
+    setSaving(false)
+    if (cpErr) { alert(`${T(t.msg.errorPrefix)}: ${cpErr.message}`); return }
+    setModal(null); setCpForm(emptyCp); loadCps()
   }
 
   async function deleteCp(id: string) {
-    if (!confirm("Kontragentni o'chirishni tasdiqlaysizmi?")) return
-    await supabase.from('counterparties').delete().eq('id', id)
+    if (!confirm(T(t.msg.deleteCpConfirm))) return
+    const { error } = await supabase.from('counterparties').delete().eq('id', id)
+    if (error) { alert(`${T(t.msg.errorPrefix)}: ${error.message}`); return }
     setCpDetail(null); loadCps()
   }
 
@@ -358,7 +401,7 @@ export default function DashboardPage() {
   async function saveSpec(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
     if (!activeOrg) return
-    if (specForm.items.length === 0) { alert("Kamida 1 ta mahsulot/xizmat qo'shing!"); setSaving(false); return }
+    if (specForm.items.length === 0) { alert(T(t.msg.addItem)); setSaving(false); return }
     const payload = {
       organization_id: activeOrg.id,
       contract_id: specForm.contract_id || null,
@@ -366,12 +409,17 @@ export default function DashboardPage() {
       items: specForm.items,
       notes: specForm.notes,
     }
+    let specErr = null
     if (editingSpec) {
-      await supabase.from('specifications').update(payload).eq('id', editingSpec.id)
+      const { error } = await supabase.from('specifications').update(payload).eq('id', editingSpec.id)
+      specErr = error
     } else {
-      await supabase.from('specifications').insert(payload)
+      const { error } = await supabase.from('specifications').insert(payload)
+      specErr = error
     }
-    setSaving(false); setSpecModal(false); setEditingSpec(null); setSpecForm(emptySpecForm)
+    setSaving(false)
+    if (specErr) { alert(`${T(t.msg.errorPrefix)}: ${specErr.message}`); return }
+    setSpecModal(false); setEditingSpec(null); setSpecForm(emptySpecForm)
     loadSpecs(activeOrg.id)
   }
 
@@ -509,8 +557,8 @@ export default function DashboardPage() {
 
     // To'lash jami + so'z bilan
     doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(0,0,0)
-    const grandWords = numberToWords(grand)
-    const grandText = safe(`Jami to'lov: ${grand.toLocaleString()} so'm (${grandWords})`)
+    const grandWords = numberToWords(grand, lang)
+    const grandText = safe(`${t.doc.jami[lang]} ${grand.toLocaleString()} ${t.doc.som[lang]} (${grandWords})`)
     const gLines = doc.splitTextToSize(grandText, cW) as string[]
     for (const l of gLines) { doc.text(l, mL, y); y += 5 }
     y += 5
@@ -553,15 +601,16 @@ export default function DashboardPage() {
   }
 
   async function deleteSpec(id: string) {
-    if (!confirm("Spesifikatsiyani o'chirishni tasdiqlaysizmi?")) return
-    await supabase.from('specifications').delete().eq('id', id)
+    if (!confirm(T(t.msg.deleteSpecConfirm))) return
+    const { error } = await supabase.from('specifications').delete().eq('id', id)
+    if (error) { alert(`${T(t.msg.errorPrefix)}: ${error.message}`); return }
     if (activeOrg) loadSpecs(activeOrg.id)
   }
 
   async function saveContract(e: React.FormEvent) {
     e.preventDefault()
     if (!canCreateContract()) { setModal('upgrade'); return }
-    if (!contractForm.organization_id) { alert("Tashkilotni tanlang!"); return }
+    if (!contractForm.organization_id) { alert(T(t.msg.selectOrg)); return }
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
     const { error } = await supabase.from('contracts').insert({
@@ -581,7 +630,7 @@ export default function DashboardPage() {
       user_id: session!.user.id
     })
     if (error) {
-      alert('Xato: ' + error.message)
+      alert(`${T(t.msg.errorPrefix)}: ${error.message}`)
       setSaving(false)
       return
     }
@@ -594,12 +643,16 @@ export default function DashboardPage() {
 
   async function saveBankAccount(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
+    if (bankForm.mfo && !/^\d{5}$/.test(bankForm.mfo)) { alert(T(t.msg.mfoInvalid)); setSaving(false); return }
+    if (bankForm.account_number && !/^\d{20}$/.test(bankForm.account_number)) { alert(T(t.msg.accountInvalid)); setSaving(false); return }
     const { data: { session } } = await supabase.auth.getSession()
     if (bankForm.is_default && activeOrg) {
       await supabase.from('bank_accounts').update({ is_default: false }).eq('organization_id', activeOrg.id)
     }
-    await supabase.from('bank_accounts').insert({ ...bankForm, organization_id: activeOrg!.id, user_id: session!.user.id })
-    setModal(null); setBankForm(emptyBank); setSaving(false); loadBankAccounts(activeOrg!.id)
+    const { error } = await supabase.from('bank_accounts').insert({ ...bankForm, organization_id: activeOrg!.id, user_id: session!.user.id })
+    setSaving(false)
+    if (error) { alert(`${T(t.msg.errorPrefix)}: ${error.message}`); return }
+    setModal(null); setBankForm(emptyBank); loadBankAccounts(activeOrg!.id)
   }
 
   async function copyContract(c: Contract) {
@@ -616,18 +669,21 @@ export default function DashboardPage() {
   }
 
   async function updateStatus(id: string, status: string) {
-    await supabase.from('contracts').update({ status }).eq('id', id)
+    const { error } = await supabase.from('contracts').update({ status }).eq('id', id)
+    if (error) { console.error('updateStatus:', error.message); return }
     loadContracts()
   }
 
   async function deleteContract(id: string) {
     if (!confirm(T(t.contracts.deleteConfirm))) return
-    await supabase.from('contracts').delete().eq('id', id)
+    const { error } = await supabase.from('contracts').delete().eq('id', id)
+    if (error) { alert(`${T(t.msg.errorPrefix)}: ${error.message}`); return }
     loadContracts()
   }
 
   async function deleteBankAccount(id: string) {
-    await supabase.from('bank_accounts').delete().eq('id', id)
+    const { error } = await supabase.from('bank_accounts').delete().eq('id', id)
+    if (error) { alert(`${T(t.msg.errorPrefix)}: ${error.message}`); return }
     if (activeOrg) loadBankAccounts(activeOrg.id)
   }
 
@@ -637,7 +693,7 @@ export default function DashboardPage() {
     const ext = file.name.split('.').pop()
     const path = `avatars/${session!.user.id}.${ext}`
     const { error: upErr } = await supabase.storage.from('org-assets').upload(path, file, { upsert: true })
-    if (upErr) { alert('Yuklash xatosi: ' + upErr.message); setAvatarUploading(false); return }
+    if (upErr) { alert(`${T(t.msg.uploadError)}: ${upErr.message}`); setAvatarUploading(false); return }
     const { data } = supabase.storage.from('org-assets').getPublicUrl(path)
     const updated = { ...profile, avatar_url: data.publicUrl }
     setProfile(updated)
@@ -649,17 +705,17 @@ export default function DashboardPage() {
     e.preventDefault(); setProfileSaving(true); setProfileMsg('')
     const { data: { session } } = await supabase.auth.getSession()
     await supabase.from('profiles').upsert({ id: session!.user.id, ...profile, updated_at: new Date().toISOString() })
-    setProfileMsg('Profil saqlandi ✓'); setProfileSaving(false)
+    setProfileMsg(T(t.msg.profileSaved)); setProfileSaving(false)
     setTimeout(() => setProfileMsg(''), 3000)
   }
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault(); setPwdMsg('')
-    if (newPassword.length < 8) { setPwdMsg("Parol kamida 8 belgi bo'lishi kerak"); return }
-    if (newPassword !== confirmPassword) { setPwdMsg("Parollar mos kelmaydi"); return }
+    if (newPassword.length < 8) { setPwdMsg(T(t.msg.pwdShort)); return }
+    if (newPassword !== confirmPassword) { setPwdMsg(T(t.msg.pwdMismatch)); return }
     const { error } = await supabase.auth.updateUser({ password: newPassword })
-    if (error) setPwdMsg('Xatolik: ' + error.message)
-    else { setPwdMsg("Parol muvaffaqiyatli o'zgartirildi ✓"); setNewPassword(''); setConfirmPassword('') }
+    if (error) setPwdMsg(`${T(t.msg.errorPrefix)}: ${error.message}`)
+    else { setPwdMsg(T(t.msg.pwdChanged)); setNewPassword(''); setConfirmPassword('') }
     setTimeout(() => setPwdMsg(''), 4000)
   }
 
@@ -668,10 +724,66 @@ export default function DashboardPage() {
     const ext = file.name.split('.').pop()
     const path = `${userId}/${activeOrg.id}/${field}.${ext}`
     const { error: upErr } = await supabase.storage.from('org-assets').upload(path, file, { upsert: true })
-    if (upErr) { alert('Yuklash xatosi: ' + upErr.message); return }
+    if (upErr) { alert(`${T(t.msg.uploadError)}: ${upErr.message}`); return }
     const { data } = supabase.storage.from('org-assets').getPublicUrl(path)
     await supabase.from('organizations').update({ [field]: data.publicUrl }).eq('id', activeOrg.id)
     loadOrgs()
+  }
+
+  async function runAiAnalysis(c: Contract, type: 'tahlil' | 'grammatika') {
+    const content = c.content || ''
+    if (!content.trim()) { setAiError("Shartnoma matni bo'sh — tahlil qilib bo'lmaydi"); return }
+    setAiLoading(true); setAiError(''); setAiResult(null)
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: type === 'tahlil' ? 'analysis' : 'grammar',
+          content,
+          lang,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) { setAiError(data.error || 'Xatolik'); return }
+      setAiResult(data.result)
+    } catch {
+      setAiError("Serverga ulanishda xatolik")
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  async function handleWordImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.name.endsWith('.docx')) { alert('Faqat .docx formatdagi fayllar qabul qilinadi'); return }
+    setWordImporting(true)
+    try {
+      const { convertToHtml } = await import('mammoth')
+      const arrayBuffer = await file.arrayBuffer()
+      const result = await convertToHtml({ arrayBuffer })
+      // HTML dan toza matn ajratib olish
+      const div = document.createElement('div')
+      div.innerHTML = result.value
+      const text = div.innerText.trim()
+      if (!text) { alert("Fayl bo'sh yoki o'qib bo'lmadi"); setWordImporting(false); return }
+      // Shablon modal ni ochish, kontent bilan to'ldirish
+      const baseName = file.name.replace(/\.docx$/i, '')
+      setEditingCustomTemplate(null)
+      setCustomTplForm({
+        type: 'boshqa',
+        name: baseName,
+        description: `Word fayldan import: ${file.name}`,
+        content: text,
+      })
+      setCustomTemplateModal(true)
+    } catch {
+      alert("Faylni o'qishda xatolik yuz berdi")
+    } finally {
+      setWordImporting(false)
+      if (wordImportRef.current) wordImportRef.current.value = ''
+    }
   }
 
   async function loadImageAsBase64(url: string): Promise<string | null> {
@@ -702,7 +814,11 @@ export default function DashboardPage() {
       orgData?.signature_url ? loadImageAsBase64(orgData.signature_url) : Promise.resolve(null),
     ])
 
-    const MONTHS = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr']
+    const MONTHS = lang === 'ru'
+      ? ['yanvarya','fevralya','marta','aprelya','maya','iyunya','iyulya','avgusta','sentyabrya','oktyabrya','noyabrya','dekabrya']
+      : lang === 'oz'
+      ? ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr']
+      : ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr']
     // jsPDF built-in fontlar faqat Latin-1 — Kirill → Lotin transliteratsiya
     const CYRL: Record<string,string> = {
       'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh','З':'Z','И':'I','Й':'Y',
@@ -720,31 +836,69 @@ export default function DashboardPage() {
       .replace(/o\u2018/g, "o'").replace(/g\u2018/g, "g'")
       .replace(/[\u0400-\u04FF]/g, ch => CYRL[ch] || ch)
 
+    // ── Justify (ikki tomonga tekislash) ─────────────────────────
+    // jsPDF built-in justify yo'q — har bir so'zni alohida chizamiz
+    const justifyLine = (line: string, x: number, yPos: number, maxW: number, isLast: boolean): void => {
+      const words = line.split(' ').filter(w => w.length > 0)
+      if (words.length <= 1 || isLast) { doc.text(line, x, yPos); return }
+      const totalW = doc.getTextWidth(line)
+      const spaceW = doc.getTextWidth(' ')
+      const extra  = (maxW - totalW) / (words.length - 1) - spaceW
+      if (extra > 5) { doc.text(line, x, yPos); return } // juda katta gap → chap
+      let cx = x
+      for (let i = 0; i < words.length; i++) {
+        doc.text(words[i], cx, yPos)
+        if (i < words.length - 1) cx += doc.getTextWidth(words[i]) + spaceW + extra
+      }
+    }
+    // Paragraph matnini justify bilan chizish, y ni o'z ichida oshiradi
+    const drawJustified = (text: string, x: number, maxW: number, lineH: number): void => {
+      const lines = doc.splitTextToSize(text, maxW) as string[]
+      for (let i = 0; i < lines.length; i++) {
+        if (y > pageH - mB - 12) { doc.addPage(); y = mT }
+        justifyLine(lines[i], x, y, maxW, i === lines.length - 1)
+        y += lineH
+      }
+    }
+
     const fmtDate = (d: string) => {
       if (!d) return '___'
       const [yy,mm,dd] = d.split('-')
       if (!yy || !mm || !dd) return d
-      return `"${parseInt(dd)}" ${MONTHS[parseInt(mm)-1]} ${yy} y.`
+      const ySuffix = lang === 'ru' ? 'g.' : 'y.'
+      return `"${parseInt(dd)}" ${MONTHS[parseInt(mm)-1]} ${yy} ${ySuffix}`
     }
-    const ctName = safe(CONTRACT_TYPE_NAMES[c.contract_type as keyof typeof CONTRACT_TYPE_NAMES] || c.contract_type)
+    const ctName = safe(CONTRACT_TYPES_I18N[c.contract_type]?.[lang] || c.contract_type)
 
-    // Shartnoma turiga qarab rol nomlari
+    // Shartnoma turiga qarab rol nomlari (til bo'yicha)
     const ROLES: Record<string, [string, string]> = {
-      oldi_sotdi: ["Sotuvchi", "Xaridor"],
-      xizmat:     ["Ijrochi",  "Buyurtmachi"],
-      ijara:      ["Ijara beruvchi", "Ijara oluvchi"],
-      pudrat:     ["Pudratchi", "Buyurtmachi"],
-      qarz:       ["Qarz beruvchi", "Qarz oluvchi"],
-      xalqaro:    ["Sotuvchi", "Xaridor"],
+      oldi_sotdi: [t.doc.sotuvchi[lang],      t.doc.xaridor[lang]],
+      xizmat:     [t.doc.ijrochi[lang],       t.doc.buyurtmachi[lang]],
+      ijara:      [t.doc.ijaraberuvchi[lang], t.doc.ijaraoluvchi[lang]],
+      pudrat:     [t.doc.pudratchi[lang],     t.doc.buyurtmachi[lang]],
+      qarz:       [t.doc.qarzberuvchi[lang],  t.doc.qarzoluvchi[lang]],
+      xalqaro:    [t.doc.sotuvchi[lang],      t.doc.xaridor[lang]],
     }
-    const [rol1, rol2] = ROLES[c.contract_type] || ["Birinchi tomon", "Ikkinchi tomon"]
+    const [rol1, rol2] = ROLES[c.contract_type] || [
+      lang === 'ru' ? 'ПЕРВАЯ СТОРОНА' : lang === 'oz' ? 'БИРИНЧИ ТОМОН' : 'BIRINCHI TOMON',
+      lang === 'ru' ? 'ВТОРАЯ СТОРОНА' : lang === 'oz' ? 'ИККИНЧИ ТОМОН' : 'IKKINCHI TOMON',
+    ]
 
     const addPageNums = () => {
       const n = doc.getNumberOfPages()
       for (let p = 1; p <= n; p++) {
         doc.setPage(p)
+        // Bepul tarif: diagonal watermark
+        if (isFree) {
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(42)
+          doc.setTextColor(210, 210, 228)
+          doc.text('Shartnoma.uz', pageW / 2, pageH / 2, { align: 'center', angle: 45 })
+          doc.setFont('times', 'normal')
+        }
+        // Footer
         doc.setFontSize(8); doc.setTextColor(170,170,170)
-        doc.text('Shartnoma.uz — Online shartnoma generatori', pageW/2, pageH-6, {align:'center'})
+        doc.text(safe(t.doc.footer[lang]), pageW/2, pageH-6, {align:'center'})
         doc.text(`${p} / ${n}`, pageW-mR, pageH-6, {align:'right'})
       }
     }
@@ -756,10 +910,10 @@ export default function DashboardPage() {
       const SF = 'times'
       let y = startY + 6
       doc.setFont(SF,'bold'); doc.setFontSize(12); doc.setTextColor(0,0,0)
-      doc.text('SPESIFIKATSIYA (1-ILOVA)', pageW/2, y, {align:'center'}); y += 8
+      doc.text(safe(t.doc.specTitle[lang]), pageW/2, y, {align:'center'}); y += 8
       // Ustun kengliklari — Jami kengaytirildi, narx qisqartirildi
       const cols = [7, 54, 15, 13, 22, 12, 22, 25]
-      const hdrs = ['№', 'Mahsulot/xizmat nomi', 'Birlik', 'Soni', 'Narx', 'QQS%', 'QQS summa', 'Jami']
+      const hdrs = ['№', safe(t.doc.productService[lang]), safe(t.spec.unit[lang]), safe(t.spec.qty[lang]), safe(t.spec.price[lang]), safe(t.doc.qqsCol[lang]), safe(t.doc.qqsSum[lang]), safe(t.spec.total[lang])]
       const anyQqs = items.some((it: SpecItem) => it.qqs_foiz && it.qqs_foiz !== 'siz')
       doc.setFillColor(230,233,240); doc.rect(mL,y-4,cW,7,'F')
       doc.setDrawColor(160,160,160); doc.rect(mL,y-4,cW,7,'S')
@@ -769,7 +923,7 @@ export default function DashboardPage() {
       items.forEach((item: SpecItem, idx: number) => {
         if (y > pageH-mB-10) { doc.addPage(); y = mT+10 }
         doc.setDrawColor(200,200,200); doc.line(mL,y+2,mL+cW,y+2); cx=mL+1
-        const ql = item.qqs_foiz==='siz'?'QQSsiz':(item.qqs_foiz?item.qqs_foiz+'%':'—')
+        const ql = item.qqs_foiz==='siz'? safe(t.doc.qqssiz[lang]) :(item.qqs_foiz?item.qqs_foiz+'%':'—')
         const row=[String(idx+1),item.nomi,item.birlik,String(item.miqdori),
                    item.narxi.toLocaleString(),ql,
                    item.qqs_summa>0?item.qqs_summa.toLocaleString():'—',
@@ -783,20 +937,20 @@ export default function DashboardPage() {
       if (anyQqs) {
         doc.rect(mL,y-2,cW,20,'F')
         doc.setFont(SF,'normal'); doc.setFontSize(10); doc.setTextColor(60,60,60)
-        doc.text(`Soliqsiz jami: ${asosiy.toLocaleString()} so'm`,mL+cW-2,y+2,{align:'right'})
-        doc.text(`QQS jami: ${qqsJ.toLocaleString()} so'm`,mL+cW-2,y+7,{align:'right'})
+        doc.text(`${safe(t.doc.soliqsizJami[lang])} ${asosiy.toLocaleString()} ${t.doc.som[lang]}`,mL+cW-2,y+2,{align:'right'})
+        doc.text(`${safe(t.doc.qqsJami[lang])} ${qqsJ.toLocaleString()} ${t.doc.som[lang]}`,mL+cW-2,y+7,{align:'right'})
         doc.setFont(SF,'bold'); doc.setTextColor(0,0,0)
-        doc.text(`QQS bilan jami: ${grand.toLocaleString()} so'm`,mL+cW-2,y+13,{align:'right'}); y+=20
+        doc.text(`${safe(t.doc.qqsBilan[lang])} ${grand.toLocaleString()} ${t.doc.som[lang]}`,mL+cW-2,y+13,{align:'right'}); y+=20
       } else {
         doc.rect(mL,y-2,cW,8,'F')
         doc.setFont(SF,'bold'); doc.setFontSize(10); doc.setTextColor(0,0,0)
-        doc.text(`Jami: ${grand.toLocaleString()} so'm`,mL+cW-2,y+3,{align:'right'}); y+=10
+        doc.text(`${safe(t.doc.jami[lang])} ${grand.toLocaleString()} ${t.doc.som[lang]}`,mL+cW-2,y+3,{align:'right'}); y+=10
       }
       // So'z bilan
       doc.setFont(SF,'italic'); doc.setFontSize(10); doc.setTextColor(50,50,50)
-      const grandWords = safe(numberToWords(grand))
-      const gwLines = doc.splitTextToSize(`So'z bilan: ${grandWords}`, cW) as string[]
-      gwLines.forEach((l:string) => { doc.text(l, mL, y); y += 5 })
+      const grandWords = safe(numberToWords(grand, lang))
+      const gwLines = doc.splitTextToSize(`${safe(t.doc.sozBilan[lang])} ${grandWords}`, cW) as string[]
+      gwLines.forEach((l:string, i:number) => { justifyLine(l, mL, y, cW, i === gwLines.length-1); y += 5 })
       return y + 3
     }
 
@@ -833,7 +987,7 @@ export default function DashboardPage() {
       const orgD = safe(org?.director_name || '___'), cpD  = safe(cp?.director_name  || '___')
       const orgI = safe(org?.inn || '___'), cpI  = safe(cp?.inn  || '___')
       const sumN = (c.amount||0).toLocaleString()
-      const sumW = safe(numberToWords(c.amount||0))
+      const sumW = safe(numberToWords(c.amount||0, lang))
       const city = safe(c.city || 'Toshkent')
 
       // ── Sarlavha ──
@@ -844,7 +998,7 @@ export default function DashboardPage() {
       y += 7
       doc.setFont('helvetica','normal'); doc.setFontSize(9)
       doc.text(`${city} shahri`, xL, y); doc.text(safe(fmtDate(c.contract_date)), xL+hW, y, {align:'right'})
-      doc.text(city,             xR, y); doc.text(safe(fmtDate(c.contract_date)), xR+hW, y, {align:'right'})
+      doc.text(`${city} city`,   xR, y); doc.text(safe(fmtDate(c.contract_date)), xR+hW, y, {align:'right'})
       y += 9
 
       // ── Tomonlar taqdimoti ──
@@ -974,7 +1128,7 @@ export default function DashboardPage() {
 
     // ── 2. SHAHAR + SANA ──
     doc.setFont(F,'normal'); doc.setFontSize(12)
-    doc.text(safe(`${c.city || 'Toshkent'} shahri`), mL, y)
+    doc.text(safe(`${c.city || 'Toshkent'} ${t.doc.shahri[lang]}`), mL, y)
     doc.text(safe(fmtDate(c.contract_date)), pageW-mR, y, {align:'right'})
     y += 3
     doc.setDrawColor(180,180,180); doc.line(mL, y, pageW-mR, y); y += 6
@@ -984,13 +1138,11 @@ export default function DashboardPage() {
     const cpName  = safe(cp?.name  || '___')
     const orgDir  = safe(org?.director_name || '___')
     const cpDir   = safe(cp?.director_name  || '___')
-    const intro = safe(`"${orgName}", keyingi o'rinlarda "${rol1}" sifatida, Direktor ${orgDir} vakilligi asosida bir tomondan va "${cpName}", keyingi o'rinlarda "${rol2}" sifatida, Direktor ${cpDir} vakilligi asosida ikkinchi tomondan ushbu shartnomani tuzdilar:`)
+    const introFn = (t.doc.intro as Record<string, Record<string, (o:string,od:string,c:string,cd:string)=>string>>)[c.contract_type]?.[lang]
+    const intro = safe(introFn ? introFn(orgName, orgDir, cpName, cpDir)
+      : `"${orgName}", keyingi o'rinlarda "${rol1}" sifatida, Direktor ${orgDir} vakilligi asosida bir tomondan va "${cpName}", keyingi o'rinlarda "${rol2}" sifatida, Direktor ${cpDir} vakilligi asosida ikkinchi tomondan ushbu shartnomani tuzdilar:`)
     doc.setFont(F,'italic'); doc.setFontSize(11); doc.setTextColor(30,30,30)
-    const introLines = doc.splitTextToSize(intro, cW) as string[]
-    for (const line of introLines) {
-      if (y > pageH-mB-20) { doc.addPage(); y = mT }
-      doc.text(line, mL, y); y += 5.5
-    }
+    drawJustified(intro, mL, cW, 5.5)
     y += 5
 
     // ── 4. ASOSIY MATN ──
@@ -1019,11 +1171,7 @@ export default function DashboardPage() {
           const indent = isSubItem ? mL+6 : isDash ? mL+8 : mL
           const ww = cW - (isSubItem||isDash ? 8 : 0)
           doc.setFont(F,'normal'); doc.setFontSize(12); doc.setTextColor(0,0,0)
-          const wrapped = doc.splitTextToSize(trimmed, ww) as string[]
-          for (const wl of wrapped) {
-            if (y > pageH-mB-12) { doc.addPage(); y = mT }
-            doc.text(wl as string, indent, y); y += 5.5
-          }
+          drawJustified(trimmed, indent, ww, 5.5)
           y += 0.5
         }
       }
@@ -1034,17 +1182,17 @@ export default function DashboardPage() {
     if (y + rekvH > pageH - mB) { doc.addPage(); y = mT } else { y += 8 }
     const colW = cW / 2
     doc.setFont(F,'bold'); doc.setFontSize(13); doc.setTextColor(0,0,0)
-    doc.text("TOMONLARNING REKVIZITLARI VA IMZOLARI", pageW/2, y, {align:'center'})
+    doc.text(safe(t.doc.rekvTitle[lang]), pageW/2, y, {align:'center'})
     y += 3; doc.setDrawColor(0,0,0); doc.line(mL, y, pageW-mR, y); y += 8
 
     const rekvizitlar = [
-      { label:'Nomi:',   left: orgName,                      right: cpName,                      bold: true  },
-      { label:'Manzil:', left: safe(org?.address||'-'),      right: safe(cp?.address||'-'),      bold: false },
-      { label:'H/r:',    left: safe(org?.bank_account||'-'), right: safe(cp?.bank_account||'-'), bold: false },
-      { label:'Bank:',   left: safe(org?.bank_name||'-'),    right: safe(cp?.bank_name||'-'),    bold: false },
-      { label:'MFO:',    left: safe(org?.mfo||'-'),          right: safe(cp?.mfo||'-'),          bold: false },
-      { label:'INN:',    left: safe(org?.inn||'-'),          right: safe(cp?.inn||'-'),          bold: false },
-      { label:'Rahbar:', left: orgDir,                       right: cpDir,                       bold: true  },
+      { label: safe(t.doc.nomi[lang]),   left: orgName,                      right: cpName,                      bold: true  },
+      { label: safe(t.doc.manzil[lang]), left: safe(org?.address||'-'),      right: safe(cp?.address||'-'),      bold: false },
+      { label: safe(t.doc.hr[lang]),     left: safe(org?.bank_account||'-'), right: safe(cp?.bank_account||'-'), bold: false },
+      { label: safe(t.doc.bank[lang]),   left: safe(org?.bank_name||'-'),    right: safe(cp?.bank_name||'-'),    bold: false },
+      { label: safe(t.doc.mfo[lang]),    left: safe(org?.mfo||'-'),          right: safe(cp?.mfo||'-'),          bold: false },
+      { label: safe(t.doc.inn[lang]),    left: safe(org?.inn||'-'),          right: safe(cp?.inn||'-'),          bold: false },
+      { label: safe(t.doc.rahbar[lang]), left: orgDir,                       right: cpDir,                       bold: true  },
     ]
     // Header
     doc.setFillColor(230,233,240); doc.setDrawColor(120,120,120)
@@ -1075,7 +1223,7 @@ export default function DashboardPage() {
     doc.text(`/ ${orgDir}`, mL+sigW+2, y); doc.text(`/ ${cpDir}`, mL+colW+5+sigW+2, y)
     y += 5
     doc.setFont(F,'normal'); doc.setFontSize(9); doc.setTextColor(120,120,120)
-    doc.text('M.O.', mL+12, y); doc.text('M.O.', mL+colW+17, y)
+    doc.text(safe(t.doc.mo[lang]), mL+12, y); doc.text(safe(t.doc.mo[lang]), mL+colW+17, y)
     try {
       if (signB64) doc.addImage(signB64,'PNG', mL, y-15, 30, 15)
       if (stampB64) doc.addImage(stampB64,'PNG', mL+5, y-10, 25, 25)
@@ -1100,14 +1248,19 @@ export default function DashboardPage() {
     const org = c.organizations || orgData
     const cp  = c.counterparties
 
-    const MONTHS = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr']
+    const MONTHS = lang === 'ru'
+      ? ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']
+      : lang === 'oz'
+      ? ['январ','феврал','март','апрел','май','июн','июл','август','сентабр','октабр','ноябр','декабр']
+      : ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr']
     const fmtDate = (d: string) => {
       if (!d) return '___'
       const [yy,mm,dd] = d.split('-')
       if (!yy || !mm || !dd) return d
-      return `"${parseInt(dd)}" ${MONTHS[parseInt(mm)-1]} ${yy} y.`
+      const ySuffix = lang === 'ru' ? 'г.' : 'y.'
+      return `"${parseInt(dd)}" ${MONTHS[parseInt(mm)-1]} ${yy} ${ySuffix}`
     }
-    const ctName = CONTRACT_TYPE_NAMES[c.contract_type as keyof typeof CONTRACT_TYPE_NAMES] || c.contract_type
+    const ctName = CONTRACT_TYPES_I18N[c.contract_type]?.[lang] || c.contract_type
 
     // Font o'lchamlari (half-points: 24=12pt, 26=13pt, 28=14pt)
     const SZ_TITLE = 28, SZ_BODY = 24, SZ_INTRO = 22, SZ_SMALL = 18
@@ -1135,29 +1288,34 @@ export default function DashboardPage() {
       spacing: { after: 120 },
       border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' } },
       children: [
-        new TextRun({ text: `${c.city || 'Toshkent'} shahri`, font: FONT, size: SZ_BODY }),
+        new TextRun({ text: `${c.city || 'Toshkent'} ${t.doc.shahri[lang]}`, font: FONT, size: SZ_BODY }),
         new TextRun({ text: '\t\t\t\t', font: FONT, size: SZ_BODY }),
         new TextRun({ text: fmtDate(c.contract_date), font: FONT, size: SZ_BODY }),
       ],
     }))
 
-    // Shartnoma turiga qarab rol nomlari
+    // Shartnoma turiga qarab rol nomlari (til bo'yicha)
     const DOCX_ROLES: Record<string, [string, string]> = {
-      oldi_sotdi: ["Sotuvchi", "Xaridor"],
-      xizmat:     ["Ijrochi",  "Buyurtmachi"],
-      ijara:      ["Ijara beruvchi", "Ijara oluvchi"],
-      pudrat:     ["Pudratchi", "Buyurtmachi"],
-      qarz:       ["Qarz beruvchi", "Qarz oluvchi"],
-      xalqaro:    ["Sotuvchi", "Xaridor"],
+      oldi_sotdi: [t.doc.sotuvchi[lang],      t.doc.xaridor[lang]],
+      xizmat:     [t.doc.ijrochi[lang],       t.doc.buyurtmachi[lang]],
+      ijara:      [t.doc.ijaraberuvchi[lang], t.doc.ijaraoluvchi[lang]],
+      pudrat:     [t.doc.pudratchi[lang],     t.doc.buyurtmachi[lang]],
+      qarz:       [t.doc.qarzberuvchi[lang],  t.doc.qarzoluvchi[lang]],
+      xalqaro:    [t.doc.sotuvchi[lang],      t.doc.xaridor[lang]],
     }
-    const [dRol1, dRol2] = DOCX_ROLES[c.contract_type] || ["Birinchi tomon", "Ikkinchi tomon"]
+    const [dRol1, dRol2] = DOCX_ROLES[c.contract_type] || [
+      lang === 'ru' ? 'ПЕРВАЯ СТОРОНА' : lang === 'oz' ? 'БИРИНЧИ ТОМОН' : 'BIRINCHI TOMON',
+      lang === 'ru' ? 'ВТОРАЯ СТОРОНА' : lang === 'oz' ? 'ИККИНЧИ ТОМОН' : 'IKKINCHI TOMON',
+    ]
 
     // ── 3. KIRISH MATNI ──
     const orgName = org?.name || '___'
     const cpName  = cp?.name  || '___'
     const orgDir  = org?.director_name || '___'
     const cpDir   = cp?.director_name  || '___'
-    const introText = `"${orgName}", keyingi o'rinlarda "${dRol1}" sifatida, Direktor ${orgDir} vakilligi asosida bir tomondan va "${cpName}", keyingi o'rinlarda "${dRol2}" sifatida, Direktor ${cpDir} vakilligi asosida ikkinchi tomondan ushbu shartnomani tuzdilar:`
+    const introDocFn = (t.doc.intro as Record<string, Record<string, (o:string,od:string,c:string,cd:string)=>string>>)[c.contract_type]?.[lang]
+    const introText = introDocFn ? introDocFn(orgName, orgDir, cpName, cpDir)
+      : `"${orgName}", keyingi o'rinlarda "${dRol1}" sifatida, Direktor ${orgDir} vakilligi asosida bir tomondan va "${cpName}", keyingi o'rinlarda "${dRol2}" sifatida, Direktor ${cpDir} vakilligi asosida ikkinchi tomondan ushbu shartnomani tuzdilar:`
     children.push(p({ text: introText, italic: true, size: SZ_INTRO, align: 'both', after: 200 }))
 
     // ── 4. ASOSIY MATN ──
@@ -1196,16 +1354,16 @@ export default function DashboardPage() {
     }
 
     // ── 5. REKVIZITLAR JADVALI ──
-    children.push(p({ text: 'TOMONLARNING REKVIZITLARI VA IMZOLARI', bold: true, align: 'center', before: 300, after: 120 }))
+    children.push(p({ text: t.doc.rekvTitle[lang], bold: true, align: 'center', before: 300, after: 120 }))
 
     const rekvRows = [
-      { label: 'Nomi:',   left: orgName,                 right: cpName,                 bold: true  },
-      { label: 'Manzil:', left: org?.address||'-',        right: cp?.address||'-',        bold: false },
-      { label: 'H/r:',    left: org?.bank_account||'-',   right: cp?.bank_account||'-',   bold: false },
-      { label: 'Bank:',   left: org?.bank_name||'-',      right: cp?.bank_name||'-',      bold: false },
-      { label: 'MFO:',    left: org?.mfo||'-',            right: cp?.mfo||'-',            bold: false },
-      { label: 'INN:',    left: org?.inn||'-',            right: cp?.inn||'-',            bold: false },
-      { label: 'Rahbar:', left: orgDir,                   right: cpDir,                   bold: true  },
+      { label: t.doc.nomi[lang],   left: orgName,                right: cpName,                bold: true  },
+      { label: t.doc.manzil[lang], left: org?.address||'-',       right: cp?.address||'-',       bold: false },
+      { label: t.doc.hr[lang],     left: org?.bank_account||'-',  right: cp?.bank_account||'-',  bold: false },
+      { label: t.doc.bank[lang],   left: org?.bank_name||'-',     right: cp?.bank_name||'-',     bold: false },
+      { label: t.doc.mfo[lang],    left: org?.mfo||'-',           right: cp?.mfo||'-',           bold: false },
+      { label: t.doc.inn[lang],    left: org?.inn||'-',           right: cp?.inn||'-',           bold: false },
+      { label: t.doc.rahbar[lang], left: orgDir,                  right: cpDir,                  bold: true  },
     ]
 
     const border = { style: BorderStyle.SINGLE, size: 4, color: '999999' }
@@ -1252,18 +1410,18 @@ export default function DashboardPage() {
       ] }))
     children.push(new Paragraph({ spacing: { after: 200 },
       children: [
-        new TextRun({ text: 'M.O.', color: '888888', font: FONT, size: SZ_SMALL }),
+        new TextRun({ text: t.doc.mo[lang], color: '888888', font: FONT, size: SZ_SMALL }),
         new TextRun({ text: '                                          ', font: FONT, size: SZ_SMALL }),
-        new TextRun({ text: 'M.O.', color: '888888', font: FONT, size: SZ_SMALL }),
+        new TextRun({ text: t.doc.mo[lang], color: '888888', font: FONT, size: SZ_SMALL }),
       ] }))
 
     // ── 6. SPESIFIKATSIYA — yangi sahifa ──
     const specItems = c.spec_items || []
     if (specItems.length > 0) {
       children.push(new Paragraph({ pageBreakBefore: true, children: [] }))
-      children.push(p({ text: 'SPESIFIKATSIYA (1-ILOVA)', bold: true, align: 'center', after: 160 }))
+      children.push(p({ text: t.doc.specTitle[lang], bold: true, align: 'center', after: 160 }))
 
-      const specHdr = ['№', "Mahsulot/xizmat nomi", 'Birlik', 'Soni', 'Narx', 'QQS%', 'QQS summa', 'Jami']
+      const specHdr = ['№', t.doc.productService[lang], t.spec.unit[lang], t.spec.qty[lang], t.spec.price[lang], t.doc.qqsCol[lang], t.doc.qqsSum[lang], t.spec.total[lang]]
       const specWidths = [5, 32, 9, 8, 12, 8, 13, 13]
       const specBorder = { style: BorderStyle.SINGLE, size: 3, color: 'BBBBBB' }
       const sB = { top: specBorder, bottom: specBorder, left: specBorder, right: specBorder }
@@ -1278,7 +1436,7 @@ export default function DashboardPage() {
       })
 
       const specDataRows = specItems.map((item: SpecItem, idx: number) => {
-        const ql = item.qqs_foiz === 'siz' ? 'QQSsiz' : (item.qqs_foiz ? item.qqs_foiz + '%' : '—')
+        const ql = item.qqs_foiz === 'siz' ? t.doc.qqssiz[lang] : (item.qqs_foiz ? item.qqs_foiz + '%' : '—')
         const row = [String(idx+1), item.nomi, item.birlik, String(item.miqdori),
                      item.narxi.toLocaleString(), ql,
                      item.qqs_summa > 0 ? item.qqs_summa.toLocaleString() : '—',
@@ -1300,13 +1458,13 @@ export default function DashboardPage() {
       const grand  = asosiy + qqsJ
       const anyQqs = specItems.some((it: SpecItem) => it.qqs_foiz && it.qqs_foiz !== 'siz')
       if (anyQqs) {
-        children.push(p({ text: `Soliqsiz jami: ${asosiy.toLocaleString()} so'm`, align: 'right', after: 40 }))
-        children.push(p({ text: `QQS jami: ${qqsJ.toLocaleString()} so'm`, align: 'right', after: 40 }))
-        children.push(p({ text: `QQS bilan jami: ${grand.toLocaleString()} so'm`, bold: true, align: 'right', after: 40 }))
+        children.push(p({ text: `${t.doc.soliqsizJami[lang]} ${asosiy.toLocaleString()} ${t.doc.som[lang]}`, align: 'right', after: 40 }))
+        children.push(p({ text: `${t.doc.qqsJami[lang]} ${qqsJ.toLocaleString()} ${t.doc.som[lang]}`, align: 'right', after: 40 }))
+        children.push(p({ text: `${t.doc.qqsBilan[lang]} ${grand.toLocaleString()} ${t.doc.som[lang]}`, bold: true, align: 'right', after: 40 }))
       } else {
-        children.push(p({ text: `Jami: ${grand.toLocaleString()} so'm`, bold: true, align: 'right', after: 40 }))
+        children.push(p({ text: `${t.doc.jami[lang]} ${grand.toLocaleString()} ${t.doc.som[lang]}`, bold: true, align: 'right', after: 40 }))
       }
-      children.push(p({ text: `So'z bilan: ${numberToWords(grand)}`, italic: true, after: 40 }))
+      children.push(p({ text: `${t.doc.sozBilan[lang]} ${numberToWords(grand, lang)}`, italic: true, after: 40, align: 'both' }))
     }
 
     const doc = new Document({
@@ -1321,7 +1479,7 @@ export default function DashboardPage() {
           default: new Footer({
             children: [new Paragraph({
               alignment: AlignmentType.CENTER,
-              children: [new TextRun({ text: 'Shartnoma.uz — Online shartnoma generatori', color: 'AAAAAA', font: FONT, size: SZ_SMALL })],
+              children: [new TextRun({ text: t.doc.footer[lang], color: 'AAAAAA', font: FONT, size: SZ_SMALL })],
             })],
           }),
         },
@@ -1332,6 +1490,11 @@ export default function DashboardPage() {
     const blob = await Packer.toBlob(doc)
     saveAs(blob, `shartnoma-${(c.contract_number||'draft').replace(/\//g,'-')}.docx`)
   }
+
+  // ── Plan check ──
+  const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(e => e.trim())
+  const isAdmin = ADMIN_EMAILS.includes(userEmail)
+  const isFree = !isAdmin && (!subscription || subscription.plan === 'free')
 
   // ── Filters ──
   const filteredContracts = contracts.filter(c => {
@@ -1355,11 +1518,50 @@ export default function DashboardPage() {
   const lbl = "block text-xs font-medium text-gray-400 mb-1.5"
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"/>
-        <div className="text-gray-400 text-sm">Yuklanmoqda...</div>
-      </div>
+    <div className="min-h-screen bg-gray-950 flex text-white">
+      {/* Skeleton sidebar */}
+      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col p-4 gap-3 shrink-0">
+        <div className="h-8 w-36 bg-gray-800 rounded-lg animate-pulse mb-4"/>
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-10 bg-gray-800 rounded-lg animate-pulse" style={{ animationDelay: `${i * 60}ms` }}/>
+        ))}
+        <div className="mt-auto h-12 bg-gray-800 rounded-lg animate-pulse"/>
+      </aside>
+
+      {/* Skeleton main */}
+      <main className="flex-1 p-8 overflow-auto">
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="h-7 w-48 bg-gray-800 rounded-lg animate-pulse"/>
+          <div className="h-9 w-32 bg-gray-800 rounded-lg animate-pulse"/>
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl p-5 animate-pulse" style={{ animationDelay: `${i * 80}ms` }}>
+              <div className="h-4 w-24 bg-gray-800 rounded mb-3"/>
+              <div className="h-7 w-16 bg-gray-700 rounded"/>
+            </div>
+          ))}
+        </div>
+
+        {/* Table skeleton */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-gray-800 flex items-center gap-3">
+            <div className="h-5 w-32 bg-gray-800 rounded animate-pulse"/>
+            <div className="ml-auto h-8 w-48 bg-gray-800 rounded-lg animate-pulse"/>
+          </div>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-4 border-b border-gray-800/50 animate-pulse" style={{ animationDelay: `${i * 60}ms` }}>
+              <div className="h-4 w-28 bg-gray-800 rounded"/>
+              <div className="h-4 w-20 bg-gray-800 rounded"/>
+              <div className="h-4 w-32 bg-gray-800 rounded"/>
+              <div className="ml-auto h-6 w-16 bg-gray-700 rounded-full"/>
+            </div>
+          ))}
+        </div>
+      </main>
     </div>
   )
 
@@ -1682,13 +1884,21 @@ export default function DashboardPage() {
                                 👁 <span>{T(t.btn.view)}</span>
                               </button>
                               <button onClick={()=>generatePDF(c)}
+                                title={isFree ? 'Bepul tarif: PDF watermark bilan yuklanadi' : ''}
                                 className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-800 hover:bg-emerald-700 rounded-lg text-xs font-medium text-white transition">
-                                📥 <span>PDF</span>
+                                📥 <span>PDF{isFree && <span className="ml-0.5 text-yellow-300 opacity-80">★</span>}</span>
                               </button>
                               <button onClick={()=>generateDOCX(c)}
                                 className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-800 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition">
                                 📄 <span>Word</span>
                               </button>
+                              {!isFree && (
+                                <button onClick={()=>{ setAiContract(c); setAiResult(null); setAiError(''); setAiTab('tahlil'); setAiModal(true) }}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-purple-800 hover:bg-purple-700 rounded-lg text-xs font-medium text-white transition"
+                                  title="AI shartnoma tahlili">
+                                  🤖 <span>AI</span>
+                                </button>
+                              )}
                               {c.status !== 'completed' && c.status !== 'cancelled' && (
                                 <button onClick={()=>updateStatus(c.id,'completed')}
                                   className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-800 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition">
@@ -1956,11 +2166,36 @@ export default function DashboardPage() {
             return (
               <div className="space-y-5">
                 {/* Header row */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <div className="text-sm text-gray-400">{allTemplates.length} {T(t.tplTab.count)}</div>
+
+                  {/* Word import — faqat AI Pro */}
+                  {!isFree && (
+                    <>
+                      <input
+                        ref={wordImportRef}
+                        type="file"
+                        accept=".docx"
+                        className="hidden"
+                        onChange={handleWordImport}
+                      />
+                      <button
+                        onClick={() => wordImportRef.current?.click()}
+                        disabled={wordImporting}
+                        title="Word (.docx) fayldan shablon yaratish — AI Pro"
+                        className="ml-auto flex items-center gap-2 bg-purple-700 hover:bg-purple-600 disabled:opacity-60 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        {wordImporting ? (
+                          <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"/><span>O'qilmoqda...</span></>
+                        ) : (
+                          <><span>📄</span><span>Word import</span><span className="text-xs bg-purple-900/60 px-1.5 py-0.5 rounded-full">AI Pro</span></>
+                        )}
+                      </button>
+                    </>
+                  )}
+
                   <button
                     onClick={() => { setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl); setCustomTemplateModal(true) }}
-                    className="ml-auto flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                    className={`flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition ${isFree ? 'ml-auto' : ''}`}>
                     {T(t.tplTab.addBtn)}
                   </button>
                 </div>
@@ -2454,6 +2689,84 @@ export default function DashboardPage() {
                 )
               )}
 
+              {/* ── Qo'llab-quvvatlash kartasi ── */}
+              {(() => {
+                const plan = !subscription || subscription.plan === 'free' ? 'free'
+                  : subscription.plan === 'ai_pro' ? 'ai_pro' : 'standard'
+                const isPaid = plan !== 'free'
+                const isAiPro = plan === 'ai_pro'
+                return (
+                  <div className={`rounded-2xl border p-6 ${isAiPro ? 'bg-purple-950/40 border-purple-700/50' : isPaid ? 'bg-blue-950/40 border-blue-700/50' : 'bg-gray-900 border-gray-800'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">💬</span>
+                        <div>
+                          <h3 className="font-semibold text-white text-sm">Qo'llab-quvvatlash</h3>
+                          <p className={`text-xs mt-0.5 ${isAiPro ? 'text-purple-300' : isPaid ? 'text-blue-300' : 'text-gray-500'}`}>
+                            {isAiPro ? '⚡ Premium — 4 soat ichida javob' : isPaid ? '✦ Ustunlik — 24 soat ichida javob' : 'Asosiy — 2–3 ish kuni'}
+                          </p>
+                        </div>
+                      </div>
+                      {isPaid && (
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${isAiPro ? 'bg-purple-800 text-purple-200' : 'bg-blue-800 text-blue-200'}`}>
+                          {isAiPro ? '⭐ AI Pro' : '✦ Standart'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Aloqa tugmalari */}
+                    <div className="flex flex-wrap gap-3 mb-5">
+                      <a href="https://t.me/shartnoma_uz_support"
+                        target="_blank" rel="noopener noreferrer"
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition ${isPaid ? 'bg-blue-500 hover:bg-blue-400 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'}`}>
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/>
+                        </svg>
+                        Telegram
+                        {isPaid && <span className="bg-white/20 text-xs px-1.5 py-0.5 rounded-full">Ustunlik</span>}
+                      </a>
+                      <a href={`mailto:support@shartnoma.uz?subject=Murojaat [${userEmail}]&body=Muammo tavsifi:%0A%0A`}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-sm font-medium transition">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        Email
+                      </a>
+                    </div>
+
+                    {/* Tezkor xabar (faqat to'lovli) */}
+                    {isPaid ? (
+                      <form onSubmit={e => {
+                        e.preventDefault()
+                        const form = e.currentTarget
+                        const subj = (form.elements.namedItem('subj') as HTMLInputElement).value
+                        const msg  = (form.elements.namedItem('msg')  as HTMLTextAreaElement).value
+                        window.location.href = `mailto:support@shartnoma.uz?subject=${encodeURIComponent(subj + ' [' + userEmail + ']')}&body=${encodeURIComponent(msg)}`
+                      }} className="space-y-3">
+                        <input name="subj" required
+                          placeholder="Mavzu: Muammo yoki savol..."
+                          className="w-full bg-gray-800/60 border border-gray-700 text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500 placeholder-gray-500"/>
+                        <textarea name="msg" required rows={3}
+                          placeholder="Muammoingizni batafsil yozing..."
+                          className="w-full bg-gray-800/60 border border-gray-700 text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500 placeholder-gray-500 resize-none"/>
+                        <button type="submit"
+                          className={`px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition ${isAiPro ? 'bg-purple-600 hover:bg-purple-500' : 'bg-blue-600 hover:bg-blue-500'}`}>
+                          Yuborish →
+                        </button>
+                      </form>
+                    ) : (
+                      <div className="bg-gray-800/60 rounded-xl p-4 flex items-center justify-between gap-4">
+                        <p className="text-gray-400 text-xs">Ustunlik qo'llab-quvvatlash uchun Standart yoki AI Pro tarifiga o'ting</p>
+                        <button onClick={() => setModal('upgrade')}
+                          className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+                          Upgrade →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
             </div>
           )}
         </main>
@@ -2698,8 +3011,9 @@ export default function DashboardPage() {
                 {T(t.viewModal.copy)}
               </button>
               <button onClick={()=>generatePDF(viewContract)}
+                title={isFree ? 'Bepul tarif: PDF watermark bilan yuklanadi' : ''}
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition">
-                📥 PDF
+                📥 PDF{isFree && <span className="text-yellow-300 text-xs ml-0.5">★</span>}
               </button>
               <button onClick={()=>generateDOCX(viewContract)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition">
@@ -3141,6 +3455,184 @@ export default function DashboardPage() {
                 Shu shablon asosida shartnoma yaratish
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── AI TAHLIL MODAL ─── */}
+      {aiModal && aiContract && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+              <div>
+                <h2 className="text-white font-semibold">🤖 AI Shartnoma Tahlili</h2>
+                <p className="text-gray-500 text-xs mt-0.5">#{aiContract.contract_number} · {CONTRACT_TYPES_I18N[aiContract.contract_type]?.[lang]}</p>
+              </div>
+              <button onClick={()=>setAiModal(false)} className="text-gray-500 hover:text-white text-xl transition">✕</button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 px-6 py-3 border-b border-gray-800">
+              {([['tahlil','📊 Tahlil + Xatarlar'],['grammatika','✏️ Grammatika']] as const).map(([key, label]) => (
+                <button key={key} onClick={()=>setAiTab(key)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${aiTab===key ? 'bg-purple-700 text-white' : 'text-gray-400 hover:text-white'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {!aiResult && !aiLoading && !aiError && (
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-4">🤖</div>
+                  <p className="text-gray-400 text-sm mb-6">
+                    {aiTab === 'tahlil'
+                      ? "Claude AI shartnomangizni tahlil qiladi: yuridik xatarlar, zaif tomonlar va tavsiyalar beradi"
+                      : "Claude AI matnidagi grammatika, imlo va uslub xatolarini topadi"}
+                  </p>
+                  <button onClick={()=>runAiAnalysis(aiContract, aiTab)}
+                    className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-3 rounded-xl font-semibold transition">
+                    {aiTab === 'tahlil' ? '📊 Tahlil boshlash' : '✏️ Tekshirish boshlash'}
+                  </button>
+                </div>
+              )}
+
+              {aiLoading && (
+                <div className="text-center py-12">
+                  <div className="w-12 h-12 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"/>
+                  <p className="text-gray-400 text-sm">Claude AI tahlil qilmoqda...</p>
+                  <p className="text-gray-600 text-xs mt-1">~10-20 soniya</p>
+                </div>
+              )}
+
+              {aiError && (
+                <div className="bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 rounded-xl text-sm">
+                  ⚠️ {aiError}
+                  <button onClick={()=>runAiAnalysis(aiContract, aiTab)}
+                    className="block mt-3 text-red-400 hover:text-red-300 underline text-xs">Qayta urinish</button>
+                </div>
+              )}
+
+              {aiResult && aiTab === 'tahlil' && (
+                <div className="space-y-4">
+                  {/* Umumiy baho */}
+                  <div className={`rounded-xl p-4 border ${
+                    aiResult.baho === 'A' ? 'bg-emerald-900/40 border-emerald-700' :
+                    aiResult.baho === 'B' ? 'bg-blue-900/40 border-blue-700' :
+                    aiResult.baho === 'C' ? 'bg-yellow-900/40 border-yellow-700' :
+                    'bg-red-900/40 border-red-700'}`}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className={`text-3xl font-black ${
+                        aiResult.baho==='A'?'text-emerald-400':aiResult.baho==='B'?'text-blue-400':aiResult.baho==='C'?'text-yellow-400':'text-red-400'}`}>
+                        {aiResult.baho}
+                      </span>
+                      <div>
+                        <div className="text-white text-sm font-semibold">Umumiy baho</div>
+                        <div className="text-gray-400 text-xs">{aiResult.umumiy}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Yuridik xatarlar */}
+                  {aiResult.yuridik_xatarlar?.length > 0 && (
+                    <div className="bg-gray-800/60 rounded-xl p-4">
+                      <h4 className="text-sm font-semibold text-red-400 mb-3">⚠️ Yuridik xatarlar</h4>
+                      <div className="space-y-2">
+                        {aiResult.yuridik_xatarlar.map((x, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium mt-0.5 ${
+                              x.daraja.includes('yuqori')||x.daraja.includes('высокий')||x.daraja.includes('юқори') ? 'bg-red-900 text-red-300' :
+                              x.daraja.includes('rta')||x.daraja.includes('редний')||x.daraja.includes('ўрта') ? 'bg-yellow-900 text-yellow-300' :
+                              'bg-gray-700 text-gray-300'}`}>{x.daraja}</span>
+                            <span className="text-gray-300 text-sm">{x.tavsif}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Kuchli/zaif tomonlar */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {aiResult.kuchli_tomonlar?.length > 0 && (
+                      <div className="bg-emerald-900/30 border border-emerald-800/50 rounded-xl p-4">
+                        <h4 className="text-xs font-semibold text-emerald-400 mb-2">✅ Kuchli tomonlar</h4>
+                        <ul className="space-y-1">
+                          {aiResult.kuchli_tomonlar.map((s, i) => <li key={i} className="text-gray-300 text-xs">• {s}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    {aiResult.zaif_tomonlar?.length > 0 && (
+                      <div className="bg-orange-900/30 border border-orange-800/50 rounded-xl p-4">
+                        <h4 className="text-xs font-semibold text-orange-400 mb-2">⚡ Zaif tomonlar</h4>
+                        <ul className="space-y-1">
+                          {aiResult.zaif_tomonlar.map((s, i) => <li key={i} className="text-gray-300 text-xs">• {s}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tavsiyalar */}
+                  {aiResult.tavsiyalar?.length > 0 && (
+                    <div className="bg-blue-900/30 border border-blue-800/50 rounded-xl p-4">
+                      <h4 className="text-xs font-semibold text-blue-400 mb-2">💡 Tavsiyalar</h4>
+                      <ul className="space-y-1.5">
+                        {aiResult.tavsiyalar.map((s, i) => <li key={i} className="text-gray-300 text-sm">• {s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Grammatika (tahlildan) */}
+                  {aiResult.grammatika_xatolari?.length > 0 && (
+                    <div className="bg-gray-800/60 rounded-xl p-4">
+                      <h4 className="text-xs font-semibold text-gray-400 mb-2">✏️ Grammatika xatolari</h4>
+                      <ul className="space-y-1">
+                        {aiResult.grammatika_xatolari.map((s, i) => <li key={i} className="text-gray-400 text-xs">• {s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  <button onClick={()=>{ setAiResult(null); runAiAnalysis(aiContract, aiTab) }}
+                    className="text-xs text-purple-400 hover:text-purple-300">🔄 Qayta tahlil</button>
+                </div>
+              )}
+
+              {aiResult && aiTab === 'grammatika' && (
+                <div className="space-y-4">
+                  <div className="bg-gray-800/60 rounded-xl p-4 flex items-center gap-3">
+                    <span className="text-2xl">✏️</span>
+                    <div>
+                      <div className="text-white font-semibold">{(aiResult as any).xatolar_soni ?? aiResult.grammatika_xatolari?.length ?? 0} ta xato topildi</div>
+                      <div className="text-gray-400 text-xs">{(aiResult as any).umumiy_baho}</div>
+                    </div>
+                  </div>
+                  {((aiResult as any).xatolar as {xato:string;togri:string;izoh:string}[])?.map((x, i) => (
+                    <div key={i} className="bg-gray-800/60 rounded-xl p-4 border border-gray-700">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-red-400 text-sm line-through">{x.xato}</span>
+                        <span className="text-gray-500">→</span>
+                        <span className="text-emerald-400 text-sm font-medium">{x.togri}</span>
+                      </div>
+                      <p className="text-gray-500 text-xs">{x.izoh}</p>
+                    </div>
+                  ))}
+                  <button onClick={()=>{ setAiResult(null); runAiAnalysis(aiContract, aiTab) }}
+                    className="text-xs text-purple-400 hover:text-purple-300">🔄 Qayta tekshirish</button>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {aiResult && (
+              <div className="px-6 py-4 border-t border-gray-800 flex justify-between items-center">
+                <span className="text-xs text-gray-600">Tahlil: Claude Sonnet AI</span>
+                <button onClick={()=>setAiModal(false)}
+                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm transition">
+                  Yopish
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -39,30 +39,85 @@ function fill(text: string, d: Partial<TemplateData>): string {
   return result
 }
 
-// Summani so'zga aylantirish
-export function numberToWords(num: number): string {
-  if (!num || isNaN(num)) return 'nol'
-  const ones = ["", "bir", "ikki", "uch", "to'rt", "besh", "olti", "yetti", "sakkiz", "to'qqiz"]
-  const tens = ["", "o'n", "yigirma", "o'ttiz", "qirq", "ellik", "oltmish", "yetmish", "sakson", "to'qson"]
-  const scales = ["", "ming", "million", "milliard"]
+// Summani so'zga aylantirish — uz / oz / ru
+export function numberToWords(num: number, lang: 'uz' | 'oz' | 'ru' = 'uz'): string {
+  if (!num || isNaN(num)) return lang === 'ru' ? 'ноль' : lang === 'oz' ? 'нол' : 'nol'
+  const n = Math.floor(num)
+  if (lang === 'ru') return _ntwRu(n)
+  if (lang === 'oz') return _ntwOz(n)
+  return _ntwUz(n)
+}
 
-  function chunk(n: number): string {
-    if (n === 0) return ""
+function _ntwUz(num: number): string {
+  const ones  = ["","bir","ikki","uch","to'rt","besh","olti","yetti","sakkiz","to'qqiz"]
+  const tens  = ["","o'n","yigirma","o'ttiz","qirq","ellik","oltmish","yetmish","sakson","to'qson"]
+  const sc    = ["","ming","million","milliard"]
+  function ch(n: number): string {
+    if (!n) return ""
     if (n < 10) return ones[n]
-    if (n < 100) return tens[Math.floor(n/10)] + (n%10 ? " " + ones[n%10] : "")
-    return ones[Math.floor(n/100)] + " yuz" + (n%100 ? " " + chunk(n%100) : "")
+    if (n < 100) return tens[Math.floor(n/10)] + (n%10 ? " "+ones[n%10] : "")
+    return ones[Math.floor(n/100)] + " yuz" + (n%100 ? " "+ch(n%100) : "")
   }
-
   const parts: string[] = []
-  let rem = Math.floor(num)
-  let i = 0
-  while (rem > 0) {
-    const c = rem % 1000
-    if (c) parts.unshift(chunk(c) + (scales[i] ? " " + scales[i] : ""))
-    rem = Math.floor(rem / 1000)
-    i++
-  }
+  let rem = num, i = 0
+  while (rem > 0) { const c = rem%1000; if (c) parts.unshift(ch(c)+(sc[i]?" "+sc[i]:"")); rem=Math.floor(rem/1000); i++ }
   return parts.join(" ") || "nol"
+}
+
+function _ntwOz(num: number): string {
+  const ones = ["","бир","икки","уч","тўрт","беш","олти","етти","саккиз","тўққиз"]
+  const tens = ["","ўн","йигирма","ўттиз","қирқ","эллик","олтмиш","етмиш","саксон","тўқсон"]
+  const sc   = ["","минг","миллион","миллиард"]
+  function ch(n: number): string {
+    if (!n) return ""
+    if (n < 10) return ones[n]
+    if (n < 100) return tens[Math.floor(n/10)] + (n%10 ? " "+ones[n%10] : "")
+    return ones[Math.floor(n/100)] + " юз" + (n%100 ? " "+ch(n%100) : "")
+  }
+  const parts: string[] = []
+  let rem = num, i = 0
+  while (rem > 0) { const c = rem%1000; if (c) parts.unshift(ch(c)+(sc[i]?" "+sc[i]:"")); rem=Math.floor(rem/1000); i++ }
+  return parts.join(" ") || "нол"
+}
+
+function _ntwRu(num: number): string {
+  const onesM   = ["","один","два","три","четыре","пять","шесть","семь","восемь","девять"]
+  const onesF   = ["","одна","две","три","четыре","пять","шесть","семь","восемь","девять"]
+  const teens   = ["десять","одиннадцать","двенадцать","тринадцать","четырнадцать",
+                   "пятнадцать","шестнадцать","семнадцать","восемнадцать","девятнадцать"]
+  const tensArr = ["","","двадцать","тридцать","сорок","пятьдесят","шестьдесят","семьдесят","восемьдесят","девяносто"]
+  const hunds   = ["","сто","двести","триста","четыреста","пятьсот","шестьсот","семьсот","восемьсот","девятьсот"]
+  const sc      = [["","",""],["тысяча","тысячи","тысяч"],["миллион","миллиона","миллионов"],["миллиард","миллиарда","миллиардов"]]
+
+  function form(n: number, f: string[]): string {
+    const n10=n%10, n100=n%100
+    if (n100>=11&&n100<=19) return f[2]
+    if (n10===1) return f[0]
+    if (n10>=2&&n10<=4) return f[1]
+    return f[2]
+  }
+  function ch(n: number, fem: boolean): string {
+    if (!n) return ""
+    const parts: string[] = []
+    if (n>=100) { parts.push(hunds[Math.floor(n/100)]); n=n%100 }
+    if (n>=10&&n<20) { parts.push(teens[n-10]); return parts.filter(Boolean).join(" ") }
+    if (n>=20) { parts.push(tensArr[Math.floor(n/10)]); n=n%10 }
+    if (n>0) parts.push(fem ? onesF[n] : onesM[n])
+    return parts.filter(Boolean).join(" ")
+  }
+  const parts: string[] = []
+  let rem = num, i = 0
+  while (rem > 0) {
+    const c = rem%1000
+    if (c) {
+      const isFem = i===1
+      const chStr = ch(c, isFem)
+      const scStr = i>0 ? form(c, sc[i]) : ""
+      parts.unshift([chStr, scStr].filter(Boolean).join(" "))
+    }
+    rem=Math.floor(rem/1000); i++
+  }
+  return parts.join(" ") || "ноль"
 }
 
 // Tuzilmali shablonlar
