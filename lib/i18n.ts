@@ -18,6 +18,7 @@ export const t = {
     shablonlar:     { uz: 'Shablonlar',         oz: 'Шаблонлар',         ru: 'Шаблоны' },
     counterparties: { uz: 'Kontragentlar',      oz: 'Контрагентлар',     ru: 'Контрагенты' },
     profile:        { uz: 'Profil',             oz: 'Профил',            ru: 'Профиль' },
+    yurist_ai:      { uz: 'Yurist AI',          oz: 'Юрист AI',          ru: 'Юрист AI' },
     logout:         { uz: 'Chiqish',            oz: 'Чиқиш',             ru: 'Выйти' },
   },
 

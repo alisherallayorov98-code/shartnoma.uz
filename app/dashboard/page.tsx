@@ -85,6 +85,7 @@ const NAV_KEYS = [
   { key: 'specifications',  icon: '📋' },
   { key: 'shablonlar',      icon: '📑' },
   { key: 'counterparties',  icon: '🤝' },
+  { key: 'yurist_ai',       icon: '⚖️' },
   { key: 'profile',         icon: '👤' },
 ]
 
@@ -165,6 +166,38 @@ export default function DashboardPage() {
   const wordImportRef = useRef<HTMLInputElement>(null)
   const [wordImporting, setWordImporting] = useState(false)
 
+  // ── Yurist AI Hub ──────────────────────────────────────
+  const AI_FREE_DAILY = 5
+  function getAiUsedToday(): number {
+    if (typeof window === 'undefined') return 0
+    try {
+      const stored = localStorage.getItem('ai_usage')
+      if (!stored) return 0
+      const { date, count } = JSON.parse(stored)
+      return date === new Date().toISOString().split('T')[0] ? count : 0
+    } catch { return 0 }
+  }
+  function incrementAiUsage() {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const cur = getAiUsedToday()
+      localStorage.setItem('ai_usage', JSON.stringify({ date: today, count: cur + 1 }))
+    } catch { /* */ }
+  }
+
+  type HubFeature = 'tahlil'|'grammatika'|'xulosa'|'tarjima'|'qa'|'clause'|'recommend'|'write'
+  const [hubFeature, setHubFeature] = useState<HubFeature>('xulosa')
+  const [hubContract, setHubContract] = useState<string>('')
+  const [hubResult, setHubResult] = useState<Record<string,unknown>|null>(null)
+  const [hubLoading, setHubLoading] = useState(false)
+  const [hubError, setHubError] = useState('')
+  const [hubQuestion, setHubQuestion] = useState('')
+  const [hubInstruction, setHubInstruction] = useState('')
+  const [hubTargetLang, setHubTargetLang] = useState('ru')
+  const [hubDescription, setHubDescription] = useState('')
+  const [hubWriteDetails, setHubWriteDetails] = useState({ tur:'oldi_sotdi', org:'', cp:'', summa:'', extra:'' })
+  const [aiUsedToday, setAiUsedToday] = useState(0)
+
   type AiAnalysis = {
     baho: string
     umumiy: string
@@ -183,7 +216,7 @@ export default function DashboardPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [avatarUploading, setAvatarUploading] = useState(false)
 
-  useEffect(() => { init() }, [])
+  useEffect(() => { init(); setAiUsedToday(getAiUsedToday()) }, [])
 
   async function init() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -752,6 +785,37 @@ export default function DashboardPage() {
     } finally {
       setAiLoading(false)
     }
+  }
+
+  async function runHubFeature() {
+    const usedToday = getAiUsedToday()
+    if (isFree && usedToday >= AI_FREE_DAILY) {
+      setHubError(`Kunlik bepul limit (${AI_FREE_DAILY} ta) tugadi. Standart yoki AI Pro tarifiga o'ting.`)
+      return
+    }
+    const selectedContract = contracts.find(c => c.id === hubContract)
+    const content = selectedContract?.content || ''
+    const needsContract = ['tahlil','grammatika','xulosa','tarjima','qa','clause'].includes(hubFeature)
+    if (needsContract && !content.trim()) {
+      setHubError("Shartnomani tanlang yoki uning matni bo'sh. Avval shartnoma yaratib, matn kiriting.")
+      return
+    }
+    setHubLoading(true); setHubError(''); setHubResult(null)
+    try {
+      const body: Record<string,unknown> = { type: hubFeature === 'tahlil' ? 'analysis' : hubFeature, lang, content }
+      if (hubFeature === 'qa')        body.question    = hubQuestion
+      if (hubFeature === 'clause')    body.instruction = hubInstruction
+      if (hubFeature === 'tarjima')   body.target_lang = hubTargetLang
+      if (hubFeature === 'recommend') { body.description = hubDescription; delete body.content }
+      if (hubFeature === 'write')     { body.details = hubWriteDetails; delete body.content }
+      const res  = await fetch('/api/ai', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+      const data = await res.json()
+      if (!res.ok || data.error) { setHubError(data.error || 'Xatolik'); return }
+      setHubResult(data.result)
+      incrementAiUsage()
+      setAiUsedToday(getAiUsedToday())
+    } catch { setHubError('Serverga ulanishda xatolik') }
+    finally  { setHubLoading(false) }
   }
 
   async function handleWordImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -2370,6 +2434,394 @@ export default function DashboardPage() {
           )}
 
           {/* ─── PROFILE ─── */}
+          {/* ══════════════════════════════════════════════════ */}
+          {/* ──────────── YURIST AI ──────────────────────── */}
+          {/* ══════════════════════════════════════════════════ */}
+          {tab==='yurist_ai' && (() => {
+            const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; needsContract: boolean; premiumOnly: boolean }[] = [
+              { key:'xulosa',    icon:'📝', name:'Xulosa',         desc:"Shartnomaning asosiy shartlarini qisqacha bayon qiladi",        needsContract:true,  premiumOnly:false },
+              { key:'tarjima',   icon:'🌐', name:'Tarjima',        desc:"Shartnomani boshqa tilga professional tarjima qiladi",           needsContract:true,  premiumOnly:false },
+              { key:'grammatika',icon:'✏️', name:'Grammatika',     desc:"Matnidagi imlo, grammatika va uslub xatolarini topadi",          needsContract:true,  premiumOnly:false },
+              { key:'tahlil',    icon:'📊', name:'Chuqur tahlil',  desc:"Yuridik xatarlar, zaif tomonlar va baho (A-D)",                 needsContract:true,  premiumOnly:true  },
+              { key:'qa',        icon:'💬', name:'Savol-Javob',    desc:"Shartnoma haqida istalgan savolga javob beradi",                 needsContract:true,  premiumOnly:true  },
+              { key:'clause',    icon:'➕', name:'Band qo\'shish', desc:"Ko'rsatma asosida yangi band yozib beradi",                      needsContract:false, premiumOnly:true  },
+              { key:'recommend', icon:'🎯', name:'Tur tavsiyasi',  desc:"Vaziyatni ta'riflang — qaysi shartnoma turi mos ekanini aytadi", needsContract:false, premiumOnly:false },
+              { key:'write',     icon:'✍️', name:'Shartnoma yoz',  desc:"Ma'lumotlar asosida to'liq shartnoma matnini yozadi",           needsContract:false, premiumOnly:true  },
+            ]
+            const sel = FEATURES.find(f => f.key === hubFeature)!
+            const canUse = !sel.premiumOnly || !isFree
+            const limitReached = isFree && aiUsedToday >= AI_FREE_DAILY
+            const contractList = contracts.filter(c => c.organization_id === activeOrg?.id)
+
+            return (
+              <div className="space-y-6 max-w-4xl">
+
+                {/* ── Header ── */}
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h1 className="text-xl font-bold text-white flex items-center gap-2">⚖️ Yurist AI</h1>
+                    <p className="text-gray-500 text-sm mt-0.5">Claude AI yordamida shartnomalaringizni tahlil qiling, tarjima qiling va takomillashtiring</p>
+                  </div>
+                  {isFree ? (
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="text-xs text-gray-500">Bugungi foydalanish</div>
+                        <div className={`text-sm font-bold ${aiUsedToday >= AI_FREE_DAILY ? 'text-red-400' : 'text-white'}`}>
+                          {aiUsedToday} / {AI_FREE_DAILY}
+                        </div>
+                        <div className="w-24 h-1.5 bg-gray-800 rounded-full mt-1">
+                          <div className={`h-1.5 rounded-full transition-all ${aiUsedToday >= AI_FREE_DAILY ? 'bg-red-500' : 'bg-blue-500'}`}
+                            style={{ width: `${Math.min(aiUsedToday/AI_FREE_DAILY*100,100)}%` }}/>
+                        </div>
+                      </div>
+                      <button onClick={() => setModal('upgrade')}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white text-xs font-semibold px-4 py-2 rounded-xl transition">
+                        ✦ Cheksiz olish →
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-xs bg-purple-900/50 border border-purple-700 text-purple-300 px-3 py-1.5 rounded-xl font-medium">
+                      ⭐ {isFree ? 'Bepul' : 'Premium'} — Cheksiz foydalanish
+                    </span>
+                  )}
+                </div>
+
+                {/* ── Feature cards ── */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {FEATURES.map(f => {
+                    const locked = f.premiumOnly && isFree
+                    return (
+                      <button key={f.key}
+                        onClick={() => { setHubFeature(f.key); setHubResult(null); setHubError('') }}
+                        className={`relative text-left p-4 rounded-xl border transition ${
+                          hubFeature === f.key
+                            ? 'bg-purple-900/50 border-purple-600 shadow-lg shadow-purple-900/20'
+                            : locked
+                            ? 'bg-gray-900/50 border-gray-800 opacity-60 cursor-default'
+                            : 'bg-gray-900 border-gray-800 hover:border-gray-600'
+                        }`}>
+                        {locked && (
+                          <span className="absolute top-2 right-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white px-1.5 py-0.5 rounded-full">PRO</span>
+                        )}
+                        <div className="text-2xl mb-2">{f.icon}</div>
+                        <div className={`text-sm font-semibold mb-1 ${hubFeature===f.key ? 'text-purple-300' : 'text-white'}`}>{f.name}</div>
+                        <div className="text-xs text-gray-500 leading-relaxed">{f.desc}</div>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* ── Feature panel ── */}
+                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xl">{sel.icon}</span>
+                    <h3 className="font-semibold text-white">{sel.name}</h3>
+                    {sel.premiumOnly && isFree && (
+                      <span className="ml-auto text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-0.5 rounded-full">
+                        Premium xizmat
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Shartnoma tanlash */}
+                  {sel.needsContract && (
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Shartnoma tanlang</label>
+                      <select value={hubContract} onChange={e => setHubContract(e.target.value)}
+                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500">
+                        <option value="">— Shartnomani tanlang —</option>
+                        {contractList.map(c => (
+                          <option key={c.id} value={c.id}>
+                            #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]} · {c.counterparties?.name || '—'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Tarjima — til tanlash */}
+                  {hubFeature === 'tarjima' && (
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Tarjima tili</label>
+                      <div className="flex gap-2">
+                        {[['ru','Ruscha'],["oz","O'zbek (Kirill)"],['en','English']].map(([v,l]) => (
+                          <button key={v} onClick={() => setHubTargetLang(v)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${hubTargetLang===v ? 'bg-purple-700 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Savol-Javob — savol */}
+                  {hubFeature === 'qa' && (
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Savolingiz</label>
+                      <input value={hubQuestion} onChange={e => setHubQuestion(e.target.value)}
+                        placeholder="Masalan: Bu shartnomada jarima bandi bormi?"
+                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                    </div>
+                  )}
+
+                  {/* Band qo'shish — ko'rsatma */}
+                  {hubFeature === 'clause' && (
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Ko'rsatma</label>
+                      <input value={hubInstruction} onChange={e => setHubInstruction(e.target.value)}
+                        placeholder="Masalan: Kechikish uchun 0.1% kunlik jarima bandi qo'sh"
+                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                    </div>
+                  )}
+
+                  {/* Tur tavsiyasi — ta'rif */}
+                  {hubFeature === 'recommend' && (
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Vaziyatni ta'riflang</label>
+                      <textarea value={hubDescription} onChange={e => setHubDescription(e.target.value)} rows={3}
+                        placeholder="Masalan: Kompaniyam boshqa firmaga 3 oy davomida ofis ijaraga bermoqchi..."
+                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600 resize-none"/>
+                    </div>
+                  )}
+
+                  {/* Shartnoma yozish — ma'lumotlar */}
+                  {hubFeature === 'write' && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Shartnoma turi</label>
+                        <select value={hubWriteDetails.tur} onChange={e => setHubWriteDetails({...hubWriteDetails, tur:e.target.value})}
+                          className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500">
+                          {Object.entries(CONTRACT_TYPES_I18N).map(([k,v]) => <option key={k} value={k}>{v[lang]}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Summa</label>
+                        <input value={hubWriteDetails.summa} onChange={e => setHubWriteDetails({...hubWriteDetails, summa:e.target.value})}
+                          placeholder="10 000 000 so'm" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Birinchi tomon</label>
+                        <input value={hubWriteDetails.org} onChange={e => setHubWriteDetails({...hubWriteDetails, org:e.target.value})}
+                          placeholder="Tashkilot nomi" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Ikkinchi tomon</label>
+                        <input value={hubWriteDetails.cp} onChange={e => setHubWriteDetails({...hubWriteDetails, cp:e.target.value})}
+                          placeholder="Kontragent nomi" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs text-gray-400 mb-1.5">Qo'shimcha shartlar (ixtiyoriy)</label>
+                        <textarea value={hubWriteDetails.extra} onChange={e => setHubWriteDetails({...hubWriteDetails, extra:e.target.value})} rows={2}
+                          placeholder="Masalan: To'lov muddati 30 kun, yetkazib berish Toshkentda..."
+                          className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600 resize-none"/>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error */}
+                  {hubError && (
+                    <div className="bg-red-900/40 border border-red-700 text-red-300 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
+                      <span>⚠️</span>
+                      <div>
+                        {hubError}
+                        {hubError.includes('limit') && (
+                          <button onClick={() => setModal('upgrade')}
+                            className="block mt-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs px-3 py-1.5 rounded-lg">
+                            Premium ga o'tish →
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Premium lock */}
+                  {!canUse && (
+                    <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/50 rounded-xl p-5 text-center">
+                      <div className="text-3xl mb-2">🔒</div>
+                      <div className="text-white font-semibold mb-1">Premium xizmat</div>
+                      <div className="text-gray-400 text-sm mb-4">Bu funksiyadan foydalanish uchun Standart yoki AI Pro tarifiga o'ting</div>
+                      <button onClick={() => setModal('upgrade')}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition">
+                        ✦ Tarifni yaxshilash →
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Action button */}
+                  {canUse && !hubLoading && !hubResult && (
+                    <button onClick={runHubFeature}
+                      disabled={limitReached}
+                      className={`w-full py-3 rounded-xl text-sm font-semibold transition ${
+                        limitReached
+                          ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 text-white'
+                      }`}>
+                      {limitReached ? `Kunlik limit tugadi (${AI_FREE_DAILY} ta)` : `${sel.icon} ${sel.name} boshlash`}
+                    </button>
+                  )}
+
+                  {/* Loading */}
+                  {hubLoading && (
+                    <div className="text-center py-8">
+                      <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"/>
+                      <div className="text-gray-400 text-sm">Claude AI ishlamoqda...</div>
+                      <div className="text-gray-600 text-xs mt-1">~10-20 soniya</div>
+                    </div>
+                  )}
+
+                  {/* Result */}
+                  {hubResult && !hubLoading && (
+                    <div className="space-y-3">
+                      <div className="h-px bg-gray-800"/>
+
+                      {/* XULOSA */}
+                      {hubFeature==='xulosa' && (
+                        <div className="space-y-3">
+                          <div className="bg-gray-800/60 rounded-xl p-4">
+                            <div className="text-xs text-gray-500 mb-1">Xulosa</div>
+                            <div className="text-white text-sm leading-relaxed">{String(hubResult.xulosa || '')}</div>
+                          </div>
+                          {(hubResult.asosiy_shartlar as string[])?.length > 0 && (
+                            <div className="bg-gray-800/60 rounded-xl p-4">
+                              <div className="text-xs text-gray-500 mb-2">Asosiy shartlar</div>
+                              {(hubResult.asosiy_shartlar as string[]).map((s,i) => <div key={i} className="text-sm text-gray-300">• {s}</div>)}
+                            </div>
+                          )}
+                          <div className="flex gap-3">
+                            {Boolean(hubResult.muddat) && <div className="bg-blue-900/40 border border-blue-800/40 rounded-xl px-4 py-3 flex-1"><div className="text-xs text-gray-500">Muddat</div><div className="text-white text-sm">{String(hubResult.muddat)}</div></div>}
+                            {Boolean(hubResult.summa)  && <div className="bg-emerald-900/40 border border-emerald-800/40 rounded-xl px-4 py-3 flex-1"><div className="text-xs text-gray-500">Summa</div><div className="text-white text-sm">{String(hubResult.summa)}</div></div>}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* TARJIMA */}
+                      {hubFeature==='tarjima' && (
+                        <div className="bg-gray-800/60 rounded-xl p-4">
+                          <div className="text-xs text-gray-500 mb-2">Tarjima</div>
+                          <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.tarjima || '')}</pre>
+                        </div>
+                      )}
+
+                      {/* GRAMMATIKA */}
+                      {hubFeature==='grammatika' && (
+                        <div className="space-y-3">
+                          <div className="bg-gray-800/60 rounded-xl p-4 flex items-center gap-3">
+                            <span className="text-2xl">✏️</span>
+                            <div>
+                              <div className="text-white font-semibold">{Number(hubResult.xatolar_soni ?? (hubResult.xatolar as unknown[])?.length ?? 0)} ta xato</div>
+                              <div className="text-gray-400 text-xs">{String(hubResult.umumiy_baho || '')}</div>
+                            </div>
+                          </div>
+                          {(hubResult.xatolar as {xato:string;togri:string;izoh:string}[])?.map((x,i) => (
+                            <div key={i} className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-red-400 text-sm line-through">{x.xato}</span>
+                                <span className="text-gray-600">→</span>
+                                <span className="text-emerald-400 text-sm font-medium">{x.togri}</span>
+                              </div>
+                              <div className="text-gray-500 text-xs">{x.izoh}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* TAHLIL */}
+                      {hubFeature==='tahlil' && (
+                        <div className="space-y-3">
+                          <div className={`rounded-xl p-4 border flex items-center gap-3 ${String(hubResult.baho)==='A'?'bg-emerald-900/40 border-emerald-700':String(hubResult.baho)==='B'?'bg-blue-900/40 border-blue-700':String(hubResult.baho)==='C'?'bg-yellow-900/40 border-yellow-700':'bg-red-900/40 border-red-700'}`}>
+                            <span className={`text-4xl font-black ${String(hubResult.baho)==='A'?'text-emerald-400':String(hubResult.baho)==='B'?'text-blue-400':String(hubResult.baho)==='C'?'text-yellow-400':'text-red-400'}`}>{String(hubResult.baho)}</span>
+                            <div className="text-gray-300 text-sm">{String(hubResult.umumiy || '')}</div>
+                          </div>
+                          {(hubResult.yuridik_xatarlar as {daraja:string;tavsif:string}[])?.map((x,i) => (
+                            <div key={i} className="flex items-start gap-2 bg-gray-800/60 rounded-xl p-3">
+                              <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 mt-0.5 ${x.daraja.match(/yuqori|высок|юқори/i)?'bg-red-900 text-red-300':x.daraja.match(/rta|редний|ўрта/i)?'bg-yellow-900 text-yellow-300':'bg-gray-700 text-gray-300'}`}>{x.daraja}</span>
+                              <span className="text-gray-300 text-sm">{x.tavsif}</span>
+                            </div>
+                          ))}
+                          {(hubResult.tavsiyalar as string[])?.map((s,i) => <div key={i} className="text-gray-300 text-sm">• {s}</div>)}
+                        </div>
+                      )}
+
+                      {/* SAVOL-JAVOB */}
+                      {hubFeature==='qa' && (
+                        <div className="space-y-2">
+                          <div className="bg-purple-900/30 border border-purple-800/40 rounded-xl p-4">
+                            <div className="text-xs text-purple-400 mb-1">Javob</div>
+                            <div className="text-white text-sm leading-relaxed">{String(hubResult.javob || '')}</div>
+                          </div>
+                          {Boolean(hubResult.havola) && <div className="text-gray-500 text-xs">📍 {String(hubResult.havola)}</div>}
+                        </div>
+                      )}
+
+                      {/* BAND */}
+                      {hubFeature==='clause' && (
+                        <div className="bg-gray-800/60 rounded-xl p-4">
+                          {Boolean(hubResult.band_nomi) && <div className="text-purple-400 text-xs font-semibold mb-2">{String(hubResult.band_nomi)}</div>}
+                          <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.band || '')}</pre>
+                          <button onClick={() => navigator.clipboard.writeText(String(hubResult.band || ''))}
+                            className="mt-3 text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
+                        </div>
+                      )}
+
+                      {/* TAVSIYA */}
+                      {hubFeature==='recommend' && (
+                        <div className="space-y-3">
+                          <div className="bg-purple-900/40 border border-purple-700 rounded-xl p-4 flex items-center gap-3">
+                            <span className="text-3xl">🎯</span>
+                            <div>
+                              <div className="text-xs text-gray-500">Tavsiya etilgan tur</div>
+                              <div className="text-white font-bold">{String(hubResult.tur_nomi || hubResult.tur || '')}</div>
+                            </div>
+                          </div>
+                          <div className="bg-gray-800/60 rounded-xl p-4 text-sm text-gray-300 leading-relaxed">{String(hubResult.tavsiya || '')}</div>
+                          {Boolean(hubResult.sabab) && <div className="text-gray-500 text-xs">💡 {String(hubResult.sabab)}</div>}
+                          {Boolean(hubResult.qoshimcha_maslahat) && <div className="text-gray-500 text-xs">📌 {String(hubResult.qoshimcha_maslahat)}</div>}
+                          <button onClick={() => { setHubFeature('write'); setHubWriteDetails({...hubWriteDetails, tur: String(hubResult.tur||'oldi_sotdi')}); setHubResult(null) }}
+                            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm px-4 py-2 rounded-xl hover:opacity-90 transition">
+                            ✍️ Shu tur bo'yicha shartnoma yoz →
+                          </button>
+                        </div>
+                      )}
+
+                      {/* SHARTNOMA YOZISH */}
+                      {hubFeature==='write' && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs text-gray-500">{Number(hubResult.bandlar_soni || 0)} ta band</div>
+                            <button onClick={() => navigator.clipboard.writeText(String(hubResult.shartnoma || ''))}
+                              className="text-xs text-purple-400 hover:text-purple-300">📋 Nusxa olish</button>
+                          </div>
+                          <div className="bg-gray-800/60 rounded-xl p-4 max-h-96 overflow-y-auto">
+                            <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.shartnoma || '')}</pre>
+                          </div>
+                        </div>
+                      )}
+
+                      <button onClick={() => { setHubResult(null); setHubError('') }}
+                        className="text-xs text-gray-600 hover:text-gray-400 transition">🔄 Qayta bajarish</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Pastki reklama banner (bepul uchun) ── */}
+                {isFree && (
+                  <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/30 rounded-2xl p-5 flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-white font-semibold text-sm mb-1">✦ Standart yoki AI Pro ga o'ting</div>
+                      <div className="text-gray-400 text-xs">Cheksiz AI, 4 ta premium funksiya, imzo/muhr avtomatik va ko'proq</div>
+                    </div>
+                    <button onClick={() => setModal('upgrade')}
+                      className="shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
+                      Upgrade →
+                    </button>
+                  </div>
+                )}
+
+              </div>
+            )
+          })()}
+          {/* ══════════════════════════════════════════════════ */}
+
           {tab==='profile' && (
             <div className="max-w-3xl space-y-5">
 

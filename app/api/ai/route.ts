@@ -3,120 +3,112 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-// Matnni belgilangan uzunlikka qisqartirish
-function truncate(text: string, maxChars = 4000): string {
-  if (text.length <= maxChars) return text
-  return text.slice(0, maxChars) + '\n...[matn qisqartirildi]'
+function truncate(text: string, max = 4000): string {
+  return text.length <= max ? text : text.slice(0, max) + '\n...[qisqartirildi]'
+}
+
+function jsonOnly(lang: string) {
+  return lang === 'ru' ? 'Верните только JSON, без пояснений.' :
+         lang === 'oz' ? 'Фақат JSON қайтаринг.' :
+                         "Faqat JSON qaytaring, izohsiz."
+}
+
+function extractJSON(raw: string): unknown {
+  const fenced = raw.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
+  let str = fenced ? fenced[1].trim() : raw.trim()
+  const s = str.indexOf('{'), e = str.lastIndexOf('}')
+  if (s !== -1 && e !== -1) str = str.slice(s, e + 1)
+  return JSON.parse(str)
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { type, content, lang } = await req.json()
+    const body = await req.json()
+    const { type, content, lang = 'uz', question, instruction,
+            target_lang, description, details } = body
 
-    if (!content || !type) {
-      return NextResponse.json({ error: 'content va type kerak' }, { status: 400 })
-    }
-
-    const shortContent = truncate(content)
-    const L = lang || 'uz'
-
-    const LABELS: Record<string, Record<string, string>> = {
-      uz: {
-        grade: "A=alo, B=yaxshi, C=qoniqarli, D=yomon",
-        high: "yuqori", mid: "o'rta", low: "past",
-        summary: "Qisqa xulosa (1-2 jumla)",
-        strong: "Kuchli tomonlar (max 3 ta)",
-        weak: "Zaif tomonlar (max 3 ta)",
-        risks: "Yuridik xatarlar (max 3 ta)",
-        tips: "Tavsiyalar (max 3 ta)",
-        grammar: "Grammatika xatolari (max 5 ta)",
-        intro: "Siz O'zbekiston qonunchiligini yaxshi biladigan yurist yordamchisiz.",
-        doc: "SHARTNOMA",
-        docGrammar: "MATN",
-        grammarTask: "Quyidagi matnda grammatika, imlo va uslub xatolarini toping.",
-        analysisTask: "Quyidagi shartnomani tahlil qiling.",
-      },
-      ru: {
-        grade: "A=отлично, B=хорошо, C=удовлетворительно, D=плохо",
-        high: "высокий", mid: "средний", low: "низкий",
-        summary: "Краткий вывод (1-2 предложения)",
-        strong: "Сильные стороны (макс 3)",
-        weak: "Слабые стороны (макс 3)",
-        risks: "Юридические риски (макс 3)",
-        tips: "Рекомендации (макс 3)",
-        grammar: "Грамматические ошибки (макс 5)",
-        intro: "Вы юридический ассистент, знающий законодательство Узбекистана.",
-        doc: "ДОГОВОР",
-        docGrammar: "ТЕКСТ",
-        grammarTask: "Найдите грамматические и стилистические ошибки в тексте.",
-        analysisTask: "Проанализируйте договор.",
-      },
-      oz: {
-        grade: "A=аъло, B=яхши, C=қониқарли, D=ёмон",
-        high: "юқори", mid: "ўрта", low: "паст",
-        summary: "Қисқа хулоса (1-2 жумла)",
-        strong: "Кучли томонлар (макс 3 та)",
-        weak: "Заиф томонлар (макс 3 та)",
-        risks: "Юридик хатарлар (макс 3 та)",
-        tips: "Тавсиялар (макс 3 та)",
-        grammar: "Грамматика хатолари (макс 5 та)",
-        intro: "Сиз Ўзбекистон қонунчилигини яхши биладиган юрист ёрдамчисисиз.",
-        doc: "ШАРТНОМА",
-        docGrammar: "МАТН",
-        grammarTask: "Қуйидаги матнда грамматика ва услуб хатоларини топинг.",
-        analysisTask: "Қуйидаги шартномани таҳлил қилинг.",
-      },
-    }
-
-    const lb = LABELS[L] || LABELS['uz']
-
-    const jsonOnly: Record<string, string> = {
-      uz: "Faqat JSON qaytaring, boshqa matn bo'lmasin.",
-      ru: "Верните только JSON, без другого текста.",
-      oz: "Фақат JSON қайтаринг, бошқа матн бўлмасин.",
-    }
-    const jsonInstr = jsonOnly[L] || jsonOnly['uz']
-
+    const jOnly = jsonOnly(lang)
     let prompt = ''
 
+    // ── 1. TAHLIL ──────────────────────────────────────────
     if (type === 'analysis') {
-      prompt = `${lb.intro} ${lb.analysisTask}
+      const labels: Record<string, string> = {
+        uz: `Siz O'zbekiston qonunchiligini yaxshi biladigan yurist yordamchisiz. Shartnomani tahlil qiling.\n${jOnly}\n{"baho":"A/B/C/D","umumiy":"...","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"yuqori|o'rta|past","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}`,
+        ru: `Вы юридический ассистент по законодательству Узбекистана. Проанализируйте договор.\n${jOnly}\n{"baho":"A/B/C/D","umumiy":"...","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"высокий|средний|низкий","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}`,
+        oz: `Сиз Ўзбекистон қонунчилигини яхши биладиган юрист ёрдамчисисиз.\n${jOnly}\n{"baho":"A/B/C/D","umumiy":"...","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"юқори|ўрта|паст","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}`,
+      }
+      prompt = `${labels[lang] || labels['uz']}\n\nSHARTNOMA:\n${truncate(content)}`
+    }
 
-${jsonInstr}
-{"baho":"${lb.grade}","umumiy":"${lb.summary}","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"${lb.high}|${lb.mid}|${lb.low}","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}
+    // ── 2. GRAMMATIKA ───────────────────────────────────────
+    else if (type === 'grammar') {
+      const task = lang === 'ru' ? 'Найдите грамматические и стилистические ошибки.' :
+                   lang === 'oz' ? 'Грамматика ва услуб хатоларини топинг.' :
+                                   'Grammatika, imlo va uslub xatolarini toping.'
+      prompt = `${task}\n${jOnly}\n{"xatolar_soni":0,"xatolar":[{"xato":"...","togri":"...","izoh":"..."}],"umumiy_baho":"..."}\n\nMATN:\n${truncate(content)}`
+    }
 
-${lb.doc}:
-${shortContent}`
-    } else {
-      prompt = `${lb.grammarTask}
+    // ── 3. XULOSA ───────────────────────────────────────────
+    else if (type === 'summary') {
+      const task = lang === 'ru' ? 'Напишите краткое резюме договора (5-8 предложений): главные условия, обязательства, сроки, сумма.' :
+                   lang === 'oz' ? 'Шартнома мазмунини қисқача баён қилинг (5-8 жумла).' :
+                                   "Shartnomaning asosiy shartlarini qisqacha bayon qiling (5-8 jumla): tomonlar, majburiyatlar, muddat, summa."
+      prompt = `${task}\n${jOnly}\n{"xulosa":"...","asosiy_shartlar":["..."],"muddat":"...","summa":"...","muhim_bandlar":["..."]}\n\nSHARTNOMA:\n${truncate(content)}`
+    }
 
-${jsonInstr}
-{"xatolar_soni":0,"xatolar":[{"xato":"...","togri":"...","izoh":"..."}],"umumiy_baho":"..."}
+    // ── 4. TARJIMA ──────────────────────────────────────────
+    else if (type === 'translate') {
+      const tLang = target_lang || 'ru'
+      const targetName: Record<string, string> = { uz: "O'zbek tilida", ru: 'на русском языке', oz: "O'zbek Kirill yozuvida", en: 'in English' }
+      const task = `Quyidagi shartnomani ${targetName[tLang] || tLang} tarjima qiling. Yuridik atamalarni to'g'ri tarjima qiling.`
+      prompt = `${task}\n${jOnly}\n{"tarjima":"..."}\n\nASL MATN:\n${truncate(content, 3000)}`
+    }
 
-${lb.docGrammar}:
-${shortContent}`
+    // ── 5. SAVOL-JAVOB ──────────────────────────────────────
+    else if (type === 'qa') {
+      const task = lang === 'ru' ? `Ответьте на вопрос по договору. Вопрос: "${question}"` :
+                   lang === 'oz' ? `Шартнома бўйича саволга жавоб беринг. Савол: "${question}"` :
+                                   `Shartnoma bo'yicha savolga javob bering. Savol: "${question}"`
+      prompt = `${task}\n${jOnly}\n{"javob":"...","havola":"shartnomaning qaysi bandiga tegishli"}\n\nSHARTNOMA:\n${truncate(content)}`
+    }
+
+    // ── 6. BAND QO'SHISH ────────────────────────────────────
+    else if (type === 'clause') {
+      const task = lang === 'ru' ? `Напишите юридический пункт договора по инструкции: "${instruction}"` :
+                   lang === 'oz' ? `Кўрсатма бўйича шартнома банди ёзинг: "${instruction}"` :
+                                   `Ko'rsatma asosida shartnoma bandi yozing: "${instruction}"`
+      const ctx = content ? `\n\nMavjud shartnoma konteksti:\n${truncate(content, 2000)}` : ''
+      prompt = `${task}. O'zbekiston qonunchiligi asosida, rasmiy yuridik uslubda yozing.\n${jOnly}\n{"band":"...","band_nomi":"..."} ${ctx}`
+    }
+
+    // ── 7. TUR TAVSIYASI ────────────────────────────────────
+    else if (type === 'recommend') {
+      const task = lang === 'ru' ? `Определите тип договора по описанию: "${description}"` :
+                   lang === 'oz' ? `Таснифни ўқиб, шартнома турини аниқланг: "${description}"` :
+                                   `Tavsifni o'qib, qaysi shartnoma turi mos ekanini aniqlang: "${description}"`
+      prompt = `${task}\nMavjud turlar: oldi_sotdi, xizmat, ijara, pudrat, qoshimcha, moliyaviy, daval, xalqaro, boshqa\n${jOnly}\n{"tur":"oldi_sotdi","tur_nomi":"...","tavsiya":"...","sabab":"...","qoshimcha_maslahat":"..."}`
+    }
+
+    // ── 8. SHARTNOMA YOZISH ─────────────────────────────────
+    else if (type === 'write') {
+      const task = lang === 'ru'
+        ? `Напишите профессиональный договор на основе данных. Тип: ${details?.tur || 'купля-продажа'}, Продавец: ${details?.org || '___'}, Покупатель: ${details?.cp || '___'}, Сумма: ${details?.summa || '___'}, Дополнительно: ${details?.extra || 'нет'}`
+        : `Quyidagi ma'lumotlar asosida professional shartnoma matnini yozing. Tur: ${details?.tur || 'oldi-sotdi'}, Sotuvchi: ${details?.org || '___'}, Xaridor: ${details?.cp || '___'}, Summa: ${details?.summa || '___'}, Qo'shimcha: ${details?.extra || 'yo\'q'}`
+      prompt = `${task}\n\nO'zbekiston qonunchiligi asosida, rasmiy uslubda, to'liq bandlar bilan yozing.\n${jOnly}\n{"shartnoma":"to'liq shartnoma matni...","bandlar_soni":0}`
+    }
+
+    else {
+      return NextResponse.json({ error: "Noto'g'ri type" }, { status: 400 })
     }
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
+      max_tokens: 3000,
       messages: [{ role: 'user', content: prompt }],
     })
 
     const raw = (message.content[0] as { type: string; text: string }).text.trim()
-
-    // JSON ni ajratib olish
-    let jsonStr = raw
-    const fenced = raw.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
-    if (fenced) {
-      jsonStr = fenced[1].trim()
-    } else {
-      const start = raw.indexOf('{')
-      const end   = raw.lastIndexOf('}')
-      if (start !== -1 && end !== -1) jsonStr = raw.slice(start, end + 1)
-    }
-
-    const result = JSON.parse(jsonStr)
+    const result = extractJSON(raw)
     return NextResponse.json({ result })
 
   } catch (err) {
