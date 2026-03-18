@@ -834,8 +834,9 @@ export default function DashboardPage() {
 
       // ── Sarlavha ──
       doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0)
-      doc.text(safe(`XALQARO SAVDO SHARTNOMASI No${c.contract_number}`), xL+hW/2, y, {align:'center'})
-      doc.text(`INTERNATIONAL TRADE CONTRACT No${c.contract_number}`,    xR+hW/2, y, {align:'center'})
+      const cNum = c.contract_number || '___'
+      doc.text(safe(`XALQARO SAVDO SHARTNOMASI No ${cNum}`), xL+hW/2, y, {align:'center'})
+      doc.text(`INTERNATIONAL TRADE CONTRACT No ${cNum}`,    xR+hW/2, y, {align:'center'})
       y += 7
       doc.setFont('helvetica','normal'); doc.setFontSize(9)
       doc.text(`${city} shahri`, xL, y); doc.text(safe(fmtDate(c.contract_date)), xL+hW, y, {align:'right'})
@@ -954,7 +955,7 @@ export default function DashboardPage() {
       } catch { /* rasm yuklanmadi */ }
 
       addPageNums()
-      doc.save(`shartnoma-${c.contract_number.replace(/\//g,'-')}.pdf`)
+      doc.save(`shartnoma-${(c.contract_number||'draft').replace(/\//g,'-')}.pdf`)
       return
     }
     // ══════════════════════════════════════════════════════
@@ -965,7 +966,7 @@ export default function DashboardPage() {
     doc.setFont(F,'bold'); doc.setFontSize(14); doc.setTextColor(0,0,0)
     doc.text(safe(`${ctName.toUpperCase()}`), pageW/2, y, {align:'center'}); y += 7
     doc.setFont(F,'bold'); doc.setFontSize(13)
-    doc.text(safe(`No ${c.contract_number}`), pageW/2, y, {align:'center'}); y += 10
+    doc.text(safe(`No ${c.contract_number || '___'}`), pageW/2, y, {align:'center'}); y += 10
 
     // ── 2. SHAHAR + SANA ──
     doc.setFont(F,'normal'); doc.setFontSize(12)
@@ -1083,7 +1084,7 @@ export default function DashboardPage() {
     }
 
     addPageNums()
-    doc.save(`shartnoma-${c.contract_number.replace(/\//g,'-')}.pdf`)
+    doc.save(`shartnoma-${(c.contract_number||'draft').replace(/\//g,'-')}.pdf`)
   }
 
   async function generateDOCX(c: Contract) {
@@ -1097,7 +1098,9 @@ export default function DashboardPage() {
 
     const MONTHS = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr']
     const fmtDate = (d: string) => {
-      const [yy,mm,dd] = (d||'').split('-')
+      if (!d) return '___'
+      const [yy,mm,dd] = d.split('-')
+      if (!yy || !mm || !dd) return d
       return `"${parseInt(dd)}" ${MONTHS[parseInt(mm)-1]} ${yy} y.`
     }
     const ctName = CONTRACT_TYPE_NAMES[c.contract_type as keyof typeof CONTRACT_TYPE_NAMES] || c.contract_type
@@ -1253,7 +1256,7 @@ export default function DashboardPage() {
     // ── 6. SPESIFIKATSIYA — yangi sahifa ──
     const specItems = c.spec_items || []
     if (specItems.length > 0) {
-      children.push(new Paragraph({ children: [new TextRun({ break: 1 })], pageBreakBefore: true }))
+      children.push(new Paragraph({ pageBreakBefore: true, children: [] }))
       children.push(p({ text: 'SPESIFIKATSIYA (1-ILOVA)', bold: true, align: 'center', after: 160 }))
 
       const specHdr = ['№', "Mahsulot/xizmat nomi", 'Birlik', 'Soni', 'Narx', 'QQS%', 'QQS summa', 'Jami']
