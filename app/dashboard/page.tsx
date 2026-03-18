@@ -3019,6 +3019,12 @@ export default function DashboardPage() {
                 className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition">
                 📄 Word
               </button>
+              {!isFree && (
+                <button onClick={()=>{ setModal(null); setAiContract(viewContract); setAiResult(null); setAiError(''); setAiTab('tahlil'); setAiModal(true) }}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-sm font-semibold transition">
+                  🤖 AI
+                </button>
+              )}
               <button onClick={()=>setModal(null)}
                 className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition text-xl leading-none">
                 ×
@@ -3475,7 +3481,7 @@ export default function DashboardPage() {
             {/* Tabs */}
             <div className="flex gap-1 px-6 py-3 border-b border-gray-800">
               {([['tahlil','📊 Tahlil + Xatarlar'],['grammatika','✏️ Grammatika']] as const).map(([key, label]) => (
-                <button key={key} onClick={()=>setAiTab(key)}
+                <button key={key} onClick={()=>{ setAiTab(key); setAiResult(null); setAiError(''); setAiLoading(false) }}
                   className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${aiTab===key ? 'bg-purple-700 text-white' : 'text-gray-400 hover:text-white'}`}>
                   {label}
                 </button>
@@ -3603,8 +3609,8 @@ export default function DashboardPage() {
                   <div className="bg-gray-800/60 rounded-xl p-4 flex items-center gap-3">
                     <span className="text-2xl">✏️</span>
                     <div>
-                      <div className="text-white font-semibold">{(aiResult as any).xatolar_soni ?? aiResult.grammatika_xatolari?.length ?? 0} ta xato topildi</div>
-                      <div className="text-gray-400 text-xs">{(aiResult as any).umumiy_baho}</div>
+                      <div className="text-white font-semibold">{(aiResult as any).xatolar_soni ?? (aiResult as any).xatolar?.length ?? 0} ta xato topildi</div>
+                      <div className="text-gray-400 text-xs">{(aiResult as any).umumiy_baho || ''}</div>
                     </div>
                   </div>
                   {((aiResult as any).xatolar as {xato:string;togri:string;izoh:string}[])?.map((x, i) => (

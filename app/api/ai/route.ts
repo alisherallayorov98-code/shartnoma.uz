@@ -70,20 +70,27 @@ export async function POST(req: NextRequest) {
 
     const lb = LABELS[L] || LABELS['uz']
 
+    const jsonOnly: Record<string, string> = {
+      uz: "Faqat JSON qaytaring, boshqa matn bo'lmasin.",
+      ru: "Верните только JSON, без другого текста.",
+      oz: "Фақат JSON қайтаринг, бошқа матн бўлмасин.",
+    }
+    const jsonInstr = jsonOnly[L] || jsonOnly['uz']
+
     let prompt = ''
 
     if (type === 'analysis') {
       prompt = `${lb.intro} ${lb.analysisTask}
 
-Faqat JSON qaytaring, boshqa matn yo'q:
-{"baho":"${lb.grade}","umumiy":"${lb.summary}","kuchli_tomonlar":["${lb.strong}"],"zaif_tomonlar":["${lb.weak}"],"yuridik_xatarlar":[{"daraja":"${lb.high}/${lb.mid}/${lb.low}","tavsif":"..."}],"tavsiyalar":["${lb.tips}"],"grammatika_xatolari":["${lb.grammar}"]}
+${jsonInstr}
+{"baho":"${lb.grade}","umumiy":"${lb.summary}","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"${lb.high}|${lb.mid}|${lb.low}","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}
 
 ${lb.doc}:
 ${shortContent}`
     } else {
       prompt = `${lb.grammarTask}
 
-Faqat JSON qaytaring:
+${jsonInstr}
 {"xatolar_soni":0,"xatolar":[{"xato":"...","togri":"...","izoh":"..."}],"umumiy_baho":"..."}
 
 ${lb.docGrammar}:
