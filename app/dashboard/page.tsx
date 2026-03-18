@@ -1061,6 +1061,235 @@ export default function DashboardPage() {
     doc.save(`shartnoma-${c.contract_number.replace(/\//g,'-')}.pdf`)
   }
 
+  async function generateDOCX(c: Contract) {
+    const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType,
+            AlignmentType, BorderStyle, Packer, convertInchesToTwip, Footer } = await import('docx')
+    const { saveAs } = await import('file-saver')
+
+    const orgData = orgs.find(o => o.id === c.organization_id)
+    const org = c.organizations || orgData
+    const cp  = c.counterparties
+
+    const MONTHS = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr']
+    const fmtDate = (d: string) => {
+      const [yy,mm,dd] = (d||'').split('-')
+      return `"${parseInt(dd)}" ${MONTHS[parseInt(mm)-1]} ${yy} y.`
+    }
+    const ctName = CONTRACT_TYPE_NAMES[c.contract_type as keyof typeof CONTRACT_TYPE_NAMES] || c.contract_type
+
+    // Font o'lchamlari (half-points: 24=12pt, 26=13pt, 28=14pt)
+    const SZ_TITLE = 28, SZ_BODY = 24, SZ_INTRO = 22, SZ_SMALL = 18
+    const FONT = 'Times New Roman'
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const children: any[] = []
+
+    const p = (opts: { text?: string; bold?: boolean; italic?: boolean; size?: number; align?: string; before?: number; after?: number; indent?: number; color?: string; border?: boolean }) =>
+      new Paragraph({
+        alignment: (opts.align || 'left') as any,
+        spacing: { before: opts.before ?? 0, after: opts.after ?? 80 },
+        indent: opts.indent ? { left: opts.indent } : undefined,
+        border: opts.border ? { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' } } : undefined,
+        children: opts.text !== undefined ? [new TextRun({ text: opts.text, bold: opts.bold, italics: opts.italic, font: FONT, size: opts.size ?? SZ_BODY, color: opts.color })] : [],
+      })
+
+    // ── 1. SARLAVHA ──
+    children.push(p({ text: ctName.toUpperCase(), bold: true, size: SZ_TITLE, align: 'center', after: 40 }))
+    children.push(p({ text: `No ${c.contract_number || '___'}`, bold: true, size: SZ_TITLE, align: 'center', after: 120 }))
+
+    // ── 2. SHAHAR + SANA ──
+    children.push(new Paragraph({
+      alignment: AlignmentType.LEFT,
+      spacing: { after: 120 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'AAAAAA' } },
+      children: [
+        new TextRun({ text: `${c.city || 'Toshkent'} shahri`, font: FONT, size: SZ_BODY }),
+        new TextRun({ text: '\t\t\t\t', font: FONT, size: SZ_BODY }),
+        new TextRun({ text: fmtDate(c.contract_date), font: FONT, size: SZ_BODY }),
+      ],
+    }))
+
+    // ── 3. KIRISH MATNI ──
+    const orgName = org?.name || '___'
+    const cpName  = cp?.name  || '___'
+    const orgDir  = org?.director_name || '___'
+    const cpDir   = cp?.director_name  || '___'
+    const introText = `"${orgName}", keyingi o'rinlarda "Sotuvchi" sifatida, Direktor ${orgDir} vakilligi asosida bir tomondan va "${cpName}", keyingi o'rinlarda "Xaridor" sifatida, Direktor ${cpDir} vakilligi asosida ikkinchi tomondan ushbu shartnomani tuzdilar:`
+    children.push(p({ text: introText, italic: true, size: SZ_INTRO, align: 'both', after: 200 }))
+
+    // ── 4. ASOSIY MATN ──
+    const content = c.content || ''
+    if (content) {
+      const allLines = content.split('\n')
+      const firstNumIdx = allLines.findIndex(l => /^1\.\s/.test(l.trim()))
+      const rekvIdx = allLines.findIndex(l => /TOMONLARNING REKVIZIT|^BUYURTMACHI:|^IJROCHI:/.test(l.trim()))
+      const start = firstNumIdx >= 0 ? firstNumIdx : 0
+      const end   = rekvIdx    >= 0 ? rekvIdx    : allLines.length
+      const bodyLines = allLines.slice(start, end)
+
+      for (const rawLine of bodyLines) {
+        const trimmed = rawLine.trim()
+        if (!trimmed) continue
+        const isSectionHead = /^[1-9]\d*\.\s+[A-Z'"]/.test(trimmed) && !/^\d+\.\d+/.test(trimmed)
+        const isSubItem = /^\d+\.\d+/.test(trimmed)
+        const isDash = trimmed.startsWith('-') || trimmed.startsWith('—')
+
+        if (isSectionHead) {
+          children.push(new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 80 },
+            children: [new TextRun({ text: trimmed, bold: true, font: FONT, size: SZ_BODY })],
+          }))
+        } else {
+          const indent = isSubItem ? convertInchesToTwip(0.25) : isDash ? convertInchesToTwip(0.35) : 0
+          children.push(new Paragraph({
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { after: 60 },
+            indent: { left: indent },
+            children: [new TextRun({ text: trimmed, font: FONT, size: SZ_BODY })],
+          }))
+        }
+      }
+    }
+
+    // ── 5. REKVIZITLAR JADVALI ──
+    children.push(p({ text: 'TOMONLARNING REKVIZITLARI VA IMZOLARI', bold: true, align: 'center', before: 300, after: 120 }))
+
+    const rekvRows = [
+      { label: 'Nomi:',   left: orgName,                 right: cpName,                 bold: true  },
+      { label: 'Manzil:', left: org?.address||'-',        right: cp?.address||'-',        bold: false },
+      { label: 'H/r:',    left: org?.bank_account||'-',   right: cp?.bank_account||'-',   bold: false },
+      { label: 'Bank:',   left: org?.bank_name||'-',      right: cp?.bank_name||'-',      bold: false },
+      { label: 'MFO:',    left: org?.mfo||'-',            right: cp?.mfo||'-',            bold: false },
+      { label: 'INN:',    left: org?.inn||'-',            right: cp?.inn||'-',            bold: false },
+      { label: 'Rahbar:', left: orgDir,                   right: cpDir,                   bold: true  },
+    ]
+
+    const border = { style: BorderStyle.SINGLE, size: 4, color: '999999' }
+    const cellBorders = { top: border, bottom: border, left: border, right: border }
+
+    const headerRow = new TableRow({
+      children: [
+        new TableCell({ borders: cellBorders, shading: { fill: 'E6E9F0' }, width: { size: 50, type: WidthType.PERCENTAGE },
+          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'SOTUVCHI', bold: true, font: FONT, size: SZ_BODY })] })] }),
+        new TableCell({ borders: cellBorders, shading: { fill: 'E6E9F0' }, width: { size: 50, type: WidthType.PERCENTAGE },
+          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'XARIDOR', bold: true, font: FONT, size: SZ_BODY })] })] }),
+      ]
+    })
+
+    const dataRows = rekvRows.map(row => new TableRow({
+      children: [
+        new TableCell({ borders: cellBorders, width: { size: 50, type: WidthType.PERCENTAGE },
+          children: [
+            new Paragraph({ children: [new TextRun({ text: row.label, italics: true, color: '888888', font: FONT, size: SZ_SMALL })] }),
+            new Paragraph({ children: [new TextRun({ text: String(row.left), bold: row.bold, font: FONT, size: SZ_BODY })] }),
+          ] }),
+        new TableCell({ borders: cellBorders, width: { size: 50, type: WidthType.PERCENTAGE },
+          children: [
+            new Paragraph({ children: [new TextRun({ text: row.label, italics: true, color: '888888', font: FONT, size: SZ_SMALL })] }),
+            new Paragraph({ children: [new TextRun({ text: String(row.right), bold: row.bold, font: FONT, size: SZ_BODY })] }),
+          ] }),
+      ]
+    }))
+
+    children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...dataRows] }))
+
+    // Imzo qismi
+    children.push(new Paragraph({ spacing: { before: 400, after: 0 },
+      children: [
+        new TextRun({ text: '________________________', font: FONT, size: SZ_BODY }),
+        new TextRun({ text: '                    ', font: FONT, size: SZ_BODY }),
+        new TextRun({ text: '________________________', font: FONT, size: SZ_BODY }),
+      ] }))
+    children.push(new Paragraph({ spacing: { after: 80 },
+      children: [
+        new TextRun({ text: `/ ${orgDir}`, font: FONT, size: SZ_SMALL }),
+        new TextRun({ text: '                              ', font: FONT, size: SZ_SMALL }),
+        new TextRun({ text: `/ ${cpDir}`, font: FONT, size: SZ_SMALL }),
+      ] }))
+    children.push(new Paragraph({ spacing: { after: 200 },
+      children: [
+        new TextRun({ text: 'M.O.', color: '888888', font: FONT, size: SZ_SMALL }),
+        new TextRun({ text: '                                          ', font: FONT, size: SZ_SMALL }),
+        new TextRun({ text: 'M.O.', color: '888888', font: FONT, size: SZ_SMALL }),
+      ] }))
+
+    // ── 6. SPESIFIKATSIYA — yangi sahifa ──
+    const specItems = c.spec_items || []
+    if (specItems.length > 0) {
+      children.push(new Paragraph({ children: [new TextRun({ break: 1 })], pageBreakBefore: true }))
+      children.push(p({ text: 'SPESIFIKATSIYA (1-ILOVA)', bold: true, align: 'center', after: 160 }))
+
+      const specHdr = ['№', "Mahsulot/xizmat nomi", 'Birlik', 'Soni', 'Narx', 'QQS%', 'QQS summa', 'Jami']
+      const specWidths = [5, 32, 9, 8, 12, 8, 13, 13]
+      const specBorder = { style: BorderStyle.SINGLE, size: 3, color: 'BBBBBB' }
+      const sB = { top: specBorder, bottom: specBorder, left: specBorder, right: specBorder }
+
+      const specHeaderRow = new TableRow({
+        children: specHdr.map((h, i) => new TableCell({
+          borders: sB, shading: { fill: 'EEF0F7' },
+          width: { size: specWidths[i], type: WidthType.PERCENTAGE },
+          children: [new Paragraph({ alignment: AlignmentType.CENTER,
+            children: [new TextRun({ text: h, bold: true, font: FONT, size: SZ_SMALL })] })]
+        }))
+      })
+
+      const specDataRows = specItems.map((item: SpecItem, idx: number) => {
+        const ql = item.qqs_foiz === 'siz' ? 'QQSsiz' : (item.qqs_foiz ? item.qqs_foiz + '%' : '—')
+        const row = [String(idx+1), item.nomi, item.birlik, String(item.miqdori),
+                     item.narxi.toLocaleString(), ql,
+                     item.qqs_summa > 0 ? item.qqs_summa.toLocaleString() : '—',
+                     item.summa.toLocaleString()]
+        return new TableRow({
+          children: row.map((cell, i) => new TableCell({
+            borders: sB,
+            width: { size: specWidths[i], type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ alignment: i === 1 ? AlignmentType.LEFT : AlignmentType.CENTER,
+              children: [new TextRun({ text: cell, font: FONT, size: SZ_SMALL })] })]
+          }))
+        })
+      })
+
+      children.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [specHeaderRow, ...specDataRows] }))
+
+      const asosiy = specItems.reduce((s: number, it: SpecItem) => s + it.miqdori * it.narxi, 0)
+      const qqsJ   = specItems.reduce((s: number, it: SpecItem) => s + (it.qqs_summa || 0), 0)
+      const grand  = asosiy + qqsJ
+      const anyQqs = specItems.some((it: SpecItem) => it.qqs_foiz && it.qqs_foiz !== 'siz')
+      if (anyQqs) {
+        children.push(p({ text: `Soliqsiz jami: ${asosiy.toLocaleString()} so'm`, align: 'right', after: 40 }))
+        children.push(p({ text: `QQS jami: ${qqsJ.toLocaleString()} so'm`, align: 'right', after: 40 }))
+        children.push(p({ text: `QQS bilan jami: ${grand.toLocaleString()} so'm`, bold: true, align: 'right', after: 40 }))
+      } else {
+        children.push(p({ text: `Jami: ${grand.toLocaleString()} so'm`, bold: true, align: 'right', after: 40 }))
+      }
+      children.push(p({ text: `So'z bilan: ${numberToWords(grand)}`, italic: true, after: 40 }))
+    }
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            margin: { top: convertInchesToTwip(0.9), bottom: convertInchesToTwip(0.9),
+                      left: convertInchesToTwip(1.18), right: convertInchesToTwip(0.79) },
+          },
+        },
+        footers: {
+          default: new Footer({
+            children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [new TextRun({ text: 'Shartnoma.uz — Online shartnoma generatori', color: 'AAAAAA', font: FONT, size: SZ_SMALL })],
+            })],
+          }),
+        },
+        children,
+      }],
+    })
+
+    const blob = await Packer.toBlob(doc)
+    saveAs(blob, `shartnoma-${(c.contract_number||'draft').replace(/\//g,'-')}.docx`)
+  }
+
   // ── Filters ──
   const filteredContracts = contracts.filter(c => {
     const s = search.toLowerCase()
@@ -1400,6 +1629,10 @@ export default function DashboardPage() {
                               <button onClick={()=>generatePDF(c)}
                                 className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-800 hover:bg-emerald-700 rounded-lg text-xs font-medium text-white transition" title="PDF">
                                 📥 <span>PDF</span>
+                              </button>
+                              <button onClick={()=>generateDOCX(c)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-800 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition" title="Word">
+                                📄 <span>Word</span>
                               </button>
                               {c.status !== 'completed' && c.status !== 'cancelled' && (
                                 <button onClick={()=>updateStatus(c.id,'completed')}
@@ -2412,6 +2645,10 @@ export default function DashboardPage() {
               <button onClick={()=>generatePDF(viewContract)}
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition">
                 📥 PDF
+              </button>
+              <button onClick={()=>generateDOCX(viewContract)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition">
+                📄 Word
               </button>
               <button onClick={()=>setModal(null)}
                 className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition text-xl leading-none">
