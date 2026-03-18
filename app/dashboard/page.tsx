@@ -717,10 +717,23 @@ export default function DashboardPage() {
       .replace(/[\u0400-\u04FF]/g, ch => CYRL[ch] || ch)
 
     const fmtDate = (d: string) => {
+      if (!d) return '___'
       const [yy,mm,dd] = d.split('-')
+      if (!yy || !mm || !dd) return d
       return `"${parseInt(dd)}" ${MONTHS[parseInt(mm)-1]} ${yy} y.`
     }
     const ctName = safe(CONTRACT_TYPE_NAMES[c.contract_type as keyof typeof CONTRACT_TYPE_NAMES] || c.contract_type)
+
+    // Shartnoma turiga qarab rol nomlari
+    const ROLES: Record<string, [string, string]> = {
+      oldi_sotdi: ["Sotuvchi", "Xaridor"],
+      xizmat:     ["Ijrochi",  "Buyurtmachi"],
+      ijara:      ["Ijara beruvchi", "Ijara oluvchi"],
+      pudrat:     ["Pudratchi", "Buyurtmachi"],
+      qarz:       ["Qarz beruvchi", "Qarz oluvchi"],
+      xalqaro:    ["Sotuvchi", "Xaridor"],
+    }
+    const [rol1, rol2] = ROLES[c.contract_type] || ["Birinchi tomon", "Ikkinchi tomon"]
 
     const addPageNums = () => {
       const n = doc.getNumberOfPages()
@@ -736,39 +749,51 @@ export default function DashboardPage() {
     const drawSpecTable = (startY: number): number => {
       const items = c.spec_items || []
       if (!items.length) return startY
+      const SF = 'times'
       let y = startY + 6
-      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0)
-      doc.text('SPESIFIKATSIYA (1-ILOVA)', pageW/2, y, {align:'center'}); y += 7
-      const cols = [7,58,16,14,22,14,22,17]
-      const hdrs = ['№','Mahsulot/xizmat nomi','Birlik','Soni','Narx','QQS%','QQS summa','Jami']
+      doc.setFont(SF,'bold'); doc.setFontSize(12); doc.setTextColor(0,0,0)
+      doc.text('SPESIFIKATSIYA (1-ILOVA)', pageW/2, y, {align:'center'}); y += 8
+      // Ustun kengliklari — Jami kengaytirildi, narx qisqartirildi
+      const cols = [7, 54, 15, 13, 22, 12, 22, 25]
+      const hdrs = ['№', 'Mahsulot/xizmat nomi', 'Birlik', 'Soni', 'Narx', 'QQS%', 'QQS summa', 'Jami']
       const anyQqs = items.some((it: SpecItem) => it.qqs_foiz && it.qqs_foiz !== 'siz')
-      doc.setFillColor(235,238,245); doc.rect(mL,y-4,cW,7,'F')
-      doc.setDrawColor(180,180,180); doc.rect(mL,y-4,cW,7,'S')
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(50,50,50)
+      doc.setFillColor(230,233,240); doc.rect(mL,y-4,cW,7,'F')
+      doc.setDrawColor(160,160,160); doc.rect(mL,y-4,cW,7,'S')
+      doc.setFont(SF,'bold'); doc.setFontSize(8); doc.setTextColor(30,30,30)
       let cx = mL+1; hdrs.forEach((h,i)=>{ doc.text(h,cx,y); cx+=cols[i] }); y+=5
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(20,20,20)
+      doc.setFont(SF,'normal'); doc.setFontSize(9); doc.setTextColor(0,0,0)
       items.forEach((item: SpecItem, idx: number) => {
-        if (y > pageH-30) { doc.addPage(); y = mT+10 }
-        doc.setDrawColor(215,215,215); doc.line(mL,y+2,mL+cW,y+2); cx=mL+1
+        if (y > pageH-mB-10) { doc.addPage(); y = mT+10 }
+        doc.setDrawColor(200,200,200); doc.line(mL,y+2,mL+cW,y+2); cx=mL+1
         const ql = item.qqs_foiz==='siz'?'QQSsiz':(item.qqs_foiz?item.qqs_foiz+'%':'—')
-        const row=[String(idx+1),item.nomi,item.birlik,String(item.miqdori),item.narxi.toLocaleString(),ql,item.qqs_summa>0?item.qqs_summa.toLocaleString():'—',item.summa.toLocaleString()]
-        row.forEach((cell,i)=>{ doc.text(doc.splitTextToSize(cell,cols[i]-1)[0] as string,cx,y); cx+=cols[i] }); y+=5
+        const row=[String(idx+1),item.nomi,item.birlik,String(item.miqdori),
+                   item.narxi.toLocaleString(),ql,
+                   item.qqs_summa>0?item.qqs_summa.toLocaleString():'—',
+                   item.summa.toLocaleString()]
+        row.forEach((cell,i)=>{ doc.text(doc.splitTextToSize(safe(cell),cols[i]-1)[0] as string,cx,y); cx+=cols[i] }); y+=6
       })
-      const asosiy=items.reduce((s:number,it:SpecItem)=>s+it.miqdori*it.narxi,0)
-      const qqsJ=items.reduce((s:number,it:SpecItem)=>s+(it.qqs_summa||0),0)
-      const grand=asosiy+qqsJ
-      doc.setFont('helvetica','bold'); doc.setFillColor(245,245,245)
+      const asosiy = items.reduce((s:number,it:SpecItem)=>s+it.miqdori*it.narxi,0)
+      const qqsJ   = items.reduce((s:number,it:SpecItem)=>s+(it.qqs_summa||0),0)
+      const grand  = asosiy+qqsJ
+      doc.setFont(SF,'bold'); doc.setFillColor(245,246,250)
       if (anyQqs) {
-        doc.rect(mL,y-3,cW,18,'F')
-        doc.setTextColor(80,80,80)
-        doc.text(`Soliqsiz jami: ${asosiy.toLocaleString()} so'm`,mL+cW-2,y+1,{align:'right'})
-        doc.text(`QQS jami: ${qqsJ.toLocaleString()} so'm`,mL+cW-2,y+6,{align:'right'})
-        doc.setTextColor(0,0,0); doc.text(`QQS bilan jami: ${grand.toLocaleString()} so'm`,mL+cW-2,y+12,{align:'right'}); y+=18
+        doc.rect(mL,y-2,cW,20,'F')
+        doc.setFont(SF,'normal'); doc.setFontSize(10); doc.setTextColor(60,60,60)
+        doc.text(`Soliqsiz jami: ${asosiy.toLocaleString()} so'm`,mL+cW-2,y+2,{align:'right'})
+        doc.text(`QQS jami: ${qqsJ.toLocaleString()} so'm`,mL+cW-2,y+7,{align:'right'})
+        doc.setFont(SF,'bold'); doc.setTextColor(0,0,0)
+        doc.text(`QQS bilan jami: ${grand.toLocaleString()} so'm`,mL+cW-2,y+13,{align:'right'}); y+=20
       } else {
-        doc.rect(mL,y-3,cW,6,'F'); doc.setTextColor(0,0,0)
-        doc.text(`Jami: ${grand.toLocaleString()} so'm`,mL+cW-2,y+1,{align:'right'}); y+=8
+        doc.rect(mL,y-2,cW,8,'F')
+        doc.setFont(SF,'bold'); doc.setFontSize(10); doc.setTextColor(0,0,0)
+        doc.text(`Jami: ${grand.toLocaleString()} so'm`,mL+cW-2,y+3,{align:'right'}); y+=10
       }
-      return y
+      // So'z bilan
+      doc.setFont(SF,'italic'); doc.setFontSize(10); doc.setTextColor(50,50,50)
+      const grandWords = safe(numberToWords(grand))
+      const gwLines = doc.splitTextToSize(`So'z bilan: ${grandWords}`, cW) as string[]
+      gwLines.forEach((l:string) => { doc.text(l, mL, y); y += 5 })
+      return y + 3
     }
 
     // ══════════════════════════════════════════════════════
@@ -877,8 +902,8 @@ export default function DashboardPage() {
 
       // ── Spesifikatsiya ──
       if ((c.spec_items||[]).length > 0) {
-        if (y > pageH - 60) { doc.addPage(); y = mT; drawDivider() }
-        y = drawSpecTable(y + 5)
+        doc.addPage(); y = mT; drawDivider()
+        y = drawSpecTable(y)
       }
 
       // ── Rekvizitlar ──
@@ -954,7 +979,7 @@ export default function DashboardPage() {
     const cpName  = safe(cp?.name  || '___')
     const orgDir  = safe(org?.director_name || '___')
     const cpDir   = safe(cp?.director_name  || '___')
-    const intro = safe(`"${orgName}", keyingi o'rinlarda "Sotuvchi" sifatida, Direktor ${orgDir} vakilligi asosida bir tomondan va "${cpName}", keyingi o'rinlarda "Xaridor" sifatida, Direktor ${cpDir} vakilligi asosida ikkinchi tomondan ushbu shartnomani tuzdilar:`)
+    const intro = safe(`"${orgName}", keyingi o'rinlarda "${rol1}" sifatida, Direktor ${orgDir} vakilligi asosida bir tomondan va "${cpName}", keyingi o'rinlarda "${rol2}" sifatida, Direktor ${cpDir} vakilligi asosida ikkinchi tomondan ushbu shartnomani tuzdilar:`)
     doc.setFont(F,'italic'); doc.setFontSize(11); doc.setTextColor(30,30,30)
     const introLines = doc.splitTextToSize(intro, cW) as string[]
     for (const line of introLines) {
@@ -1021,8 +1046,8 @@ export default function DashboardPage() {
     doc.rect(mL, y, colW, 8, 'FD'); doc.rect(mL+colW, y, colW, 8, 'FD')
     doc.line(mL+colW, y, mL+colW, y+8)
     doc.setFont(F,'bold'); doc.setFontSize(11); doc.setTextColor(0,0,0)
-    doc.text('SOTUVCHI', mL+colW/2, y+5.5, {align:'center'})
-    doc.text('XARIDOR',  mL+colW*1.5, y+5.5, {align:'center'})
+    doc.text(rol1.toUpperCase(), mL+colW/2, y+5.5, {align:'center'})
+    doc.text(rol2.toUpperCase(), mL+colW*1.5, y+5.5, {align:'center'})
     y += 8
     for (const row of rekvizitlar) {
       const cellH = 9
@@ -1109,12 +1134,23 @@ export default function DashboardPage() {
       ],
     }))
 
+    // Shartnoma turiga qarab rol nomlari
+    const DOCX_ROLES: Record<string, [string, string]> = {
+      oldi_sotdi: ["Sotuvchi", "Xaridor"],
+      xizmat:     ["Ijrochi",  "Buyurtmachi"],
+      ijara:      ["Ijara beruvchi", "Ijara oluvchi"],
+      pudrat:     ["Pudratchi", "Buyurtmachi"],
+      qarz:       ["Qarz beruvchi", "Qarz oluvchi"],
+      xalqaro:    ["Sotuvchi", "Xaridor"],
+    }
+    const [dRol1, dRol2] = DOCX_ROLES[c.contract_type] || ["Birinchi tomon", "Ikkinchi tomon"]
+
     // ── 3. KIRISH MATNI ──
     const orgName = org?.name || '___'
     const cpName  = cp?.name  || '___'
     const orgDir  = org?.director_name || '___'
     const cpDir   = cp?.director_name  || '___'
-    const introText = `"${orgName}", keyingi o'rinlarda "Sotuvchi" sifatida, Direktor ${orgDir} vakilligi asosida bir tomondan va "${cpName}", keyingi o'rinlarda "Xaridor" sifatida, Direktor ${cpDir} vakilligi asosida ikkinchi tomondan ushbu shartnomani tuzdilar:`
+    const introText = `"${orgName}", keyingi o'rinlarda "${dRol1}" sifatida, Direktor ${orgDir} vakilligi asosida bir tomondan va "${cpName}", keyingi o'rinlarda "${dRol2}" sifatida, Direktor ${cpDir} vakilligi asosida ikkinchi tomondan ushbu shartnomani tuzdilar:`
     children.push(p({ text: introText, italic: true, size: SZ_INTRO, align: 'both', after: 200 }))
 
     // ── 4. ASOSIY MATN ──
@@ -1171,9 +1207,9 @@ export default function DashboardPage() {
     const headerRow = new TableRow({
       children: [
         new TableCell({ borders: cellBorders, shading: { fill: 'E6E9F0' }, width: { size: 50, type: WidthType.PERCENTAGE },
-          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'SOTUVCHI', bold: true, font: FONT, size: SZ_BODY })] })] }),
+          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: dRol1.toUpperCase(), bold: true, font: FONT, size: SZ_BODY })] })] }),
         new TableCell({ borders: cellBorders, shading: { fill: 'E6E9F0' }, width: { size: 50, type: WidthType.PERCENTAGE },
-          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'XARIDOR', bold: true, font: FONT, size: SZ_BODY })] })] }),
+          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: dRol2.toUpperCase(), bold: true, font: FONT, size: SZ_BODY })] })] }),
       ]
     })
 
