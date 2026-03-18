@@ -1543,10 +1543,10 @@ export default function DashboardPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label:'Jami shartnoma', value:contracts.length, icon:'📄', from:'from-blue-600', to:'to-blue-900' },
-                  { label:'Faol shartnoma', value:contracts.filter(c=>c.status==='active').length, icon:'✅', from:'from-emerald-600', to:'to-emerald-900' },
-                  { label:'Tashkilotlar', value:orgs.length, icon:'🏢', from:'from-purple-600', to:'to-purple-900' },
-                  { label:'Kontragentlar', value:cps.length, icon:'🤝', from:'from-orange-600', to:'to-orange-900' },
+                  { label:T(t.overviewTab.totalContracts), value:contracts.length, icon:'📄', from:'from-blue-600', to:'to-blue-900' },
+                  { label:T(t.overview.activeContracts), value:contracts.filter(c=>c.status==='active').length, icon:'✅', from:'from-emerald-600', to:'to-emerald-900' },
+                  { label:T(t.orgs.title), value:orgs.length, icon:'🏢', from:'from-purple-600', to:'to-purple-900' },
+                  { label:T(t.cp.title), value:cps.length, icon:'🤝', from:'from-orange-600', to:'to-orange-900' },
                 ].map((s,i) => (
                   <div key={i} className={`bg-gradient-to-br ${s.from} ${s.to} rounded-xl p-5 shadow-lg`}>
                     <div className="text-2xl mb-3">{s.icon}</div>
@@ -1558,19 +1558,19 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                  <div className="text-sm text-gray-400 mb-2">Faol shartnomalar summasi</div>
-                  <div className="text-3xl font-bold text-emerald-400">{totalActive.toLocaleString()} <span className="text-xl text-gray-500 font-normal">so'm</span></div>
+                  <div className="text-sm text-gray-400 mb-2">{T(t.overviewTab.activeSum)}</div>
+                  <div className="text-3xl font-bold text-emerald-400">{totalActive.toLocaleString()} <span className="text-xl text-gray-500 font-normal">{T(t.overviewTab.som)}</span></div>
                 </div>
                 {quota && quota.limit && (
                   <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                    <div className="text-sm text-gray-400 mb-2">Oylik kvota — {quota.plan} tarif</div>
+                    <div className="text-sm text-gray-400 mb-2">{T(t.overviewTab.quota)} — {quota.plan} {T(t.overviewTab.plan)}</div>
                     <div className="text-3xl font-bold">{quota.used} <span className="text-xl text-gray-500 font-normal">/ {quota.limit}</span></div>
                     <div className="mt-3 h-2 bg-gray-700 rounded-full overflow-hidden">
                       <div className={`h-full rounded-full ${quota.percent!>=100?'bg-red-500':quota.percent!>=80?'bg-yellow-500':'bg-blue-500'}`}
                         style={{width:`${quota.percent}%`}}/>
                     </div>
                     {quota.percent!>=80 && (
-                      <button onClick={()=>setModal('upgrade')} className="text-xs text-yellow-400 mt-2 hover:underline">⚡ Tarifni yaxshilash</button>
+                      <button onClick={()=>setModal('upgrade')} className="text-xs text-yellow-400 mt-2 hover:underline">{T(t.overviewTab.upgrade)}</button>
                     )}
                   </div>
                 )}
@@ -1578,11 +1578,11 @@ export default function DashboardPage() {
 
               <div className="bg-gray-900 border border-gray-800 rounded-xl">
                 <div className="flex justify-between items-center p-5 border-b border-gray-800">
-                  <h2 className="font-semibold">So'nggi shartnomalar</h2>
-                  <button onClick={()=>setTab('contracts')} className="text-blue-400 text-sm hover:text-blue-300">Hammasini ko'rish →</button>
+                  <h2 className="font-semibold">{T(t.overviewTab.recent)}</h2>
+                  <button onClick={()=>setTab('contracts')} className="text-blue-400 text-sm hover:text-blue-300">{T(t.overviewTab.viewAll)}</button>
                 </div>
                 {contracts.length===0 ? (
-                  <div className="p-10 text-center text-gray-500 text-sm">Hali shartnoma yo'q</div>
+                  <div className="p-10 text-center text-gray-500 text-sm">{T(t.overviewTab.noContracts)}</div>
                 ) : (
                   <div className="divide-y divide-gray-800">
                     {contracts.slice(0,6).map(c => (
@@ -1595,7 +1595,7 @@ export default function DashboardPage() {
                           <div className="text-xs text-gray-400 truncate">{c.organizations?.name} → {c.counterparties?.name}</div>
                         </div>
                         <div className="text-right flex-shrink-0 space-y-0.5">
-                          <div className="text-sm font-medium">{c.amount?.toLocaleString()} so'm</div>
+                          <div className="text-sm font-medium">{c.amount?.toLocaleString()} {T(t.overviewTab.som)}</div>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${STATUSES[c.status as keyof typeof STATUSES]?.bg} ${STATUSES[c.status as keyof typeof STATUSES]?.text}`}>
                             {T(t.status[c.status as keyof typeof t.status] || t.status.draft)}
                           </span>
@@ -1608,9 +1608,9 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label:'Shartnoma yaratish', icon:'📄', action:()=>{ if(!canCreateContract()){setModal('upgrade');return}; setTab('contracts'); setContractForm({...emptyContract, organization_id: activeOrg?.id||''}); setModal('contract') } },
-                  { label:"Tashkilot qo'shish", icon:'🏢', action:()=>{ setTab('organizations'); setModal('org') } },
-                  { label:"Kontragent qo'shish", icon:'🤝', action:()=>{ setTab('counterparties'); setModal('cp') } },
+                  { label:T(t.overviewTab.createContract), icon:'📄', action:()=>{ if(!canCreateContract()){setModal('upgrade');return}; setTab('contracts'); setContractForm({...emptyContract, organization_id: activeOrg?.id||''}); setModal('contract') } },
+                  { label:T(t.overviewTab.addOrg), icon:'🏢', action:()=>{ setTab('organizations'); setModal('org') } },
+                  { label:T(t.overviewTab.addCp), icon:'🤝', action:()=>{ setTab('counterparties'); setModal('cp') } },
                 ].map((a,i) => (
                   <button key={i} onClick={a.action}
                     className="bg-gray-900 border border-gray-800 hover:border-blue-600 hover:bg-gray-800 rounded-xl p-5 text-center transition group">
@@ -1669,7 +1669,7 @@ export default function DashboardPage() {
                           <td className="px-4 py-3.5 text-xs text-gray-400 max-w-[120px] truncate">{CONTRACT_TYPES_I18N[c.contract_type]?.[lang]||c.contract_type}</td>
                           <td className="px-4 py-3.5 text-sm text-white max-w-[120px] truncate">{c.organizations?.name||'—'}</td>
                           <td className="px-4 py-3.5 text-sm text-white max-w-[120px] truncate">{c.counterparties?.name||'—'}</td>
-                          <td className="px-4 py-3.5 text-sm font-medium whitespace-nowrap">{c.amount?.toLocaleString()} so'm</td>
+                          <td className="px-4 py-3.5 text-sm font-medium whitespace-nowrap">{c.amount?.toLocaleString()} {T(t.overviewTab.som)}</td>
                           <td className="px-4 py-3.5">
                             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUSES[c.status as keyof typeof STATUSES]?.bg} ${STATUSES[c.status as keyof typeof STATUSES]?.text}`}>
                               {T(t.status[c.status as keyof typeof t.status] || t.status.draft)}
@@ -1726,7 +1726,7 @@ export default function DashboardPage() {
               {orgs.length===0 ? (
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-16 text-center">
                   <div className="text-5xl mb-4">🏢</div>
-                  <p className="text-gray-400 font-medium">Tashkilot qo'shilmagan</p>
+                  <p className="text-gray-400 font-medium">{T(t.orgs.empty)}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -1740,30 +1740,30 @@ export default function DashboardPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-white">{org.name}</h3>
-                            {activeOrg?.id===org.id && <span className="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded-full">Faol</span>}
+                            {activeOrg?.id===org.id && <span className="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded-full">{T(t.orgTab.active)}</span>}
                           </div>
                           <p className="text-xs text-gray-500 mt-0.5">INN: {org.inn||'—'}</p>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs mb-4">
-                        {[['Rahbar',org.director_name],['Bank',org.bank_name],['Hisob raqam',org.bank_account],['MFO',org.mfo]].map(([l,v])=>(
+                        {[[T(t.orgs.director),org.director_name],[T(t.orgs.bank),org.bank_name],[T(t.orgs.account),org.bank_account],[T(t.orgs.mfo),org.mfo]].map(([l,v])=>(
                           <div key={l}><span className="text-gray-500">{l}: </span><span className="text-gray-300">{v||'—'}</span></div>
                         ))}
-                        <div className="col-span-2"><span className="text-gray-500">Manzil: </span><span className="text-gray-300">{org.address||'—'}</span></div>
+                        <div className="col-span-2"><span className="text-gray-500">{T(t.orgs.address)}: </span><span className="text-gray-300">{org.address||'—'}</span></div>
                       </div>
 
                       {/* Bank accounts section */}
                       {activeOrg?.id===org.id && (
                         <div className="border-t border-gray-800 pt-4 mt-2">
                           <div className="flex justify-between items-center mb-3">
-                            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Bank hisob raqamlari</span>
+                            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{T(t.orgTab.bankAccounts)}</span>
                             <button onClick={e=>{e.stopPropagation();setModal('bankAccount')}}
                               className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
-                              + Qo'shish
+                              {T(t.orgTab.addAccount)}
                             </button>
                           </div>
                           {bankAccounts.length===0 ? (
-                            <p className="text-xs text-gray-600">Hisob raqam qo'shilmagan</p>
+                            <p className="text-xs text-gray-600">{T(t.orgTab.noAccount)}</p>
                           ) : (
                             <div className="space-y-2">
                               {bankAccounts.map(ba => (
@@ -1771,7 +1771,7 @@ export default function DashboardPage() {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                       <span className="text-sm text-white font-mono">{ba.account_number}</span>
-                                      {ba.is_default && <span className="text-xs bg-emerald-900 text-emerald-300 px-1.5 py-0.5 rounded">Asosiy</span>}
+                                      {ba.is_default && <span className="text-xs bg-emerald-900 text-emerald-300 px-1.5 py-0.5 rounded">{T(t.orgTab.primary)}</span>}
                                     </div>
                                     <div className="text-xs text-gray-400 mt-0.5">{ba.bank_name} | MFO: {ba.mfo||'—'}</div>
                                   </div>
@@ -1784,39 +1784,39 @@ export default function DashboardPage() {
 
                           {/* Stamp & Signature */}
                           <div className="border-t border-gray-800 pt-4 mt-4">
-                            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Imzo va Muhr</span>
+                            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{T(t.orgTab.stampSign)}</span>
                             <div className="grid grid-cols-2 gap-3 mt-3">
                               <div>
-                                <div className="text-xs text-gray-500 mb-2">Imzo rasmi</div>
+                                <div className="text-xs text-gray-500 mb-2">{T(t.orgTab.signImg)}</div>
                                 {org.signature_url ? (
                                   <div className="relative group">
                                     <img src={org.signature_url} alt="Imzo" className="h-16 object-contain bg-white rounded-lg p-1"/>
                                     <button onClick={()=>signatureRef.current?.click()} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-lg text-xs text-white transition flex items-center justify-center">
-                                      O'zgartirish
+                                      {T(t.orgTab.change)}
                                     </button>
                                   </div>
                                 ) : (
                                   <button onClick={()=>signatureRef.current?.click()}
                                     className="w-full h-16 border-2 border-dashed border-gray-700 rounded-lg text-xs text-gray-500 hover:border-blue-600 hover:text-blue-400 transition flex items-center justify-center gap-2">
-                                    📤 Yuklash
+                                    {T(t.orgTab.upload)}
                                   </button>
                                 )}
                                 <input ref={signatureRef} type="file" accept="image/*" className="hidden"
                                   onChange={e=>{if(e.target.files?.[0]) uploadImage(e.target.files[0],'signature_url')}}/>
                               </div>
                               <div>
-                                <div className="text-xs text-gray-500 mb-2">Muhr rasmi</div>
+                                <div className="text-xs text-gray-500 mb-2">{T(t.orgTab.stampImg)}</div>
                                 {org.stamp_url ? (
                                   <div className="relative group">
                                     <img src={org.stamp_url} alt="Muhr" className="h-16 object-contain bg-white rounded-lg p-1"/>
                                     <button onClick={()=>stampRef.current?.click()} className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-lg text-xs text-white transition flex items-center justify-center">
-                                      O'zgartirish
+                                      {T(t.orgTab.change)}
                                     </button>
                                   </div>
                                 ) : (
                                   <button onClick={()=>stampRef.current?.click()}
                                     className="w-full h-16 border-2 border-dashed border-gray-700 rounded-lg text-xs text-gray-500 hover:border-blue-600 hover:text-blue-400 transition flex items-center justify-center gap-2">
-                                    📤 Yuklash
+                                    {T(t.orgTab.upload)}
                                   </button>
                                 )}
                                 <input ref={stampRef} type="file" accept="image/*" className="hidden"
@@ -1838,34 +1838,34 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {/* Header */}
               <div className="flex items-center gap-3">
-                <div className="text-sm text-gray-400">{specs.length} ta spesifikatsiya</div>
+                <div className="text-sm text-gray-400">{specs.length} {T(t.specTab.count)}</div>
                 <button onClick={() => {
                   setEditingSpec(null)
                   setSpecForm(emptySpecForm)
                   setSpecModal(true)
                 }} className="ml-auto flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                  + Yangi spesifikatsiya
+                  {T(t.specTab.newBtn)}
                 </button>
               </div>
 
               {specs.length === 0 ? (
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-16 text-center">
                   <div className="text-5xl mb-4">📋</div>
-                  <p className="text-gray-400 font-medium">Spesifikatsiya yo'q</p>
-                  <p className="text-gray-600 text-sm mt-1">Yangi spesifikatsiya yarating</p>
+                  <p className="text-gray-400 font-medium">{T(t.specTab.empty)}</p>
+                  <p className="text-gray-600 text-sm mt-1">{T(t.specTab.createNew)}</p>
                 </div>
               ) : (
                 <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-800 bg-gray-800/40">
-                        <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">Spec raqami</th>
-                        <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">Shartnoma</th>
-                        <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">Kontragent</th>
-                        <th className="text-center px-4 py-2.5 text-xs text-gray-400 font-medium">Pozitsiyalar</th>
-                        <th className="text-right px-4 py-2.5 text-xs text-gray-400 font-medium">Jami summa</th>
-                        <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">Sana</th>
-                        <th className="px-4 py-2.5 text-xs text-gray-400 font-medium text-right">Amallar</th>
+                        <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">{T(t.specTab.colNum)}</th>
+                        <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">{T(t.specTab.colContract)}</th>
+                        <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">{T(t.specTab.colCp)}</th>
+                        <th className="text-center px-4 py-2.5 text-xs text-gray-400 font-medium">{T(t.specTab.colItems)}</th>
+                        <th className="text-right px-4 py-2.5 text-xs text-gray-400 font-medium">{T(t.specTab.colTotal)}</th>
+                        <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">{T(t.specTab.colDate)}</th>
+                        <th className="px-4 py-2.5 text-xs text-gray-400 font-medium text-right">{T(t.specTab.colActions)}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1887,10 +1887,10 @@ export default function DashboardPage() {
                               {contract?.counterparties?.name || <span className="text-gray-600">—</span>}
                             </td>
                             <td className="px-4 py-2.5 text-center">
-                              <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">{spec.items.length} ta</span>
+                              <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">{spec.items.length} {T(t.specTab.items)}</span>
                             </td>
                             <td className="px-4 py-2.5 text-right text-white font-semibold text-sm">
-                              {total.toLocaleString()} <span className="text-xs text-gray-500">so'm</span>
+                              {total.toLocaleString()} <span className="text-xs text-gray-500">{T(t.overviewTab.som)}</span>
                             </td>
                             <td className="px-4 py-2.5 text-xs text-gray-500">
                               {new Date(spec.created_at).toLocaleDateString('uz-UZ')}
@@ -1906,11 +1906,11 @@ export default function DashboardPage() {
                                   setSpecForm({ contract_id: spec.contract_id||'', spec_number: spec.spec_number, items: spec.items, notes: spec.notes||'' })
                                   setSpecModal(true)
                                 }} className="text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-900/20 transition">
-                                  Tahrirlash
+                                  {T(t.specTab.edit)}
                                 </button>
                                 <button onClick={() => deleteSpec(spec.id)}
                                   className="text-xs text-red-500 hover:text-red-400 px-2 py-1 rounded hover:bg-red-900/20 transition">
-                                  O'chirish
+                                  {T(t.btn.delete)}
                                 </button>
                               </div>
                             </td>
@@ -1957,27 +1957,27 @@ export default function DashboardPage() {
               <div className="space-y-5">
                 {/* Header row */}
                 <div className="flex items-center gap-3">
-                  <div className="text-sm text-gray-400">{allTemplates.length} ta shablon</div>
+                  <div className="text-sm text-gray-400">{allTemplates.length} {T(t.tplTab.count)}</div>
                   <button
                     onClick={() => { setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl); setCustomTemplateModal(true) }}
                     className="ml-auto flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                    + Shablon qo'shish
+                    {T(t.tplTab.addBtn)}
                   </button>
                 </div>
 
                 {/* Type filter tabs */}
                 <div className="flex flex-wrap gap-2">
-                  {TYPE_TABS.map(t => (
-                    <button key={t.key}
-                      onClick={() => setTemplateFilter(t.key)}
+                  {TYPE_TABS.map(tab => (
+                    <button key={tab.key}
+                      onClick={() => setTemplateFilter(tab.key)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                        templateFilter === t.key
+                        templateFilter === tab.key
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
                       }`}>
-                      {t.label}
+                      {tab.label}
                       <span className="ml-1.5 text-xs opacity-70">
-                        {t.key === 'barchasi' ? allTemplates.length : allTemplates.filter(x=>x.type===t.key).length}
+                        {tab.key === 'barchasi' ? allTemplates.length : allTemplates.filter(x=>x.type===tab.key).length}
                       </span>
                     </button>
                   ))}
@@ -1995,7 +1995,7 @@ export default function DashboardPage() {
                               {CONTRACT_TYPES_I18N[tpl.type]?.[lang] || tpl.type}
                             </span>
                             {!tpl.isDefault && (
-                              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-900/70 text-blue-300">Mening shablonlarim</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-900/70 text-blue-300">{T(t.tplTab.myTpls)}</span>
                             )}
                           </div>
                           <h3 className="font-semibold text-white text-sm leading-tight">{tpl.name}</h3>
@@ -2012,19 +2012,19 @@ export default function DashboardPage() {
                       <div className="flex gap-2 pt-1 border-t border-gray-800 flex-wrap">
                         <button onClick={() => setTemplatePreview(tpl)}
                           className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
-                          Ko'rish
+                          {T(t.tplTab.view)}
                         </button>
                         <button onClick={() => {
                           setEditingCustomTemplate(tpl.isDefault ? null : tpl)
                           setCustomTplForm({ type: tpl.type, name: tpl.name, description: tpl.description, content: tpl.content })
                           setCustomTemplateModal(true)
                         }} className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
-                          Tahrirlash
+                          {T(t.btn.edit)}
                         </button>
                         {!tpl.isDefault && (
                           <button onClick={() => deleteCustomTemplate(tpl.id)}
                             className="text-xs text-red-500 hover:text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-900/20 transition font-medium">
-                            O'chirish
+                            {T(t.btn.delete)}
                           </button>
                         )}
                         <button onClick={() => {
@@ -2032,7 +2032,7 @@ export default function DashboardPage() {
                           setModal('contract')
                           setTab('contracts')
                         }} className="ml-auto text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg transition font-medium">
-                          Shartnoma yaratish
+                          {T(t.tplTab.createFrom)}
                         </button>
                       </div>
                     </div>
@@ -2062,15 +2062,15 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
                 <input value={cpSearch} onChange={e=>setCpSearch(e.target.value)}
-                  placeholder="Tashkilot nomi yoki STR (INN) bo'yicha qidirish..."
+                  placeholder={T(t.cpTab.searchPlaceholder)}
                   className="w-full bg-gray-900 border border-gray-800 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"/>
               </div>
 
               {filteredCps.length===0 ? (
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-16 text-center">
                   <div className="text-5xl mb-4">🤝</div>
-                  <p className="text-gray-400 font-medium">{cpSearch ? 'Kontragent topilmadi' : "Kontragent qo'shilmagan"}</p>
-                  {!cpSearch && <button onClick={()=>setModal('cp')} className="mt-3 text-blue-400 text-sm hover:text-blue-300">+ Qo'shish</button>}
+                  <p className="text-gray-400 font-medium">{cpSearch ? T(t.cpTab.noFound) : T(t.cpTab.noAdded)}</p>
+                  {!cpSearch && <button onClick={()=>setModal('cp')} className="mt-3 text-blue-400 text-sm hover:text-blue-300">{T(t.cpTab.addBtn)}</button>}
                 </div>
               ) : (
                 <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
@@ -2078,12 +2078,12 @@ export default function DashboardPage() {
                     <thead>
                       <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
                         <th className="px-4 py-3 text-left w-8">№</th>
-                        <th className="px-4 py-3 text-left">Tashkilot nomi</th>
-                        <th className="px-4 py-3 text-left">STR / INN</th>
-                        <th className="px-4 py-3 text-left">Rahbar</th>
-                        <th className="px-4 py-3 text-left">Bank</th>
-                        <th className="px-4 py-3 text-left">MFO</th>
-                        <th className="px-4 py-3 text-center">Shartnomalar</th>
+                        <th className="px-4 py-3 text-left">{T(t.cpTab.colName)}</th>
+                        <th className="px-4 py-3 text-left">{T(t.cpTab.colInn)}</th>
+                        <th className="px-4 py-3 text-left">{T(t.cpTab.colDirector)}</th>
+                        <th className="px-4 py-3 text-left">{T(t.cpTab.colBank)}</th>
+                        <th className="px-4 py-3 text-left">{T(t.cpTab.colMfo)}</th>
+                        <th className="px-4 py-3 text-center">{T(t.cpTab.colContracts)}</th>
                         <th className="px-4 py-3 w-20"></th>
                       </tr>
                     </thead>
@@ -2127,7 +2127,7 @@ export default function DashboardPage() {
                     </tbody>
                   </table>
                   <div className="px-4 py-3 border-t border-gray-800 text-xs text-gray-600">
-                    Jami: {filteredCps.length} ta kontragent
+                    {T(t.cpTab.total)}: {filteredCps.length} {T(t.cpTab.contacts)}
                   </div>
                 </div>
               )}
@@ -2141,13 +2141,13 @@ export default function DashboardPage() {
               {/* Sub-navigatsiya */}
               <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1 w-fit">
                 {[
-                  { key: 'account', label: '👤 Akkaunt' },
-                  { key: 'company', label: '🏢 Korxona ma\'lumotlari' },
-                ].map(t => (
-                  <button key={t.key} type="button"
-                    onClick={() => setProfileTab(t.key as 'account'|'company')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${profileTab===t.key ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                    {t.label}
+                  { key: 'account', label: T(t.profileTab.accountTab) },
+                  { key: 'company', label: T(t.profileTab.companyTab) },
+                ].map(pt => (
+                  <button key={pt.key} type="button"
+                    onClick={() => setProfileTab(pt.key as 'account'|'company')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${profileTab===pt.key ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
+                    {pt.label}
                   </button>
                 ))}
               </div>
@@ -2215,9 +2215,9 @@ export default function DashboardPage() {
               {/* Statistika */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Shartnomalar', value: contracts.length, icon: '📄', color: 'blue' },
-                  { label: 'Kontragentlar', value: cps.length, icon: '🤝', color: 'emerald' },
-                  { label: 'Tashkilotlar', value: orgs.length, icon: '🏢', color: 'purple' },
+                  { label: T(t.contracts.title), value: contracts.length, icon: '📄', color: 'blue' },
+                  { label: T(t.cp.title), value: cps.length, icon: '🤝', color: 'emerald' },
+                  { label: T(t.orgs.title), value: orgs.length, icon: '🏢', color: 'purple' },
                 ].map(s => (
                   <div key={s.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
                     <span className="text-2xl">{s.icon}</span>
@@ -2231,20 +2231,20 @@ export default function DashboardPage() {
 
               {/* Shaxsiy ma'lumotlar */}
               <form onSubmit={saveProfile} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
-                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Shaxsiy ma&apos;lumotlar</h2>
+                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">{T(t.profileTab.personalInfo)}</h2>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={lbl}>To&apos;liq ism</label>
+                    <label className={lbl}>{T(t.profileTab.fullName)}</label>
                     <input className={inp} placeholder="Alisher Karimov"
                       value={profile.full_name} onChange={e=>setProfile({...profile,full_name:e.target.value})}/>
                   </div>
                   <div>
-                    <label className={lbl}>Lavozim</label>
+                    <label className={lbl}>{T(t.profileTab.position)}</label>
                     <input className={inp} placeholder="Direktor / Buxgalter / Menejer"
                       value={profile.lavozim} onChange={e=>setProfile({...profile,lavozim:e.target.value})}/>
                   </div>
                   <div className="col-span-2">
-                    <label className={lbl}>Telefon raqam</label>
+                    <label className={lbl}>{T(t.profileTab.phone)}</label>
                     <input className={inp} placeholder="+998 90 123 45 67"
                       value={profile.phone} onChange={e=>setProfile({...profile,phone:e.target.value})}/>
                   </div>
@@ -2256,27 +2256,27 @@ export default function DashboardPage() {
                 )}
                 <button type="submit" disabled={profileSaving}
                   className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition">
-                  {profileSaving ? 'Saqlanmoqda...' : 'Saqlash'}
+                  {profileSaving ? T(t.btn.saving) : T(t.btn.save)}
                 </button>
               </form>
 
               {/* Xavfsizlik */}
               <form onSubmit={changePassword} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
-                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Xavfsizlik</h2>
+                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">{T(t.profileTab.security)}</h2>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={lbl}>Yangi parol</label>
+                    <label className={lbl}>{T(t.profileTab.newPass)}</label>
                     <input type="password" className={inp} placeholder="Kamida 8 belgi"
                       value={newPassword} onChange={e=>setNewPassword(e.target.value)}/>
                   </div>
                   <div>
-                    <label className={lbl}>Parolni tasdiqlang</label>
+                    <label className={lbl}>{T(t.profileTab.confirmPass)}</label>
                     <input type="password" className={inp} placeholder="Qayta kiriting"
                       value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)}/>
                   </div>
                 </div>
                 {confirmPassword && newPassword !== confirmPassword && (
-                  <p className="text-xs text-red-400">⚠ Parollar mos kelmayapti</p>
+                  <p className="text-xs text-red-400">{T(t.profileTab.passMismatch)}</p>
                 )}
                 {pwdMsg && (
                   <div className={`text-sm px-4 py-2.5 rounded-lg ${pwdMsg.includes('✓') ? 'bg-emerald-900/40 border border-emerald-700 text-emerald-300' : 'bg-red-900/40 border border-red-700 text-red-300'}`}>
@@ -2285,20 +2285,20 @@ export default function DashboardPage() {
                 )}
                 <button type="submit" disabled={!newPassword || newPassword !== confirmPassword}
                   className="border border-gray-700 text-gray-300 hover:bg-gray-800 disabled:opacity-40 px-6 py-2.5 rounded-lg text-sm font-medium transition">
-                  Parolni o&apos;zgartirish
+                  {T(t.profileTab.changePass)}
                 </button>
               </form>
 
               {/* Chiqish */}
               <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium text-white">Hisobdan chiqish</div>
+                  <div className="text-sm font-medium text-white">{T(t.profileTab.logoutTitle)}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{userEmail}</div>
                 </div>
                 <button type="button"
                   onClick={async () => { await supabase.auth.signOut(); router.push('/login') }}
                   className="flex items-center gap-2 px-4 py-2.5 bg-red-900/30 hover:bg-red-900/50 border border-red-800/50 text-red-400 hover:text-red-300 rounded-lg text-sm font-medium transition">
-                  ⎋ Chiqish
+                  {T(t.profileTab.logoutBtn)}
                 </button>
               </div>
 
@@ -2312,7 +2312,7 @@ export default function DashboardPage() {
                     {/* Asosiy ma'lumotlar */}
                     <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
                       <div className="flex items-center justify-between mb-1">
-                        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Asosiy rekvizitlar</h2>
+                        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">{T(t.profileTab.mainInfo)}</h2>
                         <span className="text-xs text-gray-600">{activeOrg.name}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
@@ -2351,7 +2351,7 @@ export default function DashboardPage() {
 
                     {/* Bank va moliya */}
                     <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
-                      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Bank rekvizitlari</h2>
+                      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">{T(t.profileTab.bankInfo)}</h2>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className={lbl}>Bank nomi</label>
@@ -2378,7 +2378,7 @@ export default function DashboardPage() {
 
                     {/* Soliq va manzil */}
                     <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
-                      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Soliq va manzil</h2>
+                      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">{T(t.profileTab.taxAddress)}</h2>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className={lbl}>QQS ro&apos;yxat raqami</label>
@@ -2420,7 +2420,7 @@ export default function DashboardPage() {
 
                     {/* Tovar jo'natuvchi */}
                     <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
-                      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Tovar jo&apos;natuvchi</h2>
+                      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">{T(t.profileTab.sender)}</h2>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className={lbl}>F.I.Sh</label>
@@ -2442,14 +2442,14 @@ export default function DashboardPage() {
                     )}
                     <button type="submit" disabled={orgExtSaving}
                       className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-3 rounded-xl text-sm font-semibold transition">
-                      {orgExtSaving ? 'Saqlanmoqda...' : '💾 O\'zgarishlarni saqlash'}
+                      {orgExtSaving ? T(t.btn.saving) : T(t.profileTab.saveChanges)}
                     </button>
                   </form>
                 ) : (
                   <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center text-gray-500">
-                    <p className="text-sm">Avval tashkilot qo&apos;shing</p>
+                    <p className="text-sm">{T(t.profileTab.noOrg)}</p>
                     <button onClick={() => setTab('organizations')}
-                      className="mt-3 text-blue-400 text-sm hover:text-blue-300">Tashkilotlar →</button>
+                      className="mt-3 text-blue-400 text-sm hover:text-blue-300">{T(t.profileTab.orgsLink)}</button>
                   </div>
                 )
               )}
@@ -2529,9 +2529,9 @@ export default function DashboardPage() {
               </div>
               <div className="flex gap-2">
                 <button onClick={()=>{ setEditingCp(cpDetail); setCpForm({name:cpDetail.name,inn:cpDetail.inn,director_name:cpDetail.director_name,bank_name:cpDetail.bank_name,bank_account:cpDetail.bank_account,mfo:cpDetail.mfo,address:cpDetail.address,phone:cpDetail.phone||'',qqsreg:cpDetail.qqsreg||''}); setModal('cp'); setCpDetail(null) }}
-                  className="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition">✎ Tahrirlash</button>
+                  className="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition">✎ {T(t.btn.edit)}</button>
                 <button onClick={()=>deleteCp(cpDetail.id)}
-                  className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-400 hover:text-white rounded-lg text-xs font-medium transition border border-red-800/50">🗑 O'chirish</button>
+                  className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-400 hover:text-white rounded-lg text-xs font-medium transition border border-red-800/50">🗑 {T(t.btn.delete)}</button>
                 <button onClick={()=>setCpDetail(null)}
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition text-xl">×</button>
               </div>
@@ -2540,7 +2540,7 @@ export default function DashboardPage() {
 
               {/* Asosiy ma'lumotlar */}
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Asosiy ma&apos;lumotlar</h3>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{T(t.cpTab.basicInfo)}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     ['Tashkilot nomi', cpDetail.name, true],
@@ -2560,7 +2560,7 @@ export default function DashboardPage() {
 
               {/* Bank */}
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Bank rekvizitlari</h3>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{T(t.cpTab.bankDetails)}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     ['Bank nomi', cpDetail.bank_name],
@@ -2581,7 +2581,7 @@ export default function DashboardPage() {
                 return cpContracts.length > 0 ? (
                   <div>
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                      Shartnomalar ({cpContracts.length} ta)
+                      {T(t.cpTab.contracts)} ({cpContracts.length})
                     </h3>
                     <div className="space-y-2">
                       {cpContracts.slice(0,5).map(c => (
@@ -2596,7 +2596,7 @@ export default function DashboardPage() {
                               c.status==='active'?'bg-emerald-900/40 text-emerald-400':
                               c.status==='completed'?'bg-blue-900/40 text-blue-400':
                               'bg-gray-800 text-gray-500'}`}>
-                              {c.status==='active'?'Faol':c.status==='completed'?'Bajarilgan':'Qoralama'}
+                              {c.status==='active'?T(t.status.active):c.status==='completed'?T(t.status.completed):T(t.status.draft)}
                             </span>
                           </div>
                         </div>
@@ -2614,18 +2614,18 @@ export default function DashboardPage() {
       )}
 
       {modal==='bankAccount' && (
-        <Modal title="Bank hisob raqami qo'shish" onClose={()=>setModal(null)}>
+        <Modal title={T(t.bankModal.title)} onClose={()=>setModal(null)}>
           <form onSubmit={saveBankAccount} className="space-y-4">
-            <div><label className={lbl}>Bank nomi *</label>
+            <div><label className={lbl}>{T(t.bankModal.bankName)}</label>
               <input className={inp} required placeholder="Xalq banki" value={bankForm.bank_name} onChange={e=>setBankForm({...bankForm,bank_name:e.target.value})}/></div>
-            <div><label className={lbl}>Hisob raqami *</label>
+            <div><label className={lbl}>{T(t.bankModal.account)}</label>
               <input className={inp} required placeholder="20208000000000000000" value={bankForm.account_number} onChange={e=>setBankForm({...bankForm,account_number:e.target.value})}/></div>
-            <div><label className={lbl}>MFO</label>
+            <div><label className={lbl}>{T(t.bankModal.mfo)}</label>
               <input className={inp} placeholder="00873" value={bankForm.mfo} onChange={e=>setBankForm({...bankForm,mfo:e.target.value})}/></div>
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={bankForm.is_default} onChange={e=>setBankForm({...bankForm,is_default:e.target.checked})}
                 className="w-4 h-4 accent-blue-500"/>
-              <span className="text-sm text-gray-300">Asosiy hisob raqam sifatida belgilash</span>
+              <span className="text-sm text-gray-300">{T(t.bankModal.setDefault)}</span>
             </label>
             <ModalActions onClose={()=>setModal(null)} saving={saving}/>
           </form>
@@ -2691,11 +2691,11 @@ export default function DashboardPage() {
                   }, 100)
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">
-                ✎ Tahrirlash
+                {T(t.viewModal.edit)}
               </button>
               <button onClick={()=>copyContract(viewContract)}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition">
-                📋 Nusxa
+                {T(t.viewModal.copy)}
               </button>
               <button onClick={()=>generatePDF(viewContract)}
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition">
@@ -2910,7 +2910,7 @@ export default function DashboardPage() {
                       </div>
                       {specForm.items.length > 0 && (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">Barcha uchun:</span>
+                          <span className="text-xs text-gray-500">{T(t.contractModal.forAll)}</span>
                           <div className="flex gap-0.5 bg-gray-800 rounded-lg p-0.5">
                             {QQS_OPTIONS_GLOBAL.map(opt => (
                               <button key={opt.val} type="button"
@@ -2985,7 +2985,7 @@ export default function DashboardPage() {
                             </tbody>
                             <tfoot>
                               <tr className="border-t-2 border-gray-600 bg-gray-800/60 text-xs font-semibold">
-                                <td colSpan={4} className="px-3 py-2.5 text-right text-gray-400">Jami:</td>
+                                <td colSpan={4} className="px-3 py-2.5 text-right text-gray-400">{T(t.spec.total)}:</td>
                                 <td className="px-2 py-2.5 text-right text-white">{asosiy.toLocaleString()}</td>
                                 <td className="px-2 py-2.5 text-center text-gray-500">—</td>
                                 <td className="px-2 py-2.5 text-right text-orange-400">{qqsJ > 0 ? qqsJ.toLocaleString() : '—'}</td>
@@ -3001,7 +3001,7 @@ export default function DashboardPage() {
                     <button type="button"
                       onClick={() => setSpecForm(f => ({ ...f, items: [...f.items, { nomi:'', birlik:'dona', miqdori:1, narxi:0, qqs_foiz:'siz', qqs_summa:0, summa:0 }] }))}
                       className="w-full border-2 border-dashed border-gray-700 hover:border-emerald-600 text-gray-500 hover:text-emerald-400 py-2.5 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2">
-                      + Mahsulot/xizmat qo&apos;shish
+                      {T(t.contractModal.addProduct)}
                     </button>
                     {specForm.items.length === 0 && (
                       <p className="text-center text-gray-600 text-xs py-1">Ixtiyoriy — qo&apos;shmasangiz PDFda jadval bo&apos;lmaydi.</p>
@@ -3013,11 +3013,11 @@ export default function DashboardPage() {
                 <div className="flex gap-3 px-6 py-4 border-t border-gray-800 flex-shrink-0">
                   <button type="button" onClick={() => { setSpecModal(false); setEditingSpec(null) }}
                     className="flex-1 border border-gray-700 text-gray-300 hover:bg-gray-800 py-2.5 rounded-lg text-sm transition">
-                    Bekor qilish
+                    {T(t.btn.cancel)}
                   </button>
                   <button type="submit" disabled={saving}
                     className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
-                    {saving ? 'Saqlanmoqda...' : <><span>💾</span>{editingSpec ? 'Saqlash' : 'Yaratish'}</>}
+                    {saving ? T(t.btn.saving) : <><span>💾</span>{editingSpec ? T(t.btn.save) : T(t.btn.create)}</>}
                   </button>
                 </div>
               </form>
@@ -3090,11 +3090,11 @@ export default function DashboardPage() {
               <div className="flex gap-3 p-4 border-t border-gray-800 flex-shrink-0">
                 <button type="button" onClick={() => { setCustomTemplateModal(false); setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl) }}
                   className="flex-1 border border-gray-700 text-gray-300 hover:bg-gray-800 py-2.5 rounded-xl text-sm font-medium transition">
-                  Bekor qilish
+                  {T(t.btn.cancel)}
                 </button>
                 <button type="submit" disabled={saving}
                   className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-medium transition">
-                  {saving ? 'Saqlanmoqda...' : (editingCustomTemplate ? 'Saqlash' : "Qo'shish")}
+                  {saving ? T(t.btn.saving) : (editingCustomTemplate ? T(t.btn.save) : T(t.btn.add))}
                 </button>
               </div>
             </form>
@@ -3194,13 +3194,15 @@ function Modal({ title, onClose, children, wide }: {
 }
 
 function ModalActions({ onClose, saving }: { onClose: ()=>void; saving: boolean }) {
+  const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   return (
     <div className="flex gap-3 pt-2">
       <button type="button" onClick={onClose} className="flex-1 border border-gray-700 text-gray-300 py-2.5 rounded-lg text-sm hover:bg-gray-800 transition">
-        Bekor qilish
+        {T(t.btn.cancel)}
       </button>
       <button type="submit" disabled={saving} className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-semibold transition">
-        {saving?'Saqlanmoqda...':'Saqlash'}
+        {saving ? T(t.btn.saving) : T(t.btn.save)}
       </button>
     </div>
   )
@@ -3281,6 +3283,8 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
   onCpAdded: (cp: Counterparty) => void
   customTemplates: AppTemplate[]
 }) {
+  const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const [step, setStep] = useState<1|2|3|4>(1)
   const [useTemplate, setUseTemplate] = useState(true)
   const [selectedTplId, setSelectedTplId] = useState<string>('')
@@ -3632,25 +3636,25 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-800 flex-shrink-0">
           <div className="flex items-center gap-4">
-            <h2 className="text-base font-semibold text-white">Shartnoma yaratish</h2>
+            <h2 className="text-base font-semibold text-white">{form.id ? T(t.contractModal.editTitle) : T(t.contractModal.newTitle)}</h2>
             <div className="flex gap-1 bg-gray-800 rounded-lg p-0.5">
               <button type="button" onClick={() => setStep(1)}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition ${step===1 ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                1. Ma&apos;lumotlar
+                {T(t.modal.step1)}
               </button>
               {hasExtraFields && (
                 <button type="button" onClick={() => setStep(2)}
                   className={`px-3 py-1 rounded-md text-xs font-medium transition ${step===2 ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                  2. Qo&apos;shimcha
+                  {T(t.modal.step2)}
                 </button>
               )}
               <button type="button" onClick={() => { if (structure.bolimlar.length === 0) { loadTemplateAndGoToBolimlar() } else { setStep(3) } }}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition ${step===3 ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                {hasExtraFields ? '3.' : '2.'} Bo&apos;limlar
+                {T(t.modal.step3)}
               </button>
               <button type="button" onClick={() => setStep(4)}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition ${step===4 ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
-                {hasExtraFields ? '4.' : '3.'} Spesifikatsiya
+                {T(t.modal.step4)}
               </button>
             </div>
           </div>
@@ -3668,19 +3672,19 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                 {/* Raqam / Sana / Shahar */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className={lbl}>Shartnoma raqami *</label>
+                    <label className={lbl}>{T(t.modal.contractNum)} *</label>
                     <input className={inp} required placeholder="2026/001"
                       value={form.contract_number}
                       onChange={e => handleFieldChange('contract_number', e.target.value)}/>
                   </div>
                   <div>
-                    <label className={lbl}>Sana *</label>
+                    <label className={lbl}>{T(t.modal.contractDate)} *</label>
                     <input type="date" className={inp} required
                       value={form.contract_date}
                       onChange={e => handleFieldChange('contract_date', e.target.value)}/>
                   </div>
                   <div>
-                    <label className={lbl}>Shahar</label>
+                    <label className={lbl}>{T(t.modal.city)}</label>
                     <input className={inp} placeholder="Toshkent"
                       value={form.city}
                       onChange={e => handleFieldChange('city', e.target.value)}/>
@@ -3689,7 +3693,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
 
                 {/* Shartnoma turi — ixcham select */}
                 <div>
-                  <label className={lbl}>Shartnoma turi *</label>
+                  <label className={lbl}>{T(t.modal.contractType)} *</label>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {Object.entries(CONTRACT_TYPE_NAMES).map(([k,v]) => (
                       <button key={k} type="button"
@@ -3708,13 +3712,13 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                 {/* Mahsulot/xizmat nomi + Summa + Holat */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
-                    <label className={lbl}>Mahsulot yoki xizmat nomi</label>
+                    <label className={lbl}>{T(t.modal.productName)}</label>
                     <input className={inp} placeholder="Masalan: Qurilish materiallari yoki Dasturiy ta'minot yaratish"
                       value={form.product_name || ''}
                       onChange={e => handleFieldChange('product_name', e.target.value)}/>
                   </div>
                   <div>
-                    <label className={lbl}>Umumiy summa (so&apos;m)</label>
+                    <label className={lbl}>{T(t.modal.amount)}</label>
                     <input type="number" className={inp} placeholder="5000000"
                       value={form.amount}
                       onChange={e => handleFieldChange('amount', e.target.value)}/>
@@ -3723,23 +3727,23 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
 
                 {/* Tomonlar */}
                 <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 space-y-3">
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Tomonlar</p>
+                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{T(t.contractModal.parties)}</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className={lbl}>Buyurtmachi *</label>
+                      <label className={lbl}>{T(t.contractModal.customer)}</label>
                       <select className={inp} required value={form.organization_id}
                         onChange={e => handleFieldChange('organization_id', e.target.value)}>
-                        <option value="">— Tashkilot tanlang —</option>
+                        <option value="">{T(t.contractModal.selectOrg)}</option>
                         {orgs.map(o => <option key={o.id} value={o.id}>{o.name}{o.inn ? ` (${o.inn})` : ''}</option>)}
                       </select>
-                      {orgs.length===0 && <p className="text-xs text-yellow-500 mt-1">⚠ Avval tashkilot qo&apos;shing</p>}
+                      {orgs.length===0 && <p className="text-xs text-yellow-500 mt-1">{T(t.contractModal.addOrgWarn)}</p>}
                     </div>
                     <div className="relative">
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className={lbl + ' mb-0'}>Kontragent (2-tomon) *</label>
+                        <label className={lbl + ' mb-0'}>{T(t.contractModal.cpLabel)}</label>
                         <button type="button" onClick={() => setQuickCpOpen(true)}
                           className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition font-medium">
-                          <span className="text-base leading-none">+</span> Yangi qo'shish
+                          <span className="text-base leading-none">+</span> {T(t.contractModal.addNew)}
                         </button>
                       </div>
                       {/* Tanlangan kontragent ko'rsatish */}
@@ -3758,16 +3762,16 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                             value={cpSearch}
                             onChange={e => { setCpSearch(e.target.value); setCpDropOpen(true) }}
                             onFocus={() => setCpDropOpen(true)}
-                            placeholder="Nomi yoki STR (INN) bilan qidirish..."
+                            placeholder={T(t.contractModal.cpSearch)}
                             className={inp}
                           />
                           {cpDropOpen && (
                             <div className="absolute z-50 left-0 right-0 mt-1 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl max-h-52 overflow-auto">
                               {filteredCpsInModal.length === 0 ? (
                                 <div className="px-3 py-3 text-sm text-gray-500 text-center">
-                                  Kontragent topilmadi —{' '}
+                                  {T(t.contractModal.cpNotFound)}{' '}
                                   <button type="button" onClick={() => { setQuickCpOpen(true); setCpDropOpen(false) }}
-                                    className="text-blue-400 hover:text-blue-300">yangi qo'shish</button>
+                                    className="text-blue-400 hover:text-blue-300">{T(t.contractModal.addNewLink)}</button>
                                 </div>
                               ) : (
                                 filteredCpsInModal.map(cp => (
@@ -3789,8 +3793,8 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                           <div className="bg-gray-900 border border-blue-700 rounded-2xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
                               <div>
-                                <h3 className="font-bold text-white text-base">Yangi kontragent qo'shish</h3>
-                                <p className="text-xs text-gray-400 mt-0.5">To'liq ma'lumot kiritilsa shartnoma to'liq bo'ladi</p>
+                                <h3 className="font-bold text-white text-base">{T(t.contractModal.newCpTitle)}</h3>
+                                <p className="text-xs text-gray-400 mt-0.5">{T(t.contractModal.newCpDesc)}</p>
                               </div>
                               <button type="button" onClick={() => setQuickCpOpen(false)} className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
@@ -3799,7 +3803,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                             <form onSubmit={saveQuickCp}>
                               <div className="p-5 space-y-3 max-h-[70vh] overflow-auto">
                                 {/* Asosiy */}
-                                <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Asosiy ma'lumotlar</p>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">{T(t.contractModal.basicInfo)}</p>
                                 <input value={quickCpForm.name} onChange={e => setQuickCpForm({...quickCpForm, name: e.target.value})}
                                   placeholder="Tashkilot nomi *" required
                                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"/>
@@ -3823,7 +3827,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                                   placeholder="Yuridik manzil"
                                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"/>
                                 {/* Bank */}
-                                <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold pt-1">Bank rekvizitlari</p>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold pt-1">{T(t.contractModal.bankDetails)}</p>
                                 <input value={quickCpForm.bank_name} onChange={e => setQuickCpForm({...quickCpForm, bank_name: e.target.value})}
                                   placeholder="Bank nomi"
                                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"/>
@@ -3839,11 +3843,11 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                               <div className="flex gap-3 px-5 py-4 border-t border-gray-800">
                                 <button type="button" onClick={() => setQuickCpOpen(false)}
                                   className="flex-1 border border-gray-700 text-gray-300 hover:bg-gray-800 py-2.5 rounded-xl text-sm transition">
-                                  Bekor qilish
+                                  {T(t.btn.cancel)}
                                 </button>
                                 <button type="submit" disabled={quickCpSaving}
                                   className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-medium transition">
-                                  {quickCpSaving ? 'Saqlanmoqda...' : 'Saqlash va tanlash'}
+                                  {quickCpSaving ? T(t.btn.saving) : T(t.contractModal.saveSelect)}
                                 </button>
                               </div>
                             </form>
@@ -3856,7 +3860,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
 
                 {/* Shablon tanlash */}
                 <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-3">Shartnoma tuzilmasi</p>
+                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-3">{T(t.contractModal.structure)}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => setUseTemplate(true)}
                       className={`flex items-start gap-3 p-3 rounded-xl border text-left transition ${
@@ -3868,8 +3872,8 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                         {useTemplate ? '●' : '○'}
                       </span>
                       <div>
-                        <div className="text-sm font-medium">Shablon orqali</div>
-                        <div className="text-xs text-gray-500 mt-0.5">Tanlangan shartnoma turiga mos bo&apos;limlar avtomatik to&apos;ldiriladi</div>
+                        <div className="text-sm font-medium">{T(t.contractModal.viaTemplate)}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{T(t.contractModal.viaTemplateDesc)}</div>
                       </div>
                     </button>
                     <button type="button" onClick={() => setUseTemplate(false)}
@@ -3882,8 +3886,8 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                         {!useTemplate ? '●' : '○'}
                       </span>
                       <div>
-                        <div className="text-sm font-medium">O&apos;zim yozaman</div>
-                        <div className="text-xs text-gray-500 mt-0.5">Bo&apos;sh tuzilma ochiladi, barcha matnlarni o&apos;zingiz kiritasiz</div>
+                        <div className="text-sm font-medium">{T(t.contractModal.manual)}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{T(t.contractModal.manualDesc)}</div>
                       </div>
                     </button>
                   </div>
@@ -3891,7 +3895,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                   {/* Template list */}
                   {useTemplate && matchingTpls.length > 0 && (
                     <div className="mt-3 space-y-1.5">
-                      <p className="text-xs text-gray-500 mb-2">Shablon tanlang:</p>
+                      <p className="text-xs text-gray-500 mb-2">{T(t.contractModal.selectTpl)}</p>
                       {matchingTpls.map(tpl => (
                         <button key={tpl.id} type="button"
                           onClick={() => setSelectedTplId(tpl.id)}
@@ -3904,7 +3908,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                           <div className="min-w-0">
                             <div className={`text-xs font-medium truncate ${selectedTplId === tpl.id ? 'text-blue-300' : 'text-gray-300'}`}>
                               {tpl.name}
-                              {!tpl.isDefault && <span className="ml-1.5 text-xs text-emerald-400">(sizniki)</span>}
+                              {!tpl.isDefault && <span className="ml-1.5 text-xs text-emerald-400">{T(t.tplTab.custom)}</span>}
                             </div>
                             <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{tpl.description}</div>
                           </div>
@@ -3916,13 +3920,13 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                     </div>
                   )}
                   {useTemplate && matchingTpls.length === 0 && form.contract_type && (
-                    <p className="text-xs text-gray-500 mt-3 text-center">Bu shartnoma turi uchun shablon topilmadi</p>
+                    <p className="text-xs text-gray-500 mt-3 text-center">{T(t.contractModal.noTpl)}</p>
                   )}
                 </div>
 
                 <button type="button" onClick={goToStep2}
                   className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2">
-                  {hasExtraFields ? "Qo'shimcha ma'lumotlar →" : useTemplate ? 'Shablonni yuklash va tahrirlash →' : "Bo'sh tuzilmani ochish →"}
+                  {hasExtraFields ? T(t.contractModal.goToSections) : useTemplate ? T(t.contractModal.loadAndEdit) : T(t.contractModal.openEmpty)}
                 </button>
               </div>
             )}
@@ -3933,8 +3937,8 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                 <div className="flex items-center gap-3 mb-1">
                   <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">2</div>
                   <div>
-                    <p className="text-sm font-semibold text-white">Shartnomaga xos ma&apos;lumotlar</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Ushbu maydonlar shartnoma matni blanklarini avtomatik to&apos;ldiradi</p>
+                    <p className="text-sm font-semibold text-white">{T(t.contractModal.extraFields)}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{T(t.contractModal.extraDesc)}</p>
                   </div>
                 </div>
 
@@ -3968,11 +3972,11 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setStep(1)}
                     className="px-4 py-2.5 border border-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-800 transition">
-                    ← Orqaga
+                    {T(t.contractModal.back)}
                   </button>
                   <button type="button" onClick={loadTemplateAndGoToBolimlar}
                     className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">
-                    {useTemplate ? 'Shablonni yuklash va tahrirlash →' : "Bo'sh tuzilmani ochish →"}
+                    {useTemplate ? T(t.contractModal.loadAndEdit) : T(t.contractModal.openEmpty)}
                   </button>
                 </div>
               </div>
@@ -3987,11 +3991,11 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                   <div className="flex items-center gap-2">
                     {useTemplate ? (
                       <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-900/30 border border-emerald-700/50 text-emerald-400 px-2.5 py-1 rounded-full">
-                        <span>✓</span> Shablon qo&apos;llanildi
+                        <span>✓</span> {T(t.contractModal.tplApplied)}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 text-xs bg-blue-900/30 border border-blue-700/50 text-blue-400 px-2.5 py-1 rounded-full">
-                        <span>✎</span> Qo&apos;lda to&apos;ldirilmoqda
+                        <span>✎</span> {T(t.contractModal.manualMode)}
                       </span>
                     )}
                     <span className="text-xs text-gray-600">{structure.bolimlar.length} bo&apos;lim</span>
@@ -3999,7 +4003,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                   {useTemplate && (
                     <button type="button" onClick={reloadStructure}
                       className="text-xs text-gray-400 hover:text-blue-300 border border-gray-700 hover:border-blue-700 px-3 py-1.5 rounded-lg transition">
-                      ↺ Qayta yuklash
+                      {T(t.contractModal.reload)}
                     </button>
                   )}
                 </div>
@@ -4015,11 +4019,11 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                         value={bolim.sarlavha}
                         onChange={e => updateSarlavha(bi, e.target.value)}
                         className="flex-1 bg-transparent text-white text-sm font-semibold focus:outline-none placeholder-gray-600 min-w-0"
-                        placeholder="Bo'lim sarlavhasi (masalan: SHARTNOMA PREDMETI)"
+                        placeholder={T(t.contractModal.secTitle)}
                       />
                       <button type="button" onClick={() => removeBolim(bi)}
                         className="w-7 h-7 flex items-center justify-center rounded text-gray-600 hover:text-red-400 hover:bg-red-900/30 transition text-lg flex-shrink-0"
-                        title="Bo'limni o'chirish">×</button>
+                        title={T(t.contractModal.delSection)}>×</button>
                     </div>
 
                     {/* Bandlar */}
@@ -4034,16 +4038,16 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                             onChange={e => updateBand(bi, bdi, e.target.value)}
                             rows={2}
                             className="flex-1 bg-gray-800 border border-gray-700/80 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 resize-none leading-relaxed min-w-0"
-                            placeholder="Band matni..."
+                            placeholder={T(t.contractModal.clauseText)}
                           />
                           <button type="button" onClick={() => removeBand(bi, bdi)}
                             className="w-7 h-7 flex items-center justify-center rounded text-gray-700 hover:text-red-400 hover:bg-red-900/20 transition text-base flex-shrink-0 mt-1"
-                            title="Bandni o'chirish">×</button>
+                            title={T(t.contractModal.delClause)}>×</button>
                         </div>
                       ))}
                       <button type="button" onClick={() => addBand(bi)}
                         className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 px-2 py-1.5 rounded-lg hover:bg-blue-900/20 transition ml-11 font-medium">
-                        + Band qo&apos;shish
+                        {T(t.contractModal.addClause)}
                       </button>
                     </div>
                   </div>
@@ -4052,12 +4056,12 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                 {/* Bo'lim qo'shish */}
                 <button type="button" onClick={addBolim}
                   className="w-full border-2 border-dashed border-gray-700 hover:border-blue-600 text-gray-500 hover:text-blue-400 py-3 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2">
-                  + Bo&apos;lim qo&apos;shish
+                  {T(t.contractModal.addSection)}
                 </button>
                 <div className="flex justify-end pt-2">
                   <button type="button" onClick={() => setStep(4)}
                     className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition">
-                    Spesifikatsiya →
+                    {T(t.contractModal.toSpec)}
                   </button>
                 </div>
               </div>
@@ -4073,12 +4077,12 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                 {/* Sarlavha + Barcha uchun QQS */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white font-medium">Mahsulot/xizmatlar ro&apos;yxati</p>
-                    <p className="text-xs text-gray-500 mt-0.5">PDFga 1-ilova sifatida qo&apos;shiladi.</p>
+                    <p className="text-sm text-white font-medium">{T(t.contractModal.specList)}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{T(t.contractModal.specAppend)}</p>
                   </div>
                   {specItems.length > 0 && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500">Barcha uchun:</span>
+                      <span className="text-xs text-gray-500">{T(t.contractModal.forAll)}</span>
                       <div className="flex gap-0.5 bg-gray-800 rounded-lg p-0.5">
                         {QQS_OPTIONS.map(opt => (
                           <button key={opt.val} type="button"
@@ -4165,7 +4169,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                         <tfoot>
                           {/* Jami qatori — Didox uslubida: label | narx jami | QQS jami | Grand total */}
                           <tr className="border-t-2 border-gray-600 bg-gray-800/60 text-xs font-semibold">
-                            <td colSpan={4} className="px-3 py-2.5 text-right text-gray-400">Jami:</td>
+                            <td colSpan={4} className="px-3 py-2.5 text-right text-gray-400">{T(t.spec.total)}:</td>
                             <td className="px-2 py-2.5 text-right text-white">{specAsosiy.toLocaleString()}</td>
                             <td className="px-2 py-2.5 text-center text-gray-500">—</td>
                             <td className="px-2 py-2.5 text-right text-orange-400">
@@ -4184,11 +4188,11 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
 
                 <button type="button" onClick={addSpecItem}
                   className="w-full border-2 border-dashed border-gray-700 hover:border-emerald-600 text-gray-500 hover:text-emerald-400 py-2.5 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2">
-                  + Mahsulot/xizmat qo&apos;shish
+                  {T(t.contractModal.addProduct)}
                 </button>
                 {specItems.length === 0 && (
                   <p className="text-center text-gray-600 text-xs py-1">
-                    Ixtiyoriy — qo&apos;shmasangiz PDFda jadval bo&apos;lmaydi.
+                    {T(t.contractModal.specOptional)}
                   </p>
                 )}
               </div>
@@ -4203,16 +4207,16 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                 else if (step === 3) setStep(hasExtraFields ? 2 : 1)
               }}
                 className="px-4 py-2.5 border border-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-800 transition">
-                ← Orqaga
+                {T(t.contractModal.back)}
               </button>
             )}
             <button type="button" onClick={onClose}
               className="px-4 py-2.5 border border-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-800 transition">
-              Bekor qilish
+              {T(t.btn.cancel)}
             </button>
             <button type="submit" disabled={saving}
               className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-semibold transition">
-              {saving ? 'Saqlanmoqda...' : '💾 Shartnomani saqlash'}
+              {saving ? T(t.btn.saving) : T(t.contractModal.saveContract)}
             </button>
           </div>
         </form>
