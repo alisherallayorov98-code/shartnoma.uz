@@ -62,21 +62,21 @@ type Subscription = {
 
 // ─── Constants ───────────────────────────────────────────
 const STATUSES = {
-  draft:     { label: 'Qoralama',       bg: 'bg-gray-700',    text: 'text-gray-300' },
-  active:    { label: 'Faol',           bg: 'bg-emerald-900', text: 'text-emerald-300' },
-  completed: { label: 'Bajarilgan',     bg: 'bg-blue-900',    text: 'text-blue-300' },
-  cancelled: { label: 'Bekor qilingan', bg: 'bg-red-900',     text: 'text-red-300' },
+  draft:     { bg: 'bg-gray-700',    text: 'text-gray-300' },
+  active:    { bg: 'bg-emerald-900', text: 'text-emerald-300' },
+  completed: { bg: 'bg-blue-900',    text: 'text-blue-300' },
+  cancelled: { bg: 'bg-red-900',     text: 'text-red-300' },
 }
-const CONTRACT_TYPES: Record<string, string> = {
-  oldi_sotdi: 'Oldi-sotdi shartnomasi',
-  xizmat: "Xizmat ko'rsatish shartnomasi",
-  ijara: 'Ijara shartnomasi',
-  pudrat: 'Pudrat shartnomasi',
-  qoshimcha: "Qo'shimcha shartnoma",
-  moliyaviy: 'Moliyaviy yordam shartnomasi',
-  daval: 'Daval shartnomasi',
-  xalqaro: 'Xalqaro shartnoma',
-  boshqa: 'Boshqa',
+const CONTRACT_TYPES_I18N: Record<string, Record<'uz'|'oz'|'ru', string>> = {
+  oldi_sotdi: { uz: 'Oldi-sotdi',        oz: 'Олди-сотди',       ru: 'Купля-продажа' },
+  xizmat:     { uz: 'Xizmat',            oz: 'Хизмат',           ru: 'Услуги' },
+  ijara:      { uz: 'Ijara',             oz: 'Ижара',            ru: 'Аренда' },
+  pudrat:     { uz: 'Pudrat',            oz: 'Пудрат',           ru: 'Подряд' },
+  qoshimcha:  { uz: "Qo'shimcha",        oz: 'Қўшимча',          ru: 'Дополнительный' },
+  moliyaviy:  { uz: 'Moliyaviy yordam',  oz: 'Молиявий ёрдам',   ru: 'Финансовая помощь' },
+  daval:      { uz: 'Daval',             oz: 'Давал',            ru: 'Давальческий' },
+  xalqaro:    { uz: 'Xalqaro',           oz: 'Халқаро',          ru: 'Международный' },
+  boshqa:     { uz: 'Boshqa',            oz: 'Бошқа',            ru: 'Другой' },
 }
 const FREE_LIMIT = 5
 const NAV_KEYS = [
@@ -621,7 +621,7 @@ export default function DashboardPage() {
   }
 
   async function deleteContract(id: string) {
-    if (!confirm("O'chirishni tasdiqlaysizmi?")) return
+    if (!confirm(T(t.contracts.deleteConfirm))) return
     await supabase.from('contracts').delete().eq('id', id)
     loadContracts()
   }
@@ -1531,7 +1531,7 @@ export default function DashboardPage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
               </svg>
-              Yangi qo'shish
+              {T(t.btn.add)}
             </button>
           )}
         </header>
@@ -1597,7 +1597,7 @@ export default function DashboardPage() {
                         <div className="text-right flex-shrink-0 space-y-0.5">
                           <div className="text-sm font-medium">{c.amount?.toLocaleString()} so'm</div>
                           <span className={`text-xs px-2 py-0.5 rounded-full ${STATUSES[c.status as keyof typeof STATUSES]?.bg} ${STATUSES[c.status as keyof typeof STATUSES]?.text}`}>
-                            {STATUSES[c.status as keyof typeof STATUSES]?.label}
+                            {T(t.status[c.status as keyof typeof t.status] || t.status.draft)}
                           </span>
                         </div>
                       </div>
@@ -1631,30 +1631,30 @@ export default function DashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
                   <input value={search} onChange={e=>setSearch(e.target.value)}
-                    placeholder="Shartnoma raqami, tashkilot yoki kontragent..."
+                    placeholder={T(t.contracts.search)}
                     className="w-full bg-gray-900 border border-gray-800 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"/>
                 </div>
                 <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}
                   className="bg-gray-900 border border-gray-800 text-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500">
-                  <option value="all">Barcha holat</option>
-                  <option value="draft">Qoralama</option>
-                  <option value="active">Faol</option>
-                  <option value="completed">Bajarilgan</option>
-                  <option value="cancelled">Bekor qilingan</option>
+                  <option value="all">{T(t.status.all)}</option>
+                  <option value="draft">{T(t.status.draft)}</option>
+                  <option value="active">{T(t.status.active)}</option>
+                  <option value="completed">{T(t.status.completed)}</option>
+                  <option value="cancelled">{T(t.status.cancelled)}</option>
                 </select>
               </div>
 
               {filteredContracts.length===0 ? (
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-16 text-center">
                   <div className="text-5xl mb-4">📄</div>
-                  <p className="text-gray-400 font-medium">Shartnoma topilmadi</p>
+                  <p className="text-gray-400 font-medium">{T(t.contracts.empty)}</p>
                 </div>
               ) : (
                 <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-800 bg-gray-800/50">
-                        {['RAQAM','SANA','TUR','TASHKILOT','KONTRAGENT','SUMMA','HOLAT','AMALLAR'].map(h => (
+                        {[T(t.contracts.number),T(t.contracts.date),T(t.contracts.type),T(t.contracts.org),T(t.contracts.counterparty),T(t.contracts.amount),T(t.contracts.status),T(t.contracts.actions)].map(h => (
                           <th key={h} className="text-left text-xs font-medium text-gray-400 px-4 py-3 whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
@@ -1666,44 +1666,44 @@ export default function DashboardPage() {
                             <span className="font-mono text-sm font-semibold text-blue-400">#{c.contract_number}</span>
                           </td>
                           <td className="px-4 py-3.5 text-sm text-gray-400 whitespace-nowrap">{c.contract_date}</td>
-                          <td className="px-4 py-3.5 text-xs text-gray-400 max-w-[120px] truncate">{CONTRACT_TYPES[c.contract_type]||c.contract_type}</td>
+                          <td className="px-4 py-3.5 text-xs text-gray-400 max-w-[120px] truncate">{CONTRACT_TYPES_I18N[c.contract_type]?.[lang]||c.contract_type}</td>
                           <td className="px-4 py-3.5 text-sm text-white max-w-[120px] truncate">{c.organizations?.name||'—'}</td>
                           <td className="px-4 py-3.5 text-sm text-white max-w-[120px] truncate">{c.counterparties?.name||'—'}</td>
                           <td className="px-4 py-3.5 text-sm font-medium whitespace-nowrap">{c.amount?.toLocaleString()} so'm</td>
                           <td className="px-4 py-3.5">
                             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUSES[c.status as keyof typeof STATUSES]?.bg} ${STATUSES[c.status as keyof typeof STATUSES]?.text}`}>
-                              {STATUSES[c.status as keyof typeof STATUSES]?.label || c.status}
+                              {T(t.status[c.status as keyof typeof t.status] || t.status.draft)}
                             </span>
                           </td>
                           <td className="px-4 py-3.5">
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
                               <button onClick={()=>{setViewContract(c);setModal('viewContract')}}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs font-medium text-gray-200 transition" title="Ko'rish">
-                                👁 <span>Ko'rish</span>
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs font-medium text-gray-200 transition">
+                                👁 <span>{T(t.btn.view)}</span>
                               </button>
                               <button onClick={()=>generatePDF(c)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-800 hover:bg-emerald-700 rounded-lg text-xs font-medium text-white transition" title="PDF">
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-800 hover:bg-emerald-700 rounded-lg text-xs font-medium text-white transition">
                                 📥 <span>PDF</span>
                               </button>
                               <button onClick={()=>generateDOCX(c)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-800 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition" title="Word">
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-800 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition">
                                 📄 <span>Word</span>
                               </button>
                               {c.status !== 'completed' && c.status !== 'cancelled' && (
                                 <button onClick={()=>updateStatus(c.id,'completed')}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-800 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition" title="Bajarilgan">
-                                  ✓ <span>Bajarildi</span>
+                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-800 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition">
+                                  ✓ <span>{T(t.status.done)}</span>
                                 </button>
                               )}
                               {c.status !== 'cancelled' && (
                                 <button onClick={()=>updateStatus(c.id,'cancelled')}
-                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-orange-900 hover:bg-orange-700 rounded-lg text-xs font-medium text-white transition" title="Bekor qilingan">
-                                  ✕ <span>Bekor</span>
+                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-orange-900 hover:bg-orange-700 rounded-lg text-xs font-medium text-white transition">
+                                  ✕ <span>{T(t.status.cancel)}</span>
                                 </button>
                               )}
                               <button onClick={()=>deleteContract(c.id)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-red-900 hover:bg-red-800 rounded-lg text-xs font-medium text-white transition" title="O'chirish">
-                                🗑 <span>O'chirish</span>
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-red-900 hover:bg-red-800 rounded-lg text-xs font-medium text-white transition">
+                                🗑 <span>{T(t.btn.delete)}</span>
                               </button>
                             </div>
                           </td>
@@ -1712,8 +1712,8 @@ export default function DashboardPage() {
                     </tbody>
                   </table>
                   <div className="px-5 py-3 border-t border-gray-800 flex justify-between text-xs text-gray-500">
-                    <span>{filteredContracts.length} ta shartnoma</span>
-                    <span>Jami: {filteredContracts.reduce((s,c)=>s+(c.amount||0),0).toLocaleString()} so'm</span>
+                    <span>{filteredContracts.length} {lang==='ru'?'договоров':lang==='oz'?'та шартнома':'ta shartnoma'}</span>
+                    <span>{T(t.doc.jami)} {filteredContracts.reduce((s,c)=>s+(c.amount||0),0).toLocaleString()} {lang==='ru'?'сум':"so'm"}</span>
                   </div>
                 </div>
               )}
@@ -1992,7 +1992,7 @@ export default function DashboardPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${typeColors[tpl.type] || 'bg-gray-700 text-gray-300'}`}>
-                              {CONTRACT_TYPES[tpl.type] || tpl.type}
+                              {CONTRACT_TYPES_I18N[tpl.type]?.[lang] || tpl.type}
                             </span>
                             {!tpl.isDefault && (
                               <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-900/70 text-blue-300">Mening shablonlarim</span>
@@ -2662,7 +2662,7 @@ export default function DashboardPage() {
                   Shartnoma #{viewContract.contract_number}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {CONTRACT_TYPES[viewContract.contract_type]} · {viewContract.contract_date}
+                  {CONTRACT_TYPES_I18N[viewContract.contract_type]?.[lang] || viewContract.contract_type} · {viewContract.contract_date}
                 </div>
               </div>
             </div>
@@ -3049,8 +3049,8 @@ export default function DashboardPage() {
                     <label className="block text-xs text-gray-400 mb-1.5">Shartnoma turi</label>
                     <select value={customTplForm.type} onChange={e=>setCustomTplForm({...customTplForm, type: e.target.value})}
                       className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500">
-                      {Object.entries(CONTRACT_TYPES).map(([k,v]) => (
-                        <option key={k} value={k}>{v}</option>
+                      {Object.entries(CONTRACT_TYPES_I18N).map(([k,v]) => (
+                        <option key={k} value={k}>{v[lang]}</option>
                       ))}
                     </select>
                   </div>
