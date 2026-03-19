@@ -381,7 +381,7 @@ export default function DashboardPage() {
       const used = subscription?.contracts_used ?? orgContracts.length
       return { plan: 'Bepul', used, limit: FREE_LIMIT, percent: Math.min((used / FREE_LIMIT) * 100, 100) }
     }
-    return { plan: subscription.plan === 'standart' ? 'Standart' : 'AI Pro', used: null, limit: null, percent: null }
+    return { plan: subscription.plan === 'standart' ? 'Standart' : 'Premium', used: null, limit: null, percent: null }
   }
 
   // ── Save org ──
@@ -571,7 +571,7 @@ export default function DashboardPage() {
         asosiyRow.toLocaleString(),
         ql+'%',
         it.qqs_summa > 0 ? it.qqs_summa.toLocaleString() : '—',
-        it.summa.toLocaleString()
+        (it.summa||0).toLocaleString()
       ]
       // Row height based on name length
       const nameLines = doc.splitTextToSize(cells[1], colW[1]-2) as string[]
@@ -808,7 +808,7 @@ export default function DashboardPage() {
   async function runHubFeature() {
     const usedToday = getAiUsedToday()
     if (isFree && usedToday >= AI_FREE_DAILY) {
-      setHubError(`Kunlik bepul limit (${AI_FREE_DAILY} ta) tugadi. Standart yoki AI Pro tarifiga o'ting.`)
+      setHubError(`Kunlik bepul limit (${AI_FREE_DAILY} ta) tugadi. Standart yoki Premiumga o'ting.`)
       return
     }
     const selectedContract = contracts.find(c => c.id === hubContract)
@@ -1870,7 +1870,7 @@ export default function DashboardPage() {
                     <div className="text-xs text-gray-500">{today}</div>
                     {quota && (
                       <div className={`mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${isFree?'bg-gray-700 text-gray-300':'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50'}`}>
-                        {isFree ? '🔒 Bepul tarif' : '⭐ Premium tarif'}
+                        {isFree ? '🔒 Bepul tarif' : `⭐ ${quota.plan} tarif`}
                       </div>
                     )}
                   </div>
@@ -1931,11 +1931,11 @@ export default function DashboardPage() {
                       <span className="text-sm font-semibold text-emerald-400">{totalActive.toLocaleString()} so'm</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>Bajarilgan</span>
+                      <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>Bajarildi</span>
                       <span className="text-sm font-semibold text-blue-400">{totalDone.toLocaleString()} so'm</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-500 inline-block"/>Qoralamalar</span>
+                      <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-500 inline-block"/>Qoralama</span>
                       <span className="text-sm font-semibold text-gray-400">{totalDraft.toLocaleString()} so'm</span>
                     </div>
                     <div className="border-t border-gray-800 pt-3 flex justify-between items-center">
@@ -2061,13 +2061,13 @@ export default function DashboardPage() {
                 <div className="text-xs text-gray-600 uppercase tracking-wide mb-3 font-medium">Tezkor harakatlar</div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
-                    { label:'Yangi shartnoma', icon:'📄', color:'blue', action:()=>{ if(!canCreateContract()){setModal('upgrade');return}; setContractForm({...emptyContract,organization_id:activeOrg?.id||'',contract_number:autoContractNum()}); setModal('contract') } },
-                    { label:'Kontragent qo\'shish', icon:'🤝', color:'orange', action:()=>{ setTab('counterparties'); setModal('cp') } },
-                    { label:'Tashkilot qo\'shish', icon:'🏢', color:'purple', action:()=>{ setTab('organizations'); setModal('org') } },
-                    { label:'Yurist AI', icon:'⚖️', color:'emerald', action:()=>setTab('yurist_ai') },
+                    { label:'Yangi shartnoma', icon:'📄', hoverBorder:'hover:border-blue-700/60', action:()=>{ if(!canCreateContract()){setModal('upgrade');return}; setContractForm({...emptyContract,organization_id:activeOrg?.id||'',contract_number:autoContractNum()}); setModal('contract') } },
+                    { label:'Kontragent qo\'shish', icon:'🤝', hoverBorder:'hover:border-orange-700/60', action:()=>{ setTab('counterparties'); setModal('cp') } },
+                    { label:'Tashkilot qo\'shish', icon:'🏢', hoverBorder:'hover:border-purple-700/60', action:()=>{ setTab('organizations'); setModal('org') } },
+                    { label:'Yurist AI', icon:'⚖️', hoverBorder:'hover:border-emerald-700/60', action:()=>setTab('yurist_ai') },
                   ].map((a,i)=>(
                     <button key={i} onClick={a.action}
-                      className={`bg-gray-900 border border-gray-800 hover:border-${a.color}-700/60 hover:bg-gray-800/80 rounded-xl p-4 text-left transition group`}>
+                      className={`bg-gray-900 border border-gray-800 ${a.hoverBorder} hover:bg-gray-800/80 rounded-xl p-4 text-left transition group`}>
                       <div className="text-2xl mb-2">{a.icon}</div>
                       <div className="text-xs font-medium text-gray-400 group-hover:text-white transition leading-tight">{a.label}</div>
                     </button>
@@ -2126,7 +2126,7 @@ export default function DashboardPage() {
                           <td className="px-4 py-3.5 text-xs text-gray-400 max-w-[120px] truncate">{CONTRACT_TYPES_I18N[c.contract_type]?.[lang]||c.contract_type}</td>
                           <td className="px-4 py-3.5 text-sm text-white max-w-[120px] truncate">{c.organizations?.name||'—'}</td>
                           <td className="px-4 py-3.5 text-sm text-white max-w-[120px] truncate">{c.counterparties?.name||'—'}</td>
-                          <td className="px-4 py-3.5 text-sm font-medium whitespace-nowrap">{c.amount?.toLocaleString()} {T(t.overviewTab.som)}</td>
+                          <td className="px-4 py-3.5 text-sm font-medium whitespace-nowrap">{(c.amount||0).toLocaleString()} {T(t.overviewTab.som)}</td>
                           <td className="px-4 py-3.5">
                             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUSES[c.status as keyof typeof STATUSES]?.bg} ${STATUSES[c.status as keyof typeof STATUSES]?.text}`}>
                               {T(t.status[c.status as keyof typeof t.status] || t.status.draft)}
@@ -2335,7 +2335,7 @@ export default function DashboardPage() {
                     </thead>
                     <tbody>
                       {specs.map(spec => {
-                        const total = spec.items.reduce((s,it)=>s+it.summa,0)
+                        const total = spec.items.reduce((s,it)=>s+(it.summa||0),0)
                         const contract = spec.contracts
                         return (
                           <tr key={spec.id} className="border-t border-gray-800/50 hover:bg-gray-800/20 transition">
@@ -2424,7 +2424,7 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-3 flex-wrap">
                   <div className="text-sm text-gray-400">{allTemplates.length} {T(t.tplTab.count)}</div>
 
-                  {/* Word import — faqat AI Pro */}
+                  {/* Word import — faqat Premium */}
                   {!isFree && (
                     <>
                       <input
@@ -2437,12 +2437,12 @@ export default function DashboardPage() {
                       <button
                         onClick={() => wordImportRef.current?.click()}
                         disabled={wordImporting}
-                        title="Word (.docx) fayldan shablon yaratish — AI Pro"
+                        title="Word (.docx) fayldan shablon yaratish — Premium"
                         className="ml-auto flex items-center gap-2 bg-purple-700 hover:bg-purple-600 disabled:opacity-60 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                         {wordImporting ? (
                           <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"/><span>O'qilmoqda...</span></>
                         ) : (
-                          <><span>📄</span><span>Word import</span><span className="text-xs bg-purple-900/60 px-1.5 py-0.5 rounded-full">AI Pro</span></>
+                          <><span>📄</span><span>Word import</span><span className="text-xs bg-purple-900/60 px-1.5 py-0.5 rounded-full">Premium</span></>
                         )}
                       </button>
                     </>
@@ -2672,7 +2672,7 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <span className="text-xs bg-purple-900/50 border border-purple-700 text-purple-300 px-3 py-1.5 rounded-xl font-medium">
-                      ⭐ {subscription?.plan === 'ai_pro' ? 'AI Pro' : 'Standart'} — Cheksiz foydalanish
+                      ⭐ {subscription?.plan === 'premium' ? 'Premium' : 'Standart'} — Cheksiz foydalanish
                     </span>
                   )}
                 </div>
@@ -2717,7 +2717,7 @@ export default function DashboardPage() {
                   {/* Shartnoma tanlash */}
                   {sel.needsContract && (() => {
                     const contractsWithContent = contractList.filter(c => c.content?.trim())
-                    const selectedHasContent = contracts.find(c => c.id === hubContract)?.content?.trim()
+                    const selectedHasContent = contractList.find(c => c.id === hubContract)?.content?.trim()
                     return (
                       <div>
                         <label className="block text-xs text-gray-400 mb-1.5">
@@ -2855,7 +2855,7 @@ export default function DashboardPage() {
                     <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/50 rounded-xl p-5 text-center">
                       <div className="text-3xl mb-2">🔒</div>
                       <div className="text-white font-semibold mb-1">Premium xizmat</div>
-                      <div className="text-gray-400 text-sm mb-4">Bu funksiyadan foydalanish uchun Standart yoki AI Pro tarifiga o'ting</div>
+                      <div className="text-gray-400 text-sm mb-4">Bu funksiyadan foydalanish uchun Standart yoki Premium tarifiga o'ting</div>
                       <button onClick={() => setModal('upgrade')}
                         className="bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition">
                         ✦ Tarifni yaxshilash →
@@ -3057,7 +3057,7 @@ export default function DashboardPage() {
                 {isFree && (
                   <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/30 rounded-2xl p-5 flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-white font-semibold text-sm mb-1">✦ Standart yoki AI Proga o'ting</div>
+                      <div className="text-white font-semibold text-sm mb-1">✦ Standart yoki Premiumga o'ting</div>
                       <div className="text-gray-400 text-xs">Cheksiz AI, 4 ta premium funksiya, imzo/muhr avtomatik va ko'proq</div>
                     </div>
                     <button onClick={() => setModal('upgrade')}
@@ -3126,11 +3126,11 @@ export default function DashboardPage() {
                     {subscription ? (
                       <div className={`inline-flex flex-col items-end gap-1`}>
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          subscription.plan === 'ai_pro' ? 'bg-purple-900/50 text-purple-300 border border-purple-700' :
+                          subscription.plan === 'premium' ? 'bg-purple-900/50 text-purple-300 border border-purple-700' :
                           subscription.plan === 'standart' ? 'bg-blue-900/50 text-blue-300 border border-blue-700' :
                           'bg-gray-800 text-gray-400 border border-gray-700'
                         }`}>
-                          {subscription.plan === 'ai_pro' ? '⭐ AI Pro' :
+                          {subscription.plan === 'premium' ? '⭐ Premium' :
                            subscription.plan === 'standart' ? '✦ Standart' : 'Bepul'}
                         </span>
                         <span className="text-xs text-gray-500">
@@ -3394,9 +3394,9 @@ export default function DashboardPage() {
               {/* ── Qo'llab-quvvatlash kartasi ── */}
               {(() => {
                 const plan = !subscription || subscription.plan === 'free' ? 'free'
-                  : subscription.plan === 'ai_pro' ? 'ai_pro' : 'standard'
+                  : subscription.plan === 'premium' ? 'premium' : 'standart'
                 const isPaid = plan !== 'free'
-                const isAiPro = plan === 'ai_pro'
+                const isAiPro = plan === 'premium'
                 return (
                   <div className={`rounded-2xl border p-6 ${isAiPro ? 'bg-purple-950/40 border-purple-700/50' : isPaid ? 'bg-blue-950/40 border-blue-700/50' : 'bg-gray-900 border-gray-800'}`}>
                     <div className="flex items-center justify-between mb-4">
@@ -3411,7 +3411,7 @@ export default function DashboardPage() {
                       </div>
                       {isPaid && (
                         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${isAiPro ? 'bg-purple-800 text-purple-200' : 'bg-blue-800 text-blue-200'}`}>
-                          {isAiPro ? '⭐ AI Pro' : '✦ Standart'}
+                          {isAiPro ? '⭐ Premium' : '✦ Standart'}
                         </span>
                       )}
                     </div>
@@ -3458,7 +3458,7 @@ export default function DashboardPage() {
                       </form>
                     ) : (
                       <div className="bg-gray-800/60 rounded-xl p-4 flex items-center justify-between gap-4">
-                        <p className="text-gray-400 text-xs">Ustunlik qo'llab-quvvatlash uchun Standart yoki AI Pro tarifiga o'ting</p>
+                        <p className="text-gray-400 text-xs">Ustunlik qo'llab-quvvatlash uchun Standart yoki Premium tarifiga o'ting</p>
                         <button onClick={() => setModal('upgrade')}
                           className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
                           Upgrade →
@@ -3482,7 +3482,7 @@ export default function DashboardPage() {
             <div><label className={lbl}>Tashkilot nomi *</label>
               <input className={inp} required placeholder="Alfa Texnologiya MChJ" value={orgForm.name} onChange={e=>setOrgForm({...orgForm,name:e.target.value})}/></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className={lbl}>STR (INN)</label>
+              <div><label className={lbl}>INN (STIR)</label>
                 <input className={inp} placeholder="123456789" value={orgForm.inn} onChange={e=>setOrgForm({...orgForm,inn:e.target.value})}/></div>
               <div><label className={lbl}>Rahbar ismi</label>
                 <input className={inp} placeholder="F.I.O" value={orgForm.director_name} onChange={e=>setOrgForm({...orgForm,director_name:e.target.value})}/></div>
@@ -3506,7 +3506,7 @@ export default function DashboardPage() {
             <div><label className={lbl}>Tashkilot nomi *</label>
               <input className={inp} required placeholder="Beta Qurilish MChJ" value={cpForm.name} onChange={e=>setCpForm({...cpForm,name:e.target.value})}/></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className={lbl}>STR (INN)</label>
+              <div><label className={lbl}>INN (STIR)</label>
                 <input className={inp} placeholder="123456789" value={cpForm.inn} onChange={e=>setCpForm({...cpForm,inn:e.target.value})}/></div>
               <div><label className={lbl}>Rahbar ismi</label>
                 <input className={inp} placeholder="F.I.O" value={cpForm.director_name} onChange={e=>setCpForm({...cpForm,director_name:e.target.value})}/></div>
@@ -3539,7 +3539,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h2 className="text-base font-semibold text-white">{cpDetail.name}</h2>
-                  {cpDetail.inn && <p className="text-xs text-gray-500 font-mono">STR: {cpDetail.inn}</p>}
+                  {cpDetail.inn && <p className="text-xs text-gray-500 font-mono">INN: {cpDetail.inn}</p>}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -3559,7 +3559,7 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     ['Tashkilot nomi', cpDetail.name, true],
-                    ['STR / INN', cpDetail.inn, false],
+                    ['INN / STIR', cpDetail.inn, false],
                     ['Rahbar', cpDetail.director_name, false],
                     ['Telefon', cpDetail.phone, false],
                     ['QQS kodi', cpDetail.qqsreg, false],
@@ -3606,7 +3606,7 @@ export default function DashboardPage() {
                             <span className="text-xs text-gray-500 ml-2">{c.contract_date}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">{c.amount?.toLocaleString()} so'm</span>
+                            <span className="text-xs text-gray-400">{(c.amount||0).toLocaleString()} so'm</span>
                             <span className={`text-xs px-2 py-0.5 rounded-full ${
                               c.status==='active'?'bg-emerald-900/40 text-emerald-400':
                               c.status==='completed'?'bg-blue-900/40 text-blue-400':
@@ -5115,7 +5115,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                         <div className="flex items-center gap-2 bg-gray-800 border border-blue-600 rounded-lg px-3 py-2.5">
                           <div className="flex-1 min-w-0">
                             <div className="text-sm text-white font-medium truncate">{selectedCp.name}</div>
-                            {selectedCp.inn && <div className="text-xs text-gray-400">STR: {selectedCp.inn}</div>}
+                            {selectedCp.inn && <div className="text-xs text-gray-400">INN: {selectedCp.inn}</div>}
                           </div>
                           <button type="button" onClick={() => { handleFieldChange('counterparty_id',''); setCpSearch(''); setCpDropOpen(true) }}
                             className="text-gray-400 hover:text-white text-lg leading-none flex-shrink-0">×</button>
@@ -5143,7 +5143,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                                     onClick={() => { handleFieldChange('counterparty_id', cp.id); setCpSearch(''); setCpDropOpen(false) }}
                                     className="w-full text-left px-3 py-2.5 hover:bg-gray-700 transition border-b border-gray-700/50 last:border-0">
                                     <div className="text-sm text-white">{cp.name}</div>
-                                    {cp.inn && <div className="text-xs text-gray-400">STR: {cp.inn}</div>}
+                                    {cp.inn && <div className="text-xs text-gray-400">INN: {cp.inn}</div>}
                                   </button>
                                 ))
                               )}
@@ -5173,7 +5173,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"/>
                                 <div className="grid grid-cols-2 gap-3">
                                   <input value={quickCpForm.inn} onChange={e => setQuickCpForm({...quickCpForm, inn: e.target.value})}
-                                    placeholder="STR / INN"
+                                    placeholder="INN / STIR"
                                     className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500"/>
                                   <input value={quickCpForm.director_name} onChange={e => setQuickCpForm({...quickCpForm, director_name: e.target.value})}
                                     placeholder="Rahbar F.I.O."
