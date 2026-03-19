@@ -4357,7 +4357,7 @@ export default function DashboardPage() {
             recommended: false,
             features: [
               'Oyiga 50 ta shartnoma',
-              'Watermarksiz PDF',
+              "PDF da reklama belgisi yo'q",
               'Barcha shartnoma turlari',
               "Imzo va muhr qo'shish",
               'Spesifikatsiyalar',
@@ -4374,7 +4374,7 @@ export default function DashboardPage() {
             recommended: true,
             features: [
               'Cheksiz shartnomalar',
-              'Watermarksiz PDF',
+              "PDF da reklama belgisi yo'q",
               'Barcha shartnoma turlari',
               "Imzo va muhr qo'shish",
               'Spesifikatsiyalar',
