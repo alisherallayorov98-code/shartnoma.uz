@@ -1997,7 +1997,7 @@ export default function DashboardPage() {
                       {isFree && (
                         <button onClick={()=>setModal('upgrade')}
                           className="mt-4 w-full py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-yellow-600/30 to-orange-600/30 border border-yellow-700/50 text-yellow-400 hover:from-yellow-600/50 hover:to-orange-600/50 transition">
-                          ⭐ Premium ga o'tish
+                          ⭐ Premiumga o'tish
                         </button>
                       )}
                     </div>
@@ -2843,7 +2843,7 @@ export default function DashboardPage() {
                         {hubError.includes('limit') && (
                           <button onClick={() => setModal('upgrade')}
                             className="block mt-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs px-3 py-1.5 rounded-lg">
-                            Premium ga o'tish →
+                            Premiumga o'tish →
                           </button>
                         )}
                       </div>
@@ -3057,7 +3057,7 @@ export default function DashboardPage() {
                 {isFree && (
                   <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/30 rounded-2xl p-5 flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-white font-semibold text-sm mb-1">✦ Standart yoki AI Pro ga o'ting</div>
+                      <div className="text-white font-semibold text-sm mb-1">✦ Standart yoki AI Proga o'ting</div>
                       <div className="text-gray-400 text-xs">Cheksiz AI, 4 ta premium funksiya, imzo/muhr avtomatik va ko'proq</div>
                     </div>
                     <button onClick={() => setModal('upgrade')}
