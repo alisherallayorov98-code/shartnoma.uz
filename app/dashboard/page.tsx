@@ -218,6 +218,7 @@ export default function DashboardPage() {
   const [aiTab, setAiTab] = useState<'tahlil'|'grammatika'>('tahlil')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [billingAnnual, setBillingAnnual] = useState(false)
 
   useEffect(() => { init(); setAiUsedToday(getAiUsedToday()) }, [])
 
@@ -4344,81 +4345,127 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {modal==='upgrade' && (
+      {modal==='upgrade' && (() => {
+        const plans = [
+          {
+            key: 'standart',
+            name: 'Standart',
+            color: 'blue',
+            monthlyPrice: 99000,
+            annualPrice: 990000,
+            annualMonthly: 82500,
+            recommended: false,
+            features: [
+              'Oyiga 50 ta shartnoma',
+              'Watermarksiz PDF',
+              'Barcha shartnoma turlari',
+              "Imzo va muhr qo'shish",
+              'Spesifikatsiyalar',
+              'AI: kuniga 20 ta so\'rov',
+            ],
+          },
+          {
+            key: 'premium',
+            name: 'Premium',
+            color: 'yellow',
+            monthlyPrice: 199000,
+            annualPrice: 1990000,
+            annualMonthly: 165833,
+            recommended: true,
+            features: [
+              'Cheksiz shartnomalar',
+              'Watermarksiz PDF',
+              'Barcha shartnoma turlari',
+              "Imzo va muhr qo'shish",
+              'Spesifikatsiyalar',
+              'AI: cheksiz so\'rovlar',
+              'Word import/export',
+              'Ustuvor texnik yordam',
+            ],
+          },
+        ]
+        const fmt = (n: number) => n.toLocaleString('uz-UZ')
+        return (
         <Modal title="Tarifni tanlang" onClose={()=>setModal(null)} wide>
           <div className="space-y-5">
             <div className="text-center">
-              <div className="text-4xl mb-2">⭐</div>
-              <p className="text-gray-400 text-sm">Bepul tarif: oyiga <strong className="text-white">{FREE_LIMIT} ta</strong> shartnoma. Quyidagi tariflardan birini tanlang:</p>
+              <p className="text-gray-400 text-sm mb-4">Bepul tarif: oyiga <strong className="text-white">{FREE_LIMIT} ta</strong> shartnoma. Quyidagi tariflardan birini tanlang:</p>
+
+              {/* Oylik / Yillik toggle */}
+              <div className="inline-flex items-center bg-gray-800 rounded-xl p-1 gap-1">
+                <button onClick={()=>setBillingAnnual(false)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${!billingAnnual?'bg-gray-700 text-white shadow':'text-gray-400 hover:text-white'}`}>
+                  Oylik
+                </button>
+                <button onClick={()=>setBillingAnnual(true)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${billingAnnual?'bg-gray-700 text-white shadow':'text-gray-400 hover:text-white'}`}>
+                  Yillik
+                  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full font-semibold">2 oy tekin</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Standart */}
-              <div className="relative bg-gray-800/60 border border-gray-700 hover:border-blue-600/60 rounded-2xl p-5 transition group">
-                <div className="mb-4">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Standart</div>
-                  <div className="flex items-end gap-1">
-                    <span className="text-3xl font-bold text-white">99 000</span>
-                    <span className="text-gray-500 text-sm mb-1">so'm/oy</span>
-                  </div>
-                  <div className="text-xs text-gray-600 mt-0.5">yoki 890 000 so'm/yil</div>
-                </div>
-                <ul className="space-y-2 mb-5 text-sm">
-                  {[
-                    'Oyiga 50 ta shartnoma',
-                    'Watermarksiz PDF',
-                    'Barcha shartnoma turlari',
-                    'Imzo va muhr qo\'shish',
-                    'Spesifikatsiyalar',
-                    'AI: kuniga 20 ta so\'rov',
-                  ].map(f => (
-                    <li key={f} className="flex items-start gap-2 text-gray-300">
-                      <span className="text-blue-400 mt-0.5 flex-shrink-0">✓</span>{f}
-                    </li>
-                  ))}
-                </ul>
-                <a href="https://t.me/shartnoma_uz_support" target="_blank" rel="noopener noreferrer"
-                  className="block w-full text-center py-2.5 rounded-xl text-sm font-semibold bg-blue-700 hover:bg-blue-600 text-white transition">
-                  Standart tanlash
-                </a>
-              </div>
+              {plans.map(plan => (
+                <div key={plan.key}
+                  className={`relative rounded-2xl p-5 transition ${
+                    plan.recommended
+                      ? 'bg-gradient-to-b from-yellow-900/30 to-gray-800/60 border border-yellow-700/60'
+                      : 'bg-gray-800/60 border border-gray-700 hover:border-blue-600/60'
+                  }`}>
+                  {plan.recommended && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-3 py-1 rounded-full shadow-lg">🔥 TAVSIYA</span>
+                    </div>
+                  )}
 
-              {/* Premium */}
-              <div className="relative bg-gradient-to-b from-yellow-900/30 to-gray-800/60 border border-yellow-700/60 rounded-2xl p-5 transition">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-3 py-1 rounded-full shadow-lg">🔥 TAVSIYA</span>
-                </div>
-                <div className="mb-4">
-                  <div className="text-xs text-yellow-500 uppercase tracking-wide mb-1">Premium</div>
-                  <div className="flex items-end gap-1">
-                    <span className="text-3xl font-bold text-white">199 000</span>
-                    <span className="text-gray-500 text-sm mb-1">so'm/oy</span>
+                  <div className="mb-4">
+                    <div className={`text-xs uppercase tracking-wide mb-2 font-semibold ${plan.recommended?'text-yellow-500':'text-gray-500'}`}>{plan.name}</div>
+                    {billingAnnual ? (
+                      <>
+                        <div className="flex items-end gap-1">
+                          <span className="text-3xl font-bold text-white">{fmt(plan.annualPrice)}</span>
+                          <span className="text-gray-500 text-sm mb-1">so'm/yil</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-gray-500">oyiga ≈ {fmt(plan.annualMonthly)} so'm</span>
+                          <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">2 oy tekin!</span>
+                        </div>
+                        <div className="text-xs text-gray-600 line-through mt-0.5">{fmt(plan.monthlyPrice * 12)} so'm o'rniga</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-end gap-1">
+                          <span className="text-3xl font-bold text-white">{fmt(plan.monthlyPrice)}</span>
+                          <span className="text-gray-500 text-sm mb-1">so'm/oy</span>
+                        </div>
+                        <div className="text-xs text-gray-600 mt-0.5">yillik: {fmt(plan.annualPrice)} so'm (2 oy tekin)</div>
+                      </>
+                    )}
                   </div>
-                  <div className="text-xs text-gray-600 mt-0.5">yoki 1 790 000 so'm/yil</div>
+
+                  <ul className="space-y-2 mb-5 text-sm">
+                    {plan.features.map(f => (
+                      <li key={f} className={`flex items-start gap-2 ${plan.recommended?'text-gray-200':'text-gray-300'}`}>
+                        <span className={`mt-0.5 flex-shrink-0 ${plan.recommended?'text-yellow-400':'text-blue-400'}`}>✓</span>{f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <a href={`https://t.me/shartnoma_uz_support?text=${encodeURIComponent(`${plan.name} tarif (${billingAnnual?'yillik':'oylik'}) — ${billingAnnual?fmt(plan.annualPrice):fmt(plan.monthlyPrice)} so'm`)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className={`block w-full text-center py-2.5 rounded-xl text-sm font-semibold transition ${
+                      plan.recommended
+                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black shadow-lg shadow-yellow-900/30'
+                        : 'bg-blue-700 hover:bg-blue-600 text-white'
+                    }`}>
+                    {plan.name} tanlash — {billingAnnual ? `${fmt(plan.annualPrice)} so'm/yil` : `${fmt(plan.monthlyPrice)} so'm/oy`}
+                  </a>
                 </div>
-                <ul className="space-y-2 mb-5 text-sm">
-                  {[
-                    'Cheksiz shartnomalar',
-                    'Watermarksiz PDF',
-                    'Barcha shartnoma turlari',
-                    'Imzo va muhr qo\'shish',
-                    'Spesifikatsiyalar',
-                    'AI: cheksiz so\'rovlar',
-                    'Word import/export',
-                    'Ustuvor texnik yordam',
-                  ].map(f => (
-                    <li key={f} className="flex items-start gap-2 text-gray-200">
-                      <span className="text-yellow-400 mt-0.5 flex-shrink-0">✓</span>{f}
-                    </li>
-                  ))}
-                </ul>
-                <a href="https://t.me/shartnoma_uz_support" target="_blank" rel="noopener noreferrer"
-                  className="block w-full text-center py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black transition shadow-lg shadow-yellow-900/30">
-                  Premium tanlash
-                </a>
-              </div>
+              ))}
             </div>
 
+            {/* To'lov tartibi */}
             <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 text-sm text-gray-400">
               <p className="font-medium text-white mb-1.5">💳 To'lov tartibi:</p>
               <p>Telegram orqali murojaat qiling → to'lov rekvizitlari yuboriladi → 24 soat ichida tarif faollashtiriladi.</p>
@@ -4435,7 +4482,8 @@ export default function DashboardPage() {
             </button>
           </div>
         </Modal>
-      )}
+        )
+      })()}
     </div>
   )
 }
