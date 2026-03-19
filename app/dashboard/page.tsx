@@ -4345,29 +4345,93 @@ export default function DashboardPage() {
       )}
 
       {modal==='upgrade' && (
-        <Modal title="Tarifni yaxshilash" onClose={()=>setModal(null)}>
-          <div className="space-y-4 text-center">
-            <div className="text-5xl">⚡</div>
-            <p className="text-gray-300">Bepul tarif limitiga yetdingiz <strong className="text-white">({FREE_LIMIT} ta/oy)</strong></p>
-            <div className="bg-gray-800 rounded-xl p-5 text-left space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-white">Standart tarif</span>
-                <span className="text-blue-400 font-bold text-lg">50,000 so'm/oy</span>
+        <Modal title="Tarifni tanlang" onClose={()=>setModal(null)} wide>
+          <div className="space-y-5">
+            <div className="text-center">
+              <div className="text-4xl mb-2">⭐</div>
+              <p className="text-gray-400 text-sm">Bepul tarif: oyiga <strong className="text-white">{FREE_LIMIT} ta</strong> shartnoma. Quyidagi tariflardan birini tanlang:</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Standart */}
+              <div className="relative bg-gray-800/60 border border-gray-700 hover:border-blue-600/60 rounded-2xl p-5 transition group">
+                <div className="mb-4">
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Standart</div>
+                  <div className="flex items-end gap-1">
+                    <span className="text-3xl font-bold text-white">99 000</span>
+                    <span className="text-gray-500 text-sm mb-1">so'm/oy</span>
+                  </div>
+                  <div className="text-xs text-gray-600 mt-0.5">yoki 890 000 so'm/yil</div>
+                </div>
+                <ul className="space-y-2 mb-5 text-sm">
+                  {[
+                    'Oyiga 50 ta shartnoma',
+                    'Watermarksiz PDF',
+                    'Barcha shartnoma turlari',
+                    'Imzo va muhr qo\'shish',
+                    'Spesifikatsiyalar',
+                    'AI: kuniga 20 ta so\'rov',
+                  ].map(f => (
+                    <li key={f} className="flex items-start gap-2 text-gray-300">
+                      <span className="text-blue-400 mt-0.5 flex-shrink-0">✓</span>{f}
+                    </li>
+                  ))}
+                </ul>
+                <a href="https://t.me/shartnoma_uz_support" target="_blank" rel="noopener noreferrer"
+                  className="block w-full text-center py-2.5 rounded-xl text-sm font-semibold bg-blue-700 hover:bg-blue-600 text-white transition">
+                  Standart tanlash
+                </a>
               </div>
-              <ul className="text-sm text-gray-400 space-y-1.5">
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Cheksiz shartnomalar</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Reklama belgisisiz PDF</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Barcha shartnoma turlari</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Imzo va muhr avtomatik</li>
-              </ul>
+
+              {/* Premium */}
+              <div className="relative bg-gradient-to-b from-yellow-900/30 to-gray-800/60 border border-yellow-700/60 rounded-2xl p-5 transition">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold px-3 py-1 rounded-full shadow-lg">🔥 TAVSIYA</span>
+                </div>
+                <div className="mb-4">
+                  <div className="text-xs text-yellow-500 uppercase tracking-wide mb-1">Premium</div>
+                  <div className="flex items-end gap-1">
+                    <span className="text-3xl font-bold text-white">199 000</span>
+                    <span className="text-gray-500 text-sm mb-1">so'm/oy</span>
+                  </div>
+                  <div className="text-xs text-gray-600 mt-0.5">yoki 1 790 000 so'm/yil</div>
+                </div>
+                <ul className="space-y-2 mb-5 text-sm">
+                  {[
+                    'Cheksiz shartnomalar',
+                    'Watermarksiz PDF',
+                    'Barcha shartnoma turlari',
+                    'Imzo va muhr qo\'shish',
+                    'Spesifikatsiyalar',
+                    'AI: cheksiz so\'rovlar',
+                    'Word import/export',
+                    'Ustuvor texnik yordam',
+                  ].map(f => (
+                    <li key={f} className="flex items-start gap-2 text-gray-200">
+                      <span className="text-yellow-400 mt-0.5 flex-shrink-0">✓</span>{f}
+                    </li>
+                  ))}
+                </ul>
+                <a href="https://t.me/shartnoma_uz_support" target="_blank" rel="noopener noreferrer"
+                  className="block w-full text-center py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black transition shadow-lg shadow-yellow-900/30">
+                  Premium tanlash
+                </a>
+              </div>
             </div>
-            <div className="bg-gray-800 rounded-xl p-4 text-sm text-gray-400 text-left">
-              <p className="font-medium text-white mb-2">To'lov qilish uchun:</p>
-              <p>Bank orqali pul o'tkazing, xabar yuboring — 24 soat ichida faollashtiramiz.</p>
+
+            <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 text-sm text-gray-400">
+              <p className="font-medium text-white mb-1.5">💳 To'lov tartibi:</p>
+              <p>Telegram orqali murojaat qiling → to'lov rekvizitlari yuboriladi → 24 soat ichida tarif faollashtiriladi.</p>
+              <a href="https://t.me/shartnoma_uz_support" target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-3 text-blue-400 hover:text-blue-300 transition text-xs font-medium">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+                @shartnoma_uz_support
+              </a>
             </div>
+
             <button onClick={()=>setModal(null)}
-              className="w-full border border-gray-700 text-gray-300 hover:bg-gray-800 py-2.5 rounded-lg text-sm transition">
-              Yopish
+              className="w-full border border-gray-700 text-gray-400 hover:bg-gray-800 py-2.5 rounded-xl text-sm transition">
+              Keyinroq
             </button>
           </div>
         </Modal>
