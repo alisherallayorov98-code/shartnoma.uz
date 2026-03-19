@@ -224,7 +224,7 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
 
 3. IJARA HAQI
 
-3.1. Ijara haqi oyiga {{SUMMA}} ({{SUMMA_MATN}}) so'mni tashkil etadi.
+3.1. Oylik ijara haqi {{OYLIK_TOLOV}} ({{OYLIK_TOLOV_MATN}}) so'mni tashkil etadi. Butun ijara muddati uchun umumiy summa: {{SUMMA}} ({{SUMMA_MATN}}) so'm.
 3.2. Ijara haqi har oyning 5 (beshinchi) kuniga qadar to'lanadi.
 3.3. Kommunal xizmatlar (elektr, gaz, suv) Ijarachi tomonidan alohida to'lanadi.
 

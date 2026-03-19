@@ -168,20 +168,23 @@ export default function DashboardPage() {
 
   // ── Yurist AI Hub ──────────────────────────────────────
   const AI_FREE_DAILY = 5
+  function localDateStr(): string {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  }
   function getAiUsedToday(): number {
     if (typeof window === 'undefined') return 0
     try {
       const stored = localStorage.getItem('ai_usage')
       if (!stored) return 0
       const { date, count } = JSON.parse(stored)
-      return date === new Date().toISOString().split('T')[0] ? count : 0
+      return date === localDateStr() ? count : 0
     } catch { return 0 }
   }
   function incrementAiUsage() {
     try {
-      const today = new Date().toISOString().split('T')[0]
       const cur = getAiUsedToday()
-      localStorage.setItem('ai_usage', JSON.stringify({ date: today, count: cur + 1 }))
+      localStorage.setItem('ai_usage', JSON.stringify({ date: localDateStr(), count: cur + 1 }))
     } catch { /* */ }
   }
 
@@ -223,7 +226,7 @@ export default function DashboardPage() {
     if (!session) { router.push('/login'); return }
     setUserEmail(session.user.email || '')
     setUserId(session.user.id)
-    await Promise.all([loadOrgs(), loadCps(), loadContracts(), loadProfile(session.user.id)])
+    await Promise.all([loadOrgs(), loadCps(), loadProfile(session.user.id)])
     setLoading(false)
   }
 
@@ -257,8 +260,9 @@ export default function DashboardPage() {
     setCps(data || [])
   }
 
-  async function loadContracts() {
-    const { data, error } = await supabase.from('contracts').select('*, organizations(*), counterparties(*)').order('created_at', { ascending: false })
+  async function loadContracts(orgId?: string) {
+    const q = supabase.from('contracts').select('*, organizations(*), counterparties(*)').order('created_at', { ascending: false })
+    const { data, error } = orgId ? await q.eq('organization_id', orgId) : await q
     if (error) { console.error('loadContracts:', error.message); return }
     setContracts(data || [])
   }
@@ -333,8 +337,12 @@ export default function DashboardPage() {
       loadSubscription(activeOrg.id)
       loadSpecs(activeOrg.id)
       loadCustomTemplates(activeOrg.id)
+      loadContracts(activeOrg.id)
+      setHubContract('')
+      setHubResult(null)
+      setHubError('')
     }
-  }, [activeOrg])
+  }, [activeOrg?.id])
 
   async function switchOrg(org: Org) {
     setActiveOrg(org)
@@ -372,7 +380,7 @@ export default function DashboardPage() {
       const used = subscription?.contracts_used ?? orgContracts.length
       return { plan: 'Bepul', used, limit: FREE_LIMIT, percent: Math.min((used / FREE_LIMIT) * 100, 100) }
     }
-    return { plan: subscription.plan === 'standard' ? 'Standart' : 'AI Pro', used: null, limit: null, percent: null }
+    return { plan: subscription.plan === 'standart' ? 'Standart' : 'AI Pro', used: null, limit: null, percent: null }
   }
 
   // ── Save org ──
@@ -419,7 +427,15 @@ export default function DashboardPage() {
     if (!confirm(T(t.msg.deleteCpConfirm))) return
     const { error } = await supabase.from('counterparties').delete().eq('id', id)
     if (error) { alert(`${T(t.msg.errorPrefix)}: ${error.message}`); return }
-    setCpDetail(null); loadCps()
+    setCpDetail(null); loadCps(); setEditingCp(null)
+  }
+
+  // ── Auto contract number ──
+  function autoContractNum(): string {
+    const year = new Date().getFullYear()
+    const orgContracts = contracts.filter(c => c.organization_id === activeOrg?.id)
+    const num = String(orgContracts.length + 1).padStart(3, '0')
+    return `${year}/${num}`
   }
 
   // ── Auto spec number ──
@@ -644,6 +660,7 @@ export default function DashboardPage() {
     e.preventDefault()
     if (!canCreateContract()) { setModal('upgrade'); return }
     if (!contractForm.organization_id) { alert(T(t.msg.selectOrg)); return }
+    if (!contractForm.contract_number.trim()) { alert("Shartnoma raqamini kiriting"); return }
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
     const { error } = await supabase.from('contracts').insert({
@@ -795,14 +812,30 @@ export default function DashboardPage() {
     }
     const selectedContract = contracts.find(c => c.id === hubContract)
     const content = selectedContract?.content || ''
-    const needsContract = ['tahlil','grammatika','xulosa','tarjima','qa','clause'].includes(hubFeature)
+    const needsContract = ['tahlil','grammatika','xulosa','tarjima','qa'].includes(hubFeature)
     if (needsContract && !content.trim()) {
       setHubError("Shartnomani tanlang yoki uning matni bo'sh. Avval shartnoma yaratib, matn kiriting.")
       return
     }
+    if (hubFeature === 'qa' && !hubQuestion.trim()) {
+      setHubError("Iltimos, savolingizni kiriting.")
+      return
+    }
+    if (hubFeature === 'clause' && !hubInstruction.trim()) {
+      setHubError("Iltimos, band uchun ko'rsatma kiriting.")
+      return
+    }
+    if (hubFeature === 'recommend' && !hubDescription.trim()) {
+      setHubError("Iltimos, vaziyatni ta'riflang.")
+      return
+    }
     setHubLoading(true); setHubError(''); setHubResult(null)
     try {
-      const body: Record<string,unknown> = { type: hubFeature === 'tahlil' ? 'analysis' : hubFeature, lang, content }
+      const typeMap: Record<HubFeature, string> = {
+        tahlil: 'analysis', grammatika: 'grammar', xulosa: 'summary',
+        tarjima: 'translate', qa: 'qa', clause: 'clause', recommend: 'recommend', write: 'write',
+      }
+      const body: Record<string,unknown> = { type: typeMap[hubFeature], lang, content }
       if (hubFeature === 'qa')        body.question    = hubQuestion
       if (hubFeature === 'clause')    body.instruction = hubInstruction
       if (hubFeature === 'tarjima')   body.target_lang = hubTargetLang
@@ -811,9 +844,13 @@ export default function DashboardPage() {
       const res  = await fetch('/api/ai', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
       const data = await res.json()
       if (!res.ok || data.error) { setHubError(data.error || 'Xatolik'); return }
-      setHubResult(data.result)
-      incrementAiUsage()
-      setAiUsedToday(getAiUsedToday())
+      const result = data.result
+      if (!result || typeof result !== 'object' || Object.keys(result).length === 0) {
+        setHubError("AI bo'sh natija qaytardi. Qayta urinib ko'ring.")
+        return
+      }
+      setHubResult(result)
+      if (isFree) { incrementAiUsage(); setAiUsedToday(getAiUsedToday()) }
     } catch { setHubError('Serverga ulanishda xatolik') }
     finally  { setHubLoading(false) }
   }
@@ -929,8 +966,8 @@ export default function DashboardPage() {
       if (!d) return '___'
       const [yy,mm,dd] = d.split('-')
       if (!yy || !mm || !dd) return d
-      const ySuffix = lang === 'ru' ? 'g.' : 'y.'
-      return `"${parseInt(dd)}" ${MONTHS[parseInt(mm)-1]} ${yy} ${ySuffix}`
+      const ySuffix = lang === 'ru' ? 'g.' : 'yil'
+      return `${parseInt(dd)} ${MONTHS[parseInt(mm)-1]} ${yy} ${ySuffix}`
     }
     const ctName = safe(CONTRACT_TYPES_I18N[c.contract_type]?.[lang] || c.contract_type)
 
@@ -1193,9 +1230,9 @@ export default function DashboardPage() {
     // ── 2. SHAHAR + SANA ──
     doc.setFont(F,'normal'); doc.setFontSize(12)
     doc.text(safe(`${c.city || 'Toshkent'} ${t.doc.shahri[lang]}`), mL, y)
-    doc.text(safe(fmtDate(c.contract_date)), pageW-mR, y, {align:'right'})
+    doc.text(safe(fmtDate(c.contract_date)), mL + cW, y, {align:'right'})
     y += 3
-    doc.setDrawColor(180,180,180); doc.line(mL, y, pageW-mR, y); y += 6
+    doc.setDrawColor(180,180,180); doc.line(mL, y, mL + cW, y); y += 6
 
     // ── 3. TOMONLAR KIRISH MATNI ──
     const orgName = safe(org?.name || '___')
@@ -1321,8 +1358,8 @@ export default function DashboardPage() {
       if (!d) return '___'
       const [yy,mm,dd] = d.split('-')
       if (!yy || !mm || !dd) return d
-      const ySuffix = lang === 'ru' ? 'г.' : 'y.'
-      return `"${parseInt(dd)}" ${MONTHS[parseInt(mm)-1]} ${yy} ${ySuffix}`
+      const ySuffix = lang === 'ru' ? 'g.' : 'yil'
+      return `${parseInt(dd)} ${MONTHS[parseInt(mm)-1]} ${yy} ${ySuffix}`
     }
     const ctName = CONTRACT_TYPES_I18N[c.contract_type]?.[lang] || c.contract_type
 
@@ -1775,7 +1812,7 @@ export default function DashboardPage() {
           </h1>
           {tab==='shablonlar' && (
             <button
-              onClick={() => { setContractForm({...emptyContract, organization_id: activeOrg?.id||''}); setModal('contract') }}
+              onClick={() => { setContractForm({...emptyContract, organization_id: activeOrg?.id||'', contract_number: autoContractNum()}); setModal('contract') }}
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg shadow-blue-900/30"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1787,7 +1824,7 @@ export default function DashboardPage() {
           {['contracts','organizations','counterparties'].includes(tab) && (
             <button
               onClick={() => {
-                if (tab==='contracts') { if (!canCreateContract()) { setModal('upgrade'); return } setContractForm({...emptyContract, organization_id: activeOrg?.id||''}); setModal('contract') }
+                if (tab==='contracts') { if (!canCreateContract()) { setModal('upgrade'); return } setContractForm({...emptyContract, organization_id: activeOrg?.id||'', contract_number: autoContractNum()}); setModal('contract') }
                 if (tab==='organizations') setModal('org')
                 if (tab==='counterparties') setModal('cp')
               }}
@@ -1805,88 +1842,241 @@ export default function DashboardPage() {
         <main className="flex-1 overflow-auto p-6 bg-gray-950">
 
           {/* ─── OVERVIEW ─── */}
-          {tab==='overview' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { label:T(t.overviewTab.totalContracts), value:contracts.length, icon:'📄', from:'from-blue-600', to:'to-blue-900' },
-                  { label:T(t.overview.activeContracts), value:contracts.filter(c=>c.status==='active').length, icon:'✅', from:'from-emerald-600', to:'to-emerald-900' },
-                  { label:T(t.orgs.title), value:orgs.length, icon:'🏢', from:'from-purple-600', to:'to-purple-900' },
-                  { label:T(t.cp.title), value:cps.length, icon:'🤝', from:'from-orange-600', to:'to-orange-900' },
-                ].map((s,i) => (
-                  <div key={i} className={`bg-gradient-to-br ${s.from} ${s.to} rounded-xl p-5 shadow-lg`}>
-                    <div className="text-2xl mb-3">{s.icon}</div>
-                    <div className="text-3xl font-bold">{s.value}</div>
-                    <div className="text-sm opacity-80 mt-1">{s.label}</div>
-                  </div>
-                ))}
-              </div>
+          {tab==='overview' && (() => {
+            const cntTotal     = contracts.length
+            const cntActive    = contracts.filter(c=>c.status==='active').length
+            const cntDraft     = contracts.filter(c=>c.status==='draft').length
+            const cntDone      = contracts.filter(c=>c.status==='completed').length
+            const cntCancelled = contracts.filter(c=>c.status==='cancelled').length
+            const totalDone    = contracts.filter(c=>c.status==='completed').reduce((s,c)=>s+(c.amount||0),0)
+            const totalDraft   = contracts.filter(c=>c.status==='draft').reduce((s,c)=>s+(c.amount||0),0)
+            const totalAll     = contracts.reduce((s,c)=>s+(c.amount||0),0)
+            const today = new Date().toLocaleDateString(lang==='ru'?'ru-RU':'uz-UZ',{day:'numeric',month:'long',year:'numeric'})
+            const recentContracts = [...contracts].sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime()).slice(0,5)
+            return (
+            <div className="space-y-5">
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                  <div className="text-sm text-gray-400 mb-2">{T(t.overviewTab.activeSum)}</div>
-                  <div className="text-3xl font-bold text-emerald-400">{totalActive.toLocaleString()} <span className="text-xl text-gray-500 font-normal">{T(t.overviewTab.som)}</span></div>
-                </div>
-                {quota && quota.limit && (
-                  <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                    <div className="text-sm text-gray-400 mb-2">{T(t.overviewTab.quota)} — {quota.plan} {T(t.overviewTab.plan)}</div>
-                    <div className="text-3xl font-bold">{quota.used} <span className="text-xl text-gray-500 font-normal">/ {quota.limit}</span></div>
-                    <div className="mt-3 h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${quota.percent!>=100?'bg-red-500':quota.percent!>=80?'bg-yellow-500':'bg-blue-500'}`}
-                        style={{width:`${quota.percent}%`}}/>
-                    </div>
-                    {quota.percent!>=80 && (
-                      <button onClick={()=>setModal('upgrade')} className="text-xs text-yellow-400 mt-2 hover:underline">{T(t.overviewTab.upgrade)}</button>
+              {/* ── Welcome banner ── */}
+              <div className="relative bg-gradient-to-r from-blue-900/60 via-blue-800/40 to-purple-900/40 border border-blue-800/50 rounded-2xl p-6 overflow-hidden">
+                <div className="absolute inset-0 opacity-5" style={{backgroundImage:'radial-gradient(circle at 80% 50%, #3b82f6 0%, transparent 60%)'}}/>
+                <div className="relative flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <div className="text-xs text-blue-400 mb-1 font-medium tracking-wide uppercase">Shartnoma.uz — Boshqaruv paneli</div>
+                    <h1 className="text-xl font-bold text-white">{activeOrg?.name || '—'}</h1>
+                    <div className="text-sm text-gray-400 mt-0.5">INN: {activeOrg?.inn || '—'} · {activeOrg?.director_name || ''}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500">{today}</div>
+                    {quota && (
+                      <div className={`mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${isFree?'bg-gray-700 text-gray-300':'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50'}`}>
+                        {isFree ? '🔒 Bepul tarif' : '⭐ Premium tarif'}
+                      </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
 
-              <div className="bg-gray-900 border border-gray-800 rounded-xl">
-                <div className="flex justify-between items-center p-5 border-b border-gray-800">
-                  <h2 className="font-semibold">{T(t.overviewTab.recent)}</h2>
-                  <button onClick={()=>setTab('contracts')} className="text-blue-400 text-sm hover:text-blue-300">{T(t.overviewTab.viewAll)}</button>
+              {/* ── 4 stat cards ── */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-gray-900 border border-gray-800 hover:border-blue-700/60 rounded-xl p-5 transition cursor-pointer group" onClick={()=>setTab('contracts')}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 bg-blue-900/50 rounded-xl flex items-center justify-center text-lg">📄</div>
+                    <span className="text-xs text-gray-600 group-hover:text-blue-400 transition">→</span>
+                  </div>
+                  <div className="text-3xl font-bold text-white">{cntTotal}</div>
+                  <div className="text-xs text-gray-400 mt-1">{T(t.overviewTab.totalContracts)}</div>
+                  {cntTotal>0 && <div className="text-xs text-gray-600 mt-1">{cntDraft} qoralama · {cntDone} bajarildi</div>}
                 </div>
-                {contracts.length===0 ? (
-                  <div className="p-10 text-center text-gray-500 text-sm">{T(t.overviewTab.noContracts)}</div>
-                ) : (
-                  <div className="divide-y divide-gray-800">
-                    {contracts.slice(0,6).map(c => (
-                      <div key={c.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-800/40 transition">
-                        <div className="w-9 h-9 bg-blue-900/60 rounded-lg flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0">
-                          {c.contract_number.slice(0,2)}
+
+                <div className="bg-gray-900 border border-gray-800 hover:border-emerald-700/60 rounded-xl p-5 transition cursor-pointer group" onClick={()=>{setTab('contracts');setStatusFilter('active')}}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 bg-emerald-900/50 rounded-xl flex items-center justify-center text-lg">✅</div>
+                    <span className="text-xs text-gray-600 group-hover:text-emerald-400 transition">→</span>
+                  </div>
+                  <div className="text-3xl font-bold text-emerald-400">{cntActive}</div>
+                  <div className="text-xs text-gray-400 mt-1">{T(t.overview.activeContracts)}</div>
+                  {cntActive>0 && <div className="text-xs text-emerald-700 mt-1">{totalActive.toLocaleString()} so'm</div>}
+                </div>
+
+                <div className="bg-gray-900 border border-gray-800 hover:border-purple-700/60 rounded-xl p-5 transition cursor-pointer group" onClick={()=>setTab('organizations')}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 bg-purple-900/50 rounded-xl flex items-center justify-center text-lg">🏢</div>
+                    <span className="text-xs text-gray-600 group-hover:text-purple-400 transition">→</span>
+                  </div>
+                  <div className="text-3xl font-bold text-white">{orgs.length}</div>
+                  <div className="text-xs text-gray-400 mt-1">{T(t.orgs.title)}</div>
+                  {activeOrg && <div className="text-xs text-gray-600 mt-1 truncate">Faol: {activeOrg.name}</div>}
+                </div>
+
+                <div className="bg-gray-900 border border-gray-800 hover:border-orange-700/60 rounded-xl p-5 transition cursor-pointer group" onClick={()=>setTab('counterparties')}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 bg-orange-900/50 rounded-xl flex items-center justify-center text-lg">🤝</div>
+                    <span className="text-xs text-gray-600 group-hover:text-orange-400 transition">→</span>
+                  </div>
+                  <div className="text-3xl font-bold text-white">{cps.length}</div>
+                  <div className="text-xs text-gray-400 mt-1">{T(t.cp.title)}</div>
+                  {specs.length>0 && <div className="text-xs text-gray-600 mt-1">{specs.length} spesifikatsiya</div>}
+                </div>
+              </div>
+
+              {/* ── Moliyaviy va kvota ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Jami summa */}
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-4 font-medium">Moliyaviy ko'rsatkichlar</div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>Faol shartnomalar</span>
+                      <span className="text-sm font-semibold text-emerald-400">{totalActive.toLocaleString()} so'm</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>Bajarilgan</span>
+                      <span className="text-sm font-semibold text-blue-400">{totalDone.toLocaleString()} so'm</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-500 inline-block"/>Qoralamalar</span>
+                      <span className="text-sm font-semibold text-gray-400">{totalDraft.toLocaleString()} so'm</span>
+                    </div>
+                    <div className="border-t border-gray-800 pt-3 flex justify-between items-center">
+                      <span className="text-xs text-gray-500">Jami</span>
+                      <span className="text-sm font-bold text-white">{totalAll.toLocaleString()} so'm</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Holat taqsimoti */}
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-4 font-medium">Shartnomalar holati</div>
+                  {cntTotal===0 ? (
+                    <div className="text-center text-gray-600 text-sm py-4">Shartnomalar yo'q</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {[
+                        {label:'Faol', cnt:cntActive, color:'bg-emerald-500', total:cntTotal},
+                        {label:'Qoralama', cnt:cntDraft, color:'bg-gray-500', total:cntTotal},
+                        {label:'Bajarildi', cnt:cntDone, color:'bg-blue-500', total:cntTotal},
+                        {label:'Bekor', cnt:cntCancelled, color:'bg-red-500', total:cntTotal},
+                      ].map(({label,cnt,color,total})=>(
+                        <div key={label}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-gray-400">{label}</span>
+                            <span className="text-gray-500">{cnt} ta · {total>0?Math.round(cnt/total*100):0}%</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div className={`h-full ${color} rounded-full transition-all`} style={{width:`${total>0?cnt/total*100:0}%`}}/>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium">#{c.contract_number}</div>
-                          <div className="text-xs text-gray-400 truncate">{c.organizations?.name} → {c.counterparties?.name}</div>
-                        </div>
-                        <div className="text-right flex-shrink-0 space-y-0.5">
-                          <div className="text-sm font-medium">{c.amount?.toLocaleString()} {T(t.overviewTab.som)}</div>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${STATUSES[c.status as keyof typeof STATUSES]?.bg} ${STATUSES[c.status as keyof typeof STATUSES]?.text}`}>
-                            {T(t.status[c.status as keyof typeof t.status] || t.status.draft)}
-                          </span>
-                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Kvota */}
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                  <div className="text-xs text-gray-500 uppercase tracking-wide mb-4 font-medium">Oylik kvota</div>
+                  {quota ? (
+                    <div>
+                      <div className="flex items-end gap-2 mb-3">
+                        <span className="text-4xl font-bold text-white">{quota.used}</span>
+                        <span className="text-xl text-gray-600 mb-1">/ {quota.limit ?? '∞'}</span>
                       </div>
-                    ))}
+                      <div className="text-xs text-gray-500 mb-3">Yaratilgan shartnomalar · {quota.plan} tarif</div>
+                      {quota.limit && (
+                        <>
+                          <div className="h-2 bg-gray-800 rounded-full overflow-hidden mb-2">
+                            <div className={`h-full rounded-full transition-all ${quota.percent!>=100?'bg-red-500':quota.percent!>=80?'bg-yellow-500':'bg-blue-500'}`}
+                              style={{width:`${Math.min(quota.percent!,100)}%`}}/>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>{quota.limit-quota.used} ta qoldi</span>
+                            <span>{quota.percent}%</span>
+                          </div>
+                        </>
+                      )}
+                      {isFree && (
+                        <button onClick={()=>setModal('upgrade')}
+                          className="mt-4 w-full py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-yellow-600/30 to-orange-600/30 border border-yellow-700/50 text-yellow-400 hover:from-yellow-600/50 hover:to-orange-600/50 transition">
+                          ⭐ Premium ga o'tish
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-gray-600 text-sm">Ma'lumot yo'q</div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── So'nggi shartnomalar ── */}
+              <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                <div className="flex justify-between items-center px-5 py-4 border-b border-gray-800">
+                  <h2 className="font-semibold text-sm">{T(t.overviewTab.recent)}</h2>
+                  <button onClick={()=>setTab('contracts')} className="text-xs text-blue-400 hover:text-blue-300 transition flex items-center gap-1">
+                    {T(t.overviewTab.viewAll)} →
+                  </button>
+                </div>
+                {recentContracts.length===0 ? (
+                  <div className="p-10 text-center">
+                    <div className="text-4xl mb-3">📋</div>
+                    <div className="text-gray-500 text-sm mb-4">{T(t.overviewTab.noContracts)}</div>
+                    <button onClick={()=>{ if(!canCreateContract()){setModal('upgrade');return}; setContractForm({...emptyContract,organization_id:activeOrg?.id||'',contract_number:autoContractNum()}); setModal('contract') }}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm text-white transition">
+                      + Yangi shartnoma yaratish
+                    </button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-800/60">
+                    {recentContracts.map(c => {
+                      const st = STATUSES[c.status as keyof typeof STATUSES]
+                      const typeName = CONTRACT_TYPES_I18N[c.contract_type]?.[lang] || c.contract_type
+                      return (
+                        <div key={c.id} onClick={()=>{setViewContract(c);setModal('viewContract')}}
+                          className="flex items-center gap-4 px-5 py-4 hover:bg-gray-800/50 transition cursor-pointer group">
+                          <div className="w-10 h-10 bg-blue-900/40 border border-blue-800/40 rounded-xl flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0 group-hover:bg-blue-900/70 transition">
+                            {(c.contract_number||'?').slice(0,3)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-white">#{c.contract_number}</span>
+                              <span className="text-xs text-gray-600">·</span>
+                              <span className="text-xs text-gray-500">{typeName}</span>
+                            </div>
+                            <div className="text-xs text-gray-500 truncate mt-0.5">{c.counterparties?.name || '—'} · {c.contract_date}</div>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-sm font-semibold text-white">{(c.amount||0).toLocaleString()} <span className="text-gray-600 text-xs">so'm</span></div>
+                            <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${st?.bg} ${st?.text}`}>
+                              {T(t.status[c.status as keyof typeof t.status] || t.status.draft)}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { label:T(t.overviewTab.createContract), icon:'📄', action:()=>{ if(!canCreateContract()){setModal('upgrade');return}; setTab('contracts'); setContractForm({...emptyContract, organization_id: activeOrg?.id||''}); setModal('contract') } },
-                  { label:T(t.overviewTab.addOrg), icon:'🏢', action:()=>{ setTab('organizations'); setModal('org') } },
-                  { label:T(t.overviewTab.addCp), icon:'🤝', action:()=>{ setTab('counterparties'); setModal('cp') } },
-                ].map((a,i) => (
-                  <button key={i} onClick={a.action}
-                    className="bg-gray-900 border border-gray-800 hover:border-blue-600 hover:bg-gray-800 rounded-xl p-5 text-center transition group">
-                    <div className="text-3xl mb-3">{a.icon}</div>
-                    <div className="text-sm font-medium text-gray-300 group-hover:text-white">{a.label}</div>
-                  </button>
-                ))}
+              {/* ── Tezkor harakatlar ── */}
+              <div>
+                <div className="text-xs text-gray-600 uppercase tracking-wide mb-3 font-medium">Tezkor harakatlar</div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    { label:'Yangi shartnoma', icon:'📄', color:'blue', action:()=>{ if(!canCreateContract()){setModal('upgrade');return}; setContractForm({...emptyContract,organization_id:activeOrg?.id||'',contract_number:autoContractNum()}); setModal('contract') } },
+                    { label:'Kontragent qo\'shish', icon:'🤝', color:'orange', action:()=>{ setTab('counterparties'); setModal('cp') } },
+                    { label:'Tashkilot qo\'shish', icon:'🏢', color:'purple', action:()=>{ setTab('organizations'); setModal('org') } },
+                    { label:'Yurist AI', icon:'⚖️', color:'emerald', action:()=>setTab('yurist_ai') },
+                  ].map((a,i)=>(
+                    <button key={i} onClick={a.action}
+                      className={`bg-gray-900 border border-gray-800 hover:border-${a.color}-700/60 hover:bg-gray-800/80 rounded-xl p-4 text-left transition group`}>
+                      <div className="text-2xl mb-2">{a.icon}</div>
+                      <div className="text-xs font-medium text-gray-400 group-hover:text-white transition leading-tight">{a.label}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
+
             </div>
-          )}
+            )
+          })()}
 
           {/* ─── CONTRACTS ─── */}
           {tab==='contracts' && (
@@ -2327,7 +2517,7 @@ export default function DashboardPage() {
                           </button>
                         )}
                         <button onClick={() => {
-                          setContractForm({...emptyContract, contract_type: tpl.type, organization_id: activeOrg?.id||''})
+                          setContractForm({...emptyContract, contract_type: tpl.type, organization_id: activeOrg?.id||'', contract_number: autoContractNum()})
                           setModal('contract')
                           setTab('contracts')
                         }} className="ml-auto text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg transition font-medium">
@@ -2481,7 +2671,7 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <span className="text-xs bg-purple-900/50 border border-purple-700 text-purple-300 px-3 py-1.5 rounded-xl font-medium">
-                      ⭐ {isFree ? 'Bepul' : 'Premium'} — Cheksiz foydalanish
+                      ⭐ {subscription?.plan === 'ai_pro' ? 'AI Pro' : 'Standart'} — Cheksiz foydalanish
                     </span>
                   )}
                 </div>
@@ -2492,7 +2682,7 @@ export default function DashboardPage() {
                     const locked = f.premiumOnly && isFree
                     return (
                       <button key={f.key}
-                        onClick={() => { setHubFeature(f.key); setHubResult(null); setHubError('') }}
+                        onClick={() => { setHubFeature(f.key); setHubResult(null); setHubError(''); setHubLoading(false); if (!f.needsContract) setHubContract('') }}
                         className={`relative text-left p-4 rounded-xl border transition ${
                           hubFeature === f.key
                             ? 'bg-purple-900/50 border-purple-600 shadow-lg shadow-purple-900/20'
@@ -2524,20 +2714,35 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Shartnoma tanlash */}
-                  {sel.needsContract && (
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-1.5">Shartnoma tanlang</label>
-                      <select value={hubContract} onChange={e => setHubContract(e.target.value)}
-                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500">
-                        <option value="">— Shartnomani tanlang —</option>
-                        {contractList.map(c => (
-                          <option key={c.id} value={c.id}>
-                            #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]} · {c.counterparties?.name || '—'}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                  {sel.needsContract && (() => {
+                    const contractsWithContent = contractList.filter(c => c.content?.trim())
+                    const selectedHasContent = contracts.find(c => c.id === hubContract)?.content?.trim()
+                    return (
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">
+                          Shartnoma tanlang
+                          {contractsWithContent.length === 0 && contractList.length > 0 && (
+                            <span className="ml-2 text-amber-400">⚠ Hech bir shartnomada matn yo'q</span>
+                          )}
+                        </label>
+                        <select value={hubContract} onChange={e => { setHubContract(e.target.value); setHubResult(null); setHubError('') }}
+                          className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500">
+                          <option value="">— Shartnomani tanlang —</option>
+                          {contractList.map(c => {
+                            const hasContent = Boolean(c.content?.trim())
+                            return (
+                              <option key={c.id} value={c.id} disabled={!hasContent}>
+                                {hasContent ? '✓' : '✗'} #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]} · {c.counterparties?.name || '—'}{!hasContent ? ' (matn yo\'q)' : ''}
+                              </option>
+                            )
+                          })}
+                        </select>
+                        {hubContract && !selectedHasContent && (
+                          <p className="text-amber-400 text-xs mt-1">⚠ Bu shartnomada matn yo'q. Shartnomani oching va bandlar qo'shing.</p>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {/* Tarjima — til tanlash */}
                   {hubFeature === 'tarjima' && (
@@ -2558,9 +2763,18 @@ export default function DashboardPage() {
                   {hubFeature === 'qa' && (
                     <div>
                       <label className="block text-xs text-gray-400 mb-1.5">Savolingiz</label>
-                      <input value={hubQuestion} onChange={e => setHubQuestion(e.target.value)}
-                        placeholder="Masalan: Bu shartnomada jarima bandi bormi?"
-                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                      <div className="flex gap-2">
+                        <input value={hubQuestion} onChange={e => setHubQuestion(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !hubLoading) { e.preventDefault(); setHubResult(null); runHubFeature() } }}
+                          placeholder="Masalan: Bu shartnomada jarima bandi bormi? (Enter → yuborish)"
+                          className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                        {hubResult && !hubLoading && (
+                          <button onClick={() => { setHubResult(null); setHubError(''); runHubFeature() }}
+                            className="shrink-0 bg-purple-700 hover:bg-purple-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition">
+                            ↩ Yuborish
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -2569,7 +2783,8 @@ export default function DashboardPage() {
                     <div>
                       <label className="block text-xs text-gray-400 mb-1.5">Ko'rsatma</label>
                       <input value={hubInstruction} onChange={e => setHubInstruction(e.target.value)}
-                        placeholder="Masalan: Kechikish uchun 0.1% kunlik jarima bandi qo'sh"
+                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !hubLoading) { e.preventDefault(); setHubResult(null); runHubFeature() } }}
+                        placeholder="Masalan: Kechikish uchun 0.1% kunlik jarima bandi qo'sh (Enter → yuborish)"
                         className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
                     </div>
                   )}
@@ -2691,6 +2906,12 @@ export default function DashboardPage() {
                             {Boolean(hubResult.muddat) && <div className="bg-blue-900/40 border border-blue-800/40 rounded-xl px-4 py-3 flex-1"><div className="text-xs text-gray-500">Muddat</div><div className="text-white text-sm">{String(hubResult.muddat)}</div></div>}
                             {Boolean(hubResult.summa)  && <div className="bg-emerald-900/40 border border-emerald-800/40 rounded-xl px-4 py-3 flex-1"><div className="text-xs text-gray-500">Summa</div><div className="text-white text-sm">{String(hubResult.summa)}</div></div>}
                           </div>
+                          {(hubResult.muhim_bandlar as string[])?.length > 0 && (
+                            <div className="bg-gray-800/60 rounded-xl p-4">
+                              <div className="text-xs text-gray-500 mb-2">📌 Muhim bandlar</div>
+                              {(hubResult.muhim_bandlar as string[]).map((s,i) => <div key={i} className="text-sm text-gray-300">• {s}</div>)}
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -2732,6 +2953,20 @@ export default function DashboardPage() {
                             <span className={`text-4xl font-black ${String(hubResult.baho)==='A'?'text-emerald-400':String(hubResult.baho)==='B'?'text-blue-400':String(hubResult.baho)==='C'?'text-yellow-400':'text-red-400'}`}>{String(hubResult.baho)}</span>
                             <div className="text-gray-300 text-sm">{String(hubResult.umumiy || '')}</div>
                           </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {(hubResult.kuchli_tomonlar as string[])?.length > 0 && (
+                              <div className="bg-emerald-900/20 border border-emerald-800/40 rounded-xl p-3">
+                                <div className="text-xs text-emerald-400 mb-1.5">✅ Kuchli tomonlar</div>
+                                {(hubResult.kuchli_tomonlar as string[]).map((s,i) => <div key={i} className="text-xs text-gray-300">• {s}</div>)}
+                              </div>
+                            )}
+                            {(hubResult.zaif_tomonlar as string[])?.length > 0 && (
+                              <div className="bg-yellow-900/20 border border-yellow-800/40 rounded-xl p-3">
+                                <div className="text-xs text-yellow-400 mb-1.5">⚠️ Zaif tomonlar</div>
+                                {(hubResult.zaif_tomonlar as string[]).map((s,i) => <div key={i} className="text-xs text-gray-300">• {s}</div>)}
+                              </div>
+                            )}
+                          </div>
                           {(hubResult.yuridik_xatarlar as {daraja:string;tavsif:string}[])?.map((x,i) => (
                             <div key={i} className="flex items-start gap-2 bg-gray-800/60 rounded-xl p-3">
                               <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 mt-0.5 ${x.daraja.match(/yuqori|высок|юқори/i)?'bg-red-900 text-red-300':x.daraja.match(/rta|редний|ўрта/i)?'bg-yellow-900 text-yellow-300':'bg-gray-700 text-gray-300'}`}>{x.daraja}</span>
@@ -2739,6 +2974,12 @@ export default function DashboardPage() {
                             </div>
                           ))}
                           {(hubResult.tavsiyalar as string[])?.map((s,i) => <div key={i} className="text-gray-300 text-sm">• {s}</div>)}
+                          {(hubResult.grammatika_xatolari as string[])?.length > 0 && (
+                            <div className="bg-orange-900/20 border border-orange-800/40 rounded-xl p-3">
+                              <div className="text-xs text-orange-400 mb-1.5">📝 Grammatika xatolari</div>
+                              {(hubResult.grammatika_xatolari as string[]).map((s,i) => <div key={i} className="text-xs text-gray-300">• {s}</div>)}
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -2746,10 +2987,18 @@ export default function DashboardPage() {
                       {hubFeature==='qa' && (
                         <div className="space-y-2">
                           <div className="bg-purple-900/30 border border-purple-800/40 rounded-xl p-4">
-                            <div className="text-xs text-purple-400 mb-1">Javob</div>
-                            <div className="text-white text-sm leading-relaxed">{String(hubResult.javob || '')}</div>
+                            <div className="text-xs text-purple-400 mb-2 flex items-center justify-between">
+                              <span>💬 Javob</span>
+                              <span className="text-gray-600 text-xs">{hubQuestion}</span>
+                            </div>
+                            {hubResult.javob
+                              ? <div className="text-white text-sm leading-relaxed">{String(hubResult.javob)}</div>
+                              : <div className="text-gray-500 text-sm italic">AI javob qaytarmadi. Yana urinib ko'ring.</div>
+                            }
                           </div>
-                          {Boolean(hubResult.havola) && <div className="text-gray-500 text-xs">📍 {String(hubResult.havola)}</div>}
+                          {Boolean(hubResult.havola) && String(hubResult.havola) !== 'shartnomaning qaysi bandiga tegishli' && (
+                            <div className="text-gray-500 text-xs">📍 {String(hubResult.havola)}</div>
+                          )}
                         </div>
                       )}
 
@@ -3905,7 +4154,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => {
-                  setContractForm({...emptyContract, contract_type: templatePreview.type, organization_id: activeOrg?.id||''})
+                  setContractForm({...emptyContract, contract_type: templatePreview.type, organization_id: activeOrg?.id||'', contract_number: autoContractNum()})
                   setModal('contract')
                   setTemplatePreview(null)
                 }}
@@ -4242,6 +4491,7 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
   const [specItems, setSpecItems] = useState<SpecItem[]>(form.spec_items || [])
   const [barchaQqs, setBarchaQqs] = useState('')
   const [extraFields, setExtraFields] = useState<Record<string, string>>({})
+  const [formErrors, setFormErrors] = useState<Record<string, boolean>>({})
 
   // Kontragent qidiruv
   const [cpSearch, setCpSearch] = useState('')
@@ -4303,7 +4553,8 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
     ijara: [
       { key: 'ijara_manzil', label: "Ijara ob'ekti manzili", placeholder: "Toshkent sh., Chilonzor t., 5-uy, 1-xona", type: 'text', required: true },
       { key: 'ijara_maydon', label: "Maydon (m²)", placeholder: "50", type: 'number' },
-      { key: 'ijara_muddat', label: "Ijara muddati", placeholder: "12 oy", type: 'text' },
+      { key: 'oylik_tolov', label: "Oylik ijara haqi (so'm)", placeholder: "2000000", type: 'number', required: true },
+      { key: 'ijara_muddat', label: "Ijara muddati (oy soni)", placeholder: "12", type: 'number' },
       { key: 'ijara_boshlanish', label: "Ijara boshlanish sanasi", type: 'date' },
       { key: 'ijara_tugash', label: "Ijara tugash sanasi", type: 'date' },
     ],
@@ -4361,6 +4612,23 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.contract_type, customTemplates.length])
 
+  // Ijara: umumiy summani oylik × muddat dan avtomatik hisoblash
+  useEffect(() => {
+    if (form.contract_type !== 'ijara') return
+    const oylik = parseFloat(extraFields.oylik_tolov || '0') || 0
+    if (!oylik) return
+    let months = parseInt(extraFields.ijara_muddat || '0') || 0
+    if (!months && extraFields.ijara_boshlanish && extraFields.ijara_tugash) {
+      const start = new Date(extraFields.ijara_boshlanish)
+      const end = new Date(extraFields.ijara_tugash)
+      months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
+    }
+    if (months > 0) {
+      setForm({ ...form, amount: String(oylik * months) })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extraFields.oylik_tolov, extraFields.ijara_muddat, extraFields.ijara_boshlanish, extraFields.ijara_tugash, form.contract_type])
+
   function applyTplPlaceholders(content: string, ex: Record<string, string>): string {
     const { org, cp } = buildOrgCp(form)
     const amount = parseFloat(form.amount) || 0
@@ -4377,6 +4645,10 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
     t = t.replaceAll('{{IJROCHI_INN}}', cp?.inn || '___')
     t = t.replaceAll('{{SUMMA}}', amount ? fmt(amount) : '___')
     t = t.replaceAll('{{SUMMA_MATN}}', amount ? numberToWords(amount) : '___')
+    // oylik tolov (formatted)
+    const oylikVal = parseFloat(ex.oylik_tolov || '0') || 0
+    t = t.replaceAll('{{OYLIK_TOLOV}}', oylikVal ? fmt(oylikVal) : '___')
+    t = t.replaceAll('{{OYLIK_TOLOV_MATN}}', oylikVal ? numberToWords(oylikVal) : '___')
     // extra fields
     Object.entries(ex).forEach(([k, v]) => {
       t = t.replaceAll(`{{${k.toUpperCase()}}}`, v || '___')
@@ -4482,6 +4754,16 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
   const EMPTY_STRUCTURE: ContractStructure = { bolimlar: [{ sarlavha: '', bandlar: [{ matn: '' }] }] }
 
   function goToStep2() {
+    const errors: Record<string, boolean> = {}
+    if (!form.contract_number?.trim()) errors.contract_number = true
+    if (!form.contract_date) errors.contract_date = true
+    if (!form.organization_id) errors.organization_id = true
+    if (!form.counterparty_id) errors.counterparty_id = true
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      return
+    }
+    setFormErrors({})
     if (hasExtraFields) {
       setStep(2)
     } else {
@@ -4506,7 +4788,16 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
           city: form.city || 'Toshkent',
           org_name: org?.name, org_inn: org?.inn, org_director: org?.director_name,
           cp_name: cp?.name, cp_inn: cp?.inn, cp_director: cp?.director_name,
-          amount, amount_text: numberToWords(amount), extra: extraFields,
+          amount, amount_text: numberToWords(amount),
+          extra: {
+            ...extraFields,
+            oylik_tolov: extraFields.oylik_tolov
+              ? new Intl.NumberFormat('uz-UZ').format(parseFloat(extraFields.oylik_tolov) || 0)
+              : '',
+            oylik_tolov_matn: extraFields.oylik_tolov
+              ? numberToWords(parseFloat(extraFields.oylik_tolov) || 0)
+              : '',
+          },
         })
         setStructure(s)
         const typeName = CONTRACT_TYPE_NAMES[form.contract_type as keyof typeof CONTRACT_TYPE_NAMES] || form.contract_type
@@ -4522,6 +4813,8 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
   function reloadStructure() {
     const { org, cp } = buildOrgCp(form)
     const amount = parseFloat(form.amount) || 0
+    const fmt = (n: number) => new Intl.NumberFormat('uz-UZ').format(n)
+    const oylik = parseFloat(extraFields.oylik_tolov || '0') || 0
     const tplData = {
       contract_number: form.contract_number,
       contract_date: form.contract_date,
@@ -4529,7 +4822,11 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
       org_name: org?.name, org_inn: org?.inn, org_director: org?.director_name,
       cp_name: cp?.name, cp_inn: cp?.inn, cp_director: cp?.director_name,
       amount, amount_text: numberToWords(amount),
-      extra: extraFields,
+      extra: {
+        ...extraFields,
+        oylik_tolov: oylik ? fmt(oylik) : '',
+        oylik_tolov_matn: oylik ? numberToWords(oylik) : '',
+      },
     }
     const s = getStructure(form.contract_type, tplData)
     applyStructure(s)
@@ -4622,16 +4919,18 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                 {/* Raqam / Sana / Shahar */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className={lbl}>{T(t.modal.contractNum)} *</label>
-                    <input className={inp} required placeholder="2026/001"
+                    <label className={lbl}><span className="text-red-400">*</span> {T(t.modal.contractNum)}</label>
+                    <input className={inp + (formErrors.contract_number ? ' border-red-500 ring-1 ring-red-500' : '')}
+                      placeholder="2026/001"
                       value={form.contract_number}
-                      onChange={e => handleFieldChange('contract_number', e.target.value)}/>
+                      onChange={e => { handleFieldChange('contract_number', e.target.value); setFormErrors(p=>({...p, contract_number:false})) }}/>
+                    {formErrors.contract_number && <p className="text-red-400 text-xs mt-1">Shartnoma raqamini kiriting</p>}
                   </div>
                   <div>
-                    <label className={lbl}>{T(t.modal.contractDate)} *</label>
-                    <input type="date" className={inp} required
+                    <label className={lbl}><span className="text-red-400">*</span> {T(t.modal.contractDate)}</label>
+                    <input type="date" className={inp + (formErrors.contract_date ? ' border-red-500 ring-1 ring-red-500' : '')}
                       value={form.contract_date}
-                      onChange={e => handleFieldChange('contract_date', e.target.value)}/>
+                      onChange={e => { handleFieldChange('contract_date', e.target.value); setFormErrors(p=>({...p, contract_date:false})) }}/>
                   </div>
                   <div>
                     <label className={lbl}>{T(t.modal.city)}</label>
@@ -4680,23 +4979,26 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                   <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{T(t.contractModal.parties)}</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className={lbl}>{T(t.contractModal.customer)}</label>
-                      <select className={inp} required value={form.organization_id}
-                        onChange={e => handleFieldChange('organization_id', e.target.value)}>
+                      <label className={lbl}><span className="text-red-400">*</span> {T(t.contractModal.customer)}</label>
+                      <select className={inp + (formErrors.organization_id ? ' border-red-500 ring-1 ring-red-500' : '')}
+                        value={form.organization_id}
+                        onChange={e => { handleFieldChange('organization_id', e.target.value); setFormErrors(p=>({...p, organization_id:false})) }}>
                         <option value="">{T(t.contractModal.selectOrg)}</option>
                         {orgs.map(o => <option key={o.id} value={o.id}>{o.name}{o.inn ? ` (${o.inn})` : ''}</option>)}
                       </select>
+                      {formErrors.organization_id && <p className="text-red-400 text-xs mt-1">Tashkilotni tanlang</p>}
                       {orgs.length===0 && <p className="text-xs text-yellow-500 mt-1">{T(t.contractModal.addOrgWarn)}</p>}
                     </div>
                     <div className="relative">
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className={lbl + ' mb-0'}>{T(t.contractModal.cpLabel)}</label>
+                        <label className={lbl + ' mb-0'}><span className="text-red-400">*</span> {T(t.contractModal.cpLabel)}</label>
                         <button type="button" onClick={() => setQuickCpOpen(true)}
                           className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition font-medium">
                           <span className="text-base leading-none">+</span> {T(t.contractModal.addNew)}
                         </button>
                       </div>
                       {/* Tanlangan kontragent ko'rsatish */}
+                      {formErrors.counterparty_id && !selectedCp && <p className="text-red-400 text-xs mb-1">Kontragentni tanlang</p>}
                       {selectedCp ? (
                         <div className="flex items-center gap-2 bg-gray-800 border border-blue-600 rounded-lg px-3 py-2.5">
                           <div className="flex-1 min-w-0">
@@ -4710,10 +5012,10 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                         <div>
                           <input
                             value={cpSearch}
-                            onChange={e => { setCpSearch(e.target.value); setCpDropOpen(true) }}
+                            onChange={e => { setCpSearch(e.target.value); setCpDropOpen(true); setFormErrors(p=>({...p, counterparty_id:false})) }}
                             onFocus={() => setCpDropOpen(true)}
                             placeholder={T(t.contractModal.cpSearch)}
-                            className={inp}
+                            className={inp + (formErrors.counterparty_id ? ' border-red-500 ring-1 ring-red-500' : '')}
                           />
                           {cpDropOpen && (
                             <div className="absolute z-50 left-0 right-0 mt-1 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl max-h-52 overflow-auto">
@@ -4917,6 +5219,21 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                       )}
                     </div>
                   ))}
+
+                  {/* Ijara: umumiy summa hisob-kitobi */}
+                  {form.contract_type === 'ijara' && extraFields.oylik_tolov && extraFields.ijara_muddat && (
+                    <div className="bg-blue-900/20 border border-blue-800/40 rounded-xl px-4 py-3">
+                      <div className="text-xs text-blue-400 mb-1">Umumiy ijara summasi (avtomatik)</div>
+                      <div className="text-white font-semibold text-sm">
+                        {new Intl.NumberFormat('uz-UZ').format(
+                          (parseFloat(extraFields.oylik_tolov) || 0) * (parseInt(extraFields.ijara_muddat) || 0)
+                        )} so'm
+                      </div>
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        {extraFields.oylik_tolov && new Intl.NumberFormat('uz-UZ').format(parseFloat(extraFields.oylik_tolov) || 0)} so'm × {extraFields.ijara_muddat} oy
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-3 pt-2">
@@ -4951,10 +5268,16 @@ function ContractModal({ orgs, cps, form, setForm, onSave, onClose, saving, inp,
                     <span className="text-xs text-gray-600">{structure.bolimlar.length} bo&apos;lim</span>
                   </div>
                   {useTemplate && (
-                    <button type="button" onClick={reloadStructure}
-                      className="text-xs text-gray-400 hover:text-blue-300 border border-gray-700 hover:border-blue-700 px-3 py-1.5 rounded-lg transition">
-                      {T(t.contractModal.reload)}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 bg-amber-900/20 border border-amber-800/40 text-amber-400 text-xs px-2.5 py-1 rounded-lg">
+                        <span>💡</span>
+                        <span>1-2-bosqichlarda o'zgartirish bo'lsa, «Qayta yuklash» tugmasini bosing</span>
+                      </div>
+                      <button type="button" onClick={reloadStructure}
+                        className="text-xs text-gray-400 hover:text-blue-300 border border-gray-700 hover:border-blue-700 px-3 py-1.5 rounded-lg transition">
+                        {T(t.contractModal.reload)}
+                      </button>
+                    </div>
                   )}
                 </div>
 

@@ -60,7 +60,11 @@ export async function POST(req: NextRequest) {
     else if (type === 'translate') {
       const tLang = target_lang || 'ru'
       const targetName: Record<string, string> = { uz: "O'zbek tilida", ru: 'на русском языке', oz: "O'zbek Kirill yozuvida", en: 'in English' }
-      const task = `Quyidagi shartnomani ${targetName[tLang] || tLang} tarjima qiling. Yuridik atamalarni to'g'ri tarjima qiling.`
+      const task = lang === 'ru'
+        ? `Переведите следующий договор ${targetName[tLang] || tLang}. Переводите юридические термины точно.`
+        : lang === 'oz'
+        ? `Қуйидаги шартномани ${targetName[tLang] || tLang} таржима қилинг. Юридик атамаларни тўғри таржима қилинг.`
+        : `Quyidagi shartnomani ${targetName[tLang] || tLang} tarjima qiling. Yuridik atamalarni to'g'ri tarjima qiling.`
       prompt = `${task}\n${jOnly}\n{"tarjima":"..."}\n\nASL MATN:\n${truncate(content, 3000)}`
     }
 
@@ -77,7 +81,8 @@ export async function POST(req: NextRequest) {
       const task = lang === 'ru' ? `Напишите юридический пункт договора по инструкции: "${instruction}"` :
                    lang === 'oz' ? `Кўрсатма бўйича шартнома банди ёзинг: "${instruction}"` :
                                    `Ko'rsatma asosida shartnoma bandi yozing: "${instruction}"`
-      const ctx = content ? `\n\nMavjud shartnoma konteksti:\n${truncate(content, 2000)}` : ''
+      const ctxLabel = lang === 'ru' ? 'Контекст существующего договора:' : lang === 'oz' ? 'Mavjud shartnoma konteksti:' : 'Mavjud shartnoma konteksti:'
+      const ctx = content ? `\n\n${ctxLabel}\n${truncate(content, 2000)}` : ''
       prompt = `${task}. O'zbekiston qonunchiligi asosida, rasmiy yuridik uslubda yozing.\n${jOnly}\n{"band":"...","band_nomi":"..."} ${ctx}`
     }
 
@@ -86,13 +91,16 @@ export async function POST(req: NextRequest) {
       const task = lang === 'ru' ? `Определите тип договора по описанию: "${description}"` :
                    lang === 'oz' ? `Таснифни ўқиб, шартнома турини аниқланг: "${description}"` :
                                    `Tavsifni o'qib, qaysi shartnoma turi mos ekanini aniqlang: "${description}"`
-      prompt = `${task}\nMavjud turlar: oldi_sotdi, xizmat, ijara, pudrat, qoshimcha, moliyaviy, daval, xalqaro, boshqa\n${jOnly}\n{"tur":"oldi_sotdi","tur_nomi":"...","tavsiya":"...","sabab":"...","qoshimcha_maslahat":"..."}`
+      const turlar = lang === 'ru' ? 'Доступные типы: oldi_sotdi, xizmat, ijara, pudrat, qoshimcha, moliyaviy, daval, xalqaro, boshqa' : 'Mavjud turlar: oldi_sotdi, xizmat, ijara, pudrat, qoshimcha, moliyaviy, daval, xalqaro, boshqa'
+      prompt = `${task}\n${turlar}\n${jOnly}\n{"tur":"oldi_sotdi","tur_nomi":"...","tavsiya":"...","sabab":"...","qoshimcha_maslahat":"..."}`
     }
 
     // ── 8. SHARTNOMA YOZISH ─────────────────────────────────
     else if (type === 'write') {
       const task = lang === 'ru'
         ? `Напишите профессиональный договор на основе данных. Тип: ${details?.tur || 'купля-продажа'}, Продавец: ${details?.org || '___'}, Покупатель: ${details?.cp || '___'}, Сумма: ${details?.summa || '___'}, Дополнительно: ${details?.extra || 'нет'}`
+        : lang === 'oz'
+        ? `Қуйидаги маълумотлар асосида профессионал шартнома матнини ёзинг. Тур: ${details?.tur || 'oldi-sotdi'}, Сотувчи: ${details?.org || '___'}, Харидор: ${details?.cp || '___'}, Сумма: ${details?.summa || '___'}, Қўшимча: ${details?.extra || 'йўқ'}`
         : `Quyidagi ma'lumotlar asosida professional shartnoma matnini yozing. Tur: ${details?.tur || 'oldi-sotdi'}, Sotuvchi: ${details?.org || '___'}, Xaridor: ${details?.cp || '___'}, Summa: ${details?.summa || '___'}, Qo'shimcha: ${details?.extra || 'yo\'q'}`
       prompt = `${task}\n\nO'zbekiston qonunchiligi asosida, rasmiy uslubda, to'liq bandlar bilan yozing.\n${jOnly}\n{"shartnoma":"to'liq shartnoma matni...","bandlar_soni":0}`
     }
@@ -103,7 +111,7 @@ export async function POST(req: NextRequest) {
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
+      max_tokens: type === 'write' ? 6000 : 3000,
       messages: [{ role: 'user', content: prompt }],
     })
 

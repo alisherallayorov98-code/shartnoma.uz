@@ -215,7 +215,8 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
       { matn: "Ijara muddati tugagandan keyin tomonlar kelishgan holda shartnoma uzaytirilishi mumkin." },
     ]},
     { sarlavha: "IJARA HAQI", bandlar: [
-      { matn: `Ijara haqi oyiga [SUMMA] ([SUMMA_MATN]) so'mni tashkil etadi.` },
+      { matn: `Oylik ijara haqi [OYLIK_TOLOV] ([OYLIK_TOLOV_MATN]) so'mni tashkil etadi.` },
+      { matn: `Butun ijara muddati uchun umumiy summa: [SUMMA] ([SUMMA_MATN]) so'm.` },
       { matn: "Ijara haqi har oyning 5 (beshinchi) kuniga qadar to'lanadi." },
       { matn: "Kommunal xizmatlar (elektr, gaz, suv) Ijarachi tomonidan alohida to'lanadi." },
     ]},
@@ -343,11 +344,11 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
       { matn: "All payments shall be made by bank transfer." },
     ]},
     { sarlavha: "DELIVERY TERMS / YETKAZIB BERISH", bandlar: [
-      { matn: "Delivery terms: _______ (Incoterms 2020). Delivery period: within ______ days from signing." },
-      { matn: "Place of delivery: _____________________." },
+      { matn: fill("Delivery terms: [INCOTERMS] (Incoterms 2020). Place of delivery: [YETKAZISH_JOY].", d) },
+      { matn: "Delivery period: within ______ days from signing." },
     ]},
     { sarlavha: "PAYMENT TERMS / TO'LOV", bandlar: [
-      { matn: "Payment method: Bank Transfer / Letter of Credit." },
+      { matn: fill("Payment method: [TOLOV_USULI]. Payment currency: [VALYUTA].", d) },
       { matn: "Payment due: within ______ banking days after shipment documents are provided." },
     ]},
     { sarlavha: "FORCE MAJEURE / FORS-MAJOR", bandlar: [

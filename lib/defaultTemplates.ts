@@ -39,8 +39,8 @@ No {{RAQAM}}
 
 4. TOVARNI YETKAZIB BERISH TARTIBI
 
-4.1. Tovarni yetkazib berish muddati: shartnoma imzolanganidan keyin 30 (o'ttiz) kalendar kuni ichida.
-4.2. Tovar yetkazib berish joyi: Xaridorning yuridik manzili yoki tomonlar alohida kelishgan joy.
+4.1. Tovarni yetkazib berish muddati: {{YETKAZISH_MUDDAT}}.
+4.2. Tovar yetkazib berish joyi: {{YETKAZISH_JOY}}.
 4.3. Tovarni saqlash va tashish xarajatlari Sotuvchi tomonidan qoplanadi (boshqacha kelishuv bo'lmasa).
 4.4. Tovar topshirilganda Xaridor tovar-pul hujjatlariga (o'tkazish-qabul qilish dalolatnomasi, faktura, yuk xati) imzo qo'yadi.
 4.5. Tovar bilan birga sifat sertifikati, texnik pasport va ishlatish yo'riqnomasi (agar mavjud bo'lsa) taqdim etiladi.
@@ -133,8 +133,8 @@ No {{RAQAM}}
 3. YETKAZIB BERISH TARTIBI VA MUDDATI
 
 3.1. Tovarlar partiyalar bo'lib yetkazib beriladi. Har bir partiya miqdori va yetkazib berish sanasi tomonlarning yozma (jumladan, elektron) kelishuvi bilan belgilanadi.
-3.2. Har bir partiya uchun yetkazib berish muddati buyurtma qabul qilinganidan keyin 10 (o'n) ish kuni ichida.
-3.3. Tovar Xaridorning omboriga yetkazib beriladi. Tashish xarajatlari Yetkazib beruvchi tomonidan qoplanadi.
+3.2. Har bir partiya uchun yetkazib berish muddati: {{YETKAZISH_MUDDAT}}.
+3.3. Tovar yetkazib berish joyi: {{YETKAZISH_JOY}}. Tashish xarajatlari Yetkazib beruvchi tomonidan qoplanadi.
 3.4. Har bir partiya topshirilganda qabul-topshiriq dalolatnomasi yoki tovar-faktura imzolanadi.
 
 4. TOMONLARNING MAJBURIYATLARI
@@ -183,22 +183,20 @@ No {{RAQAM}}
 1. SHARTNOMA PREDMETI
 
 1.1. Ijrochi Buyurtmachiga ushbu shartnomada belgilangan xizmatlarni ko'rsatish majburiyatini oladi; Buyurtmachi esa ko'rsatilgan xizmatlarni qabul qilib olish va haq to'lash majburiyatini oladi.
-1.2. Ko'rsatiladigan xizmatlarning to'liq ro'yxati va tavsifi ushbu shartnomaga ilova qilinadigan Texnik topshiriqda (1-ilova) belgilanadi.
+1.2. Ko'rsatiladigan xizmatning tavsifi: {{XIZMAT_TAVSIF}}.
 1.3. Xizmatlar O'zbekiston Respublikasining amaldagi qonunchiligi va tomonlar o'rtasida kelishilgan talablarga muvofiq ko'rsatiladi.
 
 2. XIZMAT NARXI VA TO'LOV TARTIBI
 
 2.1. Ko'rsatilgan xizmatlar uchun umumiy to'lov miqdori {{SUMMA}} ({{SUMMA_MATN}}) so'mni tashkil etadi.
-2.2. To'lov tartibi:
-— shartnoma imzolanganidan keyin 3 (uch) ish kuni ichida 50% avans to'lovi;
-— xizmatlar to'liq ko'rsatilgandan va qabul-topshiriq dalolatnomasiga imzo qo'yilgandan keyin 5 (besh) ish kuni ichida qolgan 50%.
+2.2. To'lov tartibi: {{XIZMAT_TOLOV}}.
 2.3. To'lov naqd pulsiz bank o'tkazma yo'li bilan amalga oshiriladi.
 2.4. QQS amaldagi qonunchilikka muvofiq hisoblab qo'shiladi.
 
 3. XIZMAT KO'RSATISH MUDDATI
 
-3.1. Xizmat ko'rsatishning boshlanish sanasi: shartnoma imzolanganidan keyin 3 (uch) ish kuni.
-3.2. Xizmat ko'rsatishning tugash muddati: tomonlarning yozma kelishuvida belgilanadi.
+3.1. Xizmat ko'rsatishning boshlanish sanasi: {{XIZMAT_BOSHLANISH}}.
+3.2. Xizmat ko'rsatishning tugash muddati: {{XIZMAT_TUGASH}}.
 3.3. Ijrochi xizmat ko'rsatishda muddatlarga qat'iy rioya qilishi shart.
 
 4. TOMONLARNING HUQUQ VA MAJBURIYATLARI
@@ -265,7 +263,7 @@ No {{RAQAM}}
 — veb-sayt yoki mobil ilova yaratish;
 — texnik yordam (support) va tizimni qo'llab-quvvatlash;
 — boshqa IT xizmatlar (Texnik topshiriqqa muvofiq).
-1.2. Xizmatlarning batafsil tavsifi, texnik talablar va qabul qilish mezonlari Texnik topshiriqda (1-ilova) ko'rsatiladi.
+1.2. Ko'rsatiladigan xizmatning tavsifi: {{XIZMAT_TAVSIF}}. Batafsil texnik talablar Texnik topshiriqda (1-ilova) ko'rsatiladi.
 
 2. NARX VA TO'LOV TARTIBI
 
@@ -278,8 +276,8 @@ No {{RAQAM}}
 
 3. BAJARISH MUDDATI VA BOSQICHLARI
 
-3.1. Ishlar boshlanish sanasi: shartnoma imzolanganidan keyin 5 (besh) ish kuni.
-3.2. Yakunlanish muddati va bosqichlar Texnik topshiriqda belgilanadi.
+3.1. Ishlar boshlanish sanasi: {{XIZMAT_BOSHLANISH}}.
+3.2. Yakunlanish muddati: {{XIZMAT_TUGASH}}.
 3.3. Kechikish bo'lsa, Ijrochi Buyurtmachiga 3 ish kuni oldin yozma xabar beradi va yangi muddatni kelishib oladi.
 
 4. MUALLIFLIK HUQUQI
@@ -325,13 +323,13 @@ No {{RAQAM}}
 — huquqiy maslahat va shartnoma tayyorlash;
 — boshqaruv va biznes-jarayonlarni optimallashtirish;
 — bozor tadqiqotlari va strategik rejalashtirish.
-1.2. Xizmatlarning batafsil ko'lami va tavsifi Texnik topshiriqda (1-ilova) belgilanadi.
+1.2. Ko'rsatiladigan xizmatning tavsifi: {{XIZMAT_TAVSIF}}. Batafsil ko'lami tomonlar yozma kelishuvida belgilanadi.
 1.3. Maslahatchi mustaqil mutaxassis sifatida faoliyat yuritadi va Buyurtmachi xodimlari tarkibiga kirmaydi.
 
 2. NARX VA TO'LOV TARTIBI
 
 2.1. Xizmatlar uchun umumiy to'lov: {{SUMMA}} ({{SUMMA_MATN}}) so'm.
-2.2. To'lov tartibi: oylik to'lov ko'rinishida har oyning 5 (beshinchi) kuniga qadar yoki tomonlar kelishgan boshqa jadvalda.
+2.2. To'lov tartibi: {{XIZMAT_TOLOV}}.
 2.3. Safarbar xarajatlar (mehmonxona, transport va boshqalar) hujjatlar asosida alohida qoplanadi.
 
 3. MASLAHAT KO'RSATISH TARTIBI
@@ -378,27 +376,25 @@ No {{RAQAM}}
 1. SHARTNOMA PREDMETI
 
 1.1. Ijaraberuvchi Ijarachiga quyidagi ko'chmas mulkni (keyingi o'rinlarda "Ijara ob'ekti") vaqtincha foydalanish uchun beradi:
-— Ob'ekt turi: ofis/xona/bino/ombor
-— Manzil: _______________________
-— Umumiy maydoni: _______ m²
-— Qavatlar soni / qavat raqami: _______________________
-— Kadastr raqami (agar mavjud): _______________________
+— Manzil: {{IJARA_MANZIL}}
+— Umumiy maydoni: {{IJARA_MAYDON}} m²
 1.2. Ijara ob'ekti ushbu shartnoma imzolanganida ko'rsatilgan holda, o'tkazish-qabul qilish dalolatnomasiga asosan topshiriladi.
 1.3. Ijara ob'ektida mulk huquqiga oid hujjatlar — Ijaraberuvchida saqlanadi.
 
 2. IJARA MUDDATI
 
-2.1. Ijara muddati: shartnoma imzolanganidan boshlab 12 (o'n ikki) oy.
+2.1. Ijara muddati: {{IJARA_MUDDAT}} oy (boshlanish: {{IJARA_BOSHLANISH}}, tugash: {{IJARA_TUGASH}}).
 2.2. Ijara muddati tugashidan 30 (o'ttiz) kun oldin tomonlardan biri e'tiroz bildirmasa, shartnoma bir yilga avtomatik ravishda uzaytiriladi.
 2.3. Ijarachi Ijaraberuvchining roziligisiz uchinchi shaxslarga qayta ijara berishga haqli emas.
 
 3. IJARA HAQI VA TO'LOV TARTIBI
 
-3.1. Ijara haqi oyiga {{SUMMA}} ({{SUMMA_MATN}}) so'mni tashkil etadi.
-3.2. Ijara haqi har oyning 5 (beshinchi) kuniga qadar oldindan to'lanadi.
-3.3. Ijara haqi naqd pulsiz bank o'tkazma orqali yoki tomonlar kelishgan boshqa usulda to'lanadi.
-3.4. Kommunal xizmatlar (elektr energiyasi, gaz, suv, chiqindilarni chiqarish) Ijarachi tomonidan alohida to'lanadi.
-3.5. Ijara haqi kelgusi 12 oy ichida O'zbekiston Respublikasi Statistika qo'mitasi tomonidan e'lon qilingan inflyatsiya darajasidan 5% dan ortiq o'zgartirilmasligi kerak; bundan ko'proq o'zgartirishga tomonlarning yozma kelishuvi talab etiladi.
+3.1. Oylik ijara haqi {{OYLIK_TOLOV}} ({{OYLIK_TOLOV_MATN}}) so'mni tashkil etadi.
+3.2. Butun ijara muddati uchun umumiy summa: {{SUMMA}} ({{SUMMA_MATN}}) so'm.
+3.3. Ijara haqi har oyning 5 (beshinchi) kuniga qadar oldindan to'lanadi.
+3.4. Ijara haqi naqd pulsiz bank o'tkazma orqali yoki tomonlar kelishgan boshqa usulda to'lanadi.
+3.5. Kommunal xizmatlar (elektr energiyasi, gaz, suv, chiqindilarni chiqarish) Ijarachi tomonidan alohida to'lanadi.
+3.6. Ijara haqi kelgusi 12 oy ichida O'zbekiston Respublikasi Statistika qo'mitasi tomonidan e'lon qilingan inflyatsiya darajasidan 5% dan ortiq o'zgartirilmasligi kerak; bundan ko'proq o'zgartirishga tomonlarning yozma kelishuvi talab etiladi.
 
 4. TOMONLARNING HUQUQ VA MAJBURIYATLARI
 
@@ -461,7 +457,7 @@ No {{RAQAM}}
 2. IJARA MUDDATI VA HAQI
 
 2.1. Ijara muddati: shartnoma imzolanganidan boshlab ________ oy.
-2.2. Ijara haqi oyiga {{SUMMA}} ({{SUMMA_MATN}}) so'mni tashkil etadi.
+2.2. Oylik ijara haqi {{OYLIK_TOLOV}} ({{OYLIK_TOLOV_MATN}}) so'mni tashkil etadi. Umumiy summa: {{SUMMA}} ({{SUMMA_MATN}}) so'm.
 2.3. To'lov har oyning 5 (beshinchi) kuniga qadar oldindan bank o'tkazma orqali amalga oshiriladi.
 2.4. Yoqilg'i, elektr energiyasi va foydalanish xarajatlari Ijarachi hisobidan qoplanadi.
 
@@ -499,6 +495,71 @@ Rahbar: {{BUYURTMACHI_RAHBAR}}             Rahbar: {{IJROCHI_RAHBAR}}
 ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
         M.O.                                        M.O.`
 
+const IJARA_TEKIN = `BEPUL FOYDALANISH SHARTNOMASI (TEKIN IJARA)
+No {{RAQAM}}
+
+{{SHAHAR}} shahri                                    "{{SANA}}"
+
+{{BUYURTMACHI}}, keyingi o'rinlarda "Foydalanuvchi" deb yuritiladi, {{BUYURTMACHI_RAHBAR}} nomidan, bir tomondan, va {{IJROCHI}}, keyingi o'rinlarda "Beruvchi" deb yuritiladi, {{IJROCHI_RAHBAR}} nomidan, ikkinchi tomondan, O'zbekiston Respublikasi Fuqarolik Kodeksining 582–586-moddalariga asosan quyidagilar haqida ushbu bepul foydalanish (tekin ijara) shartnomasi tuzildi:
+
+1. SHARTNOMA PREDMETI
+
+1.1. Beruvchi Foydalanuvchiga quyidagi mol-mulkni vaqtincha BEPUL foydalanish uchun beradi:
+— Manzil / tavsif: {{IJARA_MANZIL}}
+— Maydoni: {{IJARA_MAYDON}} m²
+1.2. Ushbu shartnoma bo'yicha hech qanday ijara haqi yoki boshqa to'lov olinmaydi — mol-mulkdan foydalanish mutlaqo bepul (tekin) asosida amalga oshiriladi.
+1.3. Mol-mulk shartnoma imzolanganida ko'rsatilgan holda topshiriladi.
+
+2. FOYDALANISH MUDDATI
+
+2.1. Foydalanish muddati: {{IJARA_MUDDAT}} oy.
+2.2. Boshlanish sanasi: {{IJARA_BOSHLANISH}}. Tugash sanasi: {{IJARA_TUGASH}}.
+2.3. Muddat tugashidan 30 (o'ttiz) kun oldin tomonlardan biri e'tiroz bildirmasa, shartnoma bir yilga avtomatik ravishda uzaytiriladi.
+
+3. BEPUL FOYDALANISH SHARTLARI
+
+3.1. Ushbu shartnoma bo'yicha hech qanday ijara haqi belgilanmaydi. Shartnoma bepul (tekin) foydalanish munosabatlarini tartibga soladi.
+3.2. Kommunal xizmatlar (elektr energiyasi, gaz, suv, chiqindilarni chiqarish) va joriy ta'mirlash xarajatlari Foydalanuvchi tomonidan o'z hisobidan to'lanadi.
+3.3. Mol-mulkda kapital ta'mirlash ishlarini Beruvchi o'z hisobidan amalga oshiradi.
+
+4. TOMONLARNING MAJBURIYATLARI
+
+4.1. Beruvchi majburiyatlari:
+— mol-mulkni kelishilgan holda va muddatda topshirish;
+— foydalanish davomida to'sqinlik qilmaslik;
+— mol-mulkdagi yashirin kamchiliklari haqida oldindan xabardor qilish.
+
+4.2. Foydalanuvchi majburiyatlari:
+— mol-mulkni ehtiyotkorlik bilan ishlatish va yaxshi holatda saqlash;
+— ob'ektda o'zgartirish, ta'mirlash yoki qayta qurish ishlarini bajarishdan oldin Beruvchidan yozma ruxsat olish;
+— mol-mulkni uchinchi shaxslarga topshirmaslik;
+— foydalanish muddati tugagach mol-mulkni dastlabki holatda o'tkazish-qabul qilish dalolatnomasiga asosan qaytarish.
+
+5. MAS'ULIYAT
+
+5.1. Mol-mulkka Foydalanuvchi aybiga ko'ra yetkazilgan zarar uchun Foydalanuvchi to'liq javob beradi va zararni qoplash majburiyatini oladi.
+5.2. Mol-mulkni yo'qotish yoki qaytarib bera olmaslik holatida Foydalanuvchi uning bozor qiymatini to'liq qoplash majburiyatini oladi.
+5.3. Mol-mulkni ruxsatsiz uchinchi shaxslarga berganlik uchun Foydalanuvchi shartnomaning bir tomonlama bekor qilinishiga va zararning qoplanishiga javobgar bo'ladi.
+
+6. SHARTNOMANI BEKOR QILISH
+
+6.1. Har qaysi tomon shartnomani kamida 30 (o'ttiz) kun oldin yozma xabar berish orqali muddatidan oldin bekor qilishi mumkin.
+6.2. Foydalanuvchi mol-mulkni buzilishi, yo'qotishi yoki uchinchi shaxslarga topshirishi holatida Beruvchi shartnomani zudlik bilan bir tomonlama bekor qilish huquqiga ega.
+
+7. NIZOLARNI HAL ETISH
+
+7.1. Nizolar muzokara yo'li bilan hal etiladi, hal bo'lmasa O'zbekiston Respublikasi sudlari orqali.
+
+8. TOMONLARNING REKVIZITLARI
+
+FOYDALANUVCHI:                              BERUVCHI:
+{{BUYURTMACHI}}                             {{IJROCHI}}
+INN: {{BUYURTMACHI_INN}}                   INN: {{IJROCHI_INN}}
+Rahbar: {{BUYURTMACHI_RAHBAR}}             Rahbar: {{IJROCHI_RAHBAR}}
+
+________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
+        M.O.                                        M.O.`
+
 // ─── PUDRAT ──────────────────────────────────────────────────────────────────
 
 const PUDRAT_QURILISH = `QURILISH PUDRATCHILIGI SHARTNOMASI
@@ -511,16 +572,15 @@ No {{RAQAM}}
 1. SHARTNOMA PREDMETI
 
 1.1. Pudratchi Buyurtmachining topshirig'iga binoan quyidagi qurilish (ta'mirlash) ishlarini bajarish majburiyatini oladi:
-— Ishning nomi: _______________________
-— Ob'ekt manzili: _______________________
-— Ish hajmi va tavsifi: ushbu shartnomaga ilova qilinadigan Texnik topshiriq va smetaga muvofiq.
+— Ob'ekt manzili: {{PUDRAT_OBEKT}}
+— Bajariladigan ishlarning tavsifi: {{PUDRAT_TAVSIF}}
 1.2. Buyurtmachi bajarilgan ishlarni qabul qilib olish va belgilangan haqni to'lash majburiyatini oladi.
 1.3. Texnik topshiriq va smeta (1-ilova) ushbu shartnomaning ajralmas qismi hisoblanadi.
 
 2. ISH BAJARISH MUDDATI
 
-2.1. Ishlarni boshlash sanasi: shartnoma imzolanganidan keyin 5 (besh) ish kuni ichida.
-2.2. Ishlarni yakunlash muddati: _______________________
+2.1. Ishlarni boshlash sanasi: {{PUDRAT_BOSHLANISH}}.
+2.2. Ishlarni yakunlash muddati: {{PUDRAT_TUGASH}}.
 2.3. Ish bosqichlari va har bir bosqich muddati smeta va calendar rejaga muvofiq belgilanadi.
 2.4. Muddatni o'zgartirish faqat ikki tomonning yozma kelishuvi asosida amalga oshiriladi.
 
@@ -593,19 +653,13 @@ No {{RAQAM}}
 
 1. ASOSIY SHARTNOMA MA'LUMOTLARI
 
-1.1. Ushbu Qo'shimcha shartnoma _______ raqamli, _______ sanasida tuzilgan asosiy shartnomaning (keyingi o'rinlarda "Asosiy shartnoma") ajralmas qismi hisoblanadi.
+1.1. Ushbu Qo'shimcha shartnoma {{ASOSIY_RAQAM}} raqamli, {{ASOSIY_SANA}} sanasida tuzilgan asosiy shartnomaning (keyingi o'rinlarda "Asosiy shartnoma") ajralmas qismi hisoblanadi.
 1.2. Asosiy shartnomaning ushbu Qo'shimchada zikr etilmagan barcha bandlari o'z kuchini saqlaydi.
 
 2. KIRITILAYOTGAN O'ZGARTIRISHLAR
 
-2.1. Asosiy shartnomaning ____-bandiga quyidagi o'zgartirish kiritilsin:
-Eski tahrir: "_______________________"
-Yangi tahrir: "_______________________"
-
-2.2. Asosiy shartnomaning ____-bandiga quyidagi qo'shimcha kiritilsin:
-"_______________________"
-
-2.3. Asosiy shartnomaning ____-bandi o'z kuchini yo'qotsin.
+2.1. Kiritilayotgan o'zgarishlar:
+{{OZGARTIRISH}}
 
 3. MOLIYAVIY O'ZGARISHLAR (AGAR MAVJUD BO'LSA)
 
@@ -640,7 +694,7 @@ No {{RAQAM}}
 
 1.1. Qarz beruvchi Qarz oluvchiga moliyaviy yordam sifatida {{SUMMA}} ({{SUMMA_MATN}}) so'm miqdorida foizsiz qarz beradi.
 1.2. Ushbu qarz foizsiz beriladi va faqat asl miqdorini qaytarish talab etiladi.
-1.3. Qarz maqsadi: _______________________
+1.3. Qarz maqsadi: {{QARZ_MAQSAD}}.
 
 2. QARZNI BERISH TARTIBI
 
@@ -650,11 +704,8 @@ No {{RAQAM}}
 
 3. QARZNI QAYTARISH TARTIBI
 
-3.1. Qarz oluvchi qarzni ushbu shartnoma imzolanganidan _______ oy (yil) ichida to'liq qaytarish majburiyatini oladi.
-3.2. Qaytarish usuli:
-— [ ] bir mushtda: _______ sanasiga qadar;
-— [ ] oyma-oy: har oyning __ kuniga qadar _______ so'm;
-— [ ] chorakma-chorak: har chorakning __ kuniga qadar _______ so'm.
+3.1. Qarz oluvchi qarzni {{QARZ_MUDDAT}} ichida to'liq qaytarish majburiyatini oladi.
+3.2. Qaytarish tartibi: {{QARZ_TARTIB}}.
 3.3. Muddatidan oldin to'liq qaytarish mumkin — bu haqda 3 (uch) kun oldin xabar berish kerak.
 
 4. MAS'ULIYAT
@@ -692,8 +743,8 @@ No {{RAQAM}}
 1. SHARTNOMA PREDMETI
 
 1.1. Qarz beruvchi Qarz oluvchiga {{SUMMA}} ({{SUMMA_MATN}}) so'm miqdorida qarz beradi.
-1.2. Qarz yillik ______% foiz bilan beriladi (O'zbekiston Respublikasi Markaziy bankining qayta moliyalash stavkasidan oshmasligi tavsiya etiladi).
-1.3. Qarz maqsadi: _______________________
+1.2. Foiz shartlari: {{QARZ_FOIZ}}.
+1.3. Qarz maqsadi: {{QARZ_MAQSAD}}.
 
 2. QARZNI BERISH TARTIBI
 
@@ -703,8 +754,8 @@ No {{RAQAM}}
 3. FOIZLAR VA TO'LOV TARTIBI
 
 3.1. Foizlar har oy asl qarz qoldiqqa hisoblanadi.
-3.2. Oylik to'lov miqdori: asosiy qarzning _______ so'm + hisoblangan foizlar.
-3.3. To'lovlar har oyning __ kunida Qarz beruvchining hisob raqamiga o'tkaziladi.
+3.2. Qaytarish muddati: {{QARZ_MUDDAT}}.
+3.3. Qaytarish tartibi: {{QARZ_TARTIB}}.
 3.4. Muddatidan oldin to'liq to'lash — 5 (besh) kun oldin xabar bergan holda mumkin. Bunday holda faqat haqiqatan hisoblangan foizlar to'lanadi.
 
 4. MAS'ULIYAT
@@ -738,9 +789,8 @@ No {{RAQAM}}
 1. SHARTNOMA PREDMETI
 
 1.1. Buyurtmachi Qayta ishlovchiga o'z mulki bo'lgan xom ashyo (daval material) beradi. Qayta ishlovchi ushbu xom ashyoni belgilangan texnologiya asosida qayta ishlab, tayyor mahsulot sifatida Buyurtmachiga qaytaradi.
-1.2. Daval material turi, miqdori va sifati: _______________________
-1.3. Kutilayotgan tayyor mahsulot turi, hajmi va sifat ko'rsatkichlari: _______________________
-1.4. Xom ashyodan tayyor mahsulot olish koeffisienti (normalanuvchi sarflov): _______________________
+1.2. Daval material: {{DAVAL_MATERIAL}}, miqdori: {{DAVAL_MIQDOR}}.
+1.3. Kutilayotgan tayyor mahsulot: {{DAVAL_MAHSULOT}}.
 
 2. TOMONLARNING MAJBURIYATLARI
 
@@ -766,8 +816,8 @@ No {{RAQAM}}
 
 4. MUDDATLAR VA QABUL QILISH
 
-4.1. Xom ashyo topshirilish sanasi: shartnoma imzolanganidan keyin _______ ish kuni ichida.
-4.2. Tayyor mahsulot topshirilish muddati: xom ashyo qabul qilinganidan keyin _______ ish kuni ichida.
+4.1. Xom ashyo topshirilish sanasi: shartnoma imzolanganidan keyin 3 (uch) ish kuni ichida.
+4.2. Qayta ishlash muddati: {{DAVAL_MUDDAT}}. Tayyor mahsulot xom ashyo qabul qilinganidan so'ng ushbu muddat ichida topshiriladi.
 4.3. Tayyor mahsulot topshirilganda qabul-topshiriq dalolatnomasi imzolanadi; dalolatnamada miqdor, sifat va qoldiq materiallar (chiqindilar) ko'rsatiladi.
 
 5. MAS'ULIYAT
@@ -820,15 +870,15 @@ No {{RAQAM}}
 
 3. DELIVERY TERMS / YETKAZIB BERISH SHARTLARI
 
-3.1. Delivery terms: _____________ (Incoterms 2020 — e.g., EXW, FOB, CIF, DAP).
-3.2. Place of delivery: _______________________
+3.1. Delivery terms: {{INCOTERMS}} (Incoterms 2020).
+3.2. Place of delivery: {{YETKAZISH_JOY}}.
 3.3. Delivery period: within _______ days from the date of signing this Contract / receipt of advance payment.
 3.4. Partial shipments: [ ] Allowed / [ ] Not allowed.
 
 4. PAYMENT TERMS / TO'LOV SHARTLARI
 
-4.1. Payment method: [ ] Bank Transfer (T/T) [ ] Letter of Credit (L/C) [ ] Open Account.
-4.2. Payment currency: USD / EUR / UZS (as agreed).
+4.1. Payment method: {{TOLOV_USULI}}.
+4.2. Payment currency: {{VALYUTA}}.
 4.3. Payment schedule:
 — ___% advance within _____ banking days from signing;
 — balance within _____ banking days after shipping documents received.
@@ -1076,6 +1126,16 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['texnika', 'asbob-uskuna', 'transport'],
     content: IJARA_TEXNIKA,
+  },
+  {
+    id: 'dt-ijara-03',
+    type: 'ijara',
+    name: 'Bepul foydalanish (tekin ijara) shartnomasi',
+    description: "Mol-mulkni haq to'lamasdan (bepul) vaqtincha foydalanish uchun. Shartnomada tekin foydalanish holati aniq ko'rsatilgan, FK 582–586-moddalariga asoslangan.",
+    icon: '🆓',
+    isDefault: true,
+    tags: ['tekin', 'bepul', 'foydalanish'],
+    content: IJARA_TEKIN,
   },
 
   // ── PUDRAT ──

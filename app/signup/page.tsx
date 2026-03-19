@@ -19,15 +19,38 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
+  function translateSupabaseError(msg: string): string {
+    const m = msg.toLowerCase()
+    if (m.includes('already registered') || m.includes('user already exists'))
+      return T({ uz: 'Bu email allaqachon ro\'yxatdan o\'tgan', oz: 'Бу email аллақачон рўйхатдан ўтган', ru: 'Этот email уже зарегистрирован' })
+    if (m.includes('rate limit') || m.includes('too many'))
+      return T({ uz: 'Juda ko\'p urinish. Bir oz kutib, qayta urinib ko\'ring', oz: 'Жуда кўп уриниш. Бир оз кутиб, қайта уриниб кўринг', ru: 'Слишком много попыток. Подождите и повторите' })
+    if (m.includes('invalid email') || m.includes('email is invalid'))
+      return T({ uz: 'Noto\'g\'ri email manzil', oz: 'Нотўғри email манзил', ru: 'Некорректный email адрес' })
+    if (m.includes('password') && (m.includes('weak') || m.includes('short') || m.includes('6')))
+      return T({ uz: 'Parol juda zaif. Kamida 8 belgi ishlatish tavsiya etiladi', oz: 'Парол жуда заиф. Камида 8 белги ишлатиш тавсия этилади', ru: 'Пароль слишком слабый. Рекомендуется минимум 8 символов' })
+    if (m.includes('disabled') || m.includes('not allowed'))
+      return T({ uz: 'Ro\'yxatdan o\'tish hozircha o\'chirilgan', oz: 'Рўйхатдан ўтиш ҳозирча ўчирилган', ru: 'Регистрация временно отключена' })
+    if (m.includes('network') || m.includes('fetch'))
+      return T({ uz: 'Tarmoq xatoligi. Internet aloqasini tekshiring', oz: 'Тармоқ хатолиги. Интернет алоқасини текширинг', ru: 'Ошибка сети. Проверьте подключение к интернету' })
+    return T({ uz: 'Ro\'yxatdan o\'tishda xatolik yuz berdi. Qayta urinib ko\'ring', oz: 'Рўйхатдан ўтишда хатолик юз берди. Қайта уриниб кўринг', ru: 'Ошибка при регистрации. Попробуйте ещё раз' })
+  }
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     if (password !== confirm) { setError(T(t.signup.mismatch)); return }
     if (password.length < 8) { setError(T(t.signup.shortPass)); return }
     setLoading(true)
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin + '/login',
+      },
+    })
     if (error) {
-      setError(error.message)
+      setError(translateSupabaseError(error.message))
     } else {
       setSuccess(true)
     }
