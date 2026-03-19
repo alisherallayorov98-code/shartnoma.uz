@@ -270,7 +270,7 @@ export default function DashboardPage() {
 
   async function loadSpecs(orgId: string) {
     const { data, error } = await supabase.from('specifications')
-      .select('*, contracts(contract_number, contract_date, counterparties(name))')
+      .select('*, contracts(contract_number, contract_date, contract_type, counterparty_id, counterparties(name))')
       .eq('organization_id', orgId)
       .order('created_at', { ascending: false })
     if (error) { console.error('loadSpecs:', error.message); return }
@@ -531,7 +531,17 @@ export default function DashboardPage() {
     doc.text(dateLong, pageW/2, y, {align:'center'}); y += 8
 
     // ── KIRISH MATNI ──
-    const intro = safe(`${orgName} (keyingi o'rinlarda "Sotuvchi") va ${cpName} (keyingi o'rinlarda "Xaridor") o'rtasida ushbu Spesifikatsiya tuzildi:`)
+    const cType = contract?.contract_type || 'oldi_sotdi'
+    const SPEC_ROLES: Record<string, [string, string]> = {
+      oldi_sotdi: ["Sotuvchi", "Xaridor"],
+      xizmat:     ["Buyurtmachi", "Ijrochi"],
+      ijara:      ["Ijara beruvchi", "Ijara oluvchi"],
+      pudrat:     ["Buyurtmachi", "Pudratchi"],
+      qarz:       ["Qarz beruvchi", "Qarz oluvchi"],
+      xalqaro:    ["Sotuvchi", "Xaridor"],
+    }
+    const [sRol1, sRol2] = SPEC_ROLES[cType] || ["Birinchi tomon", "Ikkinchi tomon"]
+    const intro = safe(`${orgName} (keyingi o'rinlarda "${sRol1}") va ${cpName} (keyingi o'rinlarda "${sRol2}") o'rtasida ushbu Spesifikatsiya tuzildi:`)
     const introLines = doc.splitTextToSize(intro, cW) as string[]
     for (const l of introLines) { doc.text(l, mL, y); y += 5.5 }
     y += 3
@@ -618,10 +628,10 @@ export default function DashboardPage() {
     const half = cW/2
     const xL = mL, xR = mL+half+5
 
-    // Sotuvchi
+    // Tomonlar
     doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(80,80,80)
-    doc.text('SOTUVCHI:', xL, y)
-    doc.text('XARIDOR:', xR, y); y += 5
+    doc.text(`${sRol1.toUpperCase()}:`, xL, y)
+    doc.text(`${sRol2.toUpperCase()}:`, xR, y); y += 5
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0)
     const orgNameLines = doc.splitTextToSize(orgName, half-10) as string[]
     orgNameLines.forEach((l,i) => doc.text(l, xL, y+i*5))
@@ -973,11 +983,12 @@ export default function DashboardPage() {
     const ctName = safe(CONTRACT_TYPES_I18N[c.contract_type]?.[lang] || c.contract_type)
 
     // Shartnoma turiga qarab rol nomlari (til bo'yicha)
+    // [org (chap), kontragent (o'ng)] — intro bilan mos bo'lishi kerak
     const ROLES: Record<string, [string, string]> = {
       oldi_sotdi: [t.doc.sotuvchi[lang],      t.doc.xaridor[lang]],
-      xizmat:     [t.doc.ijrochi[lang],       t.doc.buyurtmachi[lang]],
+      xizmat:     [t.doc.buyurtmachi[lang],   t.doc.ijrochi[lang]],
       ijara:      [t.doc.ijaraberuvchi[lang], t.doc.ijaraoluvchi[lang]],
-      pudrat:     [t.doc.pudratchi[lang],     t.doc.buyurtmachi[lang]],
+      pudrat:     [t.doc.buyurtmachi[lang],   t.doc.pudratchi[lang]],
       qarz:       [t.doc.qarzberuvchi[lang],  t.doc.qarzoluvchi[lang]],
       xalqaro:    [t.doc.sotuvchi[lang],      t.doc.xaridor[lang]],
     }
@@ -1397,11 +1408,12 @@ export default function DashboardPage() {
     }))
 
     // Shartnoma turiga qarab rol nomlari (til bo'yicha)
+    // [org (chap), kontragent (o'ng)] — intro bilan mos bo'lishi kerak
     const DOCX_ROLES: Record<string, [string, string]> = {
       oldi_sotdi: [t.doc.sotuvchi[lang],      t.doc.xaridor[lang]],
-      xizmat:     [t.doc.ijrochi[lang],       t.doc.buyurtmachi[lang]],
+      xizmat:     [t.doc.buyurtmachi[lang],   t.doc.ijrochi[lang]],
       ijara:      [t.doc.ijaraberuvchi[lang], t.doc.ijaraoluvchi[lang]],
-      pudrat:     [t.doc.pudratchi[lang],     t.doc.buyurtmachi[lang]],
+      pudrat:     [t.doc.buyurtmachi[lang],   t.doc.pudratchi[lang]],
       qarz:       [t.doc.qarzberuvchi[lang],  t.doc.qarzoluvchi[lang]],
       xalqaro:    [t.doc.sotuvchi[lang],      t.doc.xaridor[lang]],
     }
@@ -2368,7 +2380,9 @@ export default function DashboardPage() {
                                 </button>
                                 <button onClick={() => {
                                   setEditingSpec(spec)
-                                  setSpecForm({ contract_id: spec.contract_id||'', spec_number: spec.spec_number, items: spec.items, notes: spec.notes||'' })
+                                  const cpId = spec.contracts?.counterparty_id || ''
+                                  const cpName = spec.contracts?.counterparties?.name || ''
+                                  setSpecForm({ contract_id: spec.contract_id||'', spec_number: spec.spec_number, items: spec.items, notes: spec.notes||'', _cpId: cpId, _cpSearch: cpName } as any)
                                   setSpecModal(true)
                                 }} className="text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-900/20 transition">
                                   {T(t.specTab.edit)}
