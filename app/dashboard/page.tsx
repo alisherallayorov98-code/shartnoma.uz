@@ -108,8 +108,7 @@ export default function DashboardPage() {
   const [cpSearch, setCpSearch] = useState('')
   const [cpDetail, setCpDetail] = useState<Counterparty | null>(null)
   const [editingCp, setEditingCp] = useState<Counterparty | null>(null)
-  const [stirLoading, setStirLoading] = useState(false)
-  const [stirMsg, setStirMsg] = useState<{type:'success'|'error'|'raw'; text:string} | null>(null)
+
   const [statusFilter, setStatusFilter] = useState('all')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [orgDropdown, setOrgDropdown] = useState(false)
@@ -406,51 +405,6 @@ export default function DashboardPage() {
     setModal(null); setOrgForm(emptyOrg); setSaving(false); loadOrgs()
   }
 
-  async function searchByStir(stir: string, target: 'cp' | 'org' = 'cp') {
-    const clean = stir.replace(/\D/g, '')
-    if (clean.length !== 9) { setStirMsg({ type:'error', text:"STIR 9 raqamdan iborat bo'lishi kerak" }); return }
-    setStirLoading(true); setStirMsg(null)
-    try {
-      const res = await fetch(`/api/stir?stir=${clean}`)
-      const data = await res.json()
-      if (!res.ok) { setStirMsg({ type:'error', text: data.error || "Xatolik yuz berdi" }); return }
-      const c = data.company
-      if (target === 'org') {
-        setOrgForm(f => ({
-          ...f,
-          name:          c.name          || f.name,
-          inn:           c.inn           || f.inn,
-          director_name: c.director_name || f.director_name,
-          address:       c.address       || f.address,
-          bank_name:     c.bank_name     || f.bank_name,
-          bank_account:  c.bank_account  || f.bank_account,
-          mfo:           c.mfo           || f.mfo,
-        }))
-      } else {
-        setCpForm(f => ({
-          ...f,
-          name:          c.name          || f.name,
-          inn:           c.inn           || f.inn,
-          director_name: c.director_name || f.director_name,
-          address:       c.address       || f.address,
-          bank_name:     c.bank_name     || f.bank_name,
-          bank_account:  c.bank_account  || f.bank_account,
-          mfo:           c.mfo           || f.mfo,
-          phone:         c.phone         || (f as any).phone || '',
-          qqsreg:        c.qqsreg        || (f as any).qqsreg || '',
-        } as any))
-      }
-      if (data.raw && !c.name) {
-        setStirMsg({ type:'raw', text: JSON.stringify(data.raw, null, 2) })
-      } else {
-        setStirMsg({ type:'success', text: `✓ ${c.name} — ma'lumotlar to'ldirildi` })
-      }
-    } catch {
-      setStirMsg({ type:'error', text:"Tarmoq xatoligi. Internet aloqasini tekshiring" })
-    } finally {
-      setStirLoading(false)
-    }
-  }
 
   async function saveCp(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
@@ -3539,48 +3493,8 @@ export default function DashboardPage() {
       {/* ─── MODALS ─── */}
 
       {modal==='org' && (
-        <Modal title="Tashkilot qo'shish" onClose={()=>{ setModal(null); setStirMsg(null) }}>
+        <Modal title="Tashkilot qo'shish" onClose={()=>setModal(null)}>
           <form onSubmit={saveOrg} className="space-y-4">
-
-            {/* ── STIR auto-qidiruv ── */}
-            <div className="bg-blue-950/40 border border-blue-800/50 rounded-xl p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-blue-400 text-sm font-medium">🔍 STIR bo'yicha avtomatik to'ldirish</span>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={9}
-                  placeholder="123456789 (9 raqam)"
-                  value={orgForm.inn}
-                  onChange={e => { setOrgForm({...orgForm, inn: e.target.value.replace(/\D/g,'')}); setStirMsg(null) }}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); searchByStir(orgForm.inn, 'org') } }}
-                  className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 font-mono"
-                />
-                <button type="button"
-                  onClick={() => searchByStir(orgForm.inn, 'org')}
-                  disabled={stirLoading || orgForm.inn.replace(/\D/g,'').length !== 9}
-                  className="shrink-0 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition flex items-center gap-2">
-                  {stirLoading
-                    ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"/><span>Qidirilmoqda...</span></>
-                    : '🔍 Qidirish'}
-                </button>
-              </div>
-              {stirMsg && (
-                stirMsg.type === 'raw' ? (
-                  <div className="bg-gray-800 rounded-lg p-3">
-                    <p className="text-yellow-400 text-xs mb-1">⚠ Ma'lumot olindi, lekin maydonlar tanilmadi. Raw response:</p>
-                    <pre className="text-xs text-gray-300 overflow-x-auto max-h-32">{stirMsg.text}</pre>
-                  </div>
-                ) : (
-                  <p className={`text-xs ${stirMsg.type==='success' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {stirMsg.text}
-                  </p>
-                )
-              )}
-            </div>
-
             <div><label className={lbl}>Tashkilot nomi *</label>
               <input className={inp} required placeholder="Alfa Texnologiya MChJ" value={orgForm.name} onChange={e=>setOrgForm({...orgForm,name:e.target.value})}/></div>
             <div className="grid grid-cols-2 gap-3">
@@ -3603,48 +3517,8 @@ export default function DashboardPage() {
       )}
 
       {modal==='cp' && (
-        <Modal title={editingCp ? "Kontragentni tahrirlash" : "Kontragent qo'shish"} onClose={()=>{ setModal(null); setEditingCp(null); setCpForm(emptyCp); setStirMsg(null) }}>
+        <Modal title={editingCp ? "Kontragentni tahrirlash" : "Kontragent qo'shish"} onClose={()=>{ setModal(null); setEditingCp(null); setCpForm(emptyCp) }}>
           <form onSubmit={saveCp} className="space-y-4">
-
-            {/* ── STIR auto-qidiruv ── */}
-            <div className="bg-blue-950/40 border border-blue-800/50 rounded-xl p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-blue-400 text-sm font-medium">🔍 STIR bo'yicha avtomatik to'ldirish</span>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={9}
-                  placeholder="123456789 (9 raqam)"
-                  value={cpForm.inn}
-                  onChange={e => { setCpForm({...cpForm, inn: e.target.value.replace(/\D/g,'')}); setStirMsg(null) }}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); searchByStir(cpForm.inn) } }}
-                  className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 font-mono"
-                />
-                <button type="button"
-                  onClick={() => searchByStir(cpForm.inn)}
-                  disabled={stirLoading || cpForm.inn.replace(/\D/g,'').length !== 9}
-                  className="shrink-0 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition flex items-center gap-2">
-                  {stirLoading
-                    ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"/><span>Qidirilmoqda...</span></>
-                    : '🔍 Qidirish'}
-                </button>
-              </div>
-              {stirMsg && (
-                stirMsg.type === 'raw' ? (
-                  <div className="bg-gray-800 rounded-lg p-3">
-                    <p className="text-yellow-400 text-xs mb-1">⚠ Ma'lumot olindi, lekin maydonlar tanilmadi. Raw response:</p>
-                    <pre className="text-xs text-gray-300 overflow-x-auto max-h-32">{stirMsg.text}</pre>
-                  </div>
-                ) : (
-                  <p className={`text-xs ${stirMsg.type==='success' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {stirMsg.text}
-                  </p>
-                )
-              )}
-            </div>
-
             <div><label className={lbl}>Tashkilot nomi *</label>
               <input className={inp} required placeholder="Beta Qurilish MChJ" value={cpForm.name} onChange={e=>setCpForm({...cpForm,name:e.target.value})}/></div>
             <div className="grid grid-cols-2 gap-3">
