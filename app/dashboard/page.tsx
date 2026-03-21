@@ -55,6 +55,15 @@ export default function DashboardOverviewPage() {
 
   const showSubWarning = !isAdmin && isSubValid && subDaysLeft !== null && subDaysLeft <= 5
 
+  // Faol shartnomalar muddati (1 yil hisobiday): 330+ kun o'tgan
+  const now = Date.now()
+  const expiringContracts = contracts.filter(c => {
+    if (c.status !== 'active') return false
+    const created = new Date(c.created_at).getTime()
+    const daysOld = (now - created) / (1000 * 60 * 60 * 24)
+    return daysOld >= 330
+  })
+
   return (
     <main className="flex-1 overflow-auto p-6 bg-gray-950">
 
@@ -90,6 +99,26 @@ export default function DashboardOverviewPage() {
             }`}>
             Murojaat qilish →
           </a>
+        </div>
+      )}
+
+      {/* ── Expiring contracts warning ── */}
+      {expiringContracts.length > 0 && (
+        <div className="mb-5 rounded-2xl p-4 flex items-center gap-4 border bg-orange-900/20 border-orange-700/50">
+          <div className="text-2xl shrink-0">⏰</div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-sm text-orange-300">
+              {expiringContracts.length} ta shartnoma muddati yaqinlashmoqda
+            </div>
+            <div className="text-gray-400 text-xs mt-0.5 truncate">
+              {expiringContracts.slice(0, 3).map(c => c.contract_number).join(', ')}
+              {expiringContracts.length > 3 ? ` va yana ${expiringContracts.length - 3} ta` : ''}
+            </div>
+          </div>
+          <Link href="/dashboard/shartnomalar"
+            className="shrink-0 text-xs font-semibold px-4 py-2 rounded-xl bg-orange-700 hover:bg-orange-600 text-white transition whitespace-nowrap">
+            Ko'rish →
+          </Link>
         </div>
       )}
 
