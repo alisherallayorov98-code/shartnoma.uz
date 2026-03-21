@@ -658,47 +658,42 @@ export default function ShartnomalarPage() {
       const t = line.trim()
       const kind = lineKind(line)
 
-      if (kind === 'empty') return new Paragraph({ style: 'Normal', text: '', spacing: { after: 20 } })
+      if (kind === 'empty') return new Paragraph({ text: '', spacing: { after: 20 } })
 
       if (kind === 'main') return new Paragraph({
-        style: 'Normal',
         alignment: AlignmentType.CENTER,
         spacing: { before: 160, after: 60 },
-        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+        children: [new TextRun({ text: t, bold: true, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
       })
 
       if (kind === 'sub') return new Paragraph({
-        style: 'Normal',
         alignment: AlignmentType.JUSTIFIED,
         spacing: { before: 0, after: 40 },
-        children: [new TextRun({ text: t, bold: false, size: 24, font: F, color: '000000' })],
+        children: [new TextRun({ text: t, bold: false, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
       })
 
       if (kind === 'label') return new Paragraph({
-        style: 'Normal',
         spacing: { before: 120, after: 40 },
-        children: [new TextRun({ text: t, bold: true, size: 22, font: F, color: '000000' })],
+        children: [new TextRun({ text: t, bold: true, italics: false, underline: {}, size: 22, font: F, color: '000000' })],
       })
 
       if (kind === 'bullet') {
         const bt = t.replace(/^[-–•]\s*/, '')
         return new Paragraph({
-          style: 'Normal',
           alignment: AlignmentType.LEFT,
           indent: { left: 360, hanging: 180 },
           spacing: { after: 30 },
-          children: [new TextRun({ text: `– ${bt}`, size: 24, font: F, color: '000000' })],
+          children: [new TextRun({ text: `– ${bt}`, bold: false, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
         })
       }
 
       const prevKind = i > 0 ? lineKind(arr[i - 1]) : 'empty'
       const isStart = prevKind === 'empty' || prevKind === 'main' || prevKind === 'sub' || prevKind === 'label'
       return new Paragraph({
-        style: 'Normal',
         alignment: AlignmentType.JUSTIFIED,
-        indent: isStart ? { firstLine: 720 } : {},
+        indent: isStart ? { firstLine: 360 } : {},
         spacing: { after: 40, line: 240 },
-        children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
+        children: [new TextRun({ text: t, bold: false, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
       })
     })
 
