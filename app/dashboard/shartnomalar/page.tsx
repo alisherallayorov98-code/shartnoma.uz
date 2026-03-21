@@ -724,17 +724,27 @@ export default function ShartnomalarPage() {
       })],
     })
 
+    // Party labels depend on contract type
+    const partyLabels: Record<string, [string, string]> = {
+      oldi_sotdi: ['SOTUVCHI', 'XARIDOR'],
+      xizmat:     ['BUYURTMACHI', 'IJROCHI'],
+      ijara:      ['IJARABERUVCHI', 'IJARACHI'],
+      pudrat:     ['BUYURTMACHI', 'PUDRATCHI'],
+    }
+    const [label1, label2] = partyLabels[c.contract_type] || ['1-TOMON', '2-TOMON']
+
     // Org details helper — works for both organizations and counterparties
-    function orgCell(title: string, org: { name?: string; inn?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | null | undefined) {
+    function orgCell(title: string, org: { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | null | undefined) {
       const details = [
-        new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 24, font: F })], spacing: { after: 120 } }),
-        new Paragraph({ children: [new TextRun({ text: org?.name || '___', bold: true, size: 22, font: F })], spacing: { after: 80 } }),
-        new Paragraph({ children: [new TextRun({ text: `INN: ${org?.inn || '___'}`, size: 20, font: F, color: '555555' })], spacing: { after: 60 } }),
-        ...(org?.bank_name ? [new Paragraph({ children: [new TextRun({ text: `Bank: ${org.bank_name}`, size: 20, font: F, color: '555555' })], spacing: { after: 60 } })] : []),
-        ...(org?.bank_account ? [new Paragraph({ children: [new TextRun({ text: `H/R: ${org.bank_account}`, size: 20, font: F, color: '555555' })], spacing: { after: 60 } })] : []),
-        ...(org?.mfo ? [new Paragraph({ children: [new TextRun({ text: `MFO: ${org.mfo}`, size: 20, font: F, color: '555555' })], spacing: { after: 60 } })] : []),
-        new Paragraph({ children: [new TextRun({ text: `Rahbar: ${org?.director_name || '___'}`, size: 20, font: F })], spacing: { after: 280 } }),
-        new Paragraph({ children: [new TextRun({ text: 'Imzo: _______________________', size: 22, font: F })], spacing: { after: 60 } }),
+        new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 24, font: F })], spacing: { after: 100 } }),
+        new Paragraph({ children: [new TextRun({ text: org?.name || '___', bold: true, size: 22, font: F })], spacing: { after: 60 } }),
+        new Paragraph({ children: [new TextRun({ text: `INN: ${org?.inn || '___'}`, size: 20, font: F, color: '555555' })], spacing: { after: 50 } }),
+        ...(org?.address ? [new Paragraph({ children: [new TextRun({ text: `Manzil: ${org.address}`, size: 20, font: F, color: '555555' })], spacing: { after: 50 } })] : []),
+        ...(org?.bank_name ? [new Paragraph({ children: [new TextRun({ text: `Bank: ${org.bank_name}`, size: 20, font: F, color: '555555' })], spacing: { after: 50 } })] : []),
+        ...(org?.bank_account ? [new Paragraph({ children: [new TextRun({ text: `H/R: ${org.bank_account}`, size: 20, font: F, color: '555555' })], spacing: { after: 50 } })] : []),
+        ...(org?.mfo ? [new Paragraph({ children: [new TextRun({ text: `MFO: ${org.mfo}`, size: 20, font: F, color: '555555' })], spacing: { after: 50 } })] : []),
+        new Paragraph({ children: [new TextRun({ text: `Rahbar: ${org?.director_name || '___'}`, size: 20, font: F })], spacing: { after: 240 } }),
+        new Paragraph({ children: [new TextRun({ text: 'Imzo: _______________________', size: 22, font: F })], spacing: { after: 50 } }),
         new Paragraph({ children: [new TextRun({ text: 'M.O.', size: 20, font: F, color: '888888' })], spacing: { after: 0 } }),
       ]
       return new TableCell({ borders: cellBorders, margins: { top: 150, bottom: 150, left: 200, right: 200 }, children: details })
@@ -744,8 +754,8 @@ export default function ShartnomalarPage() {
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: [new TableRow({
         children: [
-          orgCell('BUYURTMACHI', c.organizations),
-          orgCell('IJROCHI', c.counterparties),
+          orgCell(label1, c.organizations),
+          orgCell(label2, c.counterparties),
         ],
       })],
     })
