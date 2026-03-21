@@ -51,12 +51,25 @@ function LoadingSkeleton() {
 }
 
 function DashboardLayoutInner({ children }: { children: ReactNode }) {
-  const { initialLoading } = useDashboard()
+  const { initialLoading, sidebarOpen, setSidebarOpen } = useDashboard()
 
   return (
     <div className="min-h-screen bg-gray-950 flex text-white">
       <DashboardSidebar />
       <div className="flex-1 overflow-auto min-h-screen">
+        {/* Mobile top bar */}
+        <div className="sm:hidden flex items-center gap-3 px-4 h-14 border-b border-gray-800 bg-gray-900 sticky top-0 z-30">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-800 transition"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">S</div>
+          <span className="font-semibold text-sm">Shartnoma.uz</span>
+        </div>
         {initialLoading ? <LoadingSkeleton /> : children}
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useDashboard } from '../context'
-import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
+import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
 
 type BuxFeature = 'dalolatnoma' | 'schet_faktura' | 'talabnoma' | 'tolov_grafigi' | 'debitor_undirish'
 
@@ -297,6 +297,10 @@ export default function BuxgalterPage() {
                     <button onClick={() => downloadTextAsWord(result, currentFeature?.title || 'hujjat')}
                       className="flex items-center gap-1.5 text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg transition">
                       📝 Word
+                    </button>
+                    <button onClick={() => { saveAiResult(currentFeature?.title || 'Hujjat', result); alert('Saqlandi!') }}
+                      className="flex items-center gap-1.5 text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg transition">
+                      💾 Saqlash
                     </button>
                   </div>
                 </div>

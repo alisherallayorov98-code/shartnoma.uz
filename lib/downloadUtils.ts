@@ -1,5 +1,35 @@
 // Shared PDF and Word download utilities for AI-generated document results
 
+export type SavedAiResult = {
+  id: string
+  title: string
+  content: string
+  savedAt: string
+}
+
+export function saveAiResult(title: string, content: string) {
+  const key = 'saved_ai_results'
+  const existing: SavedAiResult[] = JSON.parse(localStorage.getItem(key) || '[]')
+  const entry: SavedAiResult = {
+    id: Date.now().toString(),
+    title,
+    content,
+    savedAt: new Date().toISOString(),
+  }
+  existing.unshift(entry)
+  // Keep max 50
+  localStorage.setItem(key, JSON.stringify(existing.slice(0, 50)))
+}
+
+export function loadSavedAiResults(): SavedAiResult[] {
+  return JSON.parse(localStorage.getItem('saved_ai_results') || '[]')
+}
+
+export function deleteSavedAiResult(id: string) {
+  const existing: SavedAiResult[] = JSON.parse(localStorage.getItem('saved_ai_results') || '[]')
+  localStorage.setItem('saved_ai_results', JSON.stringify(existing.filter(r => r.id !== id)))
+}
+
 export async function downloadTextAsPDF(text: string, filename: string) {
   const { default: jsPDF } = await import('jspdf')
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })

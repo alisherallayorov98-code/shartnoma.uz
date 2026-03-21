@@ -42,7 +42,20 @@ export function DashboardSidebar() {
   }
 
   return (
-    <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-gray-900 border-r border-gray-800 flex flex-col flex-shrink-0 transition-all duration-300`}>
+    <>
+      {/* Mobile overlay backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 sm:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+    <aside className={`
+      ${sidebarOpen ? 'w-64 translate-x-0' : 'w-16 -translate-x-full sm:translate-x-0'}
+      fixed sm:relative inset-y-0 left-0 z-50 sm:z-auto
+      bg-gray-900 border-r border-gray-800 flex flex-col flex-shrink-0 transition-all duration-300
+      h-full sm:h-auto min-h-screen
+    `}>
 
       {/* Logo + hamburger */}
       <div className="h-16 flex items-center px-4 border-b border-gray-800 gap-3">
@@ -183,5 +196,6 @@ export function DashboardSidebar() {
         </button>
       </div>
     </aside>
+    </>
   )
 }

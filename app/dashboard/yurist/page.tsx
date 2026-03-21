@@ -5,7 +5,7 @@ import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { getAiUsedToday, incrementAiUsage } from '@/lib/aiUsage'
-import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
+import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
 
 const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = {
   oldi_sotdi: { uz: 'Oldi-sotdi', oz: 'Олди-сотди', ru: 'Купля-продажа' },
@@ -369,6 +369,8 @@ export default function YuristPage() {
                     className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
                   <button onClick={() => downloadTextAsPDF(String(hubResult.xulosa || ''), 'xulosa')}
                     className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
+                  <button onClick={() => { saveAiResult('Yurist xulosa', String(hubResult.xulosa || '')); alert('Saqlandi!') }}
+                    className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                 </div>
               </div>
             )}
@@ -384,6 +386,8 @@ export default function YuristPage() {
                       className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                     <button onClick={() => downloadTextAsWord(String(hubResult.tarjima || ''), 'tarjima')}
                       className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg transition">📝 Word</button>
+                    <button onClick={() => { saveAiResult('Tarjima', String(hubResult.tarjima || '')); alert('Saqlandi!') }}
+                      className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                   </div>
                 </div>
                 <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.tarjima || '')}</pre>
@@ -479,6 +483,8 @@ export default function YuristPage() {
                     className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                   <button onClick={() => downloadTextAsWord(String(hubResult.band || ''), 'band')}
                     className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg transition">📝 Word</button>
+                  <button onClick={() => { saveAiResult('Yuridik band', String(hubResult.band || '')); alert('Saqlandi!') }}
+                    className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                 </div>
               </div>
             )}
@@ -513,6 +519,8 @@ export default function YuristPage() {
                       className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                     <button onClick={() => downloadTextAsWord(String(hubResult.shartnoma || ''), 'shartnoma')}
                       className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg transition">📝 Word</button>
+                    <button onClick={() => { saveAiResult('AI shartnoma', String(hubResult.shartnoma || '')); alert('Saqlandi!') }}
+                      className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                   </div>
                 </div>
                 <div className="bg-gray-800/60 rounded-xl p-4 max-h-96 overflow-y-auto">

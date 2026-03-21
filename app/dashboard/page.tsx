@@ -53,6 +53,26 @@ export default function DashboardOverviewPage() {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 5)
 
+  // Monthly chart — last 6 months
+  const monthlyData = (() => {
+    const result: { label: string; count: number; amount: number }[] = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(1)
+      d.setMonth(d.getMonth() - i)
+      const y = d.getFullYear()
+      const m = d.getMonth()
+      const label = d.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', { month: 'short' })
+      const monthContracts = contracts.filter(c => {
+        const cd = new Date(c.created_at)
+        return cd.getFullYear() === y && cd.getMonth() === m
+      })
+      result.push({ label, count: monthContracts.length, amount: monthContracts.reduce((s, c) => s + (c.amount || 0), 0) })
+    }
+    return result
+  })()
+  const maxCount = Math.max(...monthlyData.map(m => m.count), 1)
+
   const showSubWarning = !isAdmin && isSubValid && subDaysLeft !== null && subDaysLeft <= 5
 
   // Faol shartnomalar muddati (1 yil hisobiday): 330+ kun o'tgan
@@ -274,6 +294,26 @@ export default function DashboardOverviewPage() {
             ) : (
               <div className="text-gray-600 text-sm">Ma&apos;lumot yo&apos;q</div>
             )}
+          </div>
+        </div>
+
+        {/* ── Oylik statistika grafigi ── */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div className="text-xs text-gray-500 uppercase tracking-wide mb-4 font-medium">Oylik statistika (so'nggi 6 oy)</div>
+          <div className="flex items-end gap-3 h-28">
+            {monthlyData.map((m, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-[10px] text-gray-500">{m.count > 0 ? m.count : ''}</span>
+                <div className="w-full flex items-end justify-center" style={{ height: '72px' }}>
+                  <div
+                    className="w-full rounded-t-md bg-blue-600/70 hover:bg-blue-500/90 transition-all"
+                    style={{ height: `${Math.round((m.count / maxCount) * 72)}px`, minHeight: m.count > 0 ? '4px' : '0' }}
+                    title={`${m.count} ta · ${m.amount.toLocaleString()} so'm`}
+                  />
+                </div>
+                <span className="text-[10px] text-gray-500 capitalize">{m.label}</span>
+              </div>
+            ))}
           </div>
         </div>
 

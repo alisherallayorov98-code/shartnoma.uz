@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -79,6 +80,8 @@ export default function ShartnomalarPage() {
   const { lang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
 
+  const searchParams = useSearchParams()
+
   const {
     contracts, orgs, cps, activeOrg, subscription, isFree,
     reloadContracts, reloadCps, canCreateContract, openUpgradeModal, userId,
@@ -105,6 +108,25 @@ export default function ShartnomalarPage() {
   useEffect(() => {
     if (activeOrg?.id) loadCustomTemplates(activeOrg.id)
   }, [activeOrg?.id])
+
+  // ── Handle from_tpl (template → contract) ─────────────────────────────────
+  useEffect(() => {
+    if (searchParams.get('from_tpl') !== '1') return
+    const raw = localStorage.getItem('tpl_to_contract')
+    if (!raw || !activeOrg) return
+    try {
+      const { type, content } = JSON.parse(raw) as { type: string; content: string }
+      localStorage.removeItem('tpl_to_contract')
+      if (!canCreateContract()) { openUpgradeModal(); return }
+      const form = makeEmptyForm(activeOrg.id)
+      form.contract_number = autoContractNum()
+      form.contract_type = type || 'oldi_sotdi'
+      form.content = content || ''
+      setContractForm(form)
+      setModal('contract')
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, activeOrg])
 
   async function loadCustomTemplates(orgId: string) {
     const { data } = await supabase
@@ -354,6 +376,69 @@ export default function ShartnomalarPage() {
     }
 
     y += 8
+
+    // ─ Spec items table ─
+    if (c.spec_items && c.spec_items.length > 0) {
+      if (y > pageHeight - 60) { doc.addPage(); y = margin }
+      doc.setFontSize(10)
+      doc.setTextColor(20, 20, 20)
+      doc.text('SPESIFIKATSIYA', margin, y)
+      y += 6
+
+      const cols = ['#', 'Nomi', 'Birlik', 'Miqdori', 'Narxi', "QQS%", 'Summa']
+      const colW = [8, 60, 16, 18, 22, 14, 22]
+      const rowH = 6
+
+      // Header row
+      doc.setFillColor(40, 40, 40)
+      doc.setDrawColor(180, 180, 180)
+      let cx = margin
+      doc.setFontSize(7)
+      doc.setTextColor(255, 255, 255)
+      cols.forEach((col, i) => {
+        doc.setFillColor(60, 60, 60)
+        doc.rect(cx, y, colW[i], rowH, 'FD')
+        doc.text(col, cx + 1, y + 4)
+        cx += colW[i]
+      })
+      y += rowH
+
+      doc.setTextColor(30, 30, 30)
+      let total = 0
+      c.spec_items.forEach((item, idx) => {
+        if (y > pageHeight - margin - 10) { doc.addPage(); y = margin }
+        cx = margin
+        doc.setFillColor(idx % 2 === 0 ? 250 : 240, idx % 2 === 0 ? 250 : 240, idx % 2 === 0 ? 250 : 240)
+        const rowData = [
+          String(idx + 1),
+          item.nomi,
+          item.birlik,
+          String(item.miqdori),
+          item.narxi.toLocaleString(),
+          item.qqs_foiz === 'siz' ? '-' : `${item.qqs_foiz}%`,
+          item.summa.toLocaleString(),
+        ]
+        rowData.forEach((cell, i) => {
+          doc.setFillColor(idx % 2 === 0 ? 255 : 248, 255, 255)
+          doc.rect(cx, y, colW[i], rowH, 'S')
+          doc.text(String(cell).substring(0, Math.floor(colW[i] / 2.2)), cx + 1, y + 4)
+          cx += colW[i]
+        })
+        total += item.summa || 0
+        y += rowH
+      })
+
+      // Total row
+      cx = margin
+      doc.setFontSize(8)
+      doc.setTextColor(20, 20, 20)
+      const totalLabel = "Jami:"
+      doc.text(totalLabel, margin + colW[0] + colW[1] + colW[2] + colW[3] + colW[4], y + 4)
+      doc.setFontSize(8)
+      doc.text(total.toLocaleString() + " so'm", margin + colW[0] + colW[1] + colW[2] + colW[3] + colW[4] + colW[5] + 1, y + 4)
+      y += rowH + 6
+    }
+
     // ─ Signatures ─
     if (y > pageHeight - 60) { doc.addPage(); y = margin }
     doc.setFontSize(9)
@@ -428,6 +513,33 @@ export default function ShartnomalarPage() {
     }
 
     doc.save(`shartnoma-${c.contract_number || 'yangi'}.pdf`)
+  }
+
+  // ── Excel (CSV) export ─────────────────────────────────────────────────────
+  function exportToCSV(list: Contract[]) {
+    const CONTRACT_TYPE_NAMES_LOCAL: Record<string, string> = {
+      oldi_sotdi: 'Oldi-sotdi', xizmat: "Xizmat ko'rsatish", ijara: 'Ijara',
+      pudrat: 'Pudrat', qoshimcha: "Qo'shimcha", moliyaviy: 'Moliyaviy yordam',
+      daval: 'Daval', xalqaro: 'Xalqaro', boshqa: 'Boshqa',
+    }
+    const headers = ['Raqam', 'Sana', 'Tur', 'Holat', 'Summa', 'Kontragent', 'Tashkilot', 'Shahar']
+    const rows = list.map(c => [
+      c.contract_number,
+      c.contract_date,
+      CONTRACT_TYPE_NAMES_LOCAL[c.contract_type] || c.contract_type,
+      c.status,
+      c.amount?.toLocaleString() || '0',
+      c.counterparties?.name || '',
+      c.organizations?.name || '',
+      c.city || '',
+    ])
+    const bom = '\uFEFF'
+    const csv = bom + [headers, ...rows].map(row => row.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'shartnomalar.csv'
+    a.click(); URL.revokeObjectURL(url)
   }
 
   // ── DOCX generation ────────────────────────────────────────────────────────
@@ -569,19 +681,31 @@ export default function ShartnomalarPage() {
     <div className="p-6 max-w-7xl mx-auto">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl font-bold text-white">{T(t.contracts.title)}</h1>
           <p className="text-gray-500 text-sm mt-0.5">
             {orgContracts.length} ta shartnoma
           </p>
         </div>
-        <button
-          onClick={openNewContract}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
-        >
-          {T(t.contracts.new)}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => exportToCSV(orgContracts)}
+            title="Excel (CSV) yuklab olish"
+            className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+            </svg>
+            Excel
+          </button>
+          <button
+            onClick={openNewContract}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+          >
+            {T(t.contracts.new)}
+          </button>
+        </div>
       </div>
 
       {/* ── Quota warning ── */}
@@ -644,11 +768,11 @@ export default function ShartnomalarPage() {
               <thead>
                 <tr className="border-b border-gray-800 text-xs text-gray-500">
                   <th className="text-left px-4 py-3 font-medium">{T(t.contracts.number)}</th>
-                  <th className="text-left px-4 py-3 font-medium">{T(t.contracts.date)}</th>
-                  <th className="text-left px-4 py-3 font-medium">{T(t.contracts.type)}</th>
-                  <th className="text-left px-4 py-3 font-medium">{T(t.contracts.org)}</th>
-                  <th className="text-left px-4 py-3 font-medium">{T(t.contracts.counterparty)}</th>
-                  <th className="text-right px-4 py-3 font-medium">{T(t.contracts.amount)}</th>
+                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">{T(t.contracts.date)}</th>
+                  <th className="text-left px-4 py-3 font-medium hidden md:table-cell">{T(t.contracts.type)}</th>
+                  <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">{T(t.contracts.org)}</th>
+                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">{T(t.contracts.counterparty)}</th>
+                  <th className="text-right px-4 py-3 font-medium hidden md:table-cell">{T(t.contracts.amount)}</th>
                   <th className="text-left px-4 py-3 font-medium">{T(t.contracts.status)}</th>
                   <th className="text-left px-4 py-3 font-medium">{T(t.contracts.actions)}</th>
                 </tr>
@@ -661,29 +785,29 @@ export default function ShartnomalarPage() {
                       <span className="text-sm font-medium text-white">{c.contract_number}</span>
                     </td>
                     {/* Date */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden sm:table-cell">
                       <span className="text-sm text-gray-400">{c.contract_date}</span>
                     </td>
                     {/* Type */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden md:table-cell">
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${TYPE_COLORS[c.contract_type] || 'bg-gray-700 text-gray-300'}`}>
                         {CONTRACT_TYPES_I18N[c.contract_type] ? T(CONTRACT_TYPES_I18N[c.contract_type]) : c.contract_type}
                       </span>
                     </td>
                     {/* Org */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden lg:table-cell">
                       <span className="text-sm text-gray-300 truncate max-w-[120px] block">
                         {c.organizations?.name || '—'}
                       </span>
                     </td>
                     {/* Counterparty */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden sm:table-cell">
                       <span className="text-sm text-gray-300 truncate max-w-[120px] block">
                         {c.counterparties?.name || '—'}
                       </span>
                     </td>
                     {/* Amount */}
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right hidden md:table-cell">
                       <span className="text-sm text-white font-medium">
                         {c.amount ? Number(c.amount).toLocaleString() : '—'}
                       </span>
@@ -856,6 +980,9 @@ export default function ShartnomalarPage() {
                 </button>
                 <button onClick={() => sendByEmail(viewContract)} className="px-3 py-1.5 text-xs bg-yellow-700/30 text-yellow-400 rounded-lg hover:bg-yellow-700/50 transition">
                   ✉️ Email
+                </button>
+                <button onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition">
+                  🖨️ Print
                 </button>
                 {isPremium && (
                   <button

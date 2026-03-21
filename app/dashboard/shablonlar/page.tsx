@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -49,6 +50,7 @@ const typeColors: Record<string, string> = {
 const emptyCustomTpl = { type: 'oldi_sotdi', name: '', description: '', content: '' }
 
 export default function ShablonlarPage() {
+  const router = useRouter()
   const { lang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { activeOrg, isFree } = useDashboard()
@@ -288,8 +290,20 @@ export default function ShablonlarPage() {
                 setCustomTplForm({ type: templatePreview.type, name: getTplField(templatePreview, 'name', lang), description: getTplField(templatePreview, 'description', lang), content: getTplField(templatePreview, 'content', lang) })
                 setTemplatePreview(null)
                 setCustomTemplateModal(true)
-              }} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-sm font-medium transition">
+              }} className="bg-gray-700 hover:bg-gray-600 text-gray-300 py-2 px-4 rounded-lg text-sm font-medium transition">
                 Tahrirlash
+              </button>
+              <button onClick={() => {
+                try {
+                  localStorage.setItem('tpl_to_contract', JSON.stringify({
+                    type: templatePreview.type,
+                    content: getTplField(templatePreview, 'content', lang),
+                  }))
+                } catch { /* */ }
+                setTemplatePreview(null)
+                router.push('/dashboard/shartnomalar?from_tpl=1')
+              }} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-sm font-medium transition">
+                ✍️ Shartnoma yarat
               </button>
             </div>
           </div>
