@@ -54,6 +54,38 @@ const TYPE_COLORS: Record<string, string> = {
   boshqa:     'bg-pink-900/50 text-pink-300',
 }
 
+// ─── Template placeholder filler ─────────────────────────────────────────────
+
+function fillPlaceholders(content: string, c: {
+  contract_number?: string
+  contract_date?: string
+  city?: string
+  amount?: number | string
+  organizations?: { name?: string; inn?: string; address?: string; director_name?: string } | null
+  counterparties?: { name?: string; inn?: string; address?: string; director_name?: string } | null
+}): string {
+  const amount = Number(c.amount || 0)
+  // Simple Uzbek number-to-words (basic)
+  const amountText = amount > 0
+    ? amount.toLocaleString('uz-UZ') + " so'm"
+    : "nol so'm"
+
+  const map: Record<string, string> = {
+    '{{RAQAM}}':              c.contract_number || '',
+    '{{SANA}}':               c.contract_date || '',
+    '{{SHAHAR}}':             c.city || 'Toshkent',
+    '{{BUYURTMACHI}}':        c.organizations?.name || '___',
+    '{{BUYURTMACHI_INN}}':    c.organizations?.inn || '___',
+    '{{BUYURTMACHI_RAHBAR}}': c.organizations?.director_name || '___',
+    '{{IJROCHI}}':            c.counterparties?.name || '___',
+    '{{IJROCHI_INN}}':        c.counterparties?.inn || '___',
+    '{{IJROCHI_RAHBAR}}':     c.counterparties?.director_name || '___',
+    '{{SUMMA}}':              amount.toLocaleString('uz-UZ'),
+    '{{SUMMA_MATN}}':         amountText,
+  }
+  return content.replace(/\{\{[A-Z_]+\}\}/g, (key) => map[key] ?? key)
+}
+
 // ─── Empty form factory ───────────────────────────────────────────────────────
 
 function makeEmptyForm(orgId: string): ContractForm {
@@ -372,7 +404,7 @@ export default function ShartnomalarPage() {
       if (y + need > pageHeight - MB) { doc.addPage(); y = MT }
     }
 
-    const rawLines = (c.content || '').split('\n')
+    const rawLines = fillPlaceholders(c.content || '', c).split('\n')
     for (let li = 0; li < rawLines.length; li++) {
       const raw = rawLines[li]
       const safe = cyrillicToLatin(raw)
@@ -631,7 +663,7 @@ export default function ShartnomalarPage() {
     // 1. Skip duplicate header lines (title, №, city/date) — start from first
     //    numbered section like "1. SHARTNOMA PREDMETI"
     // 2. Cut signature/rekvizitlar section at the end — we render our own table
-    const rawLines = (c.content || '').split('\n')
+    const rawLines = fillPlaceholders(c.content || '', c).split('\n')
 
     let startIdx = 0
     for (let i = 0; i < rawLines.length; i++) {
@@ -1238,7 +1270,7 @@ export default function ShartnomalarPage() {
               {viewContract.content && (
                 <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-4">
                   <pre className="text-sm text-gray-200 whitespace-pre-wrap font-sans leading-relaxed">
-                    {viewContract.content}
+                    {fillPlaceholders(viewContract.content, viewContract)}
                   </pre>
                 </div>
               )}
