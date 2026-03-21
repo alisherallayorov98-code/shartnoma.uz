@@ -35,6 +35,7 @@ export type Contract = {
   organizations?: Org; counterparties?: Counterparty; created_at: string
   content?: string; city?: string; product_name?: string
   spec_items?: SpecItem[]; qqs_enabled?: boolean; qqs_rate?: number
+  signed_us?: boolean; signed_cp?: boolean
 }
 
 export type Specification = {

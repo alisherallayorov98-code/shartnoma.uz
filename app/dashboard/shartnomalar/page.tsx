@@ -229,6 +229,11 @@ export default function ShartnomalarPage() {
     reloadContracts()
   }
 
+  async function toggleSigned(c: Contract, side: 'signed_us' | 'signed_cp') {
+    await supabase.from('contracts').update({ [side]: !c[side] }).eq('id', c.id)
+    reloadContracts()
+  }
+
   // ── Delete contract ────────────────────────────────────────────────────────
   async function deleteContract(id: string) {
     if (!confirm(T(t.contracts.deleteConfirm))) return
@@ -685,9 +690,14 @@ export default function ShartnomalarPage() {
                     </td>
                     {/* Status */}
                     <td className="px-4 py-3">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[c.status] || 'bg-gray-700 text-gray-300'}`}>
-                        {STATUSES[c.status] ? T(STATUSES[c.status]) : c.status}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium w-fit ${STATUS_COLORS[c.status] || 'bg-gray-700 text-gray-300'}`}>
+                          {STATUSES[c.status] ? T(STATUSES[c.status]) : c.status}
+                        </span>
+                        <span className="text-xs text-gray-600">
+                          {c.signed_us ? '✅Biz' : '⬜Biz'} {c.signed_cp ? '✅KG' : '⬜KG'}
+                        </span>
+                      </div>
                     </td>
                     {/* Actions */}
                     <td className="px-4 py-3">
@@ -885,6 +895,19 @@ export default function ShartnomalarPage() {
                   <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[viewContract.status] || 'bg-gray-700 text-gray-300'}`}>
                     {STATUSES[viewContract.status] ? T(STATUSES[viewContract.status]) : viewContract.status}
                   </span>
+                </div>
+                <div className="bg-gray-800/50 rounded-xl p-3 col-span-2">
+                  <p className="text-xs text-gray-500 mb-2">Imzolash holati</p>
+                  <div className="flex gap-3">
+                    <button onClick={() => toggleSigned(viewContract, 'signed_us')}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${viewContract.signed_us ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
+                      {viewContract.signed_us ? '✅' : '⬜'} Biz imzoladik
+                    </button>
+                    <button onClick={() => toggleSigned(viewContract, 'signed_cp')}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${viewContract.signed_cp ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
+                      {viewContract.signed_cp ? '✅' : '⬜'} Kontragent imzoladi
+                    </button>
+                  </div>
                 </div>
               </div>
 
