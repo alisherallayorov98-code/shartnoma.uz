@@ -340,38 +340,62 @@ export default function ShartnomalarPage() {
     y += 6
 
     // ─ Content ─
-    doc.setFontSize(9)
-    doc.setTextColor(30, 30, 30)
-    const rawContent = c.content || ''
-    // Transliterate non-latin chars to safe representation for jsPDF
-    const safeContent = rawContent
-      .replace(/'/g, "'")
-      .replace(/'/g, "'")
-      .replace(/[^\x00-\x7F]/g, ch => {
-        const map: Record<string, string> = {
-          '\u0430':'a','\u0431':'b','\u0432':'v','\u0433':'g','\u0434':'d','\u0435':'e','\u0451':'yo','\u0436':'zh','\u0437':'z','\u0438':'i','\u0439':'y',
-          '\u043a':'k','\u043b':'l','\u043c':'m','\u043d':'n','\u043e':'o','\u043f':'p','\u0440':'r','\u0441':'s','\u0442':'t','\u0443':'u','\u0444':'f',
-          '\u0445':'x','\u0446':'ts','\u0447':'ch','\u0448':'sh','\u0449':'sch','\u044a':"'",'\u044b':'y','\u044c':"'",'\u044d':'e','\u044e':'yu','\u044f':'ya',
-          '\u0410':'A','\u0411':'B','\u0412':'V','\u0413':'G','\u0414':'D','\u0415':'E','\u0401':'Yo','\u0416':'Zh','\u0417':'Z','\u0418':'I','\u0419':'Y',
-          '\u041a':'K','\u041b':'L','\u041c':'M','\u041d':'N','\u041e':'O','\u041f':'P','\u0420':'R','\u0421':'S','\u0422':'T','\u0423':'U','\u0424':'F',
-          '\u0425':'X','\u0426':'Ts','\u0427':'Ch','\u0428':'Sh','\u0429':'Sch','\u042d':'E','\u042e':'Yu','\u042f':'Ya',
-          '\u02bb':"'",'\u02bc':"'",'\u0492':'G','\u0493':'g','\u04b2':'H','\u04b3':'h','\u049a':'Q','\u049b':'q',
-          '\u04b6':'J','\u04b7':'j','\u04e2':'I','\u04e3':'i','\u04ee':'U','\u04ef':'u',
-          '\u006f\u02bc':"o'",'\u004f\u02bc':"O'",'\u0067\u02bb':'g','\u0047\u02bb':'G',
-        }
-        return map[ch] || ch
-      })
+    function toSafePdf(str: string): string {
+      const cyr: Record<string, string> = {
+        'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y',
+        'к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f',
+        'х':'x','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ъ':"'",'ы':'y','ь':"'",'э':'e','ю':'yu','я':'ya',
+        'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh','З':'Z','И':'I','Й':'Y',
+        'К':'K','Л':'L','М':'M','Н':'N','О':'O','П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F',
+        'Х':'X','Ц':'Ts','Ч':'Ch','Ш':'Sh','Щ':'Sch','Э':'E','Ю':'Yu','Я':'Ya',
+        'ғ':"g'",'Ғ':"G'",'ҳ':'h','Ҳ':'H','қ':'q','Қ':'Q','ў':"o'",'Ў':"O'",'ҷ':'j','Ҷ':'J',
+        '\u02bb':"'",'ʻ':"'",'ʼ':"'",'–':'-','—':'-','"':'"','"':'"','\u2019':"'",
+      }
+      return str.replace(/./gu, ch => cyr[ch] ?? ch).replace(/[^\x00-\xFF]/g, '?')
+    }
 
-    const lines = safeContent.split('\n')
-    for (const rawLine of lines) {
-      const wrapped = doc.splitTextToSize(rawLine || ' ', contentWidth)
-      for (const wline of wrapped) {
-        if (y > pageHeight - margin - 20) {
-          doc.addPage()
-          y = margin
+    const rawLines = (c.content || '').split('\n')
+    for (let li = 0; li < rawLines.length; li++) {
+      const raw = rawLines[li]
+      const safe = toSafePdf(raw)
+      const trimmed = safe.trim()
+
+      if (!trimmed) { y += 2.5; continue }
+
+      // Section heading: starts with number + dot, or ALL-CAPS line
+      const isSection = /^(\d+[\.\)]\s|§\s*\d+)/.test(trimmed) ||
+        (trimmed.length <= 60 && /^[A-Z\s\.\-:'"]{6,}$/.test(trimmed))
+      // Signature-area labels
+      const isLabel = /^(BUYURTMACHI|IJROCHI|TOMONLAR|M\.O\.|Imzo|Sign)/i.test(trimmed)
+
+      if (isSection || isLabel) {
+        y += 2
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9.5)
+        doc.setTextColor(10, 10, 10)
+        const wrapped = doc.splitTextToSize(trimmed, contentWidth)
+        for (const wl of wrapped) {
+          if (y > pageHeight - margin - 20) { doc.addPage(); y = margin }
+          doc.text(wl, margin, y); y += 5.5
         }
-        doc.text(wline, margin, y)
-        y += 4.5
+        y += 0.5
+        doc.setFont('helvetica', 'normal')
+      } else {
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9.5)
+        doc.setTextColor(30, 30, 30)
+        const prevRaw = li > 0 ? rawLines[li - 1] : ''
+        const indent = !prevRaw.trim() ? 8 : 0
+        const firstPart = doc.splitTextToSize(trimmed, contentWidth - indent)
+        if (y > pageHeight - margin - 20) { doc.addPage(); y = margin }
+        doc.text(firstPart[0], margin + indent, y); y += 5.5
+        if (firstPart.length > 1) {
+          const rest = doc.splitTextToSize(firstPart.slice(1).join(' '), contentWidth)
+          for (const wl of rest) {
+            if (y > pageHeight - margin - 20) { doc.addPage(); y = margin }
+            doc.text(wl, margin, y); y += 5.5
+          }
+        }
       }
     }
 
