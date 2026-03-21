@@ -202,11 +202,54 @@ export async function POST(req: NextRequest) {
       prompt = `${task}\n\nO'zbekiston qonunchiligiga muvofiq, rasmiy talab xati formatida yozing.\n${jOnly}\n{"talabnoma":"to'liq talab xati matni..."}`
     }
 
+    // ── KOTIBA AI ────────────────────────────────────────────
+    else if (type === 'bayonnoma') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida rasmiy yig'ilish bayonnomasini tayyorla.\nTashkilot: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'}), Direktor: ${d.direktor || '___'}\nYig'ilish sanasi: ${d.sana || '___'}\nO'tkazilgan joy: ${d.joyi || '___'}\nRaislik qilgan: ${d.raislik_qilgan || '___'}\nIshtirokchilar: ${d.ishtirokchilar || '___'}\nKun tartibi:\n${d.kun_tartibi || '___'}\nQabul qilingan qarorlar:\n${d.qarorlar || '___'}`
+      prompt = `${task}\n\nO'zbekiston Respublikasi standartlariga mos rasmiy bayonnoma formatida yoz. Raqamlash, imzolar joyini qo'sh.\n${jOnly}\n{"bayonnoma":"to'liq bayonnoma matni..."}`
+    }
+
+    else if (type === 'rasmiy_xat') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida rasmiy xat tayyorla.\nYuboruvchi tashkilot: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'}), Direktor: ${d.direktor || '___'}\nKimga: ${d.kim_uchun || '___'}\nMavzu: ${d.mavzu || '___'}\nAsosiy mazmun:\n${d.asosiy_mazmun || '___'}\nJavob muddati: ${d.muddati || 'ko\'rsatilmagan'}`
+      prompt = `${task}\n\nO'zbekiston ish yuritish standartlariga mos rasmiy xat formatida yoz. Sana, raqam, imzo joyi bo'lsin.\n${jOnly}\n{"xat":"to'liq xat matni..."}`
+    }
+
+    else if (type === 'taklifnoma') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida rasmiy taklifnoma tayyorla.\nYuboruvchi tashkilot: ${d.tashkilot || '___'}, Direktor: ${d.direktor || '___'}\nTabir nomi: ${d.tadbir_nomi || '___'}\nSana va vaqt: ${d.tadbir_sana || '___'}\nJoyi: ${d.tadbir_joyi || '___'}\nKimga yo'llangan: ${d.mehmonga || '___'}\nDastur: ${d.dastur || '___'}`
+      prompt = `${task}\n\nRasmiy va iliq uslubda taklifnoma yoz. Sana, imzo joyi bo'lsin.\n${jOnly}\n{"taklifnoma":"to'liq taklifnoma matni..."}`
+    }
+
+    else if (type === 'hisobot') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida rasmiy hisobot tayyorla.\nTashkilot: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'}), Direktor: ${d.direktor || '___'}\nHisobot turi: ${d.hisobot_turi || '___'}\nDavr: ${d.davr || '___'}\nBajarilgan ishlar:\n${d.bajarilgan_ishlar || '___'}\nMuammolar:\n${d.muammolar || 'yo\'q'}\nKeyingi davr rejalari:\n${d.rejalar || '___'}`
+      prompt = `${task}\n\nRasmiy hisobot formatida yoz. Kirish, asosiy qism, xulosa va tavsiyalar bo'lsin.\n${jOnly}\n{"hisobot":"to'liq hisobot matni..."}`
+    }
+
+    else if (type === 'eslatma') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida ichki rasmiy eslatma (memo) tayyorla.\nYuboruvchi tashkilot: ${d.tashkilot || '___'}, Direktor/mas'ul: ${d.direktor || '___'}\nKimga: ${d.kimga || '___'}\nMavzu: ${d.mavzu || '___'}\nMatn:\n${d.mazmun || '___'}\nMuddat: ${d.muddat || 'ko\'rsatilmagan'}`
+      prompt = `${task}\n\nRasmiy ichki eslatma (memo) formatida yoz. Sana, imzo joyi bo'lsin.\n${jOnly}\n{"eslatma":"to'liq eslatma matni..."}`
+    }
+
+    else if (type === 'murojaatnoma') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida rasmiy murojaatnoma yoki ariza tayyorla.\nMurojaat qiluvchi: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'}), Direktor: ${d.direktor || '___'}\nKimga: ${d.kimga || '___'}\nMaqsad: ${d.maqsad || '___'}\nMurojaat mazmuni:\n${d.asosiy_mazmun || '___'}\nKutilayotgan natija: ${d.kutilgan_natija || '___'}`
+      prompt = `${task}\n\nO'zbekiston qonunchiligiga mos rasmiy murojaatnoma formatida yoz. Huquqiy asoslar, sana, imzo joyi bo'lsin.\n${jOnly}\n{"murojaatnoma":"to'liq murojaatnoma matni..."}`
+    }
+
+    else if (type === 'tushuntirish_xati') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida rasmiy tushuntirish xati tayyorla.\nTashkilot: ${d.tashkilot || '___'}, Rahbar: ${d.direktor || '___'}\nXodim: ${d.xodim_ism || '___'}, Lavozim: ${d.lavozim || '___'}\nVoqea/holat: ${d.hodisa || '___'}\nSabab:\n${d.sabab || '___'}\nTakrorlanmaslik choralari: ${d.qayta_takrorlanmasligi || 'ko\'rsatilmagan'}`
+      prompt = `${task}\n\nRasmiy tushuntirish xati formatida yoz. Sana, imzo joyi bo'lsin.\n${jOnly}\n{"tushuntirish":"to'liq tushuntirish xati matni..."}`
+    }
+
     else {
       return NextResponse.json({ error: "Noto'g'ri type" }, { status: 400 })
     }
 
-    const longTypes = ['write', 'fix', 'fix_grammar', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma']
+    const longTypes = ['write', 'fix', 'fix_grammar', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma', 'bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati']
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: longTypes.includes(type) ? 6000 : 3000,

@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { key: 'yurist_ai',       href: '/dashboard/yurist',        icon: '⚖️', label: t.nav.yurist_ai },
   { key: 'kadrlar',         href: '/dashboard/kadrlar',       icon: '👥', label: { uz: 'Kadrlar', oz: 'Кадрлар', ru: 'Кадры' } as Record<Lang, string> },
   { key: 'buxgalter',       href: '/dashboard/buxgalter',     icon: '💼', label: { uz: 'Buxgalter', oz: 'Бухгалтер', ru: 'Бухгалтер' } as Record<Lang, string> },
+  { key: 'kotiba',          href: '/dashboard/kotiba',        icon: '🗂️', label: { uz: 'Kotiba AI', oz: 'Котиба AI', ru: 'Секретарь AI' } as Record<Lang, string> },
   { key: 'profile',         href: '/dashboard/profil',        icon: '👤', label: t.nav.profile },
 ]
 
