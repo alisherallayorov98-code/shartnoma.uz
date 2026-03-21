@@ -332,7 +332,7 @@ export default function ShartnomalarPage() {
 
     y += 8
     // ─ Signatures ─
-    if (y > pageHeight - 50) { doc.addPage(); y = margin }
+    if (y > pageHeight - 60) { doc.addPage(); y = margin }
     doc.setFontSize(9)
     doc.setTextColor(50, 50, 50)
     doc.text('TOMONLARNING IMZOLARI', pageWidth / 2, y, { align: 'center' })
@@ -352,10 +352,42 @@ export default function ShartnomalarPage() {
     doc.setFontSize(8)
     doc.text(orgName, leftX, y)
     doc.text(cpName, rightX, y)
-    y += 10
+    y += 6
+
+    // ─ Imzo va muhr rasmlari ─
+    async function loadImg(url: string): Promise<string | null> {
+      try {
+        const res = await fetch(url)
+        const blob = await res.blob()
+        return await new Promise(resolve => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = () => resolve(null)
+          reader.readAsDataURL(blob)
+        })
+      } catch { return null }
+    }
+    const signUrl = c.organizations?.signature_url
+    const stampUrl = c.organizations?.stamp_url
+    const [signData, stampData] = await Promise.all([
+      signUrl ? loadImg(signUrl) : Promise.resolve(null),
+      stampUrl ? loadImg(stampUrl) : Promise.resolve(null),
+    ])
+
+    const sigY = y
+    if (signData) {
+      try { doc.addImage(signData, 'PNG', leftX, sigY, 40, 18) } catch { /* skip */ }
+    }
+    if (stampData) {
+      try { doc.addImage(stampData, 'PNG', leftX + 10, sigY + 2, 22, 22) } catch { /* skip */ }
+    }
+    y += 20
+    doc.setDrawColor(100, 100, 100)
     doc.line(leftX, y, leftX + 60, y)
     doc.line(rightX, y, rightX + 60, y)
     y += 4
+    doc.setFontSize(8)
+    doc.setTextColor(50, 50, 50)
     doc.text(`/ ${orgDir}`, leftX, y)
     doc.text(`/ ${cpDir}`, rightX, y)
     y += 5
