@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useDashboard } from '../context'
+import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
 
 type KadrFeature = 'mehnat_shartnoma' | 'buyruq_qabul' | 'buyruq_boshtash' | 'tatil_buyruq' | 'ishonchnoma' | 'lavozim_yoriqnoma'
 
@@ -270,12 +271,22 @@ export default function KadrlarPage() {
             {/* Result */}
             {result && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <h3 className="text-sm font-semibold text-white">Natija:</h3>
-                  <button onClick={handleCopy}
-                    className="flex items-center gap-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">
-                    {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
-                  </button>
+                  <div className="flex gap-2 flex-wrap">
+                    <button onClick={handleCopy}
+                      className="flex items-center gap-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">
+                      {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
+                    </button>
+                    <button onClick={() => downloadTextAsPDF(result, currentFeature?.title || 'hujjat')}
+                      className="flex items-center gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">
+                      📄 PDF
+                    </button>
+                    <button onClick={() => downloadTextAsWord(result, currentFeature?.title || 'hujjat')}
+                      className="flex items-center gap-1.5 text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg transition">
+                      📝 Word
+                    </button>
+                  </div>
                 </div>
                 <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 text-sm text-gray-200 whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto font-mono">
                   {result}

@@ -6,6 +6,7 @@ import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { DEFAULT_TEMPLATES, getTplField, type AppTemplate } from '@/lib/defaultTemplates'
+import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
 import { Modal, ModalActions } from '../_components/Modal'
 
 const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = {
@@ -269,10 +270,18 @@ export default function ShablonlarPage() {
             <div className="overflow-y-auto p-6">
               <pre className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-sans">{getTplField(templatePreview, 'content', lang)}</pre>
             </div>
-            <div className="px-6 py-4 border-t border-gray-800 flex gap-3">
+            <div className="px-6 py-4 border-t border-gray-800 flex gap-2 flex-wrap">
               <button onClick={() => navigator.clipboard.writeText(getTplField(templatePreview, 'content', lang))}
                 className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded-lg text-sm transition">
                 📋 Nusxa olish
+              </button>
+              <button onClick={() => downloadTextAsPDF(getTplField(templatePreview, 'content', lang), getTplField(templatePreview, 'name', lang))}
+                className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition">
+                📄 PDF
+              </button>
+              <button onClick={() => downloadTextAsWord(getTplField(templatePreview, 'content', lang), getTplField(templatePreview, 'name', lang))}
+                className="bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition">
+                📝 Word
               </button>
               <button onClick={() => {
                 setEditingCustomTemplate(templatePreview.isDefault ? null : templatePreview)

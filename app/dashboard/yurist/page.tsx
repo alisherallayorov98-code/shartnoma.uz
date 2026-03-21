@@ -5,6 +5,7 @@ import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { getAiUsedToday, incrementAiUsage } from '@/lib/aiUsage'
+import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
 
 const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = {
   oldi_sotdi: { uz: 'Oldi-sotdi', oz: 'Олди-сотди', ru: 'Купля-продажа' },
@@ -363,17 +364,27 @@ export default function YuristPage() {
                     {(hubResult.muhim_bandlar as string[]).map((s, i) => <div key={i} className="text-sm text-gray-300">• {s}</div>)}
                   </div>
                 )}
-                <button onClick={() => navigator.clipboard.writeText(String(hubResult.xulosa || ''))}
-                  className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
+                <div className="flex gap-2 flex-wrap">
+                  <button onClick={() => navigator.clipboard.writeText(String(hubResult.xulosa || ''))}
+                    className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
+                  <button onClick={() => downloadTextAsPDF(String(hubResult.xulosa || ''), 'xulosa')}
+                    className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
+                </div>
               </div>
             )}
 
             {hubFeature === 'tarjima' && (
               <div className="bg-gray-800/60 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                   <div className="text-xs text-gray-500">Tarjima</div>
-                  <button onClick={() => navigator.clipboard.writeText(String(hubResult.tarjima || ''))}
-                    className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => navigator.clipboard.writeText(String(hubResult.tarjima || ''))}
+                      className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
+                    <button onClick={() => downloadTextAsPDF(String(hubResult.tarjima || ''), 'tarjima')}
+                      className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
+                    <button onClick={() => downloadTextAsWord(String(hubResult.tarjima || ''), 'tarjima')}
+                      className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg transition">📝 Word</button>
+                  </div>
                 </div>
                 <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.tarjima || '')}</pre>
               </div>
@@ -461,8 +472,14 @@ export default function YuristPage() {
               <div className="bg-gray-800/60 rounded-xl p-4">
                 {Boolean(hubResult.band_nomi) && <div className="text-purple-400 text-xs font-semibold mb-2">{String(hubResult.band_nomi)}</div>}
                 <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.band || '')}</pre>
-                <button onClick={() => navigator.clipboard.writeText(String(hubResult.band || ''))}
-                  className="mt-3 text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  <button onClick={() => navigator.clipboard.writeText(String(hubResult.band || ''))}
+                    className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
+                  <button onClick={() => downloadTextAsPDF(String(hubResult.band || ''), 'band')}
+                    className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
+                  <button onClick={() => downloadTextAsWord(String(hubResult.band || ''), 'band')}
+                    className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg transition">📝 Word</button>
+                </div>
               </div>
             )}
 
@@ -487,10 +504,16 @@ export default function YuristPage() {
 
             {hubFeature === 'write' && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="text-xs text-gray-500">{Number(hubResult.bandlar_soni || 0)} ta band</div>
-                  <button onClick={() => navigator.clipboard.writeText(String(hubResult.shartnoma || ''))}
-                    className="text-xs text-purple-400 hover:text-purple-300">📋 Nusxa olish</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => navigator.clipboard.writeText(String(hubResult.shartnoma || ''))}
+                      className="text-xs text-purple-400 hover:text-purple-300">📋 Nusxa olish</button>
+                    <button onClick={() => downloadTextAsPDF(String(hubResult.shartnoma || ''), 'shartnoma')}
+                      className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
+                    <button onClick={() => downloadTextAsWord(String(hubResult.shartnoma || ''), 'shartnoma')}
+                      className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg transition">📝 Word</button>
+                  </div>
                 </div>
                 <div className="bg-gray-800/60 rounded-xl p-4 max-h-96 overflow-y-auto">
                   <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.shartnoma || '')}</pre>

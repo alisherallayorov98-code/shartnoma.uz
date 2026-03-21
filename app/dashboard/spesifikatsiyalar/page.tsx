@@ -88,6 +88,59 @@ export default function SpesifikatsiyalarPage() {
     if (activeOrg) loadSpecs(activeOrg.id)
   }
 
+  async function generateSpecWord(spec: Specification) {
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, WidthType, AlignmentType, BorderStyle } = await import('docx')
+    const items: SpecItem[] = Array.isArray(spec.items) ? spec.items : []
+    const jami = items.reduce((s, i) => s + (i.summa || 0), 0)
+    const qqsJami = items.reduce((s, i) => s + (i.qqs_summa || 0), 0)
+
+    const border = { style: BorderStyle.SINGLE, size: 1, color: '999999' }
+    const cellBorders = { top: border, bottom: border, left: border, right: border }
+
+    const headerRow = new TableRow({
+      children: ['№', 'Nomi', 'Birlik', 'Miqdori', 'Narxi', 'QQS%', 'QQS summa', 'Jami'].map(h =>
+        new TableCell({
+          borders: cellBorders,
+          children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 18 })] })],
+        })
+      ),
+    })
+
+    const dataRows = items.map((item, idx) =>
+      new TableRow({
+        children: [
+          String(idx + 1), item.nomi, item.birlik,
+          String(item.miqdori), String(item.narxi),
+          String(item.qqs_foiz), String(item.qqs_summa),
+          String(item.summa),
+        ].map(val =>
+          new TableCell({
+            borders: cellBorders,
+            children: [new Paragraph({ children: [new TextRun({ text: val, size: 18 })] })],
+          })
+        ),
+      })
+    )
+
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({ children: [new TextRun({ text: `SPESIFIKATSIYA № ${spec.spec_number}`, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
+          new Paragraph({ children: [new TextRun({ text: `Tashkilot: ${activeOrg?.name || ''}`, size: 20 })], spacing: { after: 100 } }),
+          new Paragraph({ children: [new TextRun({ text: `Sana: ${new Date(spec.created_at).toLocaleDateString('uz-UZ')}`, size: 20 })], spacing: { after: 300 } }),
+          new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...dataRows] }),
+          new Paragraph({ children: [new TextRun({ text: `Jami: ${jami.toLocaleString()} so'm`, bold: true, size: 20 })], spacing: { before: 200 } }),
+          new Paragraph({ children: [new TextRun({ text: `QQS jami: ${qqsJami.toLocaleString()} so'm`, size: 20 })], spacing: { after: 200 } }),
+        ],
+      }],
+    })
+
+    const blob = await Packer.toBlob(doc)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = `Spesifikatsiya-${spec.spec_number}.docx`; a.click()
+    URL.revokeObjectURL(url)
+  }
+
   async function generateSpecPDF(spec: Specification) {
     const { jsPDF } = await import('jspdf')
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
@@ -300,7 +353,11 @@ export default function SpesifikatsiyalarPage() {
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => generateSpecPDF(spec)}
                           className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 px-2 py-1 rounded hover:bg-emerald-900/20 transition font-medium">
-                          📥 PDF
+                          📄 PDF
+                        </button>
+                        <button onClick={() => generateSpecWord(spec)}
+                          className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-900/20 transition font-medium">
+                          📝 Word
                         </button>
                         <button onClick={() => {
                           setEditingSpec(spec)
