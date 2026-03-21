@@ -584,19 +584,39 @@ export default function ShartnomalarPage() {
 
     const typeName = (CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type
     const contentLines = (c.content || '').split('\n')
+    const F = 'Times New Roman'
 
-    const contentParagraphs = contentLines.map(line => {
-      if (!line.trim()) return new Paragraph({ text: '' })
-      const isSectionHead = /^\d+\.\s+[A-Z\s']{4,}$/.test(line.trim())
+    // Matn satri turini aniqlash (Word uchun)
+    function isDocxSection(line: string) {
+      const t = line.trim()
+      return /^(\d+[\.\)]\s|§\s*\d+)/.test(t) ||
+        (t.length <= 70 && /^[A-ZЎҚҒҲ\s"'«»\-\.]{6,}$/.test(t)) ||
+        /^[A-ZЎҚҒҲ ]{4,25}:\s*/.test(t)
+    }
+
+    const contentParagraphs = contentLines.map((line, i, arr) => {
+      const trimmed = line.trim()
+      if (!trimmed) return new Paragraph({ text: '', spacing: { after: 80 } })
+
+      if (isDocxSection(line)) {
+        return new Paragraph({
+          spacing: { before: 160, after: 80 },
+          children: [new TextRun({ text: trimmed, bold: true, size: 24, font: F, color: '000000' })],
+        })
+      }
+
+      const prevTrimmed = i > 0 ? arr[i - 1].trim() : ''
+      const isParaStart = !prevTrimmed || isDocxSection(arr[i - 1])
       return new Paragraph({
-        children: [new TextRun({
-          text: line,
-          bold: isSectionHead,
-          size: 22,
-        })],
-        spacing: { after: 100 },
+        alignment: AlignmentType.JUSTIFIED,
+        indent: isParaStart ? { firstLine: 720 } : {},
+        spacing: { after: 80, line: 276 },
+        children: [new TextRun({ text: trimmed, size: 24, font: F, color: '000000' })],
       })
     })
+
+    const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+    const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder }
 
     const sigTable = new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
@@ -604,23 +624,27 @@ export default function ShartnomalarPage() {
         new TableRow({
           children: [
             new TableCell({
-              borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+              borders: noBorders,
+              margins: { top: 100, bottom: 100, left: 0, right: 200 },
               children: [
-                new Paragraph({ text: 'BUYURTMACHI:', spacing: { after: 100 } }),
-                new Paragraph({ text: c.organizations?.name || '___', spacing: { after: 100 } }),
-                new Paragraph({ text: `INN: ${c.organizations?.inn || '___'}`, spacing: { after: 100 } }),
-                new Paragraph({ text: `Rahbar: ${c.organizations?.director_name || '___'}`, spacing: { after: 200 } }),
-                new Paragraph({ text: '_________________ M.O.', spacing: { after: 100 } }),
+                new Paragraph({ children: [new TextRun({ text: 'BUYURTMACHI:', bold: true, size: 22, font: F })], spacing: { after: 120 } }),
+                new Paragraph({ children: [new TextRun({ text: c.organizations?.name || '___', size: 22, font: F })], spacing: { after: 80 } }),
+                new Paragraph({ children: [new TextRun({ text: `INN: ${c.organizations?.inn || '___'}`, size: 20, font: F })], spacing: { after: 80 } }),
+                new Paragraph({ children: [new TextRun({ text: `Rahbar: ${c.organizations?.director_name || '___'}`, size: 20, font: F })], spacing: { after: 400 } }),
+                new Paragraph({ children: [new TextRun({ text: 'Imzo: ___________________________', size: 22, font: F })], spacing: { after: 80 } }),
+                new Paragraph({ children: [new TextRun({ text: 'M.O.', size: 20, font: F, color: '666666' })], spacing: { after: 0 } }),
               ],
             }),
             new TableCell({
-              borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+              borders: noBorders,
+              margins: { top: 100, bottom: 100, left: 200, right: 0 },
               children: [
-                new Paragraph({ text: 'IJROCHI:', spacing: { after: 100 } }),
-                new Paragraph({ text: c.counterparties?.name || '___', spacing: { after: 100 } }),
-                new Paragraph({ text: `INN: ${c.counterparties?.inn || '___'}`, spacing: { after: 100 } }),
-                new Paragraph({ text: `Rahbar: ${c.counterparties?.director_name || '___'}`, spacing: { after: 200 } }),
-                new Paragraph({ text: '_________________ M.O.', spacing: { after: 100 } }),
+                new Paragraph({ children: [new TextRun({ text: 'IJROCHI:', bold: true, size: 22, font: F })], spacing: { after: 120 } }),
+                new Paragraph({ children: [new TextRun({ text: c.counterparties?.name || '___', size: 22, font: F })], spacing: { after: 80 } }),
+                new Paragraph({ children: [new TextRun({ text: `INN: ${c.counterparties?.inn || '___'}`, size: 20, font: F })], spacing: { after: 80 } }),
+                new Paragraph({ children: [new TextRun({ text: `Rahbar: ${c.counterparties?.director_name || '___'}`, size: 20, font: F })], spacing: { after: 400 } }),
+                new Paragraph({ children: [new TextRun({ text: 'Imzo: ___________________________', size: 22, font: F })], spacing: { after: 80 } }),
+                new Paragraph({ children: [new TextRun({ text: 'M.O.', size: 20, font: F, color: '666666' })], spacing: { after: 0 } }),
               ],
             }),
           ],
@@ -630,25 +654,27 @@ export default function ShartnomalarPage() {
 
     const doc = new Document({
       sections: [{
+        properties: {
+          page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 1134 } }, // 2cm/3cm
+        },
         children: [
           new Paragraph({
-            heading: HeadingLevel.TITLE,
             alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: typeName.toUpperCase(), bold: true, size: 28 })],
-            spacing: { after: 200 },
+            spacing: { after: 160 },
+            children: [new TextRun({ text: typeName.toUpperCase(), bold: true, size: 28, font: F })],
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: `No ${c.contract_number}`, bold: true, size: 24 })],
-            spacing: { after: 200 },
+            spacing: { after: 120 },
+            children: [new TextRun({ text: `No ${c.contract_number}`, bold: true, size: 24, font: F })],
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: `${c.city || 'Toshkent'} shahri  "${c.contract_date}"`, size: 22 })],
             spacing: { after: 400 },
+            children: [new TextRun({ text: `${c.city || 'Toshkent'} shahri  "${c.contract_date}"`, size: 22, font: F })],
           }),
           ...contentParagraphs,
-          new Paragraph({ text: '', spacing: { after: 400 } }),
+          new Paragraph({ text: '', spacing: { after: 600 } }),
           sigTable,
         ],
       }],

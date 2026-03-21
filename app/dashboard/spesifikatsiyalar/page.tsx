@@ -110,28 +110,39 @@ export default function SpesifikatsiyalarPage() {
     const dataRows = items.map((item, idx) =>
       new TableRow({
         children: [
-          String(idx + 1), item.nomi, item.birlik,
-          String(item.miqdori), String(item.narxi),
-          String(item.qqs_foiz), String(item.qqs_summa),
-          String(item.summa),
+          String(idx + 1),
+          item.nomi,
+          item.birlik,
+          item.miqdori.toLocaleString(),
+          item.narxi.toLocaleString(),
+          item.qqs_foiz === 'siz' ? 'siz' : `${item.qqs_foiz}%`,
+          item.qqs_summa > 0 ? item.qqs_summa.toLocaleString() : '—',
+          item.summa.toLocaleString(),
         ].map(val =>
           new TableCell({
             borders: cellBorders,
-            children: [new Paragraph({ children: [new TextRun({ text: val, size: 18 })] })],
+            children: [new Paragraph({ children: [new TextRun({ text: val, size: 20, font: 'Times New Roman' })] })],
           })
         ),
       })
     )
 
+    const SF = 'Times New Roman'
+    const asosiy = items.reduce((s, i) => s + i.miqdori * i.narxi, 0)
     const doc = new Document({
       sections: [{
+        properties: {
+          page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 1134 } },
+        },
         children: [
-          new Paragraph({ children: [new TextRun({ text: `SPESIFIKATSIYA № ${spec.spec_number}`, bold: true, size: 28 })], alignment: AlignmentType.CENTER, spacing: { after: 200 } }),
-          new Paragraph({ children: [new TextRun({ text: `Tashkilot: ${activeOrg?.name || ''}`, size: 20 })], spacing: { after: 100 } }),
-          new Paragraph({ children: [new TextRun({ text: `Sana: ${new Date(spec.created_at).toLocaleDateString('uz-UZ')}`, size: 20 })], spacing: { after: 300 } }),
+          new Paragraph({ children: [new TextRun({ text: `SPESIFIKATSIYA № ${spec.spec_number}`, bold: true, size: 28, font: SF })], alignment: AlignmentType.CENTER, spacing: { after: 160 } }),
+          new Paragraph({ children: [new TextRun({ text: spec.contracts ? `Shartnoma No ${spec.contracts.contract_number} ga ilova` : '', size: 22, font: SF })], alignment: AlignmentType.CENTER, spacing: { after: 120 } }),
+          new Paragraph({ children: [new TextRun({ text: `Tashkilot: ${activeOrg?.name || ''}`, size: 22, font: SF })], spacing: { after: 80 } }),
+          new Paragraph({ children: [new TextRun({ text: `Sana: ${new Date(spec.created_at).toLocaleDateString('uz-UZ')}`, size: 22, font: SF })], spacing: { after: 280 } }),
           new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...dataRows] }),
-          new Paragraph({ children: [new TextRun({ text: `Jami: ${jami.toLocaleString()} so'm`, bold: true, size: 20 })], spacing: { before: 200 } }),
-          new Paragraph({ children: [new TextRun({ text: `QQS jami: ${qqsJami.toLocaleString()} so'm`, size: 20 })], spacing: { after: 200 } }),
+          new Paragraph({ children: [new TextRun({ text: `Asosiy summa: ${asosiy.toLocaleString()} so'm`, size: 22, font: SF })], spacing: { before: 200, after: 60 } }),
+          new Paragraph({ children: [new TextRun({ text: `QQS jami: ${qqsJami.toLocaleString()} so'm`, size: 22, font: SF })], spacing: { after: 60 } }),
+          new Paragraph({ children: [new TextRun({ text: `JAMI: ${jami.toLocaleString()} so'm`, bold: true, size: 24, font: SF })], spacing: { after: 200 } }),
         ],
       }],
     })
