@@ -222,36 +222,40 @@ export async function downloadTextAsWord(text: string, filename: string) {
     const kind = detectKind(line)
 
     if (kind === 'empty') {
-      return new Paragraph({ text: '', spacing: { after: 40 } })
+      return new Paragraph({ style: 'Normal', text: '', spacing: { after: 20 } })
     }
 
     if (kind === 'title') {
       return new Paragraph({
+        style: 'Normal',
         alignment: AlignmentType.CENTER,
-        spacing: { before: i > 0 ? 160 : 0, after: 120 },
+        spacing: { before: i > 0 ? 120 : 0, after: 80 },
         children: [new TextRun({ text: t, bold: true, size: 28, font: F, color: '000000' })],
       })
     }
 
     if (kind === 'main') {
       return new Paragraph({
+        style: 'Normal',
         alignment: AlignmentType.CENTER,
-        spacing: { before: 200, after: 80 },
+        spacing: { before: 160, after: 60 },
         children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       })
     }
 
     if (kind === 'sub') {
       return new Paragraph({
+        style: 'Normal',
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { before: 0, after: 60 },
-        children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
+        spacing: { before: 0, after: 40 },
+        children: [new TextRun({ text: t, bold: false, size: 24, font: F, color: '000000' })],
       })
     }
 
     if (kind === 'label') {
       return new Paragraph({
-        spacing: { before: 200, after: 80 },
+        style: 'Normal',
+        spacing: { before: 120, after: 40 },
         children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       })
     }
@@ -259,10 +263,11 @@ export async function downloadTextAsWord(text: string, filename: string) {
     if (kind === 'bullet') {
       const bt = t.replace(/^[-–•]\s*/, '')
       return new Paragraph({
+        style: 'Normal',
         alignment: AlignmentType.LEFT,
         indent: { left: 360, hanging: 180 },
-        spacing: { after: 60 },
-        children: [new TextRun({ text: `– ${bt}`, size: 24, font: F })],
+        spacing: { after: 30 },
+        children: [new TextRun({ text: `– ${bt}`, size: 24, font: F, color: '000000' })],
       })
     }
 
@@ -270,9 +275,10 @@ export async function downloadTextAsWord(text: string, filename: string) {
     const prevKind = i > 0 ? detectKind(arr[i - 1]) : 'empty'
     const isParaStart = prevKind === 'empty' || prevKind === 'title' || prevKind === 'main' || prevKind === 'sub' || prevKind === 'label'
     return new Paragraph({
+      style: 'Normal',
       alignment: AlignmentType.JUSTIFIED,
       indent: isParaStart ? { firstLine: 720 } : {},
-      spacing: { after: 60, line: 240 },
+      spacing: { after: 40, line: 240 },
       children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
     })
   })
