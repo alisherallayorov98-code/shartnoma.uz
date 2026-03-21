@@ -191,109 +191,109 @@ export async function downloadTextAsPDF(text: string, filename: string) {
 }
 
 export async function downloadTextAsWord(text: string, filename: string) {
-  const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } = await import('docx')
+  const { Document, Packer, Paragraph, TextRun, AlignmentType, Footer, PageNumber } = await import('docx')
 
-  const paragraphs = text.split('\n').map((line, i, arr) => {
-    const trimmed = line.trim()
-    const kind = classifyLine(line)
+  const F = 'Times New Roman'
+
+  // Improved line classifier for Word output
+  function detectKind(line: string): 'empty' | 'title' | 'main' | 'sub' | 'label' | 'bullet' | 'body' {
+    const t = line.trim()
+    if (!t || /^={3,}$|^-{3,}$/.test(t)) return 'empty'
+    // Main numbered section: "1. TEXT", "2. TEXT" (not subsection like 1.1)
+    if (/^(\d+\.\s+\S|§\s*\d)/.test(t) && !/^\d+\.\d/.test(t)) return 'main'
+    // Subsection: "1.1.", "1.2.3"
+    if (/^\d+\.\d+/.test(t)) return 'sub'
+    // Title: short line, starts with uppercase, mostly uppercase letters
+    if (t.length <= 80 && /^[A-ZА-ЯЁЎҚҒҲ]/.test(t)) {
+      const letters = t.replace(/\s+/g, '').replace(/[^a-zA-ZА-ЯЁа-яёЎҚҒҲўқғҳ]/g, '')
+      const uppers = t.replace(/[^A-ZА-ЯЁЎҚҒҲ]/g, '')
+      if (letters.length >= 4 && uppers.length / letters.length >= 0.65) return 'title'
+    }
+    // Label: "BUYURTMACHI:", "IJROCHI:" etc.
+    if (/^[A-ZА-ЯЁЎҚҒҲ][A-ZА-ЯЁЎҚҒҲ\s]{2,20}:\s*$/.test(t)) return 'label'
+    // Bullet
+    if (/^[-–•]\s/.test(t)) return 'bullet'
+    return 'body'
+  }
+
+  const lines = text.split('\n')
+  const paragraphs = lines.map((line, i, arr) => {
+    const t = line.trim()
+    const kind = detectKind(line)
 
     if (kind === 'empty') {
-      return new Paragraph({ text: '', spacing: { after: 100 } })
+      return new Paragraph({ text: '', spacing: { after: 80 } })
     }
 
     if (kind === 'title') {
       return new Paragraph({
-        heading: HeadingLevel.HEADING_1,
         alignment: AlignmentType.CENTER,
-        spacing: { before: 240, after: 120 },
-        children: [new TextRun({
-          text: trimmed,
-          bold: true,
-          size: 28,
-          font: 'Times New Roman',
-          color: '000000',
-        })],
+        spacing: { before: i > 0 ? 240 : 0, after: 160 },
+        children: [new TextRun({ text: t, bold: true, size: 30, font: F, color: '000000' })],
       })
     }
 
-    if (kind === 'section') {
+    if (kind === 'main') {
       return new Paragraph({
-        heading: HeadingLevel.HEADING_2,
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 280, after: 120 },
+        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+      })
+    }
+
+    if (kind === 'sub') {
+      return new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { before: 120, after: 80 },
+        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+      })
+    }
+
+    if (kind === 'label') {
+      return new Paragraph({
         spacing: { before: 200, after: 80 },
-        children: [new TextRun({
-          text: trimmed,
-          bold: true,
-          size: 24,
-          font: 'Times New Roman',
-          color: '000000',
-        })],
+        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       })
     }
 
     if (kind === 'bullet') {
+      const bt = t.replace(/^[-–•]\s*/, '')
       return new Paragraph({
         alignment: AlignmentType.LEFT,
-        indent: { left: 360, hanging: 200 },
+        indent: { left: 360, hanging: 180 },
         spacing: { after: 60 },
-        children: [new TextRun({
-          text: trimmed,
-          size: 24,
-          font: 'Times New Roman',
-        })],
+        children: [new TextRun({ text: `– ${bt}`, size: 24, font: F })],
       })
     }
 
-    if (kind === 'subsection') {
-      return new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
-        indent: { left: 720 },
-        spacing: { after: 60 },
-        children: [new TextRun({
-          text: trimmed,
-          size: 24,
-          font: 'Times New Roman',
-        })],
-      })
-    }
-
-    // body paragraph
-    const prevKind = i > 0 ? classifyLine(arr[i - 1]) : 'empty'
-    const isParaStart = prevKind === 'empty' || prevKind === 'section' || prevKind === 'title'
+    // body
+    const prevKind = i > 0 ? detectKind(arr[i - 1]) : 'empty'
+    const isParaStart = prevKind === 'empty' || prevKind === 'title' || prevKind === 'main' || prevKind === 'sub' || prevKind === 'label'
     return new Paragraph({
       alignment: AlignmentType.JUSTIFIED,
       indent: isParaStart ? { firstLine: 720 } : {},
       spacing: { after: 80, line: 276 },
-      children: [new TextRun({
-        text: trimmed,
-        size: 24,
-        font: 'Times New Roman',
-        color: '000000',
-      })],
+      children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
     })
   })
 
   const doc = new Document({
-    styles: {
-      paragraphStyles: [
-        {
-          id: 'Heading1',
-          name: 'Heading 1',
-          run: { bold: true, size: 28, font: 'Times New Roman' },
-          paragraph: { alignment: AlignmentType.CENTER, spacing: { before: 240, after: 120 } },
-        },
-        {
-          id: 'Heading2',
-          name: 'Heading 2',
-          run: { bold: true, size: 24, font: 'Times New Roman' },
-          paragraph: { spacing: { before: 200, after: 80 } },
-        },
-      ],
-    },
     sections: [{
       properties: {
-        page: {
-          margin: { top: 1134, bottom: 1134, left: 1701, right: 1134 }, // ~2cm/3cm
-        },
+        page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 1134 } },
+      },
+      footers: {
+        default: new Footer({
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({ text: 'Shartnoma.uz  |  bet ', size: 18, font: F, color: '999999' }),
+              new TextRun({ children: [PageNumber.CURRENT], size: 18, font: F, color: '999999' }),
+              new TextRun({ text: ' / ', size: 18, font: F, color: '999999' }),
+              new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: F, color: '999999' }),
+            ],
+          })],
+        }),
       },
       children: paragraphs,
     }],

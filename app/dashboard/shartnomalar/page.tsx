@@ -580,101 +580,166 @@ export default function ShartnomalarPage() {
 
   // ── DOCX generation ────────────────────────────────────────────────────────
   async function generateDOCX(c: Contract) {
-    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel, BorderStyle } = await import('docx')
+    const {
+      Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+      WidthType, AlignmentType, BorderStyle, Footer, PageNumber,
+    } = await import('docx')
 
     const typeName = (CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type
-    const contentLines = (c.content || '').split('\n')
     const F = 'Times New Roman'
 
-    // Matn satri turini aniqlash (Word uchun)
-    function isDocxSection(line: string) {
+    // Border helpers
+    const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+    const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder }
+    const thinBorder = { style: BorderStyle.SINGLE, size: 6, color: '888888' }
+    const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder }
+
+    // Line classifier for contract content
+    function lineKind(line: string): 'empty' | 'main' | 'sub' | 'label' | 'bullet' | 'body' {
       const t = line.trim()
-      return /^(\d+[\.\)]\s|§\s*\d+)/.test(t) ||
-        (t.length <= 70 && /^[A-ZЎҚҒҲ\s"'«»\-\.]{6,}$/.test(t)) ||
-        /^[A-ZЎҚҒҲ ]{4,25}:\s*/.test(t)
+      if (!t || /^={3,}$|^-{3,}$/.test(t)) return 'empty'
+      if (/^(\d+\.\s+\S|§\s*\d)/.test(t) && !/^\d+\.\d/.test(t)) return 'main'
+      if (/^\d+\.\d+/.test(t)) return 'sub'
+      if (/^[A-ZЎҚҒҲ][A-ZЎҚҒҲ\s]{2,20}:\s*$/.test(t)) return 'label'
+      if (/^[-–•]\s/.test(t)) return 'bullet'
+      return 'body'
     }
 
-    const contentParagraphs = contentLines.map((line, i, arr) => {
-      const trimmed = line.trim()
-      if (!trimmed) return new Paragraph({ text: '', spacing: { after: 80 } })
+    const contentParagraphs = (c.content || '').split('\n').map((line, i, arr) => {
+      const t = line.trim()
+      const kind = lineKind(line)
 
-      if (isDocxSection(line)) {
+      if (kind === 'empty') return new Paragraph({ text: '', spacing: { after: 80 } })
+
+      if (kind === 'main') return new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 280, after: 120 },
+        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+      })
+
+      if (kind === 'sub') return new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { before: 120, after: 80 },
+        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+      })
+
+      if (kind === 'label') return new Paragraph({
+        spacing: { before: 200, after: 80 },
+        children: [new TextRun({ text: t, bold: true, size: 22, font: F, color: '000000' })],
+      })
+
+      if (kind === 'bullet') {
+        const bt = t.replace(/^[-–•]\s*/, '')
         return new Paragraph({
-          spacing: { before: 160, after: 80 },
-          children: [new TextRun({ text: trimmed, bold: true, size: 24, font: F, color: '000000' })],
+          alignment: AlignmentType.LEFT,
+          indent: { left: 360, hanging: 180 },
+          spacing: { after: 60 },
+          children: [new TextRun({ text: `– ${bt}`, size: 24, font: F })],
         })
       }
 
-      const prevTrimmed = i > 0 ? arr[i - 1].trim() : ''
-      const isParaStart = !prevTrimmed || isDocxSection(arr[i - 1])
+      const prevKind = i > 0 ? lineKind(arr[i - 1]) : 'empty'
+      const isStart = prevKind === 'empty' || prevKind === 'main' || prevKind === 'sub' || prevKind === 'label'
       return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        indent: isParaStart ? { firstLine: 720 } : {},
+        indent: isStart ? { firstLine: 720 } : {},
         spacing: { after: 80, line: 276 },
-        children: [new TextRun({ text: trimmed, size: 24, font: F, color: '000000' })],
+        children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
       })
     })
 
-    const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
-    const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder }
+    // City LEFT / Date RIGHT header
+    const cityDateTable = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [new TableRow({
+        children: [
+          new TableCell({
+            borders: noBorders,
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({
+              alignment: AlignmentType.LEFT,
+              spacing: { after: 320 },
+              children: [new TextRun({ text: `${c.city || 'Toshkent'} shahri`, size: 22, font: F })],
+            })],
+          }),
+          new TableCell({
+            borders: noBorders,
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({
+              alignment: AlignmentType.RIGHT,
+              spacing: { after: 320 },
+              children: [new TextRun({ text: c.contract_date || '', size: 22, font: F })],
+            })],
+          }),
+        ],
+      })],
+    })
+
+    // Org details helper — works for both organizations and counterparties
+    function orgCell(title: string, org: { name?: string; inn?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | null | undefined) {
+      const details = [
+        new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 24, font: F })], spacing: { after: 120 } }),
+        new Paragraph({ children: [new TextRun({ text: org?.name || '___', bold: true, size: 22, font: F })], spacing: { after: 80 } }),
+        new Paragraph({ children: [new TextRun({ text: `INN: ${org?.inn || '___'}`, size: 20, font: F, color: '555555' })], spacing: { after: 60 } }),
+        ...(org?.bank_name ? [new Paragraph({ children: [new TextRun({ text: `Bank: ${org.bank_name}`, size: 20, font: F, color: '555555' })], spacing: { after: 60 } })] : []),
+        ...(org?.bank_account ? [new Paragraph({ children: [new TextRun({ text: `H/R: ${org.bank_account}`, size: 20, font: F, color: '555555' })], spacing: { after: 60 } })] : []),
+        ...(org?.mfo ? [new Paragraph({ children: [new TextRun({ text: `MFO: ${org.mfo}`, size: 20, font: F, color: '555555' })], spacing: { after: 60 } })] : []),
+        new Paragraph({ children: [new TextRun({ text: `Rahbar: ${org?.director_name || '___'}`, size: 20, font: F })], spacing: { after: 280 } }),
+        new Paragraph({ children: [new TextRun({ text: 'Imzo: _______________________', size: 22, font: F })], spacing: { after: 60 } }),
+        new Paragraph({ children: [new TextRun({ text: 'M.O.', size: 20, font: F, color: '888888' })], spacing: { after: 0 } }),
+      ]
+      return new TableCell({ borders: cellBorders, margins: { top: 150, bottom: 150, left: 200, right: 200 }, children: details })
+    }
 
     const sigTable = new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({
-              borders: noBorders,
-              margins: { top: 100, bottom: 100, left: 0, right: 200 },
-              children: [
-                new Paragraph({ children: [new TextRun({ text: 'BUYURTMACHI:', bold: true, size: 22, font: F })], spacing: { after: 120 } }),
-                new Paragraph({ children: [new TextRun({ text: c.organizations?.name || '___', size: 22, font: F })], spacing: { after: 80 } }),
-                new Paragraph({ children: [new TextRun({ text: `INN: ${c.organizations?.inn || '___'}`, size: 20, font: F })], spacing: { after: 80 } }),
-                new Paragraph({ children: [new TextRun({ text: `Rahbar: ${c.organizations?.director_name || '___'}`, size: 20, font: F })], spacing: { after: 400 } }),
-                new Paragraph({ children: [new TextRun({ text: 'Imzo: ___________________________', size: 22, font: F })], spacing: { after: 80 } }),
-                new Paragraph({ children: [new TextRun({ text: 'M.O.', size: 20, font: F, color: '666666' })], spacing: { after: 0 } }),
-              ],
-            }),
-            new TableCell({
-              borders: noBorders,
-              margins: { top: 100, bottom: 100, left: 200, right: 0 },
-              children: [
-                new Paragraph({ children: [new TextRun({ text: 'IJROCHI:', bold: true, size: 22, font: F })], spacing: { after: 120 } }),
-                new Paragraph({ children: [new TextRun({ text: c.counterparties?.name || '___', size: 22, font: F })], spacing: { after: 80 } }),
-                new Paragraph({ children: [new TextRun({ text: `INN: ${c.counterparties?.inn || '___'}`, size: 20, font: F })], spacing: { after: 80 } }),
-                new Paragraph({ children: [new TextRun({ text: `Rahbar: ${c.counterparties?.director_name || '___'}`, size: 20, font: F })], spacing: { after: 400 } }),
-                new Paragraph({ children: [new TextRun({ text: 'Imzo: ___________________________', size: 22, font: F })], spacing: { after: 80 } }),
-                new Paragraph({ children: [new TextRun({ text: 'M.O.', size: 20, font: F, color: '666666' })], spacing: { after: 0 } }),
-              ],
-            }),
-          ],
-        }),
-      ],
+      rows: [new TableRow({
+        children: [
+          orgCell('BUYURTMACHI', c.organizations),
+          orgCell('IJROCHI', c.counterparties),
+        ],
+      })],
+    })
+
+    // Footer with page numbers
+    const footer = new Footer({
+      children: [new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({ text: 'Shartnoma.uz  |  bet ', size: 18, font: F, color: '999999' }),
+          new TextRun({ children: [PageNumber.CURRENT], size: 18, font: F, color: '999999' }),
+          new TextRun({ text: ' / ', size: 18, font: F, color: '999999' }),
+          new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: F, color: '999999' }),
+        ],
+      })],
     })
 
     const doc = new Document({
       sections: [{
         properties: {
-          page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 1134 } }, // 2cm/3cm
+          page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 1134 } },
         },
+        footers: { default: footer },
         children: [
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 160 },
-            children: [new TextRun({ text: typeName.toUpperCase(), bold: true, size: 28, font: F })],
-          }),
+          // Document title
           new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { after: 120 },
-            children: [new TextRun({ text: `No ${c.contract_number}`, bold: true, size: 24, font: F })],
+            children: [new TextRun({ text: typeName.toUpperCase(), bold: true, size: 32, font: F })],
           }),
+          // Contract number
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            spacing: { after: 400 },
-            children: [new TextRun({ text: `${c.city || 'Toshkent'} shahri  "${c.contract_date}"`, size: 22, font: F })],
+            spacing: { after: 80 },
+            children: [new TextRun({ text: `№ ${c.contract_number}`, bold: true, size: 26, font: F })],
           }),
+          // City + Date row
+          cityDateTable,
+          // Content
           ...contentParagraphs,
-          new Paragraph({ text: '', spacing: { after: 600 } }),
+          // Spacer before signatures
+          new Paragraph({ text: '', spacing: { after: 480 } }),
+          // Signature table (bordered)
           sigTable,
         ],
       }],
@@ -899,6 +964,16 @@ export default function ShartnomalarPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         </button>
+                        {/* DOCX — primary */}
+                        <button
+                          title="Word"
+                          onClick={() => generateDOCX(c)}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 transition"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </button>
                         {/* PDF */}
                         <button
                           title="PDF"
@@ -907,16 +982,6 @@ export default function ShartnomalarPage() {
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                          </svg>
-                        </button>
-                        {/* DOCX */}
-                        <button
-                          title="Word"
-                          onClick={() => generateDOCX(c)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-400 hover:bg-gray-700 transition"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </button>
                         {/* AI (premium only) */}
@@ -1034,11 +1099,11 @@ export default function ShartnomalarPage() {
                 <p className="text-xs text-gray-500 mt-0.5">No {viewContract.contract_number} · {viewContract.contract_date}</p>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => generatePDF(viewContract)} className="px-3 py-1.5 text-xs bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition">
-                  PDF
+                <button onClick={() => generateDOCX(viewContract)} className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition font-semibold">
+                  📝 Word
                 </button>
-                <button onClick={() => generateDOCX(viewContract)} className="px-3 py-1.5 text-xs bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition">
-                  Word
+                <button onClick={() => generatePDF(viewContract)} className="px-3 py-1.5 text-xs bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition">
+                  📄 PDF
                 </button>
                 <button onClick={() => sendByEmail(viewContract)} className="px-3 py-1.5 text-xs bg-yellow-700/30 text-yellow-400 rounded-lg hover:bg-yellow-700/50 transition">
                   ✉️ Email

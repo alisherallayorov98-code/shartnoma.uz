@@ -50,6 +50,7 @@ export default function YuristPage() {
   const [hubResult, setHubResult] = useState<Record<string, unknown> | null>(null)
   const [hubError, setHubError] = useState('')
   const [aiUsedToday, setAiUsedToday] = useState(() => getAiUsedToday())
+  const [previewText, setPreviewText] = useState<string | null>(null)
 
   const contractList = contracts.filter(c => c.organization_id === activeOrg?.id)
   const sel = FEATURES.find(f => f.key === hubFeature)!
@@ -337,6 +338,33 @@ export default function YuristPage() {
           </div>
         )}
 
+        {/* Preview modal */}
+        {previewText !== null && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setPreviewText(null)}>
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+                <h3 className="font-semibold text-white">👁 Ko&apos;rish: {sel.name}</h3>
+                <button onClick={() => setPreviewText(null)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap shadow-inner">
+                  {previewText}
+                </div>
+              </div>
+              <div className="px-5 py-4 border-t border-gray-800 flex gap-3">
+                <button onClick={() => { downloadTextAsWord(previewText, sel.name); setPreviewText(null) }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">
+                  📝 Word yuklash
+                </button>
+                <button onClick={() => { downloadTextAsPDF(previewText, sel.name); setPreviewText(null) }}
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm font-semibold transition">
+                  📄 PDF yuklash
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Result */}
         {hubResult && !hubLoading && (
           <div className="space-y-3">
@@ -365,10 +393,14 @@ export default function YuristPage() {
                   </div>
                 )}
                 <div className="flex gap-2 flex-wrap">
-                  <button onClick={() => navigator.clipboard.writeText(String(hubResult.xulosa || ''))}
-                    className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
+                  <button onClick={() => setPreviewText(String(hubResult.xulosa || ''))}
+                    className="text-xs bg-purple-700 hover:bg-purple-600 text-white px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
+                  <button onClick={() => downloadTextAsWord(String(hubResult.xulosa || ''), 'xulosa')}
+                    className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
                   <button onClick={() => downloadTextAsPDF(String(hubResult.xulosa || ''), 'xulosa')}
                     className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
+                  <button onClick={() => navigator.clipboard.writeText(String(hubResult.xulosa || ''))}
+                    className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
                   <button onClick={() => { saveAiResult('Yurist xulosa', String(hubResult.xulosa || '')); alert('Saqlandi!') }}
                     className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                 </div>
@@ -379,13 +411,15 @@ export default function YuristPage() {
               <div className="bg-gray-800/60 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                   <div className="text-xs text-gray-500">Tarjima</div>
-                  <div className="flex gap-2">
-                    <button onClick={() => navigator.clipboard.writeText(String(hubResult.tarjima || ''))}
-                      className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
+                  <div className="flex gap-2 flex-wrap">
+                    <button onClick={() => setPreviewText(String(hubResult.tarjima || ''))}
+                      className="text-xs bg-purple-700 hover:bg-purple-600 text-white px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
+                    <button onClick={() => downloadTextAsWord(String(hubResult.tarjima || ''), 'tarjima')}
+                      className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
                     <button onClick={() => downloadTextAsPDF(String(hubResult.tarjima || ''), 'tarjima')}
                       className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
-                    <button onClick={() => downloadTextAsWord(String(hubResult.tarjima || ''), 'tarjima')}
-                      className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg transition">📝 Word</button>
+                    <button onClick={() => navigator.clipboard.writeText(String(hubResult.tarjima || ''))}
+                      className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
                     <button onClick={() => { saveAiResult('Tarjima', String(hubResult.tarjima || '')); alert('Saqlandi!') }}
                       className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                   </div>
@@ -477,12 +511,14 @@ export default function YuristPage() {
                 {Boolean(hubResult.band_nomi) && <div className="text-purple-400 text-xs font-semibold mb-2">{String(hubResult.band_nomi)}</div>}
                 <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.band || '')}</pre>
                 <div className="flex gap-2 mt-3 flex-wrap">
-                  <button onClick={() => navigator.clipboard.writeText(String(hubResult.band || ''))}
-                    className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa olish</button>
+                  <button onClick={() => setPreviewText(String(hubResult.band || ''))}
+                    className="text-xs bg-purple-700 hover:bg-purple-600 text-white px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
+                  <button onClick={() => downloadTextAsWord(String(hubResult.band || ''), 'band')}
+                    className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
                   <button onClick={() => downloadTextAsPDF(String(hubResult.band || ''), 'band')}
                     className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
-                  <button onClick={() => downloadTextAsWord(String(hubResult.band || ''), 'band')}
-                    className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg transition">📝 Word</button>
+                  <button onClick={() => navigator.clipboard.writeText(String(hubResult.band || ''))}
+                    className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
                   <button onClick={() => { saveAiResult('Yuridik band', String(hubResult.band || '')); alert('Saqlandi!') }}
                     className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                 </div>
@@ -512,13 +548,15 @@ export default function YuristPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="text-xs text-gray-500">{Number(hubResult.bandlar_soni || 0)} ta band</div>
-                  <div className="flex gap-2">
-                    <button onClick={() => navigator.clipboard.writeText(String(hubResult.shartnoma || ''))}
-                      className="text-xs text-purple-400 hover:text-purple-300">📋 Nusxa olish</button>
+                  <div className="flex gap-2 flex-wrap">
+                    <button onClick={() => setPreviewText(String(hubResult.shartnoma || ''))}
+                      className="text-xs bg-purple-700 hover:bg-purple-600 text-white px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
+                    <button onClick={() => downloadTextAsWord(String(hubResult.shartnoma || ''), 'shartnoma')}
+                      className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
                     <button onClick={() => downloadTextAsPDF(String(hubResult.shartnoma || ''), 'shartnoma')}
                       className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
-                    <button onClick={() => downloadTextAsWord(String(hubResult.shartnoma || ''), 'shartnoma')}
-                      className="text-xs bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-1 rounded-lg transition">📝 Word</button>
+                    <button onClick={() => navigator.clipboard.writeText(String(hubResult.shartnoma || ''))}
+                      className="text-xs text-purple-400 hover:text-purple-300">📋 Nusxa</button>
                     <button onClick={() => { saveAiResult('AI shartnoma', String(hubResult.shartnoma || '')); alert('Saqlandi!') }}
                       className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                   </div>

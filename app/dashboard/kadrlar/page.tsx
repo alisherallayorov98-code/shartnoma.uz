@@ -115,6 +115,7 @@ export default function KadrlarPage() {
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
 
   const currentFeature = FEATURES.find(f => f.key === selected)
 
@@ -124,6 +125,7 @@ export default function KadrlarPage() {
     setResult(null)
     setError('')
     setCopied(false)
+    setShowPreview(false)
   }
 
   async function handleGenerate() {
@@ -268,23 +270,54 @@ export default function KadrlarPage() {
               )}
             </button>
 
+            {/* Preview modal */}
+            {showPreview && result && (
+              <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
+                <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+                    <h3 className="font-semibold text-white">👁 Ko&apos;rish: {currentFeature?.title}</h3>
+                    <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap shadow-inner">
+                      {result}
+                    </div>
+                  </div>
+                  <div className="px-5 py-4 border-t border-gray-800 flex gap-3">
+                    <button onClick={() => { downloadTextAsWord(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
+                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">
+                      📝 Word yuklash
+                    </button>
+                    <button onClick={() => { downloadTextAsPDF(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm font-semibold transition">
+                      📄 PDF yuklash
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Result */}
             {result && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <h3 className="text-sm font-semibold text-white">Natija:</h3>
                   <div className="flex gap-2 flex-wrap">
-                    <button onClick={handleCopy}
-                      className="flex items-center gap-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">
-                      {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
+                    <button onClick={() => setShowPreview(true)}
+                      className="flex items-center gap-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg transition">
+                      👁 Ko&apos;rish
+                    </button>
+                    <button onClick={() => downloadTextAsWord(result, currentFeature?.title || 'hujjat')}
+                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">
+                      📝 Word
                     </button>
                     <button onClick={() => downloadTextAsPDF(result, currentFeature?.title || 'hujjat')}
                       className="flex items-center gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">
                       📄 PDF
                     </button>
-                    <button onClick={() => downloadTextAsWord(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg transition">
-                      📝 Word
+                    <button onClick={handleCopy}
+                      className="flex items-center gap-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">
+                      {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
                     </button>
                     <button onClick={() => { saveAiResult(currentFeature?.title || 'Hujjat', result); alert('Saqlandi!') }}
                       className="flex items-center gap-1.5 text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg transition">
