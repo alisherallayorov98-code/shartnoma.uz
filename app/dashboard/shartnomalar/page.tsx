@@ -259,6 +259,24 @@ export default function ShartnomalarPage() {
     setModal('contract')
   }
 
+  // ── Email yuborish ─────────────────────────────────────────────────────────
+  function sendByEmail(c: Contract) {
+    const typeName = (CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type
+    const subject = encodeURIComponent(`Shartnoma: ${typeName} No ${c.contract_number}`)
+    const body = encodeURIComponent(
+      `Hurmatli ${c.counterparties?.director_name || 'hamkor'},\n\n` +
+      `Sizga quyidagi shartnomani ko'rib chiqishni taklif qilamiz:\n\n` +
+      `Shartnoma turi: ${typeName}\n` +
+      `Raqam: ${c.contract_number}\n` +
+      `Sana: ${c.contract_date}\n` +
+      `Summa: ${Number(c.amount || 0).toLocaleString()} so'm\n\n` +
+      `Yuboruvchi: ${c.organizations?.name || ''}\n` +
+      `Direktor: ${c.organizations?.director_name || ''}\n\n` +
+      `Shartnomani imzolash uchun biz bilan bog'laning.`
+    )
+    window.open(`mailto:?subject=${subject}&body=${body}`)
+  }
+
   // ── PDF generation ─────────────────────────────────────────────────────────
   async function generatePDF(c: Contract) {
     const { default: jsPDF } = await import('jspdf')
@@ -729,6 +747,16 @@ export default function ShartnomalarPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </button>
+                        {/* Email */}
+                        <button
+                          title="Email yuborish"
+                          onClick={() => sendByEmail(c)}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-gray-700 transition"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                          </svg>
+                        </button>
                         {/* Done */}
                         {c.status !== 'completed' && c.status !== 'cancelled' && (
                           <button
@@ -815,6 +843,9 @@ export default function ShartnomalarPage() {
                 </button>
                 <button onClick={() => generateDOCX(viewContract)} className="px-3 py-1.5 text-xs bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition">
                   Word
+                </button>
+                <button onClick={() => sendByEmail(viewContract)} className="px-3 py-1.5 text-xs bg-yellow-700/30 text-yellow-400 rounded-lg hover:bg-yellow-700/50 transition">
+                  ✉️ Email
                 </button>
                 {isPremium && (
                   <button
