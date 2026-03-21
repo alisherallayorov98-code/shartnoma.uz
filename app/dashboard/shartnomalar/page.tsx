@@ -605,7 +605,34 @@ export default function ShartnomalarPage() {
       return 'body'
     }
 
-    const contentParagraphs = (c.content || '').split('\n').map((line, i, arr) => {
+    // ── Content cleaning ──────────────────────────────────────────────────────
+    // 1. Skip duplicate header lines (title, №, city/date) — start from first
+    //    numbered section like "1. SHARTNOMA PREDMETI"
+    // 2. Cut signature/rekvizitlar section at the end — we render our own table
+    const rawLines = (c.content || '').split('\n')
+
+    let startIdx = 0
+    for (let i = 0; i < rawLines.length; i++) {
+      const t = rawLines[i].trim()
+      if (/^(\d+\.\s+[A-ZЎҚҒҲA-z]|§\s*\d)/.test(t) && !/^\d+\.\d+/.test(t)) {
+        startIdx = i
+        break
+      }
+    }
+
+    let endIdx = rawLines.length
+    for (let i = 0; i < rawLines.length; i++) {
+      const t = rawLines[i].trim()
+      if (/^TOMONLARNING\s+(REKVIZITLARI|MA['']LUMOTLARI|IMZOLARI)/i.test(t) ||
+          /^TOMONLAR\s+(IMZOSI|REKVIZIT)/i.test(t)) {
+        endIdx = i
+        break
+      }
+    }
+
+    const cleanedLines = rawLines.slice(startIdx, endIdx)
+
+    const contentParagraphs = cleanedLines.map((line, i, arr) => {
       const t = line.trim()
       const kind = lineKind(line)
 
@@ -619,8 +646,8 @@ export default function ShartnomalarPage() {
 
       if (kind === 'sub') return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { before: 120, after: 80 },
-        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+        spacing: { before: 80, after: 60 },
+        children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
       })
 
       if (kind === 'label') return new Paragraph({
