@@ -658,22 +658,22 @@ export default function ShartnomalarPage() {
       const t = line.trim()
       const kind = lineKind(line)
 
-      if (kind === 'empty') return new Paragraph({ text: '', spacing: { after: 80 } })
+      if (kind === 'empty') return new Paragraph({ text: '', spacing: { after: 40 } })
 
       if (kind === 'main') return new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 280, after: 120 },
+        spacing: { before: 200, after: 80 },
         children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       })
 
       if (kind === 'sub') return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { before: 80, after: 60 },
+        spacing: { before: 0, after: 60 },
         children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
       })
 
       if (kind === 'label') return new Paragraph({
-        spacing: { before: 200, after: 80 },
+        spacing: { before: 160, after: 60 },
         children: [new TextRun({ text: t, bold: true, size: 22, font: F, color: '000000' })],
       })
 
@@ -682,7 +682,7 @@ export default function ShartnomalarPage() {
         return new Paragraph({
           alignment: AlignmentType.LEFT,
           indent: { left: 360, hanging: 180 },
-          spacing: { after: 60 },
+          spacing: { after: 40 },
           children: [new TextRun({ text: `– ${bt}`, size: 24, font: F })],
         })
       }
@@ -692,7 +692,7 @@ export default function ShartnomalarPage() {
       return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         indent: isStart ? { firstLine: 720 } : {},
-        spacing: { after: 80, line: 276 },
+        spacing: { after: 60, line: 240 },
         children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
       })
     })

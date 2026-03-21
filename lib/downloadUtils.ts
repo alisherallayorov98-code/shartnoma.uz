@@ -222,21 +222,21 @@ export async function downloadTextAsWord(text: string, filename: string) {
     const kind = detectKind(line)
 
     if (kind === 'empty') {
-      return new Paragraph({ text: '', spacing: { after: 80 } })
+      return new Paragraph({ text: '', spacing: { after: 40 } })
     }
 
     if (kind === 'title') {
       return new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: i > 0 ? 240 : 0, after: 160 },
-        children: [new TextRun({ text: t, bold: true, size: 30, font: F, color: '000000' })],
+        spacing: { before: i > 0 ? 160 : 0, after: 120 },
+        children: [new TextRun({ text: t, bold: true, size: 28, font: F, color: '000000' })],
       })
     }
 
     if (kind === 'main') {
       return new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 280, after: 120 },
+        spacing: { before: 200, after: 80 },
         children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       })
     }
@@ -244,8 +244,8 @@ export async function downloadTextAsWord(text: string, filename: string) {
     if (kind === 'sub') {
       return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { before: 120, after: 80 },
-        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+        spacing: { before: 0, after: 60 },
+        children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
       })
     }
 
@@ -272,7 +272,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
     return new Paragraph({
       alignment: AlignmentType.JUSTIFIED,
       indent: isParaStart ? { firstLine: 720 } : {},
-      spacing: { after: 80, line: 276 },
+      spacing: { after: 60, line: 240 },
       children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
     })
   })
