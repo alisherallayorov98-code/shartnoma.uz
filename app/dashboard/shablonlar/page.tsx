@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
-import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
+import { DEFAULT_TEMPLATES, getTplField, type AppTemplate } from '@/lib/defaultTemplates'
 import { Modal, ModalActions } from '../_components/Modal'
 
 const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = {
@@ -205,10 +205,10 @@ export default function ShablonlarPage() {
                     <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-900/70 text-blue-300">{T(t.tplTab.myTpls)}</span>
                   )}
                 </div>
-                <h3 className="font-semibold text-white text-sm leading-tight">{tpl.name}</h3>
+                <h3 className="font-semibold text-white text-sm leading-tight">{getTplField(tpl, 'name', lang)}</h3>
               </div>
             </div>
-            <p className="text-gray-400 text-xs leading-relaxed flex-1">{tpl.description}</p>
+            <p className="text-gray-400 text-xs leading-relaxed flex-1">{getTplField(tpl, 'description', lang)}</p>
             {tpl.tags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {tpl.tags.slice(0, 3).map(tag => (
@@ -258,7 +258,7 @@ export default function ShablonlarPage() {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{templatePreview.icon}</span>
                 <div>
-                  <h2 className="text-base font-semibold text-white">{templatePreview.name}</h2>
+                  <h2 className="text-base font-semibold text-white">{getTplField(templatePreview, 'name', lang)}</h2>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${typeColors[templatePreview.type] || 'bg-gray-700 text-gray-300'}`}>
                     {CONTRACT_TYPES_I18N[templatePreview.type]?.[lang] || templatePreview.type}
                   </span>
@@ -267,16 +267,16 @@ export default function ShablonlarPage() {
               <button onClick={() => setTemplatePreview(null)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 text-xl">×</button>
             </div>
             <div className="overflow-y-auto p-6">
-              <pre className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-sans">{templatePreview.content}</pre>
+              <pre className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-sans">{getTplField(templatePreview, 'content', lang)}</pre>
             </div>
             <div className="px-6 py-4 border-t border-gray-800 flex gap-3">
-              <button onClick={() => navigator.clipboard.writeText(templatePreview.content)}
+              <button onClick={() => navigator.clipboard.writeText(getTplField(templatePreview, 'content', lang))}
                 className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded-lg text-sm transition">
                 📋 Nusxa olish
               </button>
               <button onClick={() => {
                 setEditingCustomTemplate(templatePreview.isDefault ? null : templatePreview)
-                setCustomTplForm({ type: templatePreview.type, name: templatePreview.name, description: templatePreview.description, content: templatePreview.content })
+                setCustomTplForm({ type: templatePreview.type, name: getTplField(templatePreview, 'name', lang), description: getTplField(templatePreview, 'description', lang), content: getTplField(templatePreview, 'content', lang) })
                 setTemplatePreview(null)
                 setCustomTemplateModal(true)
               }} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-sm font-medium transition">
