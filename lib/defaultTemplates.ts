@@ -1,3 +1,24 @@
+import {
+  OLDI_SOTDI_STANDART_OZ, OLDI_SOTDI_YETKAZIB_OZ,
+  XIZMAT_STANDART_OZ, XIZMAT_IT_OZ, XIZMAT_KONSALTING_OZ,
+  IJARA_KOCHMAS_MULK_OZ, IJARA_TEXNIKA_OZ, IJARA_TEKIN_OZ,
+  PUDRAT_QURILISH_OZ, QOSHIMCHA_STANDART_OZ,
+  MOLIYAVIY_FOIZSIZ_OZ, MOLIYAVIY_FOIZLI_OZ,
+  DAVAL_STANDART_OZ, XALQARO_SAVDO_OZ,
+  HAMKORLIK_SHARTNOMA_OZ, VOSITACHILIK_SHARTNOMA_OZ,
+  DEFAULT_TEMPLATE_NAMES_OZ,
+} from './defaultTemplates.oz'
+import {
+  OLDI_SOTDI_STANDART_RU, OLDI_SOTDI_YETKAZIB_RU,
+  XIZMAT_STANDART_RU, XIZMAT_IT_RU, XIZMAT_KONSALTING_RU,
+  IJARA_KOCHMAS_MULK_RU, IJARA_TEXNIKA_RU, IJARA_TEKIN_RU,
+  PUDRAT_QURILISH_RU, QOSHIMCHA_STANDART_RU,
+  MOLIYAVIY_FOIZSIZ_RU, MOLIYAVIY_FOIZLI_RU,
+  DAVAL_STANDART_RU, XALQARO_SAVDO_RU,
+  HAMKORLIK_SHARTNOMA_RU, VOSITACHILIK_SHARTNOMA_RU,
+  DEFAULT_TEMPLATE_NAMES_RU,
+} from './defaultTemplates.ru'
+
 export type AppTemplate = {
   id: string
   type: string
@@ -7,6 +28,22 @@ export type AppTemplate = {
   isDefault: boolean
   icon: string
   tags: string[]
+  name_oz?: string
+  name_ru?: string
+  description_oz?: string
+  description_ru?: string
+  content_oz?: string
+  content_ru?: string
+}
+
+export function getTplField(
+  tpl: AppTemplate,
+  field: 'name' | 'description' | 'content',
+  lang: string,
+): string {
+  if (lang === 'oz') return (tpl[`${field}_oz` as keyof AppTemplate] as string) || tpl[field]
+  if (lang === 'ru') return (tpl[`${field}_ru` as keyof AppTemplate] as string) || tpl[field]
+  return tpl[field]
 }
 
 // ─── OLDI-SOTDI ──────────────────────────────────────────────────────────────
@@ -1062,6 +1099,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['tovar', 'savdo', 'kafolat'],
     content: OLDI_SOTDI_STANDART,
+    content_oz: OLDI_SOTDI_STANDART_OZ,
+    content_ru: OLDI_SOTDI_STANDART_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-oldi-01'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-oldi-01'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-oldi-01'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-oldi-01'].description,
   },
   {
     id: 'dt-oldi-02',
@@ -1072,6 +1115,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['yetkazib berish', 'dostavka', 'partiya'],
     content: OLDI_SOTDI_YETKAZIB,
+    content_oz: OLDI_SOTDI_YETKAZIB_OZ,
+    content_ru: OLDI_SOTDI_YETKAZIB_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-oldi-02'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-oldi-02'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-oldi-02'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-oldi-02'].description,
   },
 
   // ── XIZMAT KO'RSATISH ──
@@ -1084,6 +1133,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['xizmat', 'universal', 'avans'],
     content: XIZMAT_STANDART,
+    content_oz: XIZMAT_STANDART_OZ,
+    content_ru: XIZMAT_STANDART_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-xizmat-01'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-xizmat-01'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-xizmat-01'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-xizmat-01'].description,
   },
   {
     id: 'dt-xizmat-02',
@@ -1094,6 +1149,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['IT', 'dasturiy ta\'minot', 'veb-sayt'],
     content: XIZMAT_IT,
+    content_oz: XIZMAT_IT_OZ,
+    content_ru: XIZMAT_IT_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-xizmat-02'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-xizmat-02'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-xizmat-02'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-xizmat-02'].description,
   },
   {
     id: 'dt-xizmat-03',
@@ -1104,6 +1165,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['konsalting', 'maslahat', 'moliya'],
     content: XIZMAT_KONSALTING,
+    content_oz: XIZMAT_KONSALTING_OZ,
+    content_ru: XIZMAT_KONSALTING_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-xizmat-03'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-xizmat-03'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-xizmat-03'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-xizmat-03'].description,
   },
 
   // ── IJARA ──
@@ -1116,6 +1183,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['ofis', 'bino', 'ombor'],
     content: IJARA_KOCHMAS_MULK,
+    content_oz: IJARA_KOCHMAS_MULK_OZ,
+    content_ru: IJARA_KOCHMAS_MULK_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-ijara-01'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-ijara-01'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-ijara-01'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-ijara-01'].description,
   },
   {
     id: 'dt-ijara-02',
@@ -1126,6 +1199,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['texnika', 'asbob-uskuna', 'transport'],
     content: IJARA_TEXNIKA,
+    content_oz: IJARA_TEXNIKA_OZ,
+    content_ru: IJARA_TEXNIKA_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-ijara-02'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-ijara-02'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-ijara-02'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-ijara-02'].description,
   },
   {
     id: 'dt-ijara-03',
@@ -1136,6 +1215,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['tekin', 'bepul', 'foydalanish'],
     content: IJARA_TEKIN,
+    content_oz: IJARA_TEKIN_OZ,
+    content_ru: IJARA_TEKIN_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-ijara-03'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-ijara-03'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-ijara-03'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-ijara-03'].description,
   },
 
   // ── PUDRAT ──
@@ -1148,6 +1233,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['qurilish', 'ta\'mirlash', 'smeta'],
     content: PUDRAT_QURILISH,
+    content_oz: PUDRAT_QURILISH_OZ,
+    content_ru: PUDRAT_QURILISH_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-pudrat-01'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-pudrat-01'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-pudrat-01'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-pudrat-01'].description,
   },
 
   // ── QO'SHIMCHA ──
@@ -1160,6 +1251,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ["qo'shimcha", "o'zgartirish", 'ilova'],
     content: QOSHIMCHA_STANDART,
+    content_oz: QOSHIMCHA_STANDART_OZ,
+    content_ru: QOSHIMCHA_STANDART_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-qoshimcha-01'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-qoshimcha-01'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-qoshimcha-01'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-qoshimcha-01'].description,
   },
 
   // ── MOLIYAVIY ──
@@ -1172,6 +1269,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['qarz', 'foizsiz', 'moliyaviy yordam'],
     content: MOLIYAVIY_FOIZSIZ,
+    content_oz: MOLIYAVIY_FOIZSIZ_OZ,
+    content_ru: MOLIYAVIY_FOIZSIZ_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-moliyaviy-01'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-moliyaviy-01'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-moliyaviy-01'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-moliyaviy-01'].description,
   },
   {
     id: 'dt-moliyaviy-02',
@@ -1182,6 +1285,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['qarz', 'foizli', 'kredit'],
     content: MOLIYAVIY_FOIZLI,
+    content_oz: MOLIYAVIY_FOIZLI_OZ,
+    content_ru: MOLIYAVIY_FOIZLI_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-moliyaviy-02'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-moliyaviy-02'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-moliyaviy-02'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-moliyaviy-02'].description,
   },
 
   // ── DAVAL ──
@@ -1194,6 +1303,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['daval', 'qayta ishlash', 'xom ashyo'],
     content: DAVAL_STANDART,
+    content_oz: DAVAL_STANDART_OZ,
+    content_ru: DAVAL_STANDART_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-daval-01'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-daval-01'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-daval-01'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-daval-01'].description,
   },
 
   // ── XALQARO ──
@@ -1206,6 +1321,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['xalqaro', 'eksport', 'import', 'Incoterms'],
     content: XALQARO_SAVDO,
+    content_oz: XALQARO_SAVDO_OZ,
+    content_ru: XALQARO_SAVDO_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-xalqaro-01'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-xalqaro-01'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-xalqaro-01'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-xalqaro-01'].description,
   },
 
   // ── BOSHQA ──
@@ -1218,6 +1339,12 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['hamkorlik', 'sheriklik', 'foyda'],
     content: HAMKORLIK_SHARTNOMA,
+    content_oz: HAMKORLIK_SHARTNOMA_OZ,
+    content_ru: HAMKORLIK_SHARTNOMA_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-boshqa-01'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-boshqa-01'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-boshqa-01'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-boshqa-01'].description,
   },
   {
     id: 'dt-boshqa-02',
@@ -1228,5 +1355,11 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     isDefault: true,
     tags: ['agent', 'vositachi', 'komissiya'],
     content: VOSITACHILIK_SHARTNOMA,
+    content_oz: VOSITACHILIK_SHARTNOMA_OZ,
+    content_ru: VOSITACHILIK_SHARTNOMA_RU,
+    name_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-boshqa-02'].name,
+    name_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-boshqa-02'].name,
+    description_oz: DEFAULT_TEMPLATE_NAMES_OZ['dt-boshqa-02'].description,
+    description_ru: DEFAULT_TEMPLATE_NAMES_RU['dt-boshqa-02'].description,
   },
 ]

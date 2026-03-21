@@ -13,19 +13,43 @@ function jsonOnly(lang: string) {
                          "Faqat JSON qaytaring, izohsiz."
 }
 
+function repairJSON(str: string): string {
+  // Replace literal newlines/carriage-returns inside JSON string values
+  let result = ''
+  let inString = false
+  let escaped = false
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i]
+    if (escaped) { result += ch; escaped = false; continue }
+    if (ch === '\\' && inString) { result += ch; escaped = true; continue }
+    if (ch === '"') { inString = !inString; result += ch; continue }
+    if (inString && (ch === '\n' || ch === '\r')) { result += '\\n'; continue }
+    result += ch
+  }
+  return result
+}
+
 function extractJSON(raw: string): unknown {
-  const fenced = raw.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
-  let str = fenced ? fenced[1].trim() : raw.trim()
+  let str = raw.trim()
+  // Strip opening and closing code fences (handles long content that breaks capturing regex)
+  if (str.includes('```')) {
+    str = str.replace(/^```(?:json)?\s*\r?\n?/, '').replace(/\r?\n?\s*```\s*$/, '').trim()
+  }
+  // Find outermost JSON object
   const s = str.indexOf('{'), e = str.lastIndexOf('}')
   if (s !== -1 && e !== -1) str = str.slice(s, e + 1)
-  return JSON.parse(str)
+  try {
+    return JSON.parse(str)
+  } catch {
+    return JSON.parse(repairJSON(str))
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { type, content, lang = 'uz', question, instruction,
-            target_lang, description, details } = body
+            target_lang, description, details, analysis } = body
 
     const jOnly = jsonOnly(lang)
     let prompt = ''
@@ -105,13 +129,87 @@ export async function POST(req: NextRequest) {
       prompt = `${task}\n\nO'zbekiston qonunchiligi asosida, rasmiy uslubda, to'liq bandlar bilan yozing.\n${jOnly}\n{"shartnoma":"to'liq shartnoma matni...","bandlar_soni":0}`
     }
 
+    // ── 9. KAMCHILIKLARNI TO'G'IRLASH ──────────────────────
+    else if (type === 'fix') {
+      const issues = [
+        ...(analysis?.zaif_tomonlar || []).map((s: string) => `- Zaif tomonlar: ${s}`),
+        ...(analysis?.yuridik_xatarlar || []).map((x: {daraja:string;tavsif:string}) => `- Yuridik xatar [${x.daraja}]: ${x.tavsif}`),
+        ...(analysis?.tavsiyalar || []).map((s: string) => `- Tavsiya: ${s}`),
+        ...(analysis?.grammatika_xatolari || []).map((s: string) => `- Grammatika xatosi: ${s}`),
+      ].join('\n')
+      const task = lang === 'ru'
+        ? `Улучшите договор, устранив все найденные проблемы. Проблемы:\n${issues}`
+        : lang === 'oz'
+        ? `Шартномани қуйидаги камчиликларни бартараф қилган ҳолда яхшиланг. Камчиликлар:\n${issues}`
+        : `Quyidagi kamchiliklarni bartaraf qilib shartnomani to'g'rilang. Kamchiliklar:\n${issues}`
+      prompt = `${task}\n\nO'zbekiston qonunchiligi asosida, rasmiy uslubda, hamma bandlarni saqlab yozing.\n${jOnly}\n{"shartnoma_yangi":"to'liq to'g'irlangan shartnoma...","o_zgartirishlar":["..."]}\n\nASL SHARTNOMA:\n${truncate(content, 3500)}`
+    }
+
+    // ── 10. GRAMMATIKA XATOLARINI TO'G'IRLASH ──────────────
+    else if (type === 'fix_grammar') {
+      const errList = (analysis?.xatolar || [])
+        .map((x: {xato:string;togri:string;izoh:string}) => `"${x.xato}" → "${x.togri}" (${x.izoh})`)
+        .join('\n')
+      const task = lang === 'ru'
+        ? `Исправьте следующие грамматические ошибки в тексте, сохраняя официальный стиль:\n${errList}`
+        : lang === 'oz'
+        ? `Matndagi quyidagi grammatika xatolarini to'g'rilang, rasmiy uslubni saqlang:\n${errList}`
+        : `Matndagi quyidagi grammatika xatolarini to'g'rilang, rasmiy uslubni saqlang:\n${errList}`
+      prompt = `${task}\n\n${jOnly}\n{"shartnoma_yangi":"to'liq to'g'irlangan matn...","o_zgartirishlar":["..."]}\n\nASL MATN:\n${truncate(content, 3500)}`
+    }
+
+    // ── 11. MEHNAT SHARTNOMASI ──────────────────────────────
+    else if (type === 'mehnat_shartnoma') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida O'zbekiston Mehnat kodeksiga muvofiq professional mehnat shartnomasi yoki lavozim yo'riqnomasini yozing.\nTashkilot: ${d.tashkilot || '___'}, INN: ${d.tashkilot_inn || '___'}, Direktor: ${d.direktor || '___'}\nXodim: ${d.xodim_ism || d.lavozim || '___'}, Lavozim: ${d.lavozim || '___'}\nMaosh: ${d.maosh || '___'}, Boshlanish: ${d.boshlanish_sana || '___'}\nIsh vaqti: ${d.ish_vaqti || '___'}\nBo'lim: ${d["bo'lim"] || d.bolim || '___'}`
+      prompt = `${task}\n\nRasmiy yuridik uslubda to'liq hujjat yozing.\n${jOnly}\n{"shartnoma":"to'liq hujjat matni..."}`
+    }
+
+    // ── 12. BUYRUQ ──────────────────────────────────────────
+    else if (type === 'buyruq') {
+      const d = details || {}
+      const tur = d.buyruq_tur || 'qabul'
+      const turText = tur === 'qabul' ? 'ishga qabul qilish' : tur === 'boshtash' ? "ishdan bo'shatish" : tur === 'tatil' ? "ta'til berish" : tur
+      const task = `Quyidagi ma'lumotlar asosida "${turText}" buyrug'ini rasmiy shakilda yozing.\nTashkilot: ${d.tashkilot || '___'}, Direktor: ${d.direktor || '___'}\nXodim: ${d.xodim_ism || '___'}, Lavozim: ${d.lavozim || '___'}\nBo'lim: ${d["bo'lim"] || d.bolim || '___'}, Maosh: ${d.maosh || '___'}\nSana: ${d.sana || '___'}, Sabab: ${d.sabab || '___'}\nTa'til: ${d.tatil_boshlanish || ''} – ${d.tatil_tugash || ''}, ${d.kunlar_soni || ''} kun`
+      prompt = `${task}\n\nO'zbekiston qonunchiligiga muvofiq, buyruq formatida yozing.\n${jOnly}\n{"buyruq":"to'liq buyruq matni..."}`
+    }
+
+    // ── 13. ISHONCHNOMA ─────────────────────────────────────
+    else if (type === 'ishonchnoma') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida rasmiy ishonchnoma hujjatini yozing.\nIshonchnoma beruvchi: ${d.tashkilot || '___'} (${d.tashkilot_inn || '___'}), Direktor: ${d.direktor || '___'}\nIshonchnoma oluvchi: ${d.oluvchi_ism || '___'}, Pasport: ${d.oluvchi_passport || '___'}\nVakolat mazmuni: ${d.vakolat || '___'}\nAmal qilish muddati: ${d.muddat || '___'}`
+      prompt = `${task}\n\nO'zbekiston qonunchiligiga muvofiq, rasmiy ishonchnoma formatida yozing.\n${jOnly}\n{"ishonchnoma":"to'liq ishonchnoma matni..."}`
+    }
+
+    // ── 14. DALOLATNOMA ─────────────────────────────────────
+    else if (type === 'dalolatnoma') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida ish bajarilganligi to'g'risida dalolatnoma yoki to'lov grafigi tuzing.\nBajaruvchi tashkilot: ${d.tashkilot || '___'} (${d.tashkilot_inn || '___'}), Direktor: ${d.direktor || '___'}\nBank: ${d.bank_name || '___'}, H/R: ${d.bank_account || '___'}\nKontragent: ${d.kontragentar_ism || d.kontragent || '___'}\nXizmat/ish turi: ${d.xizmat_turi || '___'}\nShartnoma raqami: ${d.shartnoma_raqam || '___'}\nSumma: ${d.summa || d.jami_summa || '___'}\nSana: ${d.sana || '___'}\nTo'lov soni: ${d.tolov_soni || '___'}, Boshlanish: ${d.boshlanish_sana || '___'}`
+      prompt = `${task}\n\nRasmiy hujjat formatida yozing.\n${jOnly}\n{"dalolatnoma":"to'liq hujjat matni..."}`
+    }
+
+    // ── 15. SCHYOT-FAKTURA ──────────────────────────────────
+    else if (type === 'schet_faktura') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida schyot-faktura (invoice) tayyorlang.\nSotuvchi: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'}), Direktor: ${d.direktor || '___'}\nBank: ${d.bank_name || '___'}, H/R: ${d.bank_account || '___'}, MFO: ${d.mfo || '___'}\nXaridor: ${d.xaridor || '___'}\nMahsulot/xizmat: ${d.mahsulot_xizmat || '___'}\nMiqdor: ${d.miqdor || '1'}, Narx: ${d.narx || '___'}\nQQS: ${d.qqs || '12'}%\nSana: ${d.sana || '___'}`
+      prompt = `${task}\n\nO'zbekiston standartlariga mos schyot-faktura formatida yozing.\n${jOnly}\n{"faktura":"to'liq schyot-faktura matni..."}`
+    }
+
+    // ── 16. TALABNOMA ───────────────────────────────────────
+    else if (type === 'talabnoma') {
+      const d = details || {}
+      const task = `Quyidagi ma'lumotlar asosida qarz undirish talab xati yoki debitor undirish xatini yozing.\nKreditor: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'}), Direktor: ${d.direktor || '___'}\nQarzdor: ${d.qarzdor || '___'}\nQarz summasi: ${d.qarz_summasi || '___'}\nShartnoma raqami: ${d.shartnoma_raqam || '___'}\nMuddati o'tgan kunlar: ${d.muddat_utgan || '___'}\nKunlik jarima: ${d.jarima_foiz || '0.1'}%\nQarz sababi: ${d.qarz_sababi || '___'}\nOxirgi to'lov muhlati: ${d.oxirgi_muhlat || '___'}\nSud murojaat: ${d.sudga_murojaat || "Agar to'lanmasa, sudga murojaat qilinadi"}`
+      prompt = `${task}\n\nO'zbekiston qonunchiligiga muvofiq, rasmiy talab xati formatida yozing.\n${jOnly}\n{"talabnoma":"to'liq talab xati matni..."}`
+    }
+
     else {
       return NextResponse.json({ error: "Noto'g'ri type" }, { status: 400 })
     }
 
+    const longTypes = ['write', 'fix', 'fix_grammar', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma']
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: type === 'write' ? 6000 : 3000,
+      max_tokens: longTypes.includes(type) ? 6000 : 3000,
       messages: [{ role: 'user', content: prompt }],
     })
 

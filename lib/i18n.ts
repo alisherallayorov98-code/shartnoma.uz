@@ -441,6 +441,51 @@ export const t = {
     openEmpty:   { uz: 'Bo\'sh tuzilmani ochish →',   oz: 'Бўш тузилмани очиш →',      ru: 'Открыть пустую структуру →' },
   },
 
+  // ── Yurist AI Hub ─────────────────────────────────────────────
+  hub: {
+    translateLang:       { uz: 'Tarjima tili',                           oz: 'Таржима тили',                           ru: 'Язык перевода' },
+    yourQuestion:        { uz: 'Savolingiz',                             oz: 'Саволингиз',                             ru: 'Ваш вопрос' },
+    send:                { uz: '↩ Yuborish',                             oz: '↩ Юбориш',                               ru: '↩ Отправить' },
+    instruction:         { uz: "Ko'rsatma",                              oz: 'Кўрсатма',                               ru: 'Инструкция' },
+    describeCase:        { uz: "Vaziyatni ta'riflang",                   oz: 'Вазиятни таърифланг',                    ru: 'Опишите ситуацию' },
+    contractType:        { uz: 'Shartnoma turi',                         oz: 'Шартнома тури',                          ru: 'Тип договора' },
+    amountLabel:         { uz: 'Summa',                                  oz: 'Сумма',                                  ru: 'Сумма' },
+    firstParty:          { uz: 'Birinchi tomon',                         oz: 'Биринчи томон',                          ru: 'Первая сторона' },
+    secondParty:         { uz: 'Ikkinchi tomon',                         oz: 'Иккинчи томон',                          ru: 'Вторая сторона' },
+    extraTerms:          { uz: "Qo'shimcha shartlar (ixtiyoriy)",        oz: "Қўшимча шартлар (ихтиёрий)",             ru: 'Дополнительные условия (необязательно)' },
+    goToPremium:         { uz: "Premiumga o'tish →",                     oz: "Premiumga o'tish →",                     ru: 'Перейти на Premium →' },
+    premiumTitle:        { uz: 'Premium xizmat',                         oz: 'Премиум хизмат',                         ru: 'Функция Premium' },
+    premiumDesc:         { uz: "Bu funksiyadan foydalanish uchun Standart yoki Premium tarifiga o'ting", oz: "Бу функциядан фойдаланиш учун Стандарт ёки Премиум тарифига ўтинг", ru: 'Для использования этой функции перейдите на тариф Стандарт или Премиум' },
+    upgradeBtn:          { uz: '✦ Tarifni yaxshilash →',                 oz: '✦ Тарифни яхшилаш →',                    ru: '✦ Улучшить тариф →' },
+    errSelectContract:   { uz: "Shartnomani tanlang yoki matn bo'sh. Avval shartnoma yarating.", oz: "Шартномани танланг ёки матн бўш. Аввал шартнома яратинг.", ru: 'Выберите договор или его текст пуст. Сначала создайте договор.' },
+    errEnterQuestion:    { uz: "Iltimos, savolingizni kiriting.",         oz: "Илтимос, саволингизни киритинг.",         ru: 'Пожалуйста, введите вопрос.' },
+    errEnterInstruction: { uz: "Iltimos, ko'rsatma kiriting.",            oz: "Илтимос, кўрсатма киритинг.",             ru: 'Пожалуйста, введите инструкцию.' },
+    errDescribeCase:     { uz: "Iltimos, vaziyatni ta'riflang.",          oz: "Илтимос, вазиятни таърифланг.",           ru: 'Пожалуйста, опишите ситуацию.' },
+    plhQuestion:         { uz: "Masalan: Shartnomada jarima bandi bormi? (Enter → yuborish)", oz: "Масалан: Шартномада жарима банди борми? (Enter → юбориш)", ru: "Напр.: Есть ли в договоре штрафная оговорка? (Enter → отправить)" },
+    plhInstruction:      { uz: "Masalan: Kechikish uchun 0.1% kunlik jarima bandi qo'sh", oz: "Масалан: Кечикиш учун 0.1% кунлик жарима банди қўш", ru: "Напр.: Добавь пункт о неустойке 0.1% в день за просрочку" },
+    plhDescribeCase:     { uz: "Masalan: Kompaniyam boshqa firmaga 3 oy ofis ijaraga bermoqchi...", oz: "Масалан: Компаниям бошқа фирмага 3 ой офис ижарага бермоқчи...", ru: "Напр.: Моя компания хочет сдать офис другой фирме на 3 месяца..." },
+    plhAmount:           { uz: "10 000 000 so'm",                        oz: "10 000 000 сўм",                          ru: "10 000 000 сум" },
+    plhOrgName:          { uz: 'Tashkilot nomi',                         oz: 'Ташкилот номи',                          ru: 'Название организации' },
+    plhCpName:           { uz: 'Kontragent nomi',                        oz: 'Контрагент номи',                        ru: 'Название контрагента' },
+    plhExtraTerms:       { uz: "Masalan: To'lov muddati 30 kun, yetkazib berish Toshkentda...", oz: "Масалан: Тўлов муддати 30 кун, етказиб бериш Тошкентда...", ru: "Напр.: Срок оплаты 30 дней, доставка в Ташкенте..." },
+  },
+
+  // ── Shablon preview modal ─────────────────────────────────────
+  tplPreview: {
+    createFrom: { uz: 'Shu shablon asosida shartnoma yaratish', oz: 'Шу шаблон асосида шартнома яратиш', ru: 'Создать договор на основе шаблона' },
+    howTitle:   { uz: 'Shablonlar qanday ishlaydi?',            oz: 'Шаблонлар қандай ишлайди?',         ru: 'Как работают шаблоны?' },
+    howDesc:    { uz: "Standart shablonlar O'zbekiston qonunchiligiga muvofiq tayyorlangan. \"Nusxa\" orqali moslashtirishingiz mumkin. \"+Shablon qo'shish\" bilan yangi shablon yarating.",
+                  oz: "Стандарт шаблонлар Ўзбекистон қонунчилигига мувофиқ тайёрланган. \"Нусха\" орқали мослаштиришингиз мумкин. \"+Шаблон қўшиш\" билан янги шаблон яратинг.",
+                  ru: "Стандартные шаблоны подготовлены по законодательству РУз. Через «Копию» вы можете адаптировать их. Кнопкой «+Добавить шаблон» создайте новый шаблон." },
+  },
+
+  // ── Word import ───────────────────────────────────────────────
+  wordImport: {
+    onlyDocx: { uz: 'Faqat .docx formatdagi fayllar qabul qilinadi', oz: 'Фақат .docx форматдаги файллар қабул қилинади', ru: 'Принимаются только файлы .docx' },
+    emptyFile: { uz: "Fayl bo'sh yoki o'qib bo'lmadi",               oz: "Файл бўш ёки ўқиб бўлмади",                    ru: 'Файл пуст или не читается' },
+    readError: { uz: "Faylni o'qishda xatolik yuz berdi",            oz: "Файлни ўқишда хатолик юз берди",               ru: 'Ошибка чтения файла' },
+  },
+
   // ── Login sahifasi ───────────────────────────────────────────
   login: {
     title:      { uz: 'Kirish',                        oz: 'Кириш',                       ru: 'Войти' },

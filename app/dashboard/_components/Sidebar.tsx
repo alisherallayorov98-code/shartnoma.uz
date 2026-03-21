@@ -1,0 +1,186 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useDashboard } from '../context'
+import { useLang } from '@/lib/LanguageContext'
+import { t, tr, LANG_LABELS, type Lang } from '@/lib/i18n'
+
+const NAV_ITEMS = [
+  { key: 'overview',        href: '/dashboard',                icon: '▣',  label: t.nav.overview },
+  { key: 'contracts',       href: '/dashboard/shartnomalar',   icon: '📄', label: t.nav.contracts },
+  { key: 'specifications',  href: '/dashboard/spesifikatsiyalar', icon: '📋', label: t.nav.specifications },
+  { key: 'shablonlar',      href: '/dashboard/shablonlar',    icon: '📑', label: t.nav.shablonlar },
+  { key: 'counterparties',  href: '/dashboard/kontragentlar', icon: '🤝', label: t.nav.counterparties },
+  { key: 'yurist_ai',       href: '/dashboard/yurist',        icon: '⚖️', label: t.nav.yurist_ai },
+  { key: 'kadrlar',         href: '/dashboard/kadrlar',       icon: '👥', label: { uz: 'Kadrlar', oz: 'Кадрлар', ru: 'Кадры' } as Record<Lang, string> },
+  { key: 'buxgalter',       href: '/dashboard/buxgalter',     icon: '💼', label: { uz: 'Buxgalter', oz: 'Бухгалтер', ru: 'Бухгалтер' } as Record<Lang, string> },
+  { key: 'profile',         href: '/dashboard/profil',        icon: '👤', label: t.nav.profile },
+]
+
+export function DashboardSidebar() {
+  const pathname = usePathname()
+  const { lang, setLang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
+
+  const {
+    sidebarOpen, setSidebarOpen,
+    orgDropdown, setOrgDropdown,
+    orgs, activeOrg, contracts,
+    switchOrg, logout,
+    isAdmin, userEmail,
+    getQuotaInfo,
+    openUpgradeModal,
+  } = useDashboard()
+
+  const quota = getQuotaInfo()
+
+  function isActive(href: string) {
+    if (href === '/dashboard') return pathname === '/dashboard'
+    return pathname.startsWith(href)
+  }
+
+  return (
+    <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-gray-900 border-r border-gray-800 flex flex-col flex-shrink-0 transition-all duration-300`}>
+
+      {/* Logo + hamburger */}
+      <div className="h-16 flex items-center px-4 border-b border-gray-800 gap-3">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-800 transition flex-shrink-0"
+          aria-label="Toggle sidebar"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm shadow-lg shadow-blue-900/50">S</div>
+        {sidebarOpen && <span className="text-lg font-bold">Shartnoma.uz</span>}
+      </div>
+
+      {/* Org Switcher */}
+      {sidebarOpen && orgs.length > 0 && (
+        <div className="px-3 pt-3 relative">
+          <button
+            onClick={() => setOrgDropdown(!orgDropdown)}
+            className="w-full flex items-center gap-2 bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg px-3 py-2.5 transition text-left"
+          >
+            <div className="w-7 h-7 bg-blue-900 rounded-md flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0">
+              {activeOrg?.name[0]?.toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium text-white truncate">{activeOrg?.name}</div>
+              <div className="text-xs text-gray-500">INN: {activeOrg?.inn || '—'}</div>
+            </div>
+            <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${orgDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          {orgDropdown && (
+            <div className="absolute left-3 right-3 top-full mt-1 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+              {orgs.map(org => (
+                <button key={org.id} onClick={() => switchOrg(org)}
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-gray-700 transition text-sm ${activeOrg?.id === org.id ? 'bg-blue-900/30 text-blue-300' : 'text-gray-300'}`}>
+                  <div className="w-6 h-6 bg-gray-700 rounded flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    {org.name[0]?.toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{org.name}</div>
+                    <div className="text-xs text-gray-500">{org.inn}</div>
+                  </div>
+                  {activeOrg?.id === org.id && <span className="ml-auto text-blue-400 text-xs">●</span>}
+                </button>
+              ))}
+              <div className="border-t border-gray-700">
+                <Link href="/dashboard/tashkilotlar"
+                  onClick={() => setOrgDropdown(false)}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-gray-700 transition text-sm text-gray-300">
+                  <span>🏢</span> Tashkilotlarni boshqarish
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Quota bar */}
+      {sidebarOpen && quota && (
+        <div className="px-3 pt-3">
+          <div className="bg-gray-800 rounded-lg px-3 py-2.5">
+            <div className="flex justify-between text-xs mb-1.5">
+              <span className="text-gray-400">Tarif: <span className="text-white font-medium">{quota.plan}</span></span>
+              {quota.limit && <span className="text-gray-400">{quota.used}/{quota.limit}</span>}
+            </div>
+            {quota.limit && (
+              <>
+                <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${quota.percent! >= 100 ? 'bg-red-500' : quota.percent! >= 80 ? 'bg-yellow-500' : 'bg-blue-500'}`}
+                    style={{ width: `${quota.percent}%` }}/>
+                </div>
+                {quota.percent! >= 80 && (
+                  <button onClick={openUpgradeModal} className="text-xs text-yellow-400 mt-1.5 hover:text-yellow-300">
+                    ⚡ Tarifni yaxshilash →
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Nav */}
+      <nav className="flex-1 p-3 space-y-1 mt-2 overflow-y-auto overflow-x-hidden">
+        {NAV_ITEMS.map(item => (
+          <Link key={item.key} href={item.href}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+              isActive(item.href)
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+            }`}>
+            <span className="text-base flex-shrink-0">{item.icon}</span>
+            {sidebarOpen && <span className="flex-1 text-left font-medium">{T(item.label)}</span>}
+            {sidebarOpen && item.key === 'contracts' && (
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive(item.href) ? 'bg-blue-500' : 'bg-gray-700 text-gray-400'}`}>
+                {contracts.length}
+              </span>
+            )}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Language switcher */}
+      {sidebarOpen && (
+        <div className="px-3 pb-1 flex gap-1">
+          {(['uz', 'oz', 'ru'] as Lang[]).map(l => (
+            <button key={l} onClick={() => setLang(l)}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition ${lang === l ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+              {LANG_LABELS[l]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* User / Admin / Logout */}
+      <div className="p-3 border-t border-gray-800 space-y-2">
+        {sidebarOpen && (
+          <div className="px-3 py-2 rounded-lg bg-gray-800">
+            <div className="text-xs text-gray-500">{T(t.profile.account)}</div>
+            <div className="text-sm text-white truncate font-medium mt-0.5">{userEmail}</div>
+          </div>
+        )}
+        {isAdmin && (
+          <a href="/admin" target="_blank" rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-900/30 transition">
+            <span className="flex-shrink-0">⚙️</span>
+            {sidebarOpen && <span>Admin panel ↗</span>}
+          </a>
+        )}
+        <button onClick={logout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition">
+          <span className="flex-shrink-0">🚪</span>
+          {sidebarOpen && <span>{T(t.nav.logout)}</span>}
+        </button>
+      </div>
+    </aside>
+  )
+}
