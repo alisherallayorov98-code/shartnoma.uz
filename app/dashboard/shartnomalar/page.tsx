@@ -717,7 +717,7 @@ export default function ShartnomalarPage() {
   async function generateDOCX(c: Contract) {
     const {
       Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-      WidthType, AlignmentType, BorderStyle, Footer, PageNumber,
+      WidthType, AlignmentType, BorderStyle, Footer, PageNumber, UnderlineType,
     } = await import('docx')
 
     const typeName = (CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type
@@ -741,9 +741,10 @@ export default function ShartnomalarPage() {
     }
 
     // Rich text runs — highlights amounts (500 000 000), percentages (20%),
-    // and deadline numbers (30 (o'ttiz)) in red+bold; rest in normal black
+    // and deadline numbers (30 (o'ttiz)) in red+bold; rest in normal black.
+    // UnderlineType.NONE explicitly prevents Word from auto-applying list underline.
     function richRuns(text: string, baseBold = false) {
-      const base = { font: F, size: 24, color: '000000', italics: false }
+      const base = { font: F, size: 24, color: '000000', italics: false, underline: { type: UnderlineType.NONE } }
       const pat = /(\d{1,3}(?:\s\d{3})+(?:\s*\([^)]+\))?|\d+[,.]?\d*\s*%|\d+\s*\([^)]+\))/g
       const runs = []
       let last = 0, m: RegExpExecArray | null
@@ -795,6 +796,7 @@ export default function ShartnomalarPage() {
 
       if (kind === 'sub') return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
+        indent: { left: 0, firstLine: 0 },
         spacing: { before: 0, after: 20, line: 240 },
         children: richRuns(t),
       })
@@ -904,7 +906,7 @@ export default function ShartnomalarPage() {
     const doc = new Document({
       sections: [{
         properties: {
-          page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 1134 } },
+          page: { margin: { top: 1134, bottom: 1134, left: 1134, right: 851 } },
         },
         footers: { default: footer },
         children: [
