@@ -257,6 +257,28 @@ export default function ShartnomalarPage() {
     reloadContracts()
   }
 
+  // ── Edit contract ──────────────────────────────────────────────────────────
+  function openEditContract(c: Contract) {
+    const form: ContractForm = {
+      id: c.id,
+      contract_number: c.contract_number,
+      contract_date: c.contract_date,
+      contract_type: c.contract_type,
+      amount: String(c.amount || ''),
+      organization_id: c.organization_id,
+      counterparty_id: c.counterparty_id,
+      status: c.status,
+      content: c.content || '',
+      city: c.city || 'Toshkent',
+      product_name: c.product_name || '',
+      spec_items: c.spec_items || [],
+      qqs_enabled: c.qqs_enabled || false,
+      qqs_rate: c.qqs_rate || 12,
+    }
+    setContractForm(form)
+    setModal('contract')
+  }
+
   // ── Delete contract ────────────────────────────────────────────────────────
   async function deleteContract(id: string) {
     if (!confirm(T(t.contracts.deleteConfirm))) return
@@ -980,6 +1002,16 @@ export default function ShartnomalarPage() {
                     {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
+                        {/* Edit */}
+                        <button
+                          title="Tahrirlash"
+                          onClick={() => openEditContract(c)}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-gray-700 transition"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                          </svg>
+                        </button>
                         {/* View */}
                         <button
                           title="Ko'rish"
