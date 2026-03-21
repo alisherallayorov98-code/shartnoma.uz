@@ -342,16 +342,27 @@ export default function ShartnomalarPage() {
     // ─ Content ─
     function toSafePdf(str: string): string {
       const cyr: Record<string, string> = {
+        // Kichik kirill
         'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y',
         'к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f',
         'х':'x','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ъ':"'",'ы':'y','ь':"'",'э':'e','ю':'yu','я':'ya',
+        // Katta kirill
         'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh','З':'Z','И':'I','Й':'Y',
         'К':'K','Л':'L','М':'M','Н':'N','О':'O','П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F',
         'Х':'X','Ц':'Ts','Ч':'Ch','Ш':'Sh','Щ':'Sch','Э':'E','Ю':'Yu','Я':'Ya',
+        // O'zbek maxsus (kirill)
         'ғ':"g'",'Ғ':"G'",'ҳ':'h','Ҳ':'H','қ':'q','Қ':'Q','ў':"o'",'Ў':"O'",'ҷ':'j','Ҷ':'J',
-        '\u02bb':"'",'ʻ':"'",'ʼ':"'",'–':'-','—':'-','"':'"','"':'"','\u2019':"'",
+        // Apostrof va tinish belgilari
+        '\u02bb':"'",'ʻ':"'",'ʼ':"'",
+        '\u2013':'-','\u2014':'-',
+        '\u201c':'"','\u201d':'"',
+        '\u2018':"'",'\u2019':"'",'`':"'",
+        '\u00ab':'<<','\u00bb':'>>',
       }
-      return str.replace(/./gu, ch => cyr[ch] ?? ch).replace(/[^\x00-\xFF]/g, '?')
+      // Faqat kirill va maxsus belgilarni almashtir — lotin/ASCII o'zgarishsiz qoladi
+      return str.replace(/[а-яёА-ЯЁ\u0400-\u04FF\u02bb\u02bc\u2013\u2014\u201c\u201d\u2018\u2019`\u00ab\u00bb]/gu,
+        ch => cyr[ch] ?? ch
+      ).replace(/[^\x00-\xFF]/g, '?')
     }
 
     const rawLines = (c.content || '').split('\n')

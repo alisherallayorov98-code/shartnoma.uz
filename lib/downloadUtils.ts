@@ -33,16 +33,28 @@ export function deleteSavedAiResult(id: string) {
 // ─── Kirill → Lotin transkripsiyasi (jsPDF faqat ASCII/Latin-1 qo'llab-quvvatlaydi) ─────
 function cyrillicToLatin(str: string): string {
   const map: Record<string, string> = {
+    // Kichik kirill harflari
     'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y',
     'к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f',
     'х':'x','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ъ':"'",'ы':'y','ь':"'",'э':'e','ю':'yu','я':'ya',
+    // Katta kirill harflari
     'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh','З':'Z','И':'I','Й':'Y',
     'К':'K','Л':'L','М':'M','Н':'N','О':'O','П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F',
     'Х':'X','Ц':'Ts','Ч':'Ch','Ш':'Sh','Щ':'Sch','Э':'E','Ю':'Yu','Я':'Ya',
+    // O'zbek maxsus harflari (kirill)
     'ғ':"g'",'Ғ':"G'",'ҳ':'h','Ҳ':'H','қ':'q','Қ':'Q','ў':"o'",'Ў':"O'",'ҷ':'j','Ҷ':'J',
-    '\u02bb':"'",'ʻ':"'",'ʼ':"'",'–':'-','—':'-','"':'"','"':'"',''':'\'',' ':'\'' ,
+    // O'zbek lotin maxsus belgilari (apostroflar)
+    '\u02bb':"'",'ʻ':"'",'ʼ':"'",
+    // Tinish belgilari — izchil ko'rinish uchun
+    '\u2013':'-','\u2014':'-',   // en-dash, em-dash
+    '\u201c':'"','\u201d':'"',   // qo'shtirnoq chapdan/o'ngdan
+    '\u2018':"'",'`':"'",        // apostrof turlari
+    '\u00ab':'<<','\u00bb':'>>',  // «»
   }
-  return str.replace(/./gu, ch => map[ch] ?? (ch.charCodeAt(0) > 127 ? ch : ch))
+  // Faqat kirill va maxsus belgilarni almashtir — ASCII/lotin harflari o'zgarishsiz qoladi
+  return str.replace(/[а-яёА-ЯЁ\u0400-\u04FF\u02bb\u02bc\u2013\u2014\u201c\u201d\u2018\u2019`\u00ab\u00bb]/gu,
+    ch => map[ch] ?? ch
+  ).replace(/[^\x00-\xFF]/g, '?')  // qolgan noma'lum belgilar
 }
 
 // Tekst satri turini aniqlash
