@@ -730,39 +730,45 @@ export default function ShartnomalarPage() {
     const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder }
 
     // Line classifier for contract content
-    function lineKind(line: string): 'empty' | 'main' | 'sub' | 'label' | 'bullet' | 'body' {
+    function lineKind(line: string): 'empty' | 'main' | 'sub' | 'sub_label' | 'label' | 'bullet' | 'body' {
       const t = line.trim()
       if (!t || /^={3,}$|^-{3,}$/.test(t)) return 'empty'
       if (/^(\d+\.\s+\S|§\s*\d)/.test(t) && !/^\d+\.\d/.test(t)) return 'main'
-      if (/^\d+\.\d+/.test(t)) return 'sub'
+      if (/^\d+\.\d+/.test(t)) return /:\s*$/.test(t) ? 'sub_label' : 'sub'
       if (/^[A-ZЎҚҒҲ][A-ZЎҚҒҲ\s]{2,20}:\s*$/.test(t)) return 'label'
       if (/^[-–•]\s/.test(t)) return 'bullet'
       return 'body'
     }
 
+    // Rich text runs — highlights amounts (500 000 000), percentages (20%),
+    // and deadline numbers (30 (o'ttiz)) in red+bold; rest in normal black
+    function richRuns(text: string, baseBold = false) {
+      const base = { font: F, size: 24, color: '000000', italics: false }
+      const pat = /(\d{1,3}(?:\s\d{3})+(?:\s*\([^)]+\))?|\d+[,.]?\d*\s*%|\d+\s*\([^)]+\))/g
+      const runs = []
+      let last = 0, m: RegExpExecArray | null
+      while ((m = pat.exec(text)) !== null) {
+        if (m.index > last) runs.push(new TextRun({ ...base, text: text.slice(last, m.index), bold: baseBold }))
+        runs.push(new TextRun({ ...base, text: m[0], bold: true, color: 'CC0000' }))
+        last = m.index + m[0].length
+      }
+      if (last < text.length) runs.push(new TextRun({ ...base, text: text.slice(last), bold: baseBold }))
+      return runs.length ? runs : [new TextRun({ ...base, text, bold: baseBold })]
+    }
+
     // ── Content cleaning ──────────────────────────────────────────────────────
-    // 1. Skip duplicate header lines (title, №, city/date) — start from first
-    //    numbered section like "1. SHARTNOMA PREDMETI"
-    // 2. Cut signature/rekvizitlar section at the end — we render our own table
     const rawLines = fillPlaceholders(c.content || '', c).split('\n')
 
     let startIdx = 0
     for (let i = 0; i < rawLines.length; i++) {
       const t = rawLines[i].trim()
-      if (/^(\d+\.\s+[A-ZЎҚҒҲA-z]|§\s*\d)/.test(t) && !/^\d+\.\d+/.test(t)) {
-        startIdx = i
-        break
-      }
+      if (/^(\d+\.\s+[A-ZЎҚҒҲA-z]|§\s*\d)/.test(t) && !/^\d+\.\d+/.test(t)) { startIdx = i; break }
     }
-
     let endIdx = rawLines.length
     for (let i = 0; i < rawLines.length; i++) {
       const t = rawLines[i].trim()
       if (/^TOMONLARNING\s+(REKVIZITLARI|MA['']LUMOTLARI|IMZOLARI)/i.test(t) ||
-          /^TOMONLAR\s+(IMZOSI|REKVIZIT)/i.test(t)) {
-        endIdx = i
-        break
-      }
+          /^TOMONLAR\s+(IMZOSI|REKVIZIT)/i.test(t)) { endIdx = i; break }
     }
 
     const cleanedLines = rawLines.slice(startIdx, endIdx)
@@ -775,38 +781,45 @@ export default function ShartnomalarPage() {
 
       if (kind === 'main') return new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 160, after: 60 },
-        children: [new TextRun({ text: t, bold: true, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
+        spacing: { before: 200, after: 80 },
+        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+      })
+
+      // Sub-section label ending with ":" → bold + underline (e.g. "4.1. Majburiyatlar:")
+      if (kind === 'sub_label') return new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { before: 100, after: 20 },
+        children: [new TextRun({ text: t, bold: true, underline: {}, size: 24, font: F, color: '000000' })],
       })
 
       if (kind === 'sub') return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         spacing: { before: 0, after: 40 },
-        children: [new TextRun({ text: t, bold: false, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
+        children: richRuns(t),
       })
 
       if (kind === 'label') return new Paragraph({
         spacing: { before: 120, after: 40 },
-        children: [new TextRun({ text: t, bold: true, italics: false, underline: {}, size: 22, font: F, color: '000000' })],
+        children: [new TextRun({ text: t, bold: true, size: 22, font: F, color: '000000' })],
       })
 
       if (kind === 'bullet') {
         const bt = t.replace(/^[-–•]\s*/, '')
         return new Paragraph({
-          alignment: AlignmentType.LEFT,
+          alignment: AlignmentType.JUSTIFIED,
           indent: { left: 360, hanging: 180 },
           spacing: { after: 30 },
-          children: [new TextRun({ text: `– ${bt}`, bold: false, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
+          children: richRuns(`– ${bt}`),
         })
       }
 
       const prevKind = i > 0 ? lineKind(arr[i - 1]) : 'empty'
-      const isStart = prevKind === 'empty' || prevKind === 'main' || prevKind === 'sub' || prevKind === 'label'
+      const isStart = ['empty','main','sub','sub_label','label'].includes(prevKind)
       return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         indent: isStart ? { firstLine: 360 } : {},
         spacing: { after: 40, line: 240 },
-        children: [new TextRun({ text: t, bold: false, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
+        children: richRuns(t),
       })
     })
 
@@ -846,21 +859,22 @@ export default function ShartnomalarPage() {
     }
     const [label1, label2] = partyLabels[c.contract_type] || ['1-TOMON', '2-TOMON']
 
-    // Org details helper — works for both organizations and counterparties
+    // Org details helper
     function orgCell(title: string, org: { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | null | undefined) {
+      const mfoInn = [org?.mfo ? `MFO: ${org.mfo}` : '', org?.inn ? `INN: ${org.inn}` : ''].filter(Boolean).join('   ')
       const details = [
-        new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 24, font: F })], spacing: { after: 100 } }),
-        new Paragraph({ children: [new TextRun({ text: org?.name || '___', bold: true, size: 22, font: F })], spacing: { after: 60 } }),
-        new Paragraph({ children: [new TextRun({ text: `INN: ${org?.inn || '___'}`, size: 20, font: F, color: '555555' })], spacing: { after: 50 } }),
-        ...(org?.address ? [new Paragraph({ children: [new TextRun({ text: `Manzil: ${org.address}`, size: 20, font: F, color: '555555' })], spacing: { after: 50 } })] : []),
-        ...(org?.bank_name ? [new Paragraph({ children: [new TextRun({ text: `Bank: ${org.bank_name}`, size: 20, font: F, color: '555555' })], spacing: { after: 50 } })] : []),
-        ...(org?.bank_account ? [new Paragraph({ children: [new TextRun({ text: `H/R: ${org.bank_account}`, size: 20, font: F, color: '555555' })], spacing: { after: 50 } })] : []),
-        ...(org?.mfo ? [new Paragraph({ children: [new TextRun({ text: `MFO: ${org.mfo}`, size: 20, font: F, color: '555555' })], spacing: { after: 50 } })] : []),
-        new Paragraph({ children: [new TextRun({ text: `Rahbar: ${org?.director_name || '___'}`, size: 20, font: F })], spacing: { after: 240 } }),
-        new Paragraph({ children: [new TextRun({ text: 'Imzo: _______________________', size: 22, font: F })], spacing: { after: 50 } }),
+        new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 24, font: F, color: '000000' })], spacing: { after: 80 } }),
+        new Paragraph({ children: [new TextRun({ text: org?.name || '___', bold: true, size: 22, font: F, color: '000000' })], spacing: { after: 50 } }),
+        ...(org?.address ? [new Paragraph({ children: [new TextRun({ text: `Manzil: ${org.address}`, size: 20, font: F, color: '333333' })], spacing: { after: 40 } })] : []),
+        ...(org?.bank_account ? [new Paragraph({ children: [new TextRun({ text: `H/R: ${org.bank_account}`, size: 20, font: F, color: '333333' })], spacing: { after: 40 } })] : []),
+        ...(org?.bank_name ? [new Paragraph({ children: [new TextRun({ text: `Bank: ${org.bank_name}`, size: 20, font: F, color: '333333' })], spacing: { after: 40 } })] : []),
+        ...(mfoInn ? [new Paragraph({ children: [new TextRun({ text: mfoInn, size: 20, font: F, color: '333333' })], spacing: { after: 40 } })] : []),
+        new Paragraph({ children: [new TextRun({ text: `Rahbar: ${org?.director_name || '___'}`, bold: true, size: 20, font: F, color: '000000' })], spacing: { after: 200 } }),
+        new Paragraph({ children: [new TextRun({ text: '_________________________', size: 22, font: F })], spacing: { after: 30 } }),
+        new Paragraph({ children: [new TextRun({ text: `/ ${org?.director_name || '___'}`, size: 20, font: F, color: '333333' })], spacing: { after: 30 } }),
         new Paragraph({ children: [new TextRun({ text: 'M.O.', size: 20, font: F, color: '888888' })], spacing: { after: 0 } }),
       ]
-      return new TableCell({ borders: cellBorders, margins: { top: 150, bottom: 150, left: 200, right: 200 }, children: details })
+      return new TableCell({ borders: cellBorders, margins: { top: 160, bottom: 160, left: 220, right: 220 }, children: details })
     }
 
     const sigTable = new Table({
