@@ -31,7 +31,8 @@ export function deleteSavedAiResult(id: string) {
 }
 
 // ─── Kirill → Lotin transkripsiyasi (jsPDF faqat ASCII/Latin-1 qo'llab-quvvatlaydi) ─────
-function cyrillicToLatin(str: string): string {
+// export — boshqa fayllar ham bu funksiyadan foydalanadi
+export function cyrillicToLatin(str: string): string {
   const map: Record<string, string> = {
     // Kichik kirill harflari
     'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y',
@@ -43,8 +44,8 @@ function cyrillicToLatin(str: string): string {
     'Х':'X','Ц':'Ts','Ч':'Ch','Ш':'Sh','Щ':'Sch','Э':'E','Ю':'Yu','Я':'Ya',
     // O'zbek maxsus harflari (kirill)
     'ғ':"g'",'Ғ':"G'",'ҳ':'h','Ҳ':'H','қ':'q','Қ':'Q','ў':"o'",'Ў':"O'",'ҷ':'j','Ҷ':'J',
-    // O'zbek lotin maxsus belgilari (apostroflar)
-    '\u02bb':"'",'ʻ':"'",'ʼ':"'",
+    // O'zbek lotin maxsus belgilari — \u02bb=ʻ modifier letter turned comma, \u02bc=ʼ modifier letter apostrophe
+    '\u02bb':"'",'\u02bc':"'",
     // Tinish belgilari — izchil ko'rinish uchun
     '\u2013':'-','\u2014':'-',   // en-dash, em-dash
     '\u201c':'"','\u201d':'"',   // qo'shtirnoq chapdan/o'ngdan
@@ -80,7 +81,7 @@ export async function downloadTextAsPDF(text: string, filename: string) {
   const { default: jsPDF } = await import('jspdf')
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
-  const ML = 25, MR = 20, MT = 25, MB = 25
+  const ML = 25, MR = 20, MT = 25, MB = 30  // MB=30 footer uchun joy qoldiradi
   const pageW = 210
   const pageH = 297
   const bodyW = pageW - ML - MR
@@ -96,7 +97,6 @@ export async function downloadTextAsPDF(text: string, filename: string) {
   for (let i = 0; i < rawLines.length; i++) {
     const raw = rawLines[i]
     const safe = cyrillicToLatin(raw)
-      .replace(/[^\x00-\xFF]/g, '?')  // strip anything outside Latin-1
     const t = safe.trim()
     const kind = classifyLine(raw)
 
@@ -157,12 +157,21 @@ export async function downloadTextAsPDF(text: string, filename: string) {
       doc.setFontSize(9.5)
       doc.setTextColor(30, 30, 30)
       const indent = isParaStart ? 8 : 0
-      const firstW = doc.splitTextToSize(t, bodyW - indent)
-      guard(5.5)
-      doc.text(firstW[0], ML + indent, y); y += 5.5
-      if (firstW.length > 1) {
-        const rest = doc.splitTextToSize(firstW.slice(1).join(' '), bodyW)
-        for (const w of rest) { guard(5.5); doc.text(w, ML, y); y += 5.5 }
+      if (indent > 0) {
+        // Abzas boshi: birinchi satr chetdan, qolganlar to'liq kenglikda
+        const firstLineWrapped = doc.splitTextToSize(t, bodyW - indent)
+        guard(5.5)
+        doc.text(firstLineWrapped[0], ML + indent, y); y += 5.5
+        if (firstLineWrapped.length > 1) {
+          // Qolgan qism to'liq kenglikda qayta wrap
+          const remainder = firstLineWrapped.slice(1).join(' ')
+          const restWrapped = doc.splitTextToSize(remainder, bodyW)
+          for (const w of restWrapped) { guard(5.5); doc.text(w, ML, y); y += 5.5 }
+        }
+      } else {
+        // Oddiy satr — to'g'ridan-to'g'ri wrap
+        const wrapped = doc.splitTextToSize(t, bodyW)
+        for (const w of wrapped) { guard(5.5); doc.text(w, ML, y); y += 5.5 }
       }
     }
     firstLine = false
@@ -223,7 +232,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
 
     if (kind === 'bullet') {
       return new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
+        alignment: AlignmentType.LEFT,
         indent: { left: 360, hanging: 200 },
         spacing: { after: 60 },
         children: [new TextRun({

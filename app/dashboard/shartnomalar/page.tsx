@@ -11,6 +11,7 @@ import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
 import { getStructure, structureToText, numberToWords } from '@/lib/contractStructures'
 import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
 import ContractModal, { type ContractForm } from './_components/ContractModal'
+import { cyrillicToLatin } from '@/lib/downloadUtils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -309,74 +310,56 @@ export default function ShartnomalarPage() {
     const { default: jsPDF } = await import('jspdf')
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
-    const pageWidth = doc.internal.pageSize.getWidth()
-    const pageHeight = doc.internal.pageSize.getHeight()
-    const margin = 20
-    const contentWidth = pageWidth - margin * 2
-    let y = margin
+    const pageWidth  = doc.internal.pageSize.getWidth()   // 210
+    const pageHeight = doc.internal.pageSize.getHeight()  // 297
+    const ML = 25, MR = 20, MT = 20, MB = 30
+    const contentWidth = pageWidth - ML - MR
+    let y = MT
 
     // ─ Header ─
-    doc.setFontSize(10)
+    const orgName = cyrillicToLatin(c.organizations?.name || 'Tashkilot')
+    doc.setFontSize(9)
     doc.setTextColor(120, 120, 120)
-    doc.text(c.organizations?.name || 'Tashkilot', margin, y)
-    y += 5
+    // Tashkilot nomi uzun bo'lsa wrap qiladi
+    const orgNameLines = doc.splitTextToSize(orgName, contentWidth) as string[]
+    for (const ln of orgNameLines) { doc.text(ln, ML, y); y += 5 }
+
     doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
     doc.setTextColor(20, 20, 20)
-    const typeName = (CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type
+    const typeName = cyrillicToLatin((CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type)
     doc.text(typeName.toUpperCase(), pageWidth / 2, y, { align: 'center' })
-    y += 6
+    y += 7
     doc.setFontSize(11)
+    doc.setFont('helvetica', 'normal')
     doc.text(`No ${c.contract_number}`, pageWidth / 2, y, { align: 'center' })
     y += 5
-    doc.setFontSize(10)
+    doc.setFontSize(9.5)
     doc.setTextColor(80, 80, 80)
-    const dateStr = `${c.city || 'Toshkent'} shahri,  "${c.contract_date}"`
+    const dateStr = cyrillicToLatin(`${c.city || 'Toshkent'} shahri,  "${c.contract_date}"`)
     doc.text(dateStr, pageWidth / 2, y, { align: 'center' })
     y += 6
 
     // ─ Divider ─
-    doc.setDrawColor(200, 200, 200)
-    doc.line(margin, y, pageWidth - margin, y)
-    y += 6
+    doc.setDrawColor(180, 180, 180)
+    doc.line(ML, y, pageWidth - MR, y)
+    y += 7
 
     // ─ Content ─
-    function toSafePdf(str: string): string {
-      const cyr: Record<string, string> = {
-        // Kichik kirill
-        'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y',
-        'к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f',
-        'х':'x','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ъ':"'",'ы':'y','ь':"'",'э':'e','ю':'yu','я':'ya',
-        // Katta kirill
-        'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'Yo','Ж':'Zh','З':'Z','И':'I','Й':'Y',
-        'К':'K','Л':'L','М':'M','Н':'N','О':'O','П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F',
-        'Х':'X','Ц':'Ts','Ч':'Ch','Ш':'Sh','Щ':'Sch','Э':'E','Ю':'Yu','Я':'Ya',
-        // O'zbek maxsus (kirill)
-        'ғ':"g'",'Ғ':"G'",'ҳ':'h','Ҳ':'H','қ':'q','Қ':'Q','ў':"o'",'Ў':"O'",'ҷ':'j','Ҷ':'J',
-        // Apostrof va tinish belgilari
-        '\u02bb':"'",'ʻ':"'",'ʼ':"'",
-        '\u2013':'-','\u2014':'-',
-        '\u201c':'"','\u201d':'"',
-        '\u2018':"'",'\u2019':"'",'`':"'",
-        '\u00ab':'<<','\u00bb':'>>',
-      }
-      // Faqat kirill va maxsus belgilarni almashtir — lotin/ASCII o'zgarishsiz qoladi
-      return str.replace(/[а-яёА-ЯЁ\u0400-\u04FF\u02bb\u02bc\u2013\u2014\u201c\u201d\u2018\u2019`\u00ab\u00bb]/gu,
-        ch => cyr[ch] ?? ch
-      ).replace(/[^\x00-\xFF]/g, '?')
+    function guardY(need: number) {
+      if (y + need > pageHeight - MB) { doc.addPage(); y = MT }
     }
 
     const rawLines = (c.content || '').split('\n')
     for (let li = 0; li < rawLines.length; li++) {
       const raw = rawLines[li]
-      const safe = toSafePdf(raw)
+      const safe = cyrillicToLatin(raw)
       const trimmed = safe.trim()
 
       if (!trimmed) { y += 2.5; continue }
 
-      // Section heading: starts with number + dot, or ALL-CAPS line
       const isSection = /^(\d+[\.\)]\s|§\s*\d+)/.test(trimmed) ||
         (trimmed.length <= 60 && /^[A-Z\s\.\-:'"]{6,}$/.test(trimmed))
-      // Signature-area labels
       const isLabel = /^(BUYURTMACHI|IJROCHI|TOMONLAR|M\.O\.|Imzo|Sign)/i.test(trimmed)
 
       if (isSection || isLabel) {
@@ -385,10 +368,7 @@ export default function ShartnomalarPage() {
         doc.setFontSize(9.5)
         doc.setTextColor(10, 10, 10)
         const wrapped = doc.splitTextToSize(trimmed, contentWidth)
-        for (const wl of wrapped) {
-          if (y > pageHeight - margin - 20) { doc.addPage(); y = margin }
-          doc.text(wl, margin, y); y += 5.5
-        }
+        for (const wl of wrapped) { guardY(6); doc.text(wl, ML, y); y += 5.5 }
         y += 0.5
         doc.setFont('helvetica', 'normal')
       } else {
@@ -398,14 +378,11 @@ export default function ShartnomalarPage() {
         const prevRaw = li > 0 ? rawLines[li - 1] : ''
         const indent = !prevRaw.trim() ? 8 : 0
         const firstPart = doc.splitTextToSize(trimmed, contentWidth - indent)
-        if (y > pageHeight - margin - 20) { doc.addPage(); y = margin }
-        doc.text(firstPart[0], margin + indent, y); y += 5.5
+        guardY(5.5)
+        doc.text(firstPart[0], ML + indent, y); y += 5.5
         if (firstPart.length > 1) {
           const rest = doc.splitTextToSize(firstPart.slice(1).join(' '), contentWidth)
-          for (const wl of rest) {
-            if (y > pageHeight - margin - 20) { doc.addPage(); y = margin }
-            doc.text(wl, margin, y); y += 5.5
-          }
+          for (const wl of rest) { guardY(5.5); doc.text(wl, ML, y); y += 5.5 }
         }
       }
     }
@@ -414,87 +391,102 @@ export default function ShartnomalarPage() {
 
     // ─ Spec items table ─
     if (c.spec_items && c.spec_items.length > 0) {
-      if (y > pageHeight - 60) { doc.addPage(); y = margin }
+      if (y > pageHeight - 60) { doc.addPage(); y = MT }
+      doc.setFont('helvetica', 'bold')
       doc.setFontSize(10)
       doc.setTextColor(20, 20, 20)
-      doc.text('SPESIFIKATSIYA', margin, y)
+      doc.text('SPESIFIKATSIYA', ML, y)
       y += 6
 
-      const cols = ['#', 'Nomi', 'Birlik', 'Miqdori', 'Narxi', "QQS%", 'Summa']
-      const colW = [8, 60, 16, 18, 22, 14, 22]
-      const rowH = 6
+      const cols = ['#', 'Nomi', 'Birlik', 'Miqdori', 'Narxi', 'QQS%', 'Summa']
+      const colW = [8, 58, 16, 18, 24, 14, 22]  // jami: 160 — ML=25 + 160 = 185 < 190 (210-20)
+      const rowH = 6.5
 
-      // Header row
-      doc.setFillColor(40, 40, 40)
-      doc.setDrawColor(180, 180, 180)
-      let cx = margin
-      doc.setFontSize(7)
+      doc.setFont('helvetica', 'bold')
+      doc.setFillColor(40, 50, 80)
+      doc.setDrawColor(150, 150, 180)
+      let cx = ML
+      doc.setFontSize(7.5)
       doc.setTextColor(255, 255, 255)
       cols.forEach((col, i) => {
-        doc.setFillColor(60, 60, 60)
         doc.rect(cx, y, colW[i], rowH, 'FD')
-        doc.text(col, cx + 1, y + 4)
+        doc.text(col, cx + 1.5, y + 4.5)
         cx += colW[i]
       })
       y += rowH
 
-      doc.setTextColor(30, 30, 30)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(20, 20, 20)
       let total = 0
       c.spec_items.forEach((item, idx) => {
-        if (y > pageHeight - margin - 10) { doc.addPage(); y = margin }
-        cx = margin
-        doc.setFillColor(idx % 2 === 0 ? 250 : 240, idx % 2 === 0 ? 250 : 240, idx % 2 === 0 ? 250 : 240)
+        if (y > pageHeight - MB - 10) { doc.addPage(); y = MT }
+        cx = ML
+        if (idx % 2 === 0) {
+          doc.setFillColor(248, 249, 255)
+          doc.rect(ML, y, colW.reduce((a, b) => a + b, 0), rowH, 'F')
+        }
         const rowData = [
           String(idx + 1),
-          item.nomi,
-          item.birlik,
+          cyrillicToLatin(item.nomi || ''),
+          cyrillicToLatin(item.birlik || ''),
           String(item.miqdori),
           item.narxi.toLocaleString(),
           item.qqs_foiz === 'siz' ? '-' : `${item.qqs_foiz}%`,
           item.summa.toLocaleString(),
         ]
         rowData.forEach((cell, i) => {
-          doc.setFillColor(idx % 2 === 0 ? 255 : 248, 255, 255)
+          doc.setDrawColor(180, 180, 200)
           doc.rect(cx, y, colW[i], rowH, 'S')
-          doc.text(String(cell).substring(0, Math.floor(colW[i] / 2.2)), cx + 1, y + 4)
+          // Matn ustiga splitTextToSize, birinchi satrini olamiz
+          const cellText = doc.splitTextToSize(cell, colW[i] - 2) as string[]
+          doc.text(cellText[0] || '', cx + 1.5, y + 4.5)
           cx += colW[i]
         })
         total += item.summa || 0
         y += rowH
       })
 
-      // Total row
-      cx = margin
-      doc.setFontSize(8)
-      doc.setTextColor(20, 20, 20)
-      const totalLabel = "Jami:"
-      doc.text(totalLabel, margin + colW[0] + colW[1] + colW[2] + colW[3] + colW[4], y + 4)
-      doc.setFontSize(8)
-      doc.text(total.toLocaleString() + " so'm", margin + colW[0] + colW[1] + colW[2] + colW[3] + colW[4] + colW[5] + 1, y + 4)
+      // Jami satr
+      doc.setFillColor(230, 240, 255)
+      doc.rect(ML, y, colW.reduce((a, b) => a + b, 0), rowH, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8.5)
+      const jamiX = ML + colW[0] + colW[1] + colW[2] + colW[3] + colW[4]
+      doc.text("Jami:", jamiX + 1, y + 4.5)
+      doc.text(total.toLocaleString() + " so'm", jamiX + colW[5] + 1, y + 4.5)
+      doc.setFont('helvetica', 'normal')
       y += rowH + 6
     }
 
-    // ─ Signatures ─
-    if (y > pageHeight - 60) { doc.addPage(); y = margin }
+    // ─ Imzolar ─
+    if (y > pageHeight - 60) { doc.addPage(); y = MT }
+    doc.setFont('helvetica', 'bold')
     doc.setFontSize(9)
-    doc.setTextColor(50, 50, 50)
+    doc.setTextColor(40, 40, 40)
     doc.text('TOMONLARNING IMZOLARI', pageWidth / 2, y, { align: 'center' })
     y += 8
 
-    const leftX = margin
+    const leftX = ML
     const rightX = pageWidth / 2 + 10
 
-    const orgName = c.organizations?.name || '___'
-    const cpName = c.counterparties?.name || '___'
-    const orgDir = c.organizations?.director_name || '___'
-    const cpDir = c.counterparties?.director_name || '___'
+    const sigOrgName = cyrillicToLatin(c.organizations?.name || '___')
+    const sigCpName  = cyrillicToLatin(c.counterparties?.name || '___')
+    const sigOrgDir  = cyrillicToLatin(c.organizations?.director_name || '___')
+    const sigCpDir   = cyrillicToLatin(c.counterparties?.director_name || '___')
 
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
     doc.text('BUYURTMACHI:', leftX, y)
     doc.text('IJROCHI:', rightX, y)
     y += 5
+    doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
-    doc.text(orgName, leftX, y)
-    doc.text(cpName, rightX, y)
+    // Uzun nomlar uchun truncate (40mm ichida)
+    const orgNameShort = doc.splitTextToSize(sigOrgName, 80) as string[]
+    const cpNameShort  = doc.splitTextToSize(sigCpName, 80) as string[]
+    doc.text(orgNameShort[0], leftX, y)
+    doc.text(cpNameShort[0], rightX, y)
     y += 6
 
     // ─ Imzo va muhr rasmlari ─
@@ -510,6 +502,13 @@ export default function ShartnomalarPage() {
         })
       } catch { return null }
     }
+
+    // Rasm formatini data URL dan aniqlash (PNG yoki JPEG)
+    function detectImgFormat(dataUrl: string): 'PNG' | 'JPEG' {
+      return dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg')
+        ? 'JPEG' : 'PNG'
+    }
+
     const signUrl = c.organizations?.signature_url
     const stampUrl = c.organizations?.stamp_url
     const [signData, stampData] = await Promise.all([
@@ -517,25 +516,27 @@ export default function ShartnomalarPage() {
       stampUrl ? loadImg(stampUrl) : Promise.resolve(null),
     ])
 
+    if (y > pageHeight - MB - 25) { doc.addPage(); y = MT }
     const sigY = y
     if (signData) {
-      try { doc.addImage(signData, 'PNG', leftX, sigY, 40, 18) } catch { /* skip */ }
+      try { doc.addImage(signData, detectImgFormat(signData), leftX, sigY, 40, 18) } catch { /* skip */ }
     }
     if (stampData) {
-      try { doc.addImage(stampData, 'PNG', leftX + 10, sigY + 2, 22, 22) } catch { /* skip */ }
+      try { doc.addImage(stampData, detectImgFormat(stampData), leftX + 8, sigY, 24, 24) } catch { /* skip */ }
     }
-    y += 20
-    doc.setDrawColor(100, 100, 100)
-    doc.line(leftX, y, leftX + 60, y)
-    doc.line(rightX, y, rightX + 60, y)
+    y += 22
+    doc.setDrawColor(80, 80, 80)
+    doc.line(leftX, y, leftX + 70, y)
+    doc.line(rightX, y, rightX + 70, y)
     y += 4
     doc.setFontSize(8)
-    doc.setTextColor(50, 50, 50)
-    doc.text(`/ ${orgDir}`, leftX, y)
-    doc.text(`/ ${cpDir}`, rightX, y)
+    doc.setTextColor(40, 40, 40)
+    doc.text(`/ ${sigOrgDir}`, leftX, y)
+    doc.text(`/ ${sigCpDir}`, rightX, y)
     y += 5
-    doc.text('M.O.', leftX + 25, y)
-    doc.text('M.O.', rightX + 25, y)
+    doc.setTextColor(100, 100, 100)
+    doc.text('M.O.', leftX + 30, y)
+    doc.text('M.O.', rightX + 30, y)
 
     // ─ Footer ─
     const totalPages = ((doc.internal as unknown) as { getNumberOfPages(): number }).getNumberOfPages()
@@ -543,8 +544,8 @@ export default function ShartnomalarPage() {
       doc.setPage(i)
       doc.setFontSize(7)
       doc.setTextColor(150, 150, 150)
-      doc.text('Shartnoma.uz', pageWidth / 2, pageHeight - 8, { align: 'center' })
-      doc.text(`${i} / ${totalPages}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
+      doc.text('Shartnoma.uz', pageWidth / 2, pageHeight - 10, { align: 'center' })
+      doc.text(`${i} / ${totalPages}`, pageWidth - MR, pageHeight - 10, { align: 'right' })
     }
 
     doc.save(`shartnoma-${c.contract_number || 'yangi'}.pdf`)

@@ -7,6 +7,7 @@ import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { Modal, ModalActions } from '../_components/Modal'
 import type { Counterparty } from '@/lib/types'
+import { cyrillicToLatin } from '@/lib/downloadUtils'
 
 type SpecItem = {
   nomi: string; birlik: string; miqdori: number; narxi: number
@@ -144,9 +145,10 @@ export default function SpesifikatsiyalarPage() {
   async function generateSpecPDF(spec: Specification) {
     const { jsPDF } = await import('jspdf')
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const pageW = 210, pageH = 297, mL = 15, mR = 15, mT = 15
+    const pageW = 210, pageH = 297, mL = 20, mR = 20, mT = 20, mB = 28
     const cW = pageW - mL - mR
-    const safe = (s: string) => (s || '').replace(/[ʻʼ\u02BC\u2018\u2019]/g, "'").replace(/[\u201C\u201D\u00AB\u00BB]/g, '"').replace(/[\u2013\u2014]/g, '-')
+    // cyrillicToLatin import qilingan — barcha kirill va maxsus belgilarni to'g'ri aylantiradi
+    const safe = (s: string) => cyrillicToLatin(s || '')
 
     const org = activeOrg
     const contract = spec.contracts
@@ -165,6 +167,9 @@ export default function SpesifikatsiyalarPage() {
     const dateLong = `"${dd}" ${MONTHS[mm - 1]} ${yy} y.`
 
     let y = mT
+    function guardSpec(need: number) {
+      if (y + need > pageH - mB) { doc.addPage(); y = mT }
+    }
 
     doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(0, 0, 0)
     doc.text(safe(`SPESIFIKATSIYA No${spec.spec_number}`), pageW / 2, y, { align: 'center' }); y += 7
@@ -211,7 +216,7 @@ export default function SpesifikatsiyalarPage() {
         cx += cols[i]
       })
       y += rowH
-      if (y > pageH - 40) { doc.addPage(); y = mT }
+      guardSpec(rowH + 5)
     })
 
     // Totals
@@ -233,7 +238,7 @@ export default function SpesifikatsiyalarPage() {
 
     // Signatures
     y += 8
-    if (y > pageH - 40) { doc.addPage(); y = mT }
+    if (y > pageH - 50) { doc.addPage(); y = mT }
     const half = cW / 2
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(80, 80, 80)
     doc.text('SOTUVCHI:', mL, y); doc.text('XARIDOR:', mL + half + 5, y); y += 5
@@ -245,8 +250,13 @@ export default function SpesifikatsiyalarPage() {
     doc.text(safe(`Rahbar: _____________ / ${org?.director_name || ''}`), mL, y + 5)
     doc.text(safe(`Rahbar: _____________ / ${cpFull?.director_name || ''}`), mL + half + 5, y + 5)
 
-    doc.setFontSize(8); doc.setTextColor(170, 170, 170)
-    doc.text('Shartnoma.uz', pageW / 2, pageH - 5, { align: 'center' })
+    const totalPages = ((doc.internal as unknown) as { getNumberOfPages(): number }).getNumberOfPages()
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p)
+      doc.setFontSize(7.5); doc.setTextColor(160, 160, 160)
+      doc.text('Shartnoma.uz', pageW / 2, pageH - 10, { align: 'center' })
+      doc.text(`${p} / ${totalPages}`, pageW - mR, pageH - 10, { align: 'right' })
+    }
 
     doc.save(`spec-${spec.spec_number}.pdf`)
   }
