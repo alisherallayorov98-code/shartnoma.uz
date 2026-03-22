@@ -3,12 +3,12 @@
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 
-export function Modal({ title, onClose, children, wide }: {
-  title: string; onClose: () => void; children: React.ReactNode; wide?: boolean
+export function Modal({ title, onClose, children, wide, xl }: {
+  title: string; onClose: () => void; children: React.ReactNode; wide?: boolean; xl?: boolean
 }) {
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className={`bg-gray-900 border border-gray-800 rounded-2xl w-full ${wide ? 'max-w-2xl' : 'max-w-lg'} max-h-[90vh] flex flex-col shadow-2xl`}>
+      <div className={`bg-gray-900 border border-gray-800 rounded-2xl w-full ${xl ? 'max-w-4xl' : wide ? 'max-w-2xl' : 'max-w-lg'} max-h-[90vh] flex flex-col shadow-2xl`}>
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-800 flex-shrink-0">
           <h2 className="text-base font-semibold text-white">{title}</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition text-xl">×</button>

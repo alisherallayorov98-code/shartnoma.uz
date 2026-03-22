@@ -44,6 +44,7 @@ export default function SpesifikatsiyalarPage() {
   const [specItems, setSpecItems] = useState<SpecItem[]>([])
   const [saving, setSaving] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [specCpId, setSpecCpId] = useState('')
 
   const lbl = 'block text-xs text-gray-400 mb-1'
   const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500'
@@ -82,7 +83,7 @@ export default function SpesifikatsiyalarPage() {
     }
     setSaving(false)
     if (specErr) { toast(`${T(t.msg.errorPrefix)}: ${specErr.message}`, 'error'); return }
-    setSpecModal(false); setEditingSpec(null); setSpecForm(emptySpecForm); setSpecItems([])
+    setSpecModal(false); setEditingSpec(null); setSpecForm(emptySpecForm); setSpecItems([]); setSpecCpId('')
     loadSpecs(activeOrg.id)
   }
 
@@ -369,6 +370,7 @@ export default function SpesifikatsiyalarPage() {
           setEditingSpec(null)
           setSpecForm({ ...emptySpecForm, spec_number: nextSpecNumber() })
           setSpecItems([emptySpecItem()])
+          setSpecCpId('')
           setSpecModal(true)
         }} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
           {T(t.specTab.newBtn)}
@@ -436,6 +438,7 @@ export default function SpesifikatsiyalarPage() {
                         <button onClick={() => {
                           setEditingSpec(spec)
                           const cpId = spec.contracts?.counterparty_id || ''
+                          setSpecCpId(cpId)
                           setSpecForm({
                             contract_id: spec.contract_id || '',
                             spec_number: spec.spec_number,
@@ -463,7 +466,7 @@ export default function SpesifikatsiyalarPage() {
 
       {/* Spec modal */}
       {specModal && (
-        <Modal title={editingSpec ? "Spesifikatsiyani tahrirlash" : T(t.specTab.newBtn)} onClose={() => { setSpecModal(false); setEditingSpec(null); setSpecForm(emptySpecForm); setSpecItems([]) }} wide>
+        <Modal title={editingSpec ? "Spesifikatsiyani tahrirlash" : T(t.specTab.newBtn)} onClose={() => { setSpecModal(false); setEditingSpec(null); setSpecForm(emptySpecForm); setSpecItems([]); setSpecCpId('') }} xl>
           <form onSubmit={saveSpec} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -472,21 +475,31 @@ export default function SpesifikatsiyalarPage() {
                   onChange={e => setSpecForm({ ...specForm, spec_number: e.target.value })}/>
               </div>
               <div>
+                <label className={lbl}>Izoh</label>
+                <input className={inp} placeholder="Ixtiyoriy izoh..."
+                  value={specForm.notes} onChange={e => setSpecForm({ ...specForm, notes: e.target.value })}/>
+              </div>
+              <div>
+                <label className={lbl}>Kontragent (ixtiyoriy)</label>
+                <select className={inp} value={specCpId}
+                  onChange={e => { setSpecCpId(e.target.value); setSpecForm(f => ({ ...f, contract_id: '' })) }}>
+                  <option value="">— Kontragentni tanlang —</option>
+                  {cps.filter(cp => contracts.some(c => c.organization_id === activeOrg?.id && c.counterparty_id === cp.id)).map(cp => (
+                    <option key={cp.id} value={cp.id}>{cp.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className={lbl}>Shartnoma (ixtiyoriy)</label>
                 <select className={inp} value={specForm.contract_id}
                   onChange={e => setSpecForm({ ...specForm, contract_id: e.target.value })}>
                   <option value="">— Shartnomani tanlang —</option>
-                  {contracts.filter(c => c.organization_id === activeOrg?.id).map(c => (
+                  {contracts.filter(c => c.organization_id === activeOrg?.id && (!specCpId || c.counterparty_id === specCpId)).map(c => (
                     <option key={c.id} value={c.id}>
                       #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang] || c.contract_type}
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="col-span-2">
-                <label className={lbl}>Izoh</label>
-                <input className={inp} placeholder="Ixtiyoriy izoh..."
-                  value={specForm.notes} onChange={e => setSpecForm({ ...specForm, notes: e.target.value })}/>
               </div>
             </div>
 
@@ -583,7 +596,7 @@ export default function SpesifikatsiyalarPage() {
               </button>
             </div>
 
-            <ModalActions onClose={() => { setSpecModal(false); setEditingSpec(null); setSpecForm(emptySpecForm); setSpecItems([]) }} saving={saving}/>
+            <ModalActions onClose={() => { setSpecModal(false); setEditingSpec(null); setSpecForm(emptySpecForm); setSpecItems([]); setSpecCpId('') }} saving={saving}/>
           </form>
         </Modal>
       )}
