@@ -862,20 +862,21 @@ export default function ShartnomalarPage() {
     }
     const [label1, label2] = partyLabels[c.contract_type] || ['1-TOMON', '2-TOMON']
 
-    // Org details helper
+    // Org details helper — all text bold dark black, no hyperlink coloring
+    const B = { font: F, color: '000000', bold: true }
     function orgCell(title: string, org: { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | null | undefined) {
       const mfoInn = [org?.mfo ? `MFO: ${org.mfo}` : '', org?.inn ? `INN: ${org.inn}` : ''].filter(Boolean).join('   ')
       const details = [
-        new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 24, font: F, color: '000000' })], spacing: { after: 80 } }),
-        new Paragraph({ children: [new TextRun({ text: org?.name || '___', bold: true, size: 22, font: F, color: '000000' })], spacing: { after: 50 } }),
-        ...(org?.address ? [new Paragraph({ children: [new TextRun({ text: `Manzil: ${org.address}`, size: 20, font: F, color: '333333' })], spacing: { after: 40 } })] : []),
-        ...(org?.bank_account ? [new Paragraph({ children: [new TextRun({ text: `H/R: ${org.bank_account}`, size: 20, font: F, color: '333333' })], spacing: { after: 40 } })] : []),
-        ...(org?.bank_name ? [new Paragraph({ children: [new TextRun({ text: `Bank: ${org.bank_name}`, size: 20, font: F, color: '333333' })], spacing: { after: 40 } })] : []),
-        ...(mfoInn ? [new Paragraph({ children: [new TextRun({ text: mfoInn, size: 20, font: F, color: '333333' })], spacing: { after: 40 } })] : []),
-        new Paragraph({ children: [new TextRun({ text: `Rahbar: ${org?.director_name || '___'}`, bold: true, size: 20, font: F, color: '000000' })], spacing: { after: 200 } }),
-        new Paragraph({ children: [new TextRun({ text: '_________________________', size: 22, font: F })], spacing: { after: 30 } }),
-        new Paragraph({ children: [new TextRun({ text: `/ ${org?.director_name || '___'}`, size: 20, font: F, color: '333333' })], spacing: { after: 30 } }),
-        new Paragraph({ children: [new TextRun({ text: 'M.O.', size: 20, font: F, color: '888888' })], spacing: { after: 0 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: title, size: 24 })], spacing: { after: 80 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: org?.name || '___', size: 22 })], spacing: { after: 50 } }),
+        ...(org?.address ? [new Paragraph({ children: [new TextRun({ ...B, text: `Manzil: ${org.address}`, size: 20 })], spacing: { after: 40 } })] : []),
+        ...(org?.bank_account ? [new Paragraph({ children: [new TextRun({ ...B, text: `H/R: ${org.bank_account}`, size: 20 })], spacing: { after: 40 } })] : []),
+        ...(org?.bank_name ? [new Paragraph({ children: [new TextRun({ ...B, text: `Bank: ${org.bank_name}`, size: 20 })], spacing: { after: 40 } })] : []),
+        ...(mfoInn ? [new Paragraph({ children: [new TextRun({ ...B, text: mfoInn, size: 20 })], spacing: { after: 40 } })] : []),
+        new Paragraph({ children: [new TextRun({ ...B, text: `Rahbar: ${org?.director_name || '___'}`, size: 20 })], spacing: { after: 200 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: '_________________________', size: 22 })], spacing: { after: 30 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: `/ ${org?.director_name || '___'}`, size: 20 })], spacing: { after: 30 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: 'M.O.', size: 20 })], spacing: { after: 0 } }),
       ]
       return new TableCell({ borders: cellBorders, margins: { top: 160, bottom: 160, left: 220, right: 220 }, children: details })
     }
