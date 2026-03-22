@@ -18,10 +18,19 @@ export type TemplateData = {
   extra?: Record<string, string>
 }
 
+// "2026-03-22" → "22.03.2026-yil"
+function formatDateUz(dateStr: string | undefined): string {
+  if (!dateStr) return '___'
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  const [y, m, d] = parts
+  return `${d}.${m}.${y}-yil`
+}
+
 function fill(text: string, d: Partial<TemplateData>): string {
   let result = text
     .replace(/\[RAQAM\]/g, d.contract_number || '___')
-    .replace(/\[SANA\]/g, d.contract_date || '___')
+    .replace(/\[SANA\]/g, formatDateUz(d.contract_date))
     .replace(/\[SHAHAR\]/g, d.city || 'Toshkent')
     .replace(/\[BUYURTMACHI\]/g, d.org_name || '_________________')
     .replace(/\[BUYURTMACHI_INN\]/g, d.org_inn || '___')
@@ -692,7 +701,7 @@ export function structureToText(
   lines.push(header.type_name.toUpperCase())
   lines.push(`№ ${header.number}`)
   lines.push('')
-  lines.push(`${header.city} shahri${' '.repeat(40)}"${header.date}"`)
+  lines.push(`${header.city} shahri${' '.repeat(40)}${formatDateUz(header.date)}`)
   lines.push('')
 
   structure.bolimlar.forEach((bolim, bi) => {
