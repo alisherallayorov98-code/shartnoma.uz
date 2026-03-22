@@ -217,33 +217,37 @@ export default function ShartnomalarPage() {
         cp_director: cp?.director_name || '',
         amount,
         amount_text: amount > 0 ? numberToWords(amount, 'uz') + " so'm" : '___',
-        extra: ({
-          ...(contractForm.product_name ? { TOVAR_NOMI: contractForm.product_name } : {}),
-          ...(contractForm.yetkazish_muddat ? { YETKAZISH_MUDDAT: contractForm.yetkazish_muddat } : { YETKAZISH_MUDDAT: '20 (yigirma) ish kuni' }),
+        extra: (() => {
+          const ex: Record<string, string> = {
+            YETKAZISH_MUDDAT: contractForm.yetkazish_muddat || '20 (yigirma) ish kuni',
+            QOLDIQ_QIYMAT: '___',
+          }
+          if (contractForm.product_name) ex.TOVAR_NOMI = contractForm.product_name
           // Agentlik
-          ...(contractForm.xizmat_tavsif ? { AGENT_VAZIFA: contractForm.xizmat_tavsif } : {}),
-          ...(contractForm.qarz_foiz ? { AGENT_FOZ: contractForm.qarz_foiz } : {}),
-          ...(contractForm.yetkazish_joy ? { AGENT_HUDUD: contractForm.yetkazish_joy } : {}),
+          if (contractForm.xizmat_tavsif) ex.AGENT_VAZIFA = contractForm.xizmat_tavsif
+          if (contractForm.qarz_foiz) ex.AGENT_FOZ = contractForm.qarz_foiz
+          if (contractForm.yetkazish_joy) ex.AGENT_HUDUD = contractForm.yetkazish_joy
           // Transport
-          ...(contractForm.ijara_manzil ? { YETKAZISH_JOY: contractForm.ijara_manzil, QABUL_JOY: contractForm.yetkazish_joy || '___' } : {}),
+          if (contractForm.ijara_manzil) {
+            ex.YETKAZISH_JOY = contractForm.ijara_manzil
+            ex.QABUL_JOY = contractForm.yetkazish_joy || '___'
+          }
           // Lizing
-          ...(contractForm.pudrat_obekt ? { LIZING_OBEKT: contractForm.pudrat_obekt } : {}),
-          ...(contractForm.ijara_muddat ? { LIZING_MUDDAT: contractForm.ijara_muddat } : {}),
-          ...(contractForm.oylik_tolov ? { LIZING_FOIZ: contractForm.oylik_tolov } : {}),
-          ...(contractForm.qarz_foiz ? { BOSHLANGICH_BADAL: contractForm.qarz_foiz } : {}),
-          QOLDIQ_QIYMAT: '___',
-          ...(contractForm.asosiy_raqam ? { ASOSIY_RAQAM: contractForm.asosiy_raqam } : {}),
-          ...(contractForm.asosiy_sana ? { ASOSIY_SANA: contractForm.asosiy_sana.split('-').reverse().join('.') + '-yil' } : {}),
-          ...(() => {
-            const parts: string[] = []
-            if (contractForm.yangi_muddat) {
-              const d = contractForm.yangi_muddat.split('-').reverse().join('.') + '-yil'
-              parts.push(`Asosiy shartnomaning amal qilish muddati ${d} gacha uzaytirilsin`)
-            }
-            if (contractForm.ozgartirish) parts.push(contractForm.ozgartirish)
-            return parts.length ? { OZGARTIRISH: parts.join('. ') } : {}
-          })(),
-        }) as Record<string, string>,
+          if (contractForm.pudrat_obekt) ex.LIZING_OBEKT = contractForm.pudrat_obekt
+          if (contractForm.ijara_muddat) ex.LIZING_MUDDAT = contractForm.ijara_muddat
+          if (contractForm.oylik_tolov) ex.LIZING_FOIZ = contractForm.oylik_tolov
+          if (contractForm.qarz_foiz) ex.BOSHLANGICH_BADAL = contractForm.qarz_foiz
+          if (contractForm.asosiy_raqam) ex.ASOSIY_RAQAM = contractForm.asosiy_raqam
+          if (contractForm.asosiy_sana) ex.ASOSIY_SANA = contractForm.asosiy_sana.split('-').reverse().join('.') + '-yil'
+          const parts: string[] = []
+          if (contractForm.yangi_muddat) {
+            const d = contractForm.yangi_muddat.split('-').reverse().join('.') + '-yil'
+            parts.push(`Asosiy shartnomaning amal qilish muddati ${d} gacha uzaytirilsin`)
+          }
+          if (contractForm.ozgartirish) parts.push(contractForm.ozgartirish)
+          if (parts.length) ex.OZGARTIRISH = parts.join('. ')
+          return ex
+        })(),
       })
       content = structureToText(structure, {
         type_name: (CONTRACT_TYPE_NAMES as Record<string, string>)[contractForm.contract_type] || contractForm.contract_type,
