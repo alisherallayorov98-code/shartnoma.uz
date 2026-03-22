@@ -38,34 +38,65 @@ function jsonOnly(lang: string) {
 }
 
 function repairJSON(str: string): string {
-  // Replace literal newlines/carriage-returns inside JSON string values
+  // Escape control characters and fix common issues inside JSON string values
   let result = ''
   let inString = false
   let escaped = false
   for (let i = 0; i < str.length; i++) {
     const ch = str[i]
+    const code = ch.charCodeAt(0)
     if (escaped) { result += ch; escaped = false; continue }
     if (ch === '\\' && inString) { result += ch; escaped = true; continue }
     if (ch === '"') { inString = !inString; result += ch; continue }
-    if (inString && (ch === '\n' || ch === '\r')) { result += '\\n'; continue }
+    if (inString) {
+      if (ch === '\n' || ch === '\r') { result += '\\n'; continue }
+      if (ch === '\t') { result += '\\t'; continue }
+      if (code < 0x20) { result += `\\u${code.toString(16).padStart(4, '0')}`; continue }
+    }
     result += ch
   }
   return result
 }
 
+function closeOpenJSON(str: string): string {
+  // Try to close truncated JSON by counting open braces/brackets
+  const opens: string[] = []
+  let inString = false
+  let escaped = false
+  for (const ch of str) {
+    if (escaped) { escaped = false; continue }
+    if (ch === '\\' && inString) { escaped = true; continue }
+    if (ch === '"') { inString = !inString; continue }
+    if (!inString) {
+      if (ch === '{') opens.push('}')
+      else if (ch === '[') opens.push(']')
+      else if (ch === '}' || ch === ']') opens.pop()
+    }
+  }
+  // Remove trailing incomplete value (comma or open string)
+  let closed = str.trimEnd()
+  if (closed.endsWith(',')) closed = closed.slice(0, -1)
+  return closed + opens.reverse().join('')
+}
+
 function extractJSON(raw: string): unknown {
   let str = raw.trim()
-  // Strip opening and closing code fences (handles long content that breaks capturing regex)
+  // Strip code fences
   if (str.includes('```')) {
     str = str.replace(/^```(?:json)?\s*\r?\n?/, '').replace(/\r?\n?\s*```\s*$/, '').trim()
   }
   // Find outermost JSON object
   const s = str.indexOf('{'), e = str.lastIndexOf('}')
   if (s !== -1 && e !== -1) str = str.slice(s, e + 1)
-  try {
-    return JSON.parse(str)
-  } catch {
-    return JSON.parse(repairJSON(str))
+  // Attempt 1: direct parse
+  try { return JSON.parse(str) } catch { /* continue */ }
+  // Attempt 2: repair control chars
+  try { return JSON.parse(repairJSON(str)) } catch { /* continue */ }
+  // Attempt 3: repair + close truncated JSON
+  try { return JSON.parse(closeOpenJSON(repairJSON(str))) } catch { /* continue */ }
+  // Attempt 4: close truncated only
+  try { return JSON.parse(closeOpenJSON(str)) } catch (e) {
+    throw e
   }
 }
 
@@ -96,7 +127,7 @@ export async function POST(req: NextRequest) {
         ru: `Вы юридический ассистент по законодательству Узбекистана. Проанализируйте договор.\n${jOnly}\n{"baho":"A/B/C/D","umumiy":"...","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"высокий|средний|низкий","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}`,
         oz: `Сиз Ўзбекистон қонунчилигини яхши биладиган юрист ёрдамчисисиз.\n${jOnly}\n{"baho":"A/B/C/D","umumiy":"...","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"юқори|ўрта|паст","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}`,
       }
-      prompt = `${labels[lang] || labels['uz']}\n\nSHARTNOMA:\n${truncate(content)}`
+      prompt = `${labels[lang] || labels['uz']}\n\nSHARTNOMA:\n${truncate(content, 3000)}`
     }
 
     // ── 2. GRAMMATIKA ───────────────────────────────────────
@@ -1124,7 +1155,7 @@ ${jOnly}
       return NextResponse.json({ error: "Noto'g'ri type" }, { status: 400 })
     }
 
-    const longTypes = ['write', 'fix', 'fix_grammar', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi', 'bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati']
+    const longTypes = ['analysis', 'grammar', 'write', 'fix', 'fix_grammar', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi', 'bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati']
     const kotibaTypes = ['bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati']
     const kadrTypes = ['mehnat_shartnoma', 'buyruq', 'ishonchnoma']
     const buxTypes = ['dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi']
