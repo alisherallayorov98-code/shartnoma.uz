@@ -218,6 +218,7 @@ export default function ShartnomalarPage() {
         city: contractForm.city,
         org,
         cp,
+        contract_type: contractForm.contract_type,
       })
     } else {
       // Template-based content: fill all {{PLACEHOLDER}} variables now so DB stores clean text

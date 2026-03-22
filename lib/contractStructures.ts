@@ -125,7 +125,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
 
   oldi_sotdi: (d) => ({ bolimlar: [
     { sarlavha: "SHARTNOMA PREDMETI", bandlar: [
-      { matn: `[BUYURTMACHI] (keyingi o'rinlarda "Xaridor") va [IJROCHI] (keyingi o'rinlarda "Sotuvchi") o'rtasida ushbu oldi-sotdi shartnomasi tuzildi.` },
+      { matn: `[BUYURTMACHI] (keyingi o'rinlarda "Sotuvchi") va [IJROCHI] (keyingi o'rinlarda "Xaridor") o'rtasida ushbu oldi-sotdi shartnomasi tuzildi.` },
       { matn: "Sotuvchi Xaridorga tovarlarni sotish, Xaridor esa ushbu tovarlarni qabul qilib to'lash majburiyatini oladi." },
       { matn: "Tovarning nomi, miqdori va narxi ushbu shartnomaga ilova qilinadigan Spesifikatsiyada ko'rsatiladi." },
     ]},
@@ -396,9 +396,21 @@ export function getStructure(type: string, data: Partial<TemplateData>): Contrac
   }
 }
 
+const TYPE_LABELS: Record<string, [string, string]> = {
+  oldi_sotdi: ['SOTUVCHI', 'XARIDOR'],
+  xizmat:     ['IJROCHI', 'BUYURTMACHI'],
+  ijara:      ['IJARABERUVCHI', 'IJARACHI'],
+  pudrat:     ['PUDRATCHI', 'BUYURTMACHI'],
+  qoshimcha:  ['1-TOMON', '2-TOMON'],
+  moliyaviy:  ['QARZ BERUVCHI', 'QARZ OLUVCHI'],
+  daval:      ['BUYURTMACHI', 'QAYTA ISHLOVCHI'],
+  xalqaro:    ['SELLER', 'BUYER'],
+  boshqa:     ['1-TOMON', '2-TOMON'],
+}
+
 export function structureToText(
   structure: ContractStructure,
-  header: { type_name: string; number: string; date: string; city: string; org: any; cp: any }
+  header: { type_name: string; number: string; date: string; city: string; org: any; cp: any; contract_type?: string }
 ): string {
   const lines: string[] = []
   lines.push(header.type_name.toUpperCase())
@@ -416,10 +428,12 @@ export function structureToText(
     })
   })
 
+  const [orgLabel, cpLabel] = TYPE_LABELS[header.contract_type || 'boshqa'] || ['1-TOMON', '2-TOMON']
+
   lines.push('TOMONLARNING REKVIZITLARI')
   lines.push('')
   if (header.org) {
-    lines.push(`BUYURTMACHI: ${header.org.name}`)
+    lines.push(`${orgLabel}: ${header.org.name}`)
     lines.push(`INN: ${header.org.inn || '—'}`)
     lines.push(`Rahbar: ${header.org.director_name || '—'}`)
     lines.push(`Bank: ${header.org.bank_name || '—'}`)
@@ -428,7 +442,7 @@ export function structureToText(
   }
   lines.push('')
   if (header.cp) {
-    lines.push(`IJROCHI: ${header.cp.name}`)
+    lines.push(`${cpLabel}: ${header.cp.name}`)
     lines.push(`INN: ${header.cp.inn || '—'}`)
     lines.push(`Rahbar: ${header.cp.director_name || '—'}`)
     lines.push(`Bank: ${header.cp.bank_name || '—'}`)
