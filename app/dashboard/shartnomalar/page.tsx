@@ -885,6 +885,145 @@ export default function ShartnomalarPage() {
       })],
     })
 
+    // ── 1-ILOVA: Spec table ──────────────────────────────────────────────────
+    const specItems = (c.spec_items || []) as Array<{
+      nomi: string; birlik: string; miqdori: number; narxi: number
+      qqs_foiz: string; qqs_summa: number; summa: number
+    }>
+
+    const headerBg = '1F3864'
+    const headerCell = (text: string, w: number, align = AlignmentType.CENTER) =>
+      new TableCell({
+        width: { size: w, type: WidthType.PERCENTAGE },
+        shading: { fill: headerBg },
+        borders: cellBorders,
+        margins: { top: 60, bottom: 60, left: 100, right: 100 },
+        children: [new Paragraph({
+          alignment: align,
+          children: [new TextRun({ text, bold: true, size: 18, font: F, color: 'FFFFFF' })],
+        })],
+      })
+
+    const dataCell = (text: string, w: number, align = AlignmentType.CENTER, bold = false, color = '000000') =>
+      new TableCell({
+        width: { size: w, type: WidthType.PERCENTAGE },
+        borders: cellBorders,
+        margins: { top: 50, bottom: 50, left: 100, right: 100 },
+        children: [new Paragraph({
+          alignment: align,
+          children: [new TextRun({ text, bold, size: 20, font: F, color })],
+        })],
+      })
+
+    const specSection = specItems.length > 0 ? [
+      // Page break before appendix
+      new Paragraph({ pageBreakBefore: true, text: '' }),
+      // Appendix header
+      new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        spacing: { after: 40 },
+        children: [new TextRun({ text: '1-ILOVA', bold: true, size: 22, font: F })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        spacing: { after: 40 },
+        children: [new TextRun({ text: `№${c.contract_number}-sonli shartnomaga`, size: 20, font: F })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        spacing: { after: 200 },
+        children: [new TextRun({ text: `${c.contract_date} dan`, size: 20, font: F })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 0, after: 200 },
+        children: [new TextRun({ text: 'NARXNI KELISHISH PROTOKOLI', bold: true, size: 26, font: F, underline: {} })],
+      }),
+      // Spec table
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          // Header row
+          new TableRow({
+            tableHeader: true,
+            children: [
+              headerCell('№', 4),
+              headerCell('Tovarlar (ish, xizmatlar) nomi', 26, AlignmentType.LEFT),
+              headerCell("O'lchov birligi", 9),
+              headerCell('Miqdori', 7),
+              headerCell('Narxi (so\'m)', 12),
+              headerCell('Yetkazib berish qiymati', 13),
+              headerCell('QQS stavkasi', 9),
+              headerCell('QQS summasi', 10),
+              headerCell('QQS bilan jami', 10),
+            ],
+          }),
+          // Data rows
+          ...specItems.map((item, i) => {
+            const base = item.miqdori * item.narxi
+            const fmt = (n: number) => n.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            const qqs = item.qqs_foiz === 'siz' ? 'QQSsiz' : item.qqs_foiz + '%'
+            return new TableRow({
+              children: [
+                dataCell(String(i + 1), 4),
+                dataCell(item.nomi || '—', 26, AlignmentType.LEFT),
+                dataCell(item.birlik || 'dona', 9),
+                dataCell(String(item.miqdori), 7, AlignmentType.RIGHT),
+                dataCell(fmt(item.narxi), 12, AlignmentType.RIGHT),
+                dataCell(fmt(base), 13, AlignmentType.RIGHT),
+                dataCell(qqs, 9),
+                dataCell(fmt(item.qqs_summa), 10, AlignmentType.RIGHT),
+                dataCell(fmt(item.summa), 10, AlignmentType.RIGHT, true, 'CC0000'),
+              ],
+            })
+          }),
+          // Total row
+          (() => {
+            const totalBase = specItems.reduce((s, i) => s + i.miqdori * i.narxi, 0)
+            const totalQqs = specItems.reduce((s, i) => s + i.qqs_summa, 0)
+            const totalSum = specItems.reduce((s, i) => s + i.summa, 0)
+            const fmt = (n: number) => n.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            return new TableRow({
+              children: [
+                new TableCell({
+                  columnSpan: 5,
+                  borders: cellBorders,
+                  shading: { fill: 'F2F2F2' },
+                  margins: { top: 60, bottom: 60, left: 100, right: 100 },
+                  children: [new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [new TextRun({ text: 'JAMI:', bold: true, size: 22, font: F })],
+                  })],
+                }),
+                dataCell(fmt(totalBase), 13, AlignmentType.RIGHT, true),
+                dataCell('', 9),
+                dataCell(fmt(totalQqs), 10, AlignmentType.RIGHT, true),
+                dataCell(fmt(totalSum), 10, AlignmentType.RIGHT, true, 'CC0000'),
+              ],
+            })
+          })(),
+        ],
+      }),
+      // Total in words
+      new Paragraph({
+        spacing: { before: 120, after: 80 },
+        children: [new TextRun({
+          text: `Jami so'z bilan: ${numberToWords(Math.round(specItems.reduce((s, i) => s + i.summa, 0)), 'uz')} so'm`,
+          bold: true, size: 22, font: F,
+        })],
+      }),
+      new Paragraph({
+        spacing: { after: 240 },
+        children: [new TextRun({
+          text: "Ushbu Protokol Shartnomaning ajralmas qismi hisoblanadi va ikki nusxada tuzilgan.",
+          size: 20, font: F, italics: true,
+        })],
+      }),
+      // Signature table for appendix
+      new Paragraph({ text: '', spacing: { after: 240 } }),
+      sigTable,
+    ] : []
+
     const doc = new Document({
       sections: [{
         properties: {
@@ -912,6 +1051,8 @@ export default function ShartnomalarPage() {
           new Paragraph({ text: '', spacing: { after: 480 } }),
           // Signature table (bordered)
           sigTable,
+          // 1-ILOVA: spec table (if exists)
+          ...specSection,
         ],
       }],
     })
