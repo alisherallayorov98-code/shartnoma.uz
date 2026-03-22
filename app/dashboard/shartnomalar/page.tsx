@@ -217,7 +217,7 @@ export default function ShartnomalarPage() {
         cp_director: cp?.director_name || '',
         amount,
         amount_text: amount > 0 ? numberToWords(amount, 'uz') + " so'm" : '___',
-        extra: {
+        extra: ({
           ...(contractForm.product_name ? { TOVAR_NOMI: contractForm.product_name } : {}),
           ...(contractForm.yetkazish_muddat ? { YETKAZISH_MUDDAT: contractForm.yetkazish_muddat } : { YETKAZISH_MUDDAT: '20 (yigirma) ish kuni' }),
           // Agentlik
@@ -243,7 +243,7 @@ export default function ShartnomalarPage() {
             if (contractForm.ozgartirish) parts.push(contractForm.ozgartirish)
             return parts.length ? { OZGARTIRISH: parts.join('. ') } : {}
           })(),
-        },
+        }) as Record<string, string>,
       })
       content = structureToText(structure, {
         type_name: (CONTRACT_TYPE_NAMES as Record<string, string>)[contractForm.contract_type] || contractForm.contract_type,
@@ -898,7 +898,7 @@ export default function ShartnomalarPage() {
     }>
 
     const headerBg = '1F3864'
-    const headerCell = (text: string, w: number, align = AlignmentType.CENTER) =>
+    const headerCell = (text: string, w: number, align: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.CENTER) =>
       new TableCell({
         width: { size: w, type: WidthType.PERCENTAGE },
         shading: { fill: headerBg },
@@ -910,7 +910,7 @@ export default function ShartnomalarPage() {
         })],
       })
 
-    const dataCell = (text: string, w: number, align = AlignmentType.CENTER, bold = false, color = '000000') =>
+    const dataCell = (text: string, w: number, align: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.CENTER, bold = false, color = '000000') =>
       new TableCell({
         width: { size: w, type: WidthType.PERCENTAGE },
         borders: cellBorders,
