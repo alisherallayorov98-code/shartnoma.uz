@@ -515,7 +515,7 @@ export default function ContractModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-3xl max-h-[95vh] flex flex-col shadow-2xl">
+      <div className={`bg-gray-900 border border-gray-800 rounded-2xl w-full max-h-[95vh] flex flex-col shadow-2xl ${step === 4 ? 'max-w-6xl' : 'max-w-3xl'}`}>
 
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-800 flex-shrink-0">
