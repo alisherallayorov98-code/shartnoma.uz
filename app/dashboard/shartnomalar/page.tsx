@@ -109,7 +109,7 @@ export default function ShartnomalarPage() {
 
   // AI state
   const [aiContract, setAiContract] = useState<Contract | null>(null)
-  const [aiResult, setAiResult] = useState('')
+  const [aiResult, setAiResult] = useState<unknown>(null)
   const [aiError, setAiError] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiTab, setAiTab] = useState<'tahlil' | 'grammatika'>('tahlil')
@@ -894,7 +894,7 @@ export default function ShartnomalarPage() {
   async function runAiAnalysis(c: Contract, type: 'tahlil' | 'grammatika') {
     setAiContract(c)
     setAiTab(type)
-    setAiResult('')
+    setAiResult(null)
     setAiError('')
     setAiLoading(true)
     setAiModal(true)
@@ -907,7 +907,7 @@ export default function ShartnomalarPage() {
       })
       const data = await res.json()
       if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
-      setAiResult(data.result || data.message || 'Natija yo\'q')
+      setAiResult(data.result ?? null)
     } catch (err) {
       setAiError(err instanceof Error ? err.message : 'Xatolik yuz berdi')
     } finally {
