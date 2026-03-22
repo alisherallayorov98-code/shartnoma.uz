@@ -3,6 +3,8 @@
 import { t, tr, type Lang } from '@/lib/i18n'
 import type { Contract } from '@/lib/types'
 
+type FixResult = { shartnoma_yangi: string; o_zgartirishlar: string[] }
+
 interface AiModalProps {
   aiContract: Contract | null
   aiLoading: boolean
@@ -12,6 +14,11 @@ interface AiModalProps {
   onTabChange: (tab: 'tahlil' | 'grammatika') => void
   onClose: () => void
   onRunAiAnalysis: (c: Contract, type: 'tahlil' | 'grammatika') => void
+  fixLoading: boolean
+  fixResult: FixResult | null
+  fixSaving: boolean
+  onFix: () => void
+  onSaveFixed: () => void
   lang: Lang
 }
 
@@ -38,12 +45,17 @@ const BAHO_COLOR: Record<string, string> = {
   D: 'text-red-400 bg-red-900/40 border-red-700/50',
 }
 const DARAJA_COLOR: Record<string, string> = {
-  yuqori: 'text-red-300',  высокий: 'text-red-300',
+  yuqori: 'text-red-300', высокий: 'text-red-300',
   "o'rta": 'text-yellow-300', средний: 'text-yellow-300',
   past: 'text-green-300', низкий: 'text-green-300',
 }
 
-function AnalysisView({ result }: { result: AnalysisResult }) {
+function AnalysisView({ result, onFix, fixLoading, hasIssues }: {
+  result: AnalysisResult
+  onFix: () => void
+  fixLoading: boolean
+  hasIssues: boolean
+}) {
   const baho = result.baho || ''
   return (
     <div className="space-y-4">
@@ -111,6 +123,26 @@ function AnalysisView({ result }: { result: AnalysisResult }) {
           </ul>
         </div>
       )}
+
+      {/* Fix button */}
+      {hasIssues && (
+        <div className="pt-2 border-t border-gray-800">
+          <button
+            onClick={onFix}
+            disabled={fixLoading}
+            className="w-full flex items-center justify-center gap-2 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 disabled:text-gray-500 text-white py-2.5 rounded-xl text-sm font-semibold transition"
+          >
+            {fixLoading ? (
+              <>
+                <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                AI to&apos;g&apos;irlamoqda...
+              </>
+            ) : (
+              <>✦ Kamchiliklarni AI bilan to&apos;g&apos;irlash</>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -153,19 +185,78 @@ function GrammarView({ result }: { result: GrammarResult }) {
   )
 }
 
+function FixView({ result, onSave, saving }: { result: FixResult; onSave: () => void; saving: boolean }) {
+  return (
+    <div className="space-y-4">
+      {/* Changes list */}
+      {result.o_zgartirishlar.length > 0 && (
+        <div className="bg-emerald-900/20 border border-emerald-700/30 rounded-xl p-4">
+          <p className="text-xs text-emerald-400 font-semibold mb-2">✓ Kiritilgan o&apos;zgarishlar ({result.o_zgartirishlar.length} ta)</p>
+          <ul className="space-y-1">
+            {result.o_zgartirishlar.map((item, i) => (
+              <li key={i} className="text-xs text-gray-300 flex gap-2">
+                <span className="text-emerald-500 flex-shrink-0">{i + 1}.</span>{item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Fixed contract preview */}
+      <div>
+        <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">To&apos;g&apos;irlangan shartnoma matni</p>
+        <div className="bg-white text-gray-900 rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap font-serif max-h-64 overflow-y-auto shadow-inner border border-gray-200">
+          {result.shartnoma_yangi}
+        </div>
+      </div>
+
+      {/* Save button */}
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className="w-full flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-700 disabled:text-gray-500 text-white py-3 rounded-xl text-sm font-bold transition"
+      >
+        {saving ? (
+          <>
+            <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            Saqlanmoqda...
+          </>
+        ) : (
+          '✓ Shartnomani yangilash va saqlash'
+        )}
+      </button>
+    </div>
+  )
+}
+
 export default function AiModal({
   aiContract, aiLoading, aiError, aiResult,
-  aiTab, onTabChange, onClose, onRunAiAnalysis, lang,
+  aiTab, onTabChange, onClose, onRunAiAnalysis,
+  fixLoading, fixResult, fixSaving, onFix, onSaveFixed,
+  lang,
 }: AiModalProps) {
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
 
   function renderResult() {
     if (!aiResult || typeof aiResult !== 'object') return null
     const r = aiResult as Record<string, unknown>
+
+    // Show fix result if available
+    if (fixResult) {
+      return <FixView result={fixResult} onSave={onSaveFixed} saving={fixSaving} />
+    }
+
     if (aiTab === 'grammatika' || 'xatolar' in r || 'xatolar_soni' in r) {
       return <GrammarView result={r as GrammarResult} />
     }
-    return <AnalysisView result={r as AnalysisResult} />
+
+    const ar = r as AnalysisResult
+    const hasIssues = !!(
+      (ar.zaif_tomonlar?.length) ||
+      (ar.yuridik_xatarlar?.length) ||
+      (ar.tavsiyalar?.length)
+    )
+    return <AnalysisView result={ar} onFix={onFix} fixLoading={fixLoading} hasIssues={hasIssues} />
   }
 
   return (
@@ -174,28 +265,41 @@ export default function AiModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
           <h2 className="text-base font-semibold text-white flex items-center gap-2">
-            <span className="text-purple-400">✦</span> AI Tahlil
+            <span className="text-purple-400">✦</span>
+            {fixResult ? 'To\'g\'irlangan shartnoma' : 'AI Tahlil'}
           </h2>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition text-xl">
-            ×
-          </button>
+          <div className="flex items-center gap-2">
+            {fixResult && (
+              <button
+                onClick={() => { /* go back */ onRunAiAnalysis(aiContract!, aiTab) }}
+                className="text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition"
+              >
+                ← Tahlilga qaytish
+              </button>
+            )}
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition text-xl">
+              ×
+            </button>
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-800 flex-shrink-0">
-          <button
-            onClick={() => { onTabChange('tahlil'); if (aiContract) onRunAiAnalysis(aiContract, 'tahlil') }}
-            className={`flex-1 py-2.5 text-sm font-medium transition ${aiTab === 'tahlil' ? 'text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
-          >
-            Shartnoma tahlili
-          </button>
-          <button
-            onClick={() => { onTabChange('grammatika'); if (aiContract) onRunAiAnalysis(aiContract, 'grammatika') }}
-            className={`flex-1 py-2.5 text-sm font-medium transition ${aiTab === 'grammatika' ? 'text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
-          >
-            Grammatika tekshirish
-          </button>
-        </div>
+        {/* Tabs — hide when showing fix result */}
+        {!fixResult && (
+          <div className="flex border-b border-gray-800 flex-shrink-0">
+            <button
+              onClick={() => { onTabChange('tahlil'); if (aiContract) onRunAiAnalysis(aiContract, 'tahlil') }}
+              className={`flex-1 py-2.5 text-sm font-medium transition ${aiTab === 'tahlil' ? 'text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
+            >
+              Shartnoma tahlili
+            </button>
+            <button
+              onClick={() => { onTabChange('grammatika'); if (aiContract) onRunAiAnalysis(aiContract, 'grammatika') }}
+              className={`flex-1 py-2.5 text-sm font-medium transition ${aiTab === 'grammatika' ? 'text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
+            >
+              Grammatika tekshirish
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         <div className="overflow-y-auto flex-1 p-6">
@@ -216,14 +320,16 @@ export default function AiModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-800 flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="w-full border border-gray-700 text-gray-300 py-2 rounded-lg text-sm hover:bg-gray-800 transition"
-          >
-            {T(t.btn.close)}
-          </button>
-        </div>
+        {!fixResult && (
+          <div className="px-6 py-4 border-t border-gray-800 flex-shrink-0">
+            <button
+              onClick={onClose}
+              className="w-full border border-gray-700 text-gray-300 py-2 rounded-lg text-sm hover:bg-gray-800 transition"
+            >
+              {T(t.btn.close)}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

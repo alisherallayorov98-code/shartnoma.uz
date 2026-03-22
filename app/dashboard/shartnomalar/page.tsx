@@ -114,6 +114,9 @@ export default function ShartnomalarPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiTab, setAiTab] = useState<'tahlil' | 'grammatika'>('tahlil')
   const [aiModal, setAiModal] = useState(false)
+  const [fixLoading, setFixLoading] = useState(false)
+  const [fixResult, setFixResult] = useState<{ shartnoma_yangi: string; o_zgartirishlar: string[] } | null>(null)
+  const [fixSaving, setFixSaving] = useState(false)
 
   // ── Load custom templates ──────────────────────────────────────────────────
   useEffect(() => {
@@ -896,6 +899,7 @@ export default function ShartnomalarPage() {
     setAiTab(type)
     setAiResult(null)
     setAiError('')
+    setFixResult(null)
     setAiLoading(true)
     setAiModal(true)
     try {
@@ -913,6 +917,49 @@ export default function ShartnomalarPage() {
     } finally {
       setAiLoading(false)
     }
+  }
+
+  // ── Fix contract via AI ─────────────────────────────────────────────────────
+  async function fixContract() {
+    if (!aiContract) return
+    setFixLoading(true)
+    setFixResult(null)
+    try {
+      const res = await fetchAi({
+        type: 'fix',
+        content: aiContract.content || '',
+        analysis: aiResult,
+        lang,
+      })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
+      const r = data.result as { shartnoma_yangi?: string; o_zgartirishlar?: string[] }
+      if (!r?.shartnoma_yangi) throw new Error("AI bo'sh natija qaytardi")
+      setFixResult({
+        shartnoma_yangi: r.shartnoma_yangi,
+        o_zgartirishlar: r.o_zgartirishlar || [],
+      })
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Xatolik yuz berdi', 'error')
+    } finally {
+      setFixLoading(false)
+    }
+  }
+
+  async function saveFixedContract() {
+    if (!aiContract || !fixResult) return
+    setFixSaving(true)
+    const { error } = await supabase
+      .from('contracts')
+      .update({ content: fixResult.shartnoma_yangi })
+      .eq('id', aiContract.id)
+    setFixSaving(false)
+    if (error) { toast(`Saqlashda xato: ${error.message}`, 'error'); return }
+    logAudit('update', 'contracts', aiContract.id, { action: 'ai_fix', changes_count: fixResult.o_zgartirishlar.length })
+    toast("Shartnoma muvaffaqiyatli yangilandi", 'success')
+    reloadContracts()
+    setAiModal(false)
+    setFixResult(null)
   }
 
   // ── Filtered contracts ─────────────────────────────────────────────────────
@@ -1252,8 +1299,13 @@ export default function ShartnomalarPage() {
           aiResult={aiResult}
           aiTab={aiTab}
           onTabChange={setAiTab}
-          onClose={() => setAiModal(false)}
+          onClose={() => { setAiModal(false); setFixResult(null) }}
           onRunAiAnalysis={runAiAnalysis}
+          fixLoading={fixLoading}
+          fixResult={fixResult}
+          fixSaving={fixSaving}
+          onFix={fixContract}
+          onSaveFixed={saveFixedContract}
           lang={lang}
         />
       )}
