@@ -209,7 +209,7 @@ export default function ShartnomalarPage() {
         cp_inn: cp?.inn || '',
         cp_director: cp?.director_name || '',
         amount,
-        amount_text: numberToWords(amount, 'uz') + " so'm",
+        amount_text: amount > 0 ? numberToWords(amount, 'uz') + " so'm" : '___',
       })
       content = structureToText(structure, {
         type_name: (CONTRACT_TYPE_NAMES as Record<string, string>)[contractForm.contract_type] || contractForm.contract_type,

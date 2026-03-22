@@ -29,8 +29,8 @@ function fill(text: string, d: Partial<TemplateData>): string {
     .replace(/\[IJROCHI\]/g, d.cp_name || '_________________')
     .replace(/\[IJROCHI_INN\]/g, d.cp_inn || '___')
     .replace(/\[IJROCHI_RAHBAR\]/g, d.cp_director || '___')
-    .replace(/\[SUMMA\]/g, d.amount?.toLocaleString() || '___')
-    .replace(/\[SUMMA_MATN\]/g, d.amount_text || '___')
+    .replace(/\[SUMMA\]/g, d.amount ? d.amount.toLocaleString('uz-UZ') : '___')
+    .replace(/\[SUMMA_MATN\]/g, (d.amount && d.amount_text) ? d.amount_text : '___')
   if (d.extra) {
     for (const [key, value] of Object.entries(d.extra)) {
       if (value) result = result.replace(new RegExp(`\\[${key.toUpperCase()}\\]`, 'g'), value)
