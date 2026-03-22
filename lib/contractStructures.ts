@@ -189,7 +189,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
       { matn: "Yetkazib berish muddatlari buzilganda, Sotuvchi Xaridorga yetkazib berilmagan Tovar qiymatidan har bir kechikkan kun uchun 0,5 (nol butun besh) foiz miqdorida penya to'laydi, lekin penya bajarilmagan majburiyat hajmining 50 (ellik) foizidan oshmasligi kerak." },
       { matn: "Xaridorning Tovar sifati bo'yicha pretenziyalari Shartnomaning 2.9-bandiga muvofiq mulk huquqi Xaridorga o'tguniga qadar qabul qilinadi." },
       { matn: "To'lov muddatlari buzilganda, Xaridor Sotuvchiga muddati o'tgan to'lov summasidan har bir kechikkan kun uchun 0,5 (nol butun besh) foiz miqdorida penya to'laydi, lekin penya bajarilmagan majburiyat hajmining 50 (ellik) foizidan oshmasligi kerak." },
-      { matn: "Tomonlardan biri Shartnomani bajarmaganligi sababli boshqa tomon ko'rgan haqiqiy zararni, shu jumladan boy berilgan foyda (упущенная выгода) va foydani qoplashi shart, bu penyani to'lashdan qat'i nazar amal qiladi." },
+      { matn: "Tomonlardan biri Shartnomani bajarmaganligi sababli boshqa tomon ko'rgan haqiqiy zararni, shu jumladan boy berilgan foyda va boshqa yo'qotishlarni qoplashi shart; bu majburiyat penyani to'lashdan qat'i nazar amal qiladi." },
     ]},
 
     { sarlavha: "FORS-MAJOR", bandlar: [
@@ -302,7 +302,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "IJARA MUDDATI", bandlar: [
-      { matn: `Ijara muddati [SUMMA_MATN] — Tomonlar qo'l qo'ygan Topshirish-qabul qilish akti sanasidan boshlanadi. Ijara oxiri ushbu Shartnomada yoki qo'shimcha kelishuvda ko'rsatilgan sana hisoblanadi.` },
+      { matn: "Ijara muddati ___ — Tomonlar qo'l qo'ygan Topshirish-qabul qilish akti sanasidan boshlanadi. Ijara oxiri ushbu Shartnomada yoki qo'shimcha kelishuvda ko'rsatilgan sana hisoblanadi." },
       { matn: "Ijara muddati tugagandan so'ng Tomonlar yozma kelishuvga asosan Shartnomani uzaytirishi mumkin. Agar muddati tugashidan kamida 30 (o'ttiz) kun oldin hech biri tugatish haqida yozma xabar bermasa, Shartnoma xuddi shunday muddatga uzaytirilgan hisoblanadi." },
       { matn: "Ijara muddati 1 (bir) yildan ortiq bo'lsa, Shartnoma O'zbekiston Respublikasining amaldagi qonunchiligiga muvofiq davlat ro'yxatidan o'tkazilishi shart; o'tkazilmagan taqdirda Shartnoma kuchga kirmagan hisoblanadi." },
     ]},
