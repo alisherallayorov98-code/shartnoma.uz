@@ -31,6 +31,9 @@ const CONTRACT_TYPES_I18N: Record<string, Record<Lang, string>> = {
   qoshimcha:  { uz: "Qo'shimcha",          oz: 'Қўшимча',             ru: 'Дополнительный' },
   moliyaviy:  { uz: 'Moliyaviy yordam',    oz: 'Молиявий ёрдам',      ru: 'Финансовая помощь' },
   daval:      { uz: 'Daval',               oz: 'Давал',               ru: 'Давальческий' },
+  agentlik:   { uz: 'Agentlik',            oz: 'Агентлик',            ru: 'Агентский' },
+  transport:  { uz: 'Transport',           oz: 'Транспорт',           ru: 'Транспортный' },
+  lizing:     { uz: 'Lizing',             oz: 'Лизинг',              ru: 'Лизинг' },
   xalqaro:    { uz: 'Xalqaro',             oz: 'Халқаро',             ru: 'Международный' },
   boshqa:     { uz: 'Boshqa',              oz: 'Бошқа',               ru: 'Другой' },
 }
@@ -58,6 +61,9 @@ const TYPE_COLORS: Record<string, string> = {
   qoshimcha:  'bg-gray-700 text-gray-300',
   moliyaviy:  'bg-yellow-900/50 text-yellow-300',
   daval:      'bg-cyan-900/50 text-cyan-300',
+  agentlik:   'bg-rose-900/50 text-rose-300',
+  transport:  'bg-slate-600/50 text-slate-300',
+  lizing:     'bg-amber-900/50 text-amber-300',
   xalqaro:    'bg-indigo-900/50 text-indigo-300',
   boshqa:     'bg-pink-900/50 text-pink-300',
 }
@@ -219,7 +225,7 @@ export default function ShartnomalarPage() {
           ...(contractForm.qarz_foiz ? { AGENT_FOZ: contractForm.qarz_foiz } : {}),
           ...(contractForm.yetkazish_joy ? { AGENT_HUDUD: contractForm.yetkazish_joy } : {}),
           // Transport
-          ...(contractForm.ijara_manzil ? { YETKAZISH_JOY: contractForm.yetkazish_joy || '___', QABUL_JOY: contractForm.ijara_manzil } : {}),
+          ...(contractForm.ijara_manzil ? { YETKAZISH_JOY: contractForm.ijara_manzil, QABUL_JOY: contractForm.yetkazish_joy || '___' } : {}),
           // Lizing
           ...(contractForm.pudrat_obekt ? { LIZING_OBEKT: contractForm.pudrat_obekt } : {}),
           ...(contractForm.ijara_muddat ? { LIZING_MUDDAT: contractForm.ijara_muddat } : {}),
