@@ -14,6 +14,7 @@ import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
 
 export type SpecItem = {
   nomi: string
+  shtrix_kodi: string
   birlik: string
   miqdori: number
   narxi: number
@@ -213,7 +214,8 @@ export default function ContractModal({
   // ─── Spec helpers ──────────────────────────────────────────────────────────
 
   function addSpecItem() {
-    const item: SpecItem = { nomi: '', birlik: 'dona', miqdori: 1, narxi: 0, qqs_foiz: 'siz', qqs_summa: 0, summa: 0 }
+    const lastQqs = form.spec_items.at(-1)?.qqs_foiz ?? 'siz'
+    const item: SpecItem = { nomi: '', shtrix_kodi: '', birlik: 'dona', miqdori: 1, narxi: 0, qqs_foiz: lastQqs, qqs_summa: 0, summa: 0 }
     setForm(f => ({ ...f, spec_items: [...f.spec_items, item] }))
   }
 
@@ -221,20 +223,25 @@ export default function ContractModal({
     setForm(f => ({ ...f, spec_items: f.spec_items.filter((_, idx) => idx !== i) }))
   }
 
+  function calcItem(item: SpecItem): SpecItem {
+    const base = (item.miqdori || 0) * (item.narxi || 0)
+    let qqs = 0
+    if (item.qqs_foiz === '12') qqs = base * 0.12
+    else if (item.qqs_foiz === '15') qqs = base * 0.15
+    else if (item.qqs_foiz === '0') qqs = 0
+    return { ...item, qqs_summa: Math.round(qqs), summa: Math.round(base + qqs) }
+  }
+
   function updateSpecItem(i: number, key: keyof SpecItem, val: string | number) {
     setForm(f => {
-      const items = [...f.spec_items]
-      const item = { ...items[i], [key]: val }
-      // recalculate
-      const base = (item.miqdori || 0) * (item.narxi || 0)
-      let qqs = 0
-      if (item.qqs_foiz === '12') qqs = base * 0.12
-      else if (item.qqs_foiz === '15') qqs = base * 0.15
-      else if (item.qqs_foiz === '0') qqs = 0
-      item.qqs_summa = Math.round(qqs)
-      item.summa = base + item.qqs_summa
-      items[i] = item
-      // update total amount
+      let items = [...f.spec_items]
+      // "all" — apply QQS rate to every row
+      if (key === 'qqs_foiz' && val === 'all') {
+        items = items.map(it => calcItem({ ...it, qqs_foiz: items[i].qqs_foiz }))
+        const total = items.reduce((s, it) => s + it.summa, 0)
+        return { ...f, spec_items: items, amount: String(total) }
+      }
+      items[i] = calcItem({ ...items[i], [key]: val })
       const total = items.reduce((s, it) => s + it.summa, 0)
       return { ...f, spec_items: items, amount: String(total) }
     })
@@ -1079,78 +1086,78 @@ export default function ContractModal({
 
                 {form.spec_items.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
+                    <table className="w-full text-xs border border-gray-700 rounded-lg overflow-hidden">
                       <thead>
-                        <tr className="text-gray-500 border-b border-gray-700">
-                          <th className="text-left pb-2 pr-2 min-w-[120px]">Nomi</th>
-                          <th className="text-left pb-2 pr-2 w-24">Birlik</th>
-                          <th className="text-right pb-2 pr-2 w-20">Miqdor</th>
-                          <th className="text-right pb-2 pr-2 w-24">Narxi</th>
-                          <th className="text-center pb-2 pr-2 w-20">QQS%</th>
-                          <th className="text-right pb-2 pr-2 w-24">QQS summa</th>
-                          <th className="text-right pb-2 w-28">Jami</th>
+                        <tr className="bg-blue-900/40 text-blue-300 border-b border-gray-700">
+                          <th className="text-left py-2 px-2 min-w-[140px]">Mahsulot yoki xizmatga izoh*</th>
+                          <th className="text-left py-2 px-2 w-24">Shtrix kod</th>
+                          <th className="text-left py-2 px-2 w-20">O'lchov birligi*</th>
+                          <th className="text-right py-2 px-2 w-16">Soni</th>
+                          <th className="text-right py-2 px-2 w-24">Narx*</th>
+                          <th className="text-right py-2 px-2 w-28">Yetkazib berish narxi*</th>
+                          <th className="text-center py-2 px-2 w-24">QQS, %</th>
+                          <th className="text-right py-2 px-2 w-24">QQS, Miqdor*</th>
+                          <th className="text-right py-2 px-2 w-28">Jami*</th>
                           <th className="w-6"></th>
                         </tr>
                       </thead>
-                      <tbody className="space-y-1">
-                        {form.spec_items.map((item, i) => (
-                          <tr key={i} className="border-b border-gray-800">
-                            <td className="py-1 pr-2">
-                              <input
-                                value={item.nomi}
-                                onChange={e => updateSpecItem(i, 'nomi', e.target.value)}
-                                className={inp2}
-                                placeholder="Nomi"
-                              />
-                            </td>
-                            <td className="py-1 pr-2">
-                              <BirlikPicker value={item.birlik} onChange={v => updateSpecItem(i, 'birlik', v)} />
-                            </td>
-                            <td className="py-1 pr-2">
-                              <input
-                                type="number"
-                                value={item.miqdori}
-                                onChange={e => updateSpecItem(i, 'miqdori', parseFloat(e.target.value) || 0)}
-                                className={inp2 + ' text-right'}
-                                min={0}
-                              />
-                            </td>
-                            <td className="py-1 pr-2">
-                              <input
-                                type="number"
-                                value={item.narxi}
-                                onChange={e => updateSpecItem(i, 'narxi', parseFloat(e.target.value) || 0)}
-                                className={inp2 + ' text-right'}
-                                min={0}
-                              />
-                            </td>
-                            <td className="py-1 pr-2">
-                              <select
-                                value={item.qqs_foiz}
-                                onChange={e => updateSpecItem(i, 'qqs_foiz', e.target.value)}
-                                className={inp2 + ' text-center'}
-                              >
-                                <option value="siz">QQSsiz</option>
-                                <option value="0">0%</option>
-                                <option value="12">12%</option>
-                                <option value="15">15%</option>
-                              </select>
-                            </td>
-                            <td className="py-1 pr-2 text-right text-gray-400">
-                              {item.qqs_summa.toLocaleString()}
-                            </td>
-                            <td className="py-1 text-right font-medium text-white">
-                              {item.summa.toLocaleString()}
-                            </td>
-                            <td className="py-1 pl-1">
-                              <button type="button" onClick={() => removeSpecItem(i)} className="text-red-400 hover:text-red-300 w-5 h-5 flex items-center justify-center">
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                      <tbody>
+                        {form.spec_items.map((item, i) => {
+                          const base = (item.miqdori || 0) * (item.narxi || 0)
+                          return (
+                            <tr key={i} className="border-b border-gray-800 hover:bg-gray-800/30">
+                              <td className="py-1 px-2">
+                                <input value={item.nomi} onChange={e => updateSpecItem(i, 'nomi', e.target.value)} className={inp2} placeholder="Mahsulot nomi" />
+                              </td>
+                              <td className="py-1 px-2">
+                                <input value={item.shtrix_kodi} onChange={e => updateSpecItem(i, 'shtrix_kodi', e.target.value)} className={inp2} placeholder="—" />
+                              </td>
+                              <td className="py-1 px-2">
+                                <BirlikPicker value={item.birlik} onChange={v => updateSpecItem(i, 'birlik', v)} />
+                              </td>
+                              <td className="py-1 px-2">
+                                <input type="number" value={item.miqdori} onChange={e => updateSpecItem(i, 'miqdori', parseFloat(e.target.value) || 0)} className={inp2 + ' text-right'} min={0} />
+                              </td>
+                              <td className="py-1 px-2">
+                                <input type="number" value={item.narxi} onChange={e => updateSpecItem(i, 'narxi', parseFloat(e.target.value) || 0)} className={inp2 + ' text-right'} min={0} />
+                              </td>
+                              <td className="py-1 px-2 text-right text-gray-300 font-medium">
+                                {base.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td className="py-1 px-2">
+                                <select value={item.qqs_foiz} onChange={e => updateSpecItem(i, 'qqs_foiz', e.target.value)} className={inp2 + ' text-center'}>
+                                  <option value="siz">QQSsiz</option>
+                                  <option value="0">0%</option>
+                                  <option value="12">12%</option>
+                                  <option value="15">15%</option>
+                                  <option value="all">Barchasi uchun</option>
+                                </select>
+                              </td>
+                              <td className="py-1 px-2 text-right text-gray-300">
+                                {item.qqs_summa.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td className="py-1 px-2 text-right font-semibold text-white">
+                                {item.summa.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td className="py-1 pl-1">
+                                <button type="button" onClick={() => removeSpecItem(i)} className="text-red-400 hover:text-red-300 w-5 h-5 flex items-center justify-center">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                        {/* Jami qatori */}
+                        <tr className="bg-gray-800/50 font-medium text-gray-300">
+                          <td colSpan={5} className="py-2 px-2 text-right text-xs">Jami:</td>
+                          <td className="py-2 px-2 text-right text-white">{specBase.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td></td>
+                          <td className="py-2 px-2 text-right text-white">{specQqs.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="py-2 px-2 text-right text-white font-bold">{specTotal.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td></td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
