@@ -15,12 +15,9 @@ import { useToast } from '@/lib/toast'
 
 export type SpecItem = {
   nomi: string
-  izoh?: string
-  shtrix_kodi?: string
   birlik: string
   miqdori: number
   narxi: number
-  yetkazib_narxi?: number
   qqs_foiz: string
   qqs_summa: number
   summa: number
@@ -223,7 +220,7 @@ export default function ContractModal({
 
   function addSpecItem() {
     const lastQqs = form.spec_items.at(-1)?.qqs_foiz ?? 'siz'
-    const item: SpecItem = { nomi: '', shtrix_kodi: '', birlik: 'dona', miqdori: 1, narxi: 0, qqs_foiz: lastQqs, qqs_summa: 0, summa: 0 }
+    const item: SpecItem = { nomi: '', birlik: 'dona', miqdori: 1, narxi: 0, qqs_foiz: lastQqs, qqs_summa: 0, summa: 0 }
     setForm(f => ({ ...f, spec_items: [...f.spec_items, item] }))
   }
 
@@ -317,6 +314,8 @@ export default function ContractModal({
         city: form.city,
         org,
         cp,
+        contract_type: form.contract_type,
+        spec_items: form.spec_items.length > 0 ? form.spec_items : undefined,
       })
       setForm(f => ({ ...f, content: text }))
     }
@@ -1160,16 +1159,16 @@ export default function ContractModal({
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs border border-gray-700 rounded-lg overflow-hidden">
                       <thead>
-                        <tr className="bg-blue-900/40 text-blue-300 border-b border-gray-700">
-                          <th className="text-left py-2 px-2 min-w-[140px]">Mahsulot yoki xizmatga izoh*</th>
-                          <th className="text-left py-2 px-2 w-24">Shtrix kod</th>
-                          <th className="text-left py-2 px-2 w-20">O'lchov birligi*</th>
-                          <th className="text-right py-2 px-2 w-16">Soni</th>
-                          <th className="text-right py-2 px-2 w-24">Narx*</th>
-                          <th className="text-right py-2 px-2 w-28">Yetkazib berish narxi*</th>
-                          <th className="text-center py-2 px-2 w-24">QQS, %</th>
-                          <th className="text-right py-2 px-2 w-24">QQS, Miqdor*</th>
-                          <th className="text-right py-2 px-2 w-28">Jami*</th>
+                        <tr className="bg-blue-900/40 text-blue-300 border-b border-gray-700 text-xs">
+                          <th className="text-center py-2 px-2 w-8">№</th>
+                          <th className="text-left py-2 px-2 min-w-[160px]">Tovarlar (ish, xizmatlar) nomi</th>
+                          <th className="text-center py-2 px-2 w-20">O'lchov birligi</th>
+                          <th className="text-right py-2 px-2 w-16">Miqdori</th>
+                          <th className="text-right py-2 px-2 w-28">Narxi (so'm)</th>
+                          <th className="text-right py-2 px-2 w-28">Yetkazib berish qiymati</th>
+                          <th className="text-center py-2 px-2 w-20">QQS stavkasi</th>
+                          <th className="text-right py-2 px-2 w-28">QQS summasi</th>
+                          <th className="text-right py-2 px-2 w-32">QQS bilan jami</th>
                           <th className="w-6"></th>
                         </tr>
                       </thead>
@@ -1177,12 +1176,10 @@ export default function ContractModal({
                         {form.spec_items.map((item, i) => {
                           const base = (item.miqdori || 0) * (item.narxi || 0)
                           return (
-                            <tr key={i} className="border-b border-gray-800 hover:bg-gray-800/30">
+                            <tr key={i} className="border-b border-gray-800 hover:bg-gray-800/30 text-xs">
+                              <td className="py-1 px-2 text-center text-gray-500">{i + 1}</td>
                               <td className="py-1 px-2">
-                                <input value={item.nomi} onChange={e => updateSpecItem(i, 'nomi', e.target.value)} className={inp2} placeholder="Mahsulot nomi" />
-                              </td>
-                              <td className="py-1 px-2">
-                                <input value={item.shtrix_kodi} onChange={e => updateSpecItem(i, 'shtrix_kodi', e.target.value)} className={inp2} placeholder="—" />
+                                <input value={item.nomi} onChange={e => updateSpecItem(i, 'nomi', e.target.value)} className={inp2} placeholder="Tovar nomi..." />
                               </td>
                               <td className="py-1 px-2">
                                 <BirlikPicker value={item.birlik} onChange={v => updateSpecItem(i, 'birlik', v)} />
@@ -1222,12 +1219,12 @@ export default function ContractModal({
                           )
                         })}
                         {/* Jami qatori */}
-                        <tr className="bg-gray-800/50 font-medium text-gray-300">
-                          <td colSpan={5} className="py-2 px-2 text-right text-xs">Jami:</td>
+                        <tr className="bg-gray-800/60 font-semibold text-gray-200 text-xs border-t border-gray-600">
+                          <td colSpan={5} className="py-2 px-2 text-right">Jami:</td>
                           <td className="py-2 px-2 text-right text-white">{specBase.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                           <td></td>
-                          <td className="py-2 px-2 text-right text-white">{specQqs.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                          <td className="py-2 px-2 text-right text-white font-bold">{specTotal.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="py-2 px-2 text-right text-yellow-400">{specQqs.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="py-2 px-2 text-right text-emerald-400 font-bold text-sm">{specTotal.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                           <td></td>
                         </tr>
                       </tbody>

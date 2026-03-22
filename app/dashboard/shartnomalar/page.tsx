@@ -247,6 +247,7 @@ export default function ShartnomalarPage() {
         org,
         cp,
         contract_type: contractForm.contract_type,
+        spec_items: contractForm.spec_items.length > 0 ? contractForm.spec_items : undefined,
       })
       if (lang === 'oz' || lang === 'ru') content = latinToCyrillic(content)
     } else {

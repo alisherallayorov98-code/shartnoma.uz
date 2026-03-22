@@ -842,9 +842,99 @@ const TYPE_LABELS: Record<string, [string, string]> = {
   boshqa:     ['1-TOMON',         '2-TOMON'],
 }
 
+type SpecItemForText = {
+  nomi: string
+  birlik: string
+  miqdori: number
+  narxi: number
+  qqs_foiz: string
+  qqs_summa: number
+  summa: number
+}
+
+function buildSpecTable(items: SpecItemForText[], number: string, date: string, org: any, cp: any): string {
+  const lines: string[] = []
+  const sep = '─'.repeat(110)
+  const formatNum = (n: number) => n.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const pad = (s: string, w: number) => s.length >= w ? s.slice(0, w) : s + ' '.repeat(w - s.length)
+  const rpad = (s: string, w: number) => s.length >= w ? s.slice(0, w) : ' '.repeat(w - s.length) + s
+
+  lines.push('')
+  lines.push('1-ILOVA')
+  lines.push(`№${number}-sonli shartnomaga`)
+  lines.push(`${formatDateUz(date)} dan`)
+  lines.push('')
+  lines.push('NARXNI KELISHISH PROTOKOLI')
+  lines.push('')
+  lines.push(sep)
+  lines.push(
+    pad('№', 4) +
+    pad('Tovarlar (ish, xizmatlar) nomi', 32) +
+    pad("O'lchov", 10) +
+    rpad('Miqdori', 10) +
+    rpad('Narxi', 16) +
+    rpad('Yetkazib ber.', 18) +
+    rpad('QQS%', 6) +
+    rpad('QQS sum.', 16) +
+    rpad('Jami (QQS bilan)', 20)
+  )
+  lines.push(sep)
+
+  let totalBase = 0, totalQqs = 0, totalSum = 0
+  items.forEach((item, i) => {
+    const base = item.miqdori * item.narxi
+    totalBase += base
+    totalQqs += item.qqs_summa
+    totalSum += item.summa
+    lines.push(
+      pad(String(i + 1), 4) +
+      pad(item.nomi || '—', 32) +
+      pad(item.birlik || 'dona', 10) +
+      rpad(String(item.miqdori), 10) +
+      rpad(formatNum(item.narxi), 16) +
+      rpad(formatNum(base), 18) +
+      rpad(item.qqs_foiz === 'siz' ? 'QQSsiz' : item.qqs_foiz + '%', 6) +
+      rpad(formatNum(item.qqs_summa), 16) +
+      rpad(formatNum(item.summa), 20)
+    )
+  })
+
+  lines.push(sep)
+  lines.push(
+    pad('JAMI:', 56) +
+    rpad(formatNum(totalBase), 18) +
+    rpad('', 6) +
+    rpad(formatNum(totalQqs), 16) +
+    rpad(formatNum(totalSum), 20)
+  )
+  lines.push(sep)
+  lines.push('')
+  lines.push(`So'z bilan: ${numberToWords(Math.round(totalSum), 'uz')} so'm`)
+  lines.push('')
+  lines.push('Ushbu Protokol Shartnomaning ajralmas qismi hisoblanadi va ikki nusxada tuzilgan.')
+  lines.push('')
+
+  if (org) {
+    lines.push('SOTUVCHI: ' + org.name)
+    lines.push('INN: ' + (org.inn || '—') + '    MFO: ' + (org.mfo || '—'))
+    lines.push('H/r: ' + (org.bank_account || '—'))
+    lines.push('Rahbar: ' + (org.director_name || '—'))
+    lines.push('_________________ / ' + (org.director_name || '___') + '        M.O.')
+  }
+  lines.push('')
+  if (cp) {
+    lines.push('XARIDOR: ' + cp.name)
+    lines.push('INN: ' + (cp.inn || '—') + '    MFO: ' + (cp.mfo || '—'))
+    lines.push('H/r: ' + (cp.bank_account || '—'))
+    lines.push('Rahbar: ' + (cp.director_name || '—'))
+    lines.push('_________________ / ' + (cp.director_name || '___') + '        M.O.')
+  }
+  return lines.join('\n')
+}
+
 export function structureToText(
   structure: ContractStructure,
-  header: { type_name: string; number: string; date: string; city: string; org: any; cp: any; contract_type?: string }
+  header: { type_name: string; number: string; date: string; city: string; org: any; cp: any; contract_type?: string; spec_items?: SpecItemForText[] }
 ): string {
   const lines: string[] = []
   lines.push(header.type_name.toUpperCase())
@@ -889,6 +979,11 @@ export function structureToText(
   lines.push('')
   lines.push('_________________ / ' + (header.cp?.director_name || '___'))
   lines.push('        M.O.')
+
+  // 1-ILOVA: spec items mavjud bo'lsa
+  if (header.spec_items && header.spec_items.length > 0) {
+    lines.push(buildSpecTable(header.spec_items, header.number, header.date, header.org, header.cp))
+  }
 
   return lines.join('\n')
 }
