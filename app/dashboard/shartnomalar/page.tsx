@@ -779,30 +779,30 @@ export default function ShartnomalarPage() {
       const kind = lineKind(line)
 
       // Empty lines: minimal height, no extra space
-      if (kind === 'empty') return new Paragraph({ text: '', spacing: { after: 0, line: 120 } })
+      if (kind === 'empty') return new Paragraph({ text: '', spacing: { after: 0, line: 80 } })
 
       if (kind === 'main') return new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 160, after: 60 },
+        spacing: { before: 120, after: 40 },
         children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       })
 
-      // Sub-section label ending with ":" → bold + underline
       if (kind === 'sub_label') return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { before: 40, after: 0 },
+        indent: { left: 0, firstLine: 0 },
+        spacing: { before: 20, after: 0 },
         children: [new TextRun({ text: t, bold: true, underline: {}, size: 24, font: F, color: '000000' })],
       })
 
       if (kind === 'sub') return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         indent: { left: 0, firstLine: 0 },
-        spacing: { before: 0, after: 20, line: 240 },
+        spacing: { before: 0, after: 10, line: 240 },
         children: richRuns(t),
       })
 
       if (kind === 'label') return new Paragraph({
-        spacing: { before: 80, after: 20 },
+        spacing: { before: 60, after: 10 },
         children: [new TextRun({ text: t, bold: true, size: 22, font: F, color: '000000' })],
       })
 
@@ -811,7 +811,7 @@ export default function ShartnomalarPage() {
         return new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
           indent: { left: 360, hanging: 180 },
-          spacing: { after: 20, line: 240 },
+          spacing: { after: 10, line: 240 },
           children: richRuns(`– ${bt}`),
         })
       }
@@ -821,7 +821,7 @@ export default function ShartnomalarPage() {
       return new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         indent: isStart ? { firstLine: 360 } : {},
-        spacing: { after: 20, line: 240 },
+        spacing: { after: 10, line: 240 },
         children: richRuns(t),
       })
     })
