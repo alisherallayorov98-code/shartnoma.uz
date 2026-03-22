@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(e => e.trim())
-
 function getAdminDb() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,8 +12,19 @@ function getAdminDb() {
 async function verifyAdmin(req: NextRequest): Promise<boolean> {
   const token = req.headers.get('Authorization')?.replace('Bearer ', '')
   if (!token) return false
-  const { data: { user } } = await getAdminDb().auth.getUser(token)
-  return !!user?.email && ADMIN_EMAILS.includes(user.email)
+  const db = getAdminDb()
+  const { data: { user } } = await db.auth.getUser(token)
+  if (!user) return false
+  // Check admins table (primary). Fall back to ADMIN_EMAILS env var for bootstrap.
+  const { data } = await db.from('admins').select('user_id').eq('user_id', user.id).maybeSingle()
+  if (data) return true
+  const fallbackEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean)
+  return fallbackEmails.includes(user.email ?? '')
+}
+
+export async function HEAD(req: NextRequest) {
+  const ok = await verifyAdmin(req)
+  return new NextResponse(null, { status: ok ? 200 : 403 })
 }
 
 export async function GET(req: NextRequest) {

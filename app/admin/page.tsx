@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import * as XLSX from 'xlsx'
 
-const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(e => e.trim())
-
 type Client = {
   id: string; name: string; inn: string; address: string
   created_at: string; user_id: string; user_email: string

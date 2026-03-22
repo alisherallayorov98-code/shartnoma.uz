@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase'
 import type { Org, BankAccount, Counterparty, Contract, Subscription } from '@/lib/types'
 
 const FREE_LIMIT = 5
-const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(e => e.trim())
 
 type Profile = {
   full_name: string; phone: string; lavozim: string; avatar_url: string
@@ -33,6 +32,7 @@ type DashboardContextType = {
   bankAccounts: BankAccount[]
   cps: Counterparty[]
   contracts: Contract[]
+  contractsTotal: number
   subscription: Subscription | null
   demoAccess: { expires_at: string } | null
   profile: Profile
@@ -72,7 +72,7 @@ const defaultProfile: Profile = {
 
 export const DashboardContext = createContext<DashboardContextType>({
   userId: '', userEmail: '', isAdmin: false,
-  orgs: [], activeOrg: null, bankAccounts: [], cps: [], contracts: [],
+  orgs: [], activeOrg: null, bankAccounts: [], cps: [], contracts: [], contractsTotal: 0,
   subscription: null, demoAccess: null, profile: defaultProfile,
   sidebarOpen: true, setSidebarOpen: () => {}, orgDropdown: false, setOrgDropdown: () => {},
   initialLoading: true,
@@ -98,17 +98,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [cps, setCps] = useState<Counterparty[]>([])
   const [contracts, setContracts] = useState<Contract[]>([])
+  const [contractsTotal, setContractsTotal] = useState(0)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [demoAccess, setDemoAccess] = useState<{ expires_at: string } | null>(null)
   const [profile, setProfile] = useState<Profile>(defaultProfile)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [orgDropdown, setOrgDropdown] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
 
   // ── Computed ──────────────────────────────────────────────────────────────
-  const ADMIN_EMAILS_LIST = ADMIN_EMAILS
-  const isAdmin = ADMIN_EMAILS_LIST.includes(userEmail)
   const isDemoActive = !!demoAccess && new Date(demoAccess.expires_at) > new Date()
   const isSubValid = !!subscription && subscription.plan !== 'free' && new Date(subscription.period_end) > new Date()
   const isFree = !isAdmin && !isDemoActive && !isSubValid
@@ -139,20 +139,21 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const loadSubscription = useCallback(async (orgId: string) => {
-    const { data } = await supabase.from('subscriptions').select('*')
+    const { data, error } = await supabase.from('subscriptions').select('*')
       .eq('organization_id', orgId).eq('is_active', true)
       .gt('period_end', new Date().toISOString())
       .order('created_at', { ascending: false })
+    if (error) { console.error('loadSubscription:', error.message); return }
     const list: Subscription[] = data || []
-    // Best plan: ai_pro > standard > free
     const best = list.find(s => s.plan === 'ai_pro') || list.find(s => s.plan === 'standard') || list[0] || null
     setSubscription(best)
   }, [])
 
   const loadDemoAccess = useCallback(async (orgId: string) => {
-    const { data } = await supabase.from('demo_access').select('expires_at')
+    const { data, error } = await supabase.from('demo_access').select('expires_at')
       .eq('organization_id', orgId).eq('is_active', true)
       .gt('expires_at', new Date().toISOString()).single()
+    if (error && error.code !== 'PGRST116') { console.error('loadDemoAccess:', error.message); return }
     setDemoAccess(data || null)
   }, [])
 
@@ -163,10 +164,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const loadContracts = useCallback(async (orgId?: string) => {
-    const q = supabase.from('contracts').select('*, organizations(*), counterparties(*)').order('created_at', { ascending: false })
-    const { data, error } = orgId ? await q.eq('organization_id', orgId) : await q
+    const base = supabase.from('contracts').select('*, organizations(*), counterparties(*)', { count: 'exact' }).order('created_at', { ascending: false }).limit(200)
+    const { data, count, error } = orgId ? await base.eq('organization_id', orgId) : await base
     if (error) { console.error('loadContracts:', error.message); return }
     setContracts(data || [])
+    setContractsTotal(count ?? data?.length ?? 0)
   }, [])
 
   const loadProfile = useCallback(async (uid: string) => {
@@ -188,6 +190,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       if (!session) { router.push('/login'); return }
       setUserEmail(session.user.email || '')
       setUserId(session.user.id)
+      const adminCheck = await fetch('/api/admin', {
+        method: 'HEAD',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      setIsAdmin(adminCheck.ok)
       await Promise.all([loadOrgs(), loadCps(), loadProfile(session.user.id)])
       setInitialLoading(false)
     }
@@ -196,12 +203,24 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   // ── When activeOrg changes ────────────────────────────────────────────────
   useEffect(() => {
-    if (activeOrg) {
-      loadBankAccounts(activeOrg.id)
-      loadSubscription(activeOrg.id)
-      loadDemoAccess(activeOrg.id)
-      loadContracts(activeOrg.id)
-    }
+    if (!activeOrg) return
+    loadBankAccounts(activeOrg.id)
+    loadSubscription(activeOrg.id)
+    loadDemoAccess(activeOrg.id)
+    loadContracts(activeOrg.id)
+
+    // Real-time: reload contracts when another tab/device changes them
+    const channel = supabase
+      .channel(`contracts:${activeOrg.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'contracts',
+        filter: `organization_id=eq.${activeOrg.id}`,
+      }, () => { loadContracts(activeOrg.id) })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [activeOrg?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -252,7 +271,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   return (
     <DashboardContext.Provider value={{
       userId, userEmail, isAdmin,
-      orgs, activeOrg, bankAccounts, cps, contracts, subscription, demoAccess, profile,
+      orgs, activeOrg, bankAccounts, cps, contracts, contractsTotal, subscription, demoAccess, profile,
       sidebarOpen, setSidebarOpen, orgDropdown, setOrgDropdown,
       initialLoading,
       isFree, isDemoActive, isSubValid, subDaysLeft,

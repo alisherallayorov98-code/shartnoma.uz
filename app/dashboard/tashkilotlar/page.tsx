@@ -6,6 +6,7 @@ import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { Modal, ModalActions } from '../_components/Modal'
+import { useToast } from '@/lib/toast'
 import type { Org } from '@/lib/types'
 
 const emptyOrg = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '' }
@@ -15,6 +16,7 @@ export default function TashkilotlarPage() {
   const { lang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { orgs, activeOrg, bankAccounts, switchOrg, reloadOrgs, userId } = useDashboard()
+  const { toast } = useToast()
 
   const [orgForm, setOrgForm] = useState(emptyOrg)
   const [bankForm, setBankForm] = useState(emptyBank)
@@ -30,10 +32,10 @@ export default function TashkilotlarPage() {
 
   async function saveOrg(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
-    if (!orgForm.name.trim()) { alert(T(t.msg.nameRequired)); setSaving(false); return }
-    if (orgForm.inn && !/^\d{9}$/.test(orgForm.inn)) { alert(T(t.msg.innInvalid)); setSaving(false); return }
-    if (orgForm.mfo && !/^\d{5}$/.test(orgForm.mfo)) { alert(T(t.msg.mfoInvalid)); setSaving(false); return }
-    if (orgForm.bank_account && !/^\d{20}$/.test(orgForm.bank_account)) { alert(T(t.msg.accountInvalid)); setSaving(false); return }
+    if (!orgForm.name.trim()) { toast(T(t.msg.nameRequired), 'error'); setSaving(false); return }
+    if (orgForm.inn && !/^\d{9}$/.test(orgForm.inn)) { toast(T(t.msg.innInvalid), 'error'); setSaving(false); return }
+    if (orgForm.mfo && !/^\d{5}$/.test(orgForm.mfo)) { toast(T(t.msg.mfoInvalid), 'error'); setSaving(false); return }
+    if (orgForm.bank_account && !/^\d{20}$/.test(orgForm.bank_account)) { toast(T(t.msg.accountInvalid), 'error'); setSaving(false); return }
     const { data: { session } } = await supabase.auth.getSession()
     const { data: newOrg } = await supabase.from('organizations').insert({ ...orgForm, user_id: session!.user.id }).select().single()
     if (newOrg) {
@@ -48,21 +50,21 @@ export default function TashkilotlarPage() {
 
   async function saveBankAccount(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
-    if (bankForm.mfo && !/^\d{5}$/.test(bankForm.mfo)) { alert(T(t.msg.mfoInvalid)); setSaving(false); return }
-    if (bankForm.account_number && !/^\d{20}$/.test(bankForm.account_number)) { alert(T(t.msg.accountInvalid)); setSaving(false); return }
+    if (bankForm.mfo && !/^\d{5}$/.test(bankForm.mfo)) { toast(T(t.msg.mfoInvalid), 'error'); setSaving(false); return }
+    if (bankForm.account_number && !/^\d{20}$/.test(bankForm.account_number)) { toast(T(t.msg.accountInvalid), 'error'); setSaving(false); return }
     const { data: { session } } = await supabase.auth.getSession()
     if (bankForm.is_default && activeOrg) {
       await supabase.from('bank_accounts').update({ is_default: false }).eq('organization_id', activeOrg.id)
     }
     const { error } = await supabase.from('bank_accounts').insert({ ...bankForm, organization_id: activeOrg!.id, user_id: session!.user.id })
     setSaving(false)
-    if (error) { alert(`${T(t.msg.errorPrefix)}: ${error.message}`); return }
+    if (error) { toast(`${T(t.msg.errorPrefix)}: ${error.message}`, 'error'); return }
     setBankModal(false); setBankForm(emptyBank); reloadOrgs()
   }
 
   async function deleteBankAccount(id: string) {
     const { error } = await supabase.from('bank_accounts').delete().eq('id', id)
-    if (error) { alert(`${T(t.msg.errorPrefix)}: ${error.message}`); return }
+    if (error) { toast(`${T(t.msg.errorPrefix)}: ${error.message}`, 'error'); return }
     reloadOrgs()
   }
 
@@ -71,9 +73,11 @@ export default function TashkilotlarPage() {
     const ext = file.name.split('.').pop()
     const path = `${userId}/${activeOrg.id}/${field}.${ext}`
     const { error: upErr } = await supabase.storage.from('org-assets').upload(path, file, { upsert: true })
-    if (upErr) { alert(`${T(t.msg.uploadError)}: ${upErr.message}`); return }
+    if (upErr) { toast(`${T(t.msg.uploadError)}: ${upErr.message}`, 'error'); return }
     const { data } = supabase.storage.from('org-assets').getPublicUrl(path)
-    await supabase.from('organizations').update({ [field]: data.publicUrl }).eq('id', activeOrg.id)
+    const { error: dbErr } = await supabase.from('organizations').update({ [field]: data.publicUrl }).eq('id', activeOrg.id)
+    if (dbErr) { toast(`Saqlashda xato: ${dbErr.message}`, 'error'); return }
+    toast(field === 'stamp_url' ? 'Muhr saqlandi' : 'Imzo saqlandi')
     reloadOrgs()
   }
 

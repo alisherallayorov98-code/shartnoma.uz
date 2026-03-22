@@ -23,7 +23,12 @@ export default function LoginPage() {
     setError('')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError(T(t.login.error))
+      const m = error.message.toLowerCase()
+      if (m.includes('email not confirmed') || m.includes('not confirmed')) {
+        setError(T({ uz: 'Email tasdiqlash havolasi yuborilgan edi. Iltimos, emailingizni tekshiring.', oz: 'Email тасдиқлаш ҳаволаси юборилган эди. Илтимос, emailингизни текширинг.', ru: 'Ссылка для подтверждения отправлена на email. Пожалуйста, проверьте почту.' }))
+      } else {
+        setError(T(t.login.error))
+      }
     } else {
       router.push('/dashboard')
     }

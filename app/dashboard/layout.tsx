@@ -5,12 +5,17 @@ export const dynamic = 'force-dynamic'
 import { ReactNode } from 'react'
 import { DashboardProvider, useDashboard } from './context'
 import { DashboardSidebar } from './_components/Sidebar'
+import ErrorBoundary from './_components/ErrorBoundary'
+import UpgradeModal from './_components/UpgradeModal'
+import { ToastProvider } from '@/lib/toast'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <DashboardProvider>
-      <DashboardLayoutInner>{children}</DashboardLayoutInner>
-    </DashboardProvider>
+    <ToastProvider>
+      <DashboardProvider>
+        <DashboardLayoutInner>{children}</DashboardLayoutInner>
+      </DashboardProvider>
+    </ToastProvider>
   )
 }
 
@@ -70,7 +75,8 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">S</div>
           <span className="font-semibold text-sm">Shartnoma.uz</span>
         </div>
-        {initialLoading ? <LoadingSkeleton /> : children}
+        {initialLoading ? <LoadingSkeleton /> : <ErrorBoundary>{children}</ErrorBoundary>}
+        <UpgradeModal />
       </div>
     </div>
   )

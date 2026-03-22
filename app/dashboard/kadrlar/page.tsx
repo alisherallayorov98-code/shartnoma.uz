@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { useDashboard } from '../context'
-import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
+import { fetchAi } from '@/lib/fetchAi'
+import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
+import { saveAiDocument } from '@/lib/aiDocuments'
+import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 
 type KadrFeature = 'mehnat_shartnoma' | 'buyruq_qabul' | 'buyruq_boshtash' | 'tatil_buyruq' | 'ishonchnoma' | 'lavozim_yoriqnoma'
 
@@ -11,10 +14,18 @@ type FeatureConfig = {
   icon: string
   title: string
   description: string
-  fields: { key: string; label: string; placeholder: string; type?: string }[]
+  fields: { key: string; label: string; placeholder: string; type?: string; textarea?: boolean }[]
   apiType: string
   resultField: string
 }
+
+const MEHNAT_TURLARI = [
+  { key: 'belgilanmagan_muddatli', label: 'Belgilanmagan muddatli (doimiy)' },
+  { key: 'belgilangan_muddatli',   label: 'Belgilangan muddatli (muddatli)' },
+  { key: 'yarim_stavkada',         label: 'Yarim stavkada (part-time)' },
+  { key: 'masofaviy',              label: 'Masofaviy ish (remote)' },
+  { key: 'amaliyot',               label: 'Amaliyot / Stajyor' },
+]
 
 const FEATURES: FeatureConfig[] = [
   {
@@ -87,7 +98,7 @@ const FEATURES: FeatureConfig[] = [
       { key: 'beruvchi_ism', label: "Ishonchnoma beruvchi", placeholder: "Toshmatov Alisher Baxtiyorovich" },
       { key: 'oluvchi_ism', label: "Ishonchnoma oluvchi", placeholder: "Nazarov Dilshod Karimovich" },
       { key: 'oluvchi_passport', label: "Oluvchi pasporti", placeholder: "AB 1234567" },
-      { key: 'vakolat', label: "Vakolat mazmuni", placeholder: "Bank hisob raqamidan pul olish uchun..." },
+      { key: 'vakolat', label: "Vakolat mazmuni", placeholder: "Bank hisob raqamidan pul olish uchun...", textarea: true },
       { key: 'muddat', label: "Amal qilish muddati", placeholder: "1 yil" },
     ],
   },
@@ -101,8 +112,8 @@ const FEATURES: FeatureConfig[] = [
     fields: [
       { key: 'lavozim', label: "Lavozim nomi", placeholder: "Bosh muhasib" },
       { key: 'bo\'lim', label: "Bo'lim", placeholder: "Moliya bo'limi" },
-      { key: 'asosiy_vazifalar', label: "Asosiy vazifalar", placeholder: "Hisobot tuzish, soliq hisobotlari..." },
-      { key: 'talablar', label: "Talablar (ma'lumot, tajriba)", placeholder: "Oliy ma'lumot, 3 yil tajriba..." },
+      { key: 'asosiy_vazifalar', label: "Asosiy vazifalar", placeholder: "Hisobot tuzish, soliq hisobotlari...", textarea: true },
+      { key: 'talablar', label: "Talablar (ma'lumot, tajriba)", placeholder: "Oliy ma'lumot, 3 yil tajriba...", textarea: true },
     ],
   },
 ]
@@ -111,11 +122,13 @@ export default function KadrlarPage() {
   const { activeOrg, isFree } = useDashboard()
   const [selected, setSelected] = useState<KadrFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
+  const [mehnatTur, setMehnatTur] = useState('belgilanmagan_muddatli')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [savedKey, setSavedKey] = useState(0)   // increment to reload SavedDocsPanel
 
   const currentFeature = FEATURES.find(f => f.key === selected)
 
@@ -126,6 +139,7 @@ export default function KadrlarPage() {
     setError('')
     setCopied(false)
     setShowPreview(false)
+    setMehnatTur('belgilanmagan_muddatli')
   }
 
   async function handleGenerate() {
@@ -137,29 +151,45 @@ export default function KadrlarPage() {
     setResult(null)
 
     try {
-      const buyruqTur = selected === 'buyruq_qabul' ? 'qabul' : selected === 'buyruq_boshtash' ? 'boshtash' : selected === 'tatil_buyruq' ? 'tatil' : undefined
+      const buyruqTur = selected === 'buyruq_qabul' ? 'qabul'
+        : selected === 'buyruq_boshtash' ? 'boshtash'
+        : selected === 'tatil_buyruq' ? 'tatil'
+        : undefined
 
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: currentFeature.apiType,
-          lang: 'uz',
-          details: {
-            ...formData,
-            tashkilot: activeOrg.name,
-            tashkilot_inn: activeOrg.inn,
-            direktor: activeOrg.director_name,
-            ...(buyruqTur ? { buyruq_tur: buyruqTur } : {}),
-          },
-        }),
+      const res = await fetchAi({
+        type: currentFeature.apiType,
+        lang: 'uz',
+        details: {
+          ...formData,
+          tashkilot: activeOrg.name,
+          tashkilot_inn: activeOrg.inn,
+          direktor: activeOrg.director_name,
+          ...(buyruqTur ? { buyruq_tur: buyruqTur } : {}),
+          ...(selected === 'mehnat_shartnoma' ? { mehnat_tur: mehnatTur } : {}),
+        },
       })
 
       const data = await res.json()
       if (data.error) { setError(data.error); return }
 
-      const text = data.result?.[currentFeature.resultField] || data.result?.shartnoma || data.result?.buyruq || data.result?.ishonchnoma || JSON.stringify(data.result, null, 2)
+      const text = data.result?.[currentFeature.resultField]
+        || data.result?.shartnoma || data.result?.buyruq || data.result?.ishonchnoma
+        || JSON.stringify(data.result, null, 2)
       setResult(text)
+
+      // Auto-save to Supabase
+      if (text && activeOrg) {
+        const meta: Record<string, string> = {}
+        if (selected === 'mehnat_shartnoma') meta.contract_type = mehnatTur
+        saveAiDocument({
+          organization_id: activeOrg.id,
+          section: 'kadrlar',
+          feature_key: selected!,
+          title: currentFeature.title,
+          content: text,
+          meta,
+        }).then(() => setSavedKey(k => k + 1)).catch(console.error)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Xatolik yuz berdi")
     } finally {
@@ -175,8 +205,10 @@ export default function KadrlarPage() {
     })
   }
 
+  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-gray-500'
+
   return (
-    <main className="flex-1 overflow-auto p-6 bg-gray-950">
+    <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-950">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}
@@ -191,7 +223,7 @@ export default function KadrlarPage() {
         {isFree && (
           <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-4 flex items-center gap-3">
             <span className="text-xl">⭐</span>
-            <div className="flex-1 text-sm text-yellow-300">Bu funksiyalar Premium tarifda to&apos;liq ishlaydi. Bepul tarifda cheklangan miqdorda foydalanish mumkin.</div>
+            <div className="flex-1 text-sm text-yellow-300">Bu funksiyalar Premium tarifda to&apos;liq ishlaydi.</div>
           </div>
         )}
 
@@ -224,22 +256,52 @@ export default function KadrlarPage() {
               </div>
             </div>
 
+            {/* Mehnat shartnomasi turi */}
+            {selected === 'mehnat_shartnoma' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                  Shartnoma turi
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {MEHNAT_TURLARI.map(t => (
+                    <button key={t.key} onClick={() => setMehnatTur(t.key)}
+                      className={`px-3 py-2.5 rounded-lg border text-sm text-left transition ${
+                        mehnatTur === t.key
+                          ? 'border-cyan-500 bg-cyan-900/30 text-cyan-300'
+                          : 'border-gray-700 bg-gray-800 text-gray-300 hover:border-gray-600'
+                      }`}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {currentFeature.fields.map(field => (
-                <div key={field.key}>
+                <div key={field.key} className={field.textarea ? 'sm:col-span-2' : ''}>
                   <label className="block text-xs font-medium text-gray-400 mb-1.5">{field.label}</label>
-                  <input
-                    type={field.type || 'text'}
-                    value={formData[field.key] || ''}
-                    onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
-                    placeholder={field.placeholder}
-                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-gray-500"
-                  />
+                  {field.textarea ? (
+                    <textarea
+                      value={formData[field.key] || ''}
+                      onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      rows={3}
+                      className={`${inp} resize-y`}
+                    />
+                  ) : (
+                    <input
+                      type={field.type || 'text'}
+                      value={formData[field.key] || ''}
+                      onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      className={inp}
+                    />
+                  )}
                 </div>
               ))}
             </div>
 
-            {/* Org info display */}
             {activeOrg && (
               <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-2 text-xs text-gray-400">
                 Tashkilot: <span className="text-white font-medium">{activeOrg.name}</span> · INN: {activeOrg.inn} · Direktor: {activeOrg.director_name}
@@ -252,22 +314,14 @@ export default function KadrlarPage() {
               </div>
             )}
 
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition"
-            >
+            <button onClick={handleGenerate} disabled={loading}
+              className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
               {loading ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  AI ishlamoqda…
-                </>
-              ) : (
-                <>🤖 AI bilan tayyorlash</>
-              )}
+                <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>AI ishlamoqda…</>
+              ) : <>🤖 AI bilan tayyorlash</>}
             </button>
 
             {/* Preview modal */}
@@ -279,19 +333,13 @@ export default function KadrlarPage() {
                     <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6">
-                    <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap shadow-inner">
-                      {result}
-                    </div>
+                    <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap shadow-inner">{result}</div>
                   </div>
                   <div className="px-5 py-4 border-t border-gray-800 flex gap-3">
                     <button onClick={() => { downloadTextAsWord(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">
-                      📝 Word yuklash
-                    </button>
+                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">📝 Word</button>
                     <button onClick={() => { downloadTextAsPDF(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
-                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm font-semibold transition">
-                      📄 PDF yuklash
-                    </button>
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm transition">📄 PDF</button>
                   </div>
                 </div>
               </div>
@@ -301,27 +349,20 @@ export default function KadrlarPage() {
             {result && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <h3 className="text-sm font-semibold text-white">Natija:</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-white">Natija:</h3>
+                    <span className="text-xs text-green-400">✓ Saqlandi</span>
+                  </div>
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setShowPreview(true)}
-                      className="flex items-center gap-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg transition">
-                      👁 Ko&apos;rish
-                    </button>
+                      className="flex items-center gap-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
                     <button onClick={() => downloadTextAsWord(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">
-                      📝 Word
-                    </button>
+                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
                     <button onClick={() => downloadTextAsPDF(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">
-                      📄 PDF
-                    </button>
+                      className="flex items-center gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
                     <button onClick={handleCopy}
                       className="flex items-center gap-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">
                       {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
-                    </button>
-                    <button onClick={() => { saveAiResult(currentFeature?.title || 'Hujjat', result); alert('Saqlandi!') }}
-                      className="flex items-center gap-1.5 text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg transition">
-                      💾 Saqlash
                     </button>
                   </div>
                 </div>
@@ -331,6 +372,11 @@ export default function KadrlarPage() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Saved Documents */}
+        {activeOrg && (
+          <SavedDocumentsPanel orgId={activeOrg.id} section="kadrlar" accentColor="cyan" refreshKey={savedKey} />
         )}
       </div>
     </main>

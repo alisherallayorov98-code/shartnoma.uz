@@ -85,7 +85,7 @@ export default function DashboardOverviewPage() {
   })
 
   return (
-    <main className="flex-1 overflow-auto p-6 bg-gray-950">
+    <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-950">
 
       {/* ── Subscription warning ── */}
       {showSubWarning && subDaysLeft !== null && (

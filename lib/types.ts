@@ -22,7 +22,8 @@ export type Counterparty = {
 }
 
 export type SpecItem = {
-  nomi: string; birlik: string; miqdori: number; narxi: number
+  nomi: string; izoh?: string; shtrix_kodi?: string; birlik: string; miqdori: number; narxi: number
+  yetkazib_narxi?: number
   qqs_foiz: string   // 'siz' | '0' | '12' | '15'
   qqs_summa: number
   summa: number      // narx*miqdor + qqs_summa
@@ -51,6 +52,17 @@ export type Specification = {
     contract_type?: string; counterparty_id?: string
     counterparties?: { name: string }
   }
+}
+
+export type AiDocument = {
+  id: string
+  organization_id: string
+  section: string        // 'kadrlar' | 'buxgalter' | 'kotiba'
+  feature_key: string    // 'mehnat_shartnoma' | 'buyruq' | 'dalolatnoma' | ...
+  title: string
+  content: string
+  meta: Record<string, string>  // { contract_type: 'belgilangan_muddatli' } etc.
+  created_at: string
 }
 
 export type Subscription = {

@@ -9,15 +9,18 @@ import type { ContractStructure } from '@/lib/contractStructures'
 import { getStructure, structureToText, numberToWords } from '@/lib/contractStructures'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
 import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
+import { useToast } from '@/lib/toast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type SpecItem = {
   nomi: string
-  shtrix_kodi: string
+  izoh?: string
+  shtrix_kodi?: string
   birlik: string
   miqdori: number
   narxi: number
+  yetkazib_narxi?: number
   qqs_foiz: string
   qqs_summa: number
   summa: number
@@ -180,6 +183,7 @@ export default function ContractModal({
   orgs, cps, form, setForm, onSave, onClose, saving, customTemplates
 }: ContractModalProps) {
   const { lang } = useLang()
+  const { toast } = useToast()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
 
   const [step, setStep] = useState(1)
@@ -451,7 +455,7 @@ export default function ContractModal({
       user_id: session!.user.id,
     }).select().single()
     setSavingCp(false)
-    if (error) { alert('Xato: ' + error.message); return }
+    if (error) { toast('Xato: ' + error.message, 'error'); return }
     if (data) {
       setForm(f => ({ ...f, counterparty_id: data.id }))
     }

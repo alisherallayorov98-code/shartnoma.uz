@@ -11,7 +11,14 @@ import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
 import { getStructure, structureToText, numberToWords } from '@/lib/contractStructures'
 import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
 import ContractModal, { type ContractForm } from './_components/ContractModal'
+import ViewContractModal from './_components/ViewContractModal'
+import AiModal from './_components/AiModal'
 import { cyrillicToLatin } from '@/lib/downloadUtils'
+import { fillPlaceholders, type PlaceholderData } from '@/lib/contractUtils'
+import { fetchAi } from '@/lib/fetchAi'
+import { logAudit } from '@/lib/audit'
+import { useToast } from '@/lib/toast'
+import ConfirmModal from '../_components/ConfirmModal'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -54,108 +61,6 @@ const TYPE_COLORS: Record<string, string> = {
   boshqa:     'bg-pink-900/50 text-pink-300',
 }
 
-// ─── Template placeholder filler ─────────────────────────────────────────────
-
-type PlaceholderData = {
-  contract_number?: string
-  contract_date?: string
-  city?: string
-  amount?: number | string
-  organizations?: { name?: string; inn?: string; address?: string; director_name?: string } | null
-  counterparties?: { name?: string; inn?: string; address?: string; director_name?: string } | null
-  // Extra contract-type-specific fields
-  ijara_manzil?: string
-  ijara_maydon?: string
-  oylik_tolov?: string
-  ijara_muddat?: string
-  ijara_boshlanish?: string
-  ijara_tugash?: string
-  xizmat_tavsif?: string
-  xizmat_boshlanish?: string
-  xizmat_tugash?: string
-  xizmat_tolov?: string
-  pudrat_obekt?: string
-  pudrat_tavsif?: string
-  pudrat_boshlanish?: string
-  pudrat_tugash?: string
-  qarz_maqsad?: string
-  qarz_foiz?: string
-  qarz_muddat?: string
-  daval_material?: string
-  daval_mahsulot?: string
-  incoterms?: string
-  yetkazish_joy?: string
-  yetkazish_muddat?: string
-  tolov_usuli?: string
-  valyuta?: string
-  asosiy_raqam?: string
-  asosiy_sana?: string
-  ozgartirish?: string
-}
-
-function fillPlaceholders(content: string, c: PlaceholderData): string {
-  const amount = Number(c.amount || 0)
-  const amountText = amount > 0 ? amount.toLocaleString('uz-UZ') + " so'm" : "nol so'm"
-  const oylik = Number(c.oylik_tolov || 0)
-  const oylikText = oylik > 0 ? oylik.toLocaleString('uz-UZ') + " so'm" : ''
-
-  const map: Record<string, string> = {
-    // Core
-    '{{RAQAM}}':              c.contract_number || '',
-    '{{SANA}}':               c.contract_date || '',
-    '{{SHAHAR}}':             c.city || 'Toshkent',
-    // Parties
-    '{{BUYURTMACHI}}':        c.organizations?.name || '___',
-    '{{BUYURTMACHI_INN}}':    c.organizations?.inn || '___',
-    '{{BUYURTMACHI_RAHBAR}}': c.organizations?.director_name || '___',
-    '{{IJROCHI}}':            c.counterparties?.name || '___',
-    '{{IJROCHI_INN}}':        c.counterparties?.inn || '___',
-    '{{IJROCHI_RAHBAR}}':     c.counterparties?.director_name || '___',
-    // Amount
-    '{{SUMMA}}':              amount.toLocaleString('uz-UZ'),
-    '{{SUMMA_MATN}}':         amountText,
-    // Ijara
-    '{{IJARA_MANZIL}}':       c.ijara_manzil || '___',
-    '{{IJARA_MAYDON}}':       c.ijara_maydon || '___',
-    '{{OYLIK_TOLOV}}':        oylik ? oylik.toLocaleString('uz-UZ') : '___',
-    '{{OYLIK_TOLOV_MATN}}':   oylikText || '___',
-    '{{IJARA_MUDDAT}}':       c.ijara_muddat || '___',
-    '{{IJARA_BOSHLANISH}}':   c.ijara_boshlanish || '___',
-    '{{IJARA_TUGASH}}':       c.ijara_tugash || '___',
-    // Xizmat
-    '{{XIZMAT_TAVSIF}}':      c.xizmat_tavsif || '___',
-    '{{XIZMAT_BOSHLANISH}}':  c.xizmat_boshlanish || '___',
-    '{{XIZMAT_TUGASH}}':      c.xizmat_tugash || '___',
-    '{{XIZMAT_TOLOV}}':       c.xizmat_tolov || '___',
-    // Pudrat
-    '{{PUDRAT_OBEKT}}':       c.pudrat_obekt || '___',
-    '{{PUDRAT_TAVSIF}}':      c.pudrat_tavsif || '___',
-    '{{PUDRAT_BOSHLANISH}}':  c.pudrat_boshlanish || '___',
-    '{{PUDRAT_TUGASH}}':      c.pudrat_tugash || '___',
-    // Moliyaviy/qarz
-    '{{QARZ_MAQSAD}}':        c.qarz_maqsad || '___',
-    '{{QARZ_FOIZ}}':          c.qarz_foiz || '___',
-    '{{QARZ_MUDDAT}}':        c.qarz_muddat || '___',
-    '{{QARZ_TARTIB}}':        '___',
-    // Daval
-    '{{DAVAL_MATERIAL}}':     c.daval_material || '___',
-    '{{DAVAL_MAHSULOT}}':     c.daval_mahsulot || '___',
-    '{{DAVAL_MIQDOR}}':       '___',
-    '{{DAVAL_MUDDAT}}':       '___',
-    // Xalqaro
-    '{{INCOTERMS}}':          c.incoterms || '___',
-    '{{YETKAZISH_JOY}}':      c.yetkazish_joy || '___',
-    '{{YETKAZISH_MUDDAT}}':   c.yetkazish_muddat || '___',
-    '{{TOLOV_USULI}}':        c.tolov_usuli || '___',
-    '{{VALYUTA}}':            c.valyuta || 'USD',
-    // Qo'shimcha
-    '{{ASOSIY_RAQAM}}':       c.asosiy_raqam || '___',
-    '{{ASOSIY_SANA}}':        c.asosiy_sana || '___',
-    '{{OZGARTIRISH}}':        c.ozgartirish || '___',
-  }
-  return content.replace(/\{\{[A-Z_]+\}\}/g, (key) => map[key] ?? key)
-}
-
 // ─── Empty form factory ───────────────────────────────────────────────────────
 
 function makeEmptyForm(orgId: string): ContractForm {
@@ -184,6 +89,7 @@ export default function ShartnomalarPage() {
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
 
   const searchParams = useSearchParams()
+  const { toast } = useToast()
 
   const {
     contracts, orgs, cps, activeOrg, subscription, isFree,
@@ -198,6 +104,8 @@ export default function ShartnomalarPage() {
   const [viewContract, setViewContract] = useState<Contract | null>(null)
   const [saving, setSaving] = useState(false)
   const [customTemplates, setCustomTemplates] = useState<AppTemplate[]>([])
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   // AI state
   const [aiContract, setAiContract] = useState<Contract | null>(null)
@@ -267,7 +175,7 @@ export default function ShartnomalarPage() {
   // ── Open modal ─────────────────────────────────────────────────────────────
   function openNewContract() {
     if (!canCreateContract()) { openUpgradeModal(); return }
-    if (!activeOrg) { alert(T(t.msg.noOrgs)); return }
+    if (!activeOrg) { toast(T(t.msg.noOrgs), 'error'); return }
     const form = makeEmptyForm(activeOrg.id)
     form.contract_number = autoContractNum()
     setContractForm(form)
@@ -277,7 +185,7 @@ export default function ShartnomalarPage() {
   // ── Save contract ──────────────────────────────────────────────────────────
   async function saveContract(e: React.FormEvent) {
     e.preventDefault()
-    if (!contractForm.organization_id) { alert(T(t.msg.selectOrg)); return }
+    if (!contractForm.organization_id) { toast(T(t.msg.selectOrg), 'error'); return }
 
     setSaving(true)
 
@@ -341,11 +249,28 @@ export default function ShartnomalarPage() {
     let error: { message: string } | null = null
 
     if (contractForm.id) {
+      // Save current version before overwriting
+      const existing = contracts.find(c => c.id === contractForm.id)
+      if (existing) {
+        const { data: lastVer } = await supabase
+          .from('contract_versions').select('version').eq('contract_id', contractForm.id)
+          .order('version', { ascending: false }).limit(1).maybeSingle()
+        await supabase.from('contract_versions').insert({
+          contract_id: contractForm.id,
+          version: (lastVer?.version ?? 0) + 1,
+          content: existing.content,
+          amount: existing.amount,
+          status: existing.status,
+          saved_by: userId,
+        })
+      }
       const { error: e } = await supabase.from('contracts').update(payload).eq('id', contractForm.id)
       error = e
+      if (!e) logAudit('update', 'contracts', contractForm.id, { contract_number: payload.contract_number, contract_type: payload.contract_type })
     } else {
-      const { error: e } = await supabase.from('contracts').insert(payload)
+      const { data: inserted, error: e } = await supabase.from('contracts').insert(payload).select('id').single()
       error = e
+      if (!e && inserted) logAudit('create', 'contracts', inserted.id, { contract_number: payload.contract_number, contract_type: payload.contract_type })
       if (!e && subscription) {
         await supabase.from('subscriptions')
           .update({ contracts_used: (subscription.contracts_used || 0) + 1 })
@@ -354,20 +279,35 @@ export default function ShartnomalarPage() {
     }
 
     setSaving(false)
-    if (error) { alert(`Xato: ${error.message}`); return }
+    if (error) { toast(`Xato: ${error.message}`, 'error'); return }
     setModal(null)
     reloadContracts()
   }
 
   // ── Update status ──────────────────────────────────────────────────────────
   async function updateStatus(id: string, status: string) {
-    await supabase.from('contracts').update({ status }).eq('id', id)
+    const { error } = await supabase.from('contracts').update({ status }).eq('id', id)
+    if (error) { toast(`Xato: ${error.message}`, 'error'); return }
     reloadContracts()
   }
 
   async function toggleSigned(c: Contract, side: 'signed_us' | 'signed_cp') {
-    await supabase.from('contracts').update({ [side]: !c[side] }).eq('id', c.id)
+    const { error } = await supabase.from('contracts').update({ [side]: !c[side] }).eq('id', c.id)
+    if (error) { toast(`Xato: ${error.message}`, 'error'); return }
     reloadContracts()
+    // If both sides are now signed, send notification email
+    const newUs = side === 'signed_us' ? !c.signed_us : c.signed_us
+    const newCp = side === 'signed_cp' ? !c.signed_cp : c.signed_cp
+    if (newUs && newCp) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        fetch('/api/notify/signed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ contractId: c.id }),
+        }).catch(() => {})
+      }
+    }
   }
 
   // ── Edit contract ──────────────────────────────────────────────────────────
@@ -393,9 +333,16 @@ export default function ShartnomalarPage() {
   }
 
   // ── Delete contract ────────────────────────────────────────────────────────
-  async function deleteContract(id: string) {
-    if (!confirm(T(t.contracts.deleteConfirm))) return
-    await supabase.from('contracts').delete().eq('id', id)
+  function deleteContract(id: string) {
+    setConfirmDeleteId(id)
+  }
+
+  async function doDeleteContract(id: string) {
+    const contract = contracts.find(c => c.id === id)
+    const { error } = await supabase.from('contracts').delete().eq('id', id)
+    if (error) { toast(`Xato: ${error.message}`, 'error'); return }
+    if (contract) logAudit('delete', 'contracts', id, { contract_number: contract.contract_number, contract_type: contract.contract_type })
+    toast("Shartnoma o'chirildi", 'info')
     reloadContracts()
   }
 
@@ -952,18 +899,14 @@ export default function ShartnomalarPage() {
     setAiLoading(true)
     setAiModal(true)
     try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: type === 'tahlil' ? 'analysis' : 'grammar',
-          content: c.content || '',
-          contract_type: c.contract_type,
-          contract_number: c.contract_number,
-        }),
+      const res = await fetchAi({
+        type: type === 'tahlil' ? 'analysis' : 'grammar',
+        content: c.content || '',
+        contract_type: c.contract_type,
+        contract_number: c.contract_number,
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
       setAiResult(data.result || data.message || 'Natija yo\'q')
     } catch (err) {
       setAiError(err instanceof Error ? err.message : 'Xatolik yuz berdi')
@@ -1287,200 +1230,40 @@ export default function ShartnomalarPage() {
 
       {/* ── View contract modal ── */}
       {modal === 'viewContract' && viewContract && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-3xl max-h-[95vh] flex flex-col shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
-              <div>
-                <h2 className="text-base font-semibold text-white">
-                  {(CONTRACT_TYPE_NAMES as Record<string, string>)[viewContract.contract_type] || viewContract.contract_type}
-                </h2>
-                <p className="text-xs text-gray-500 mt-0.5">No {viewContract.contract_number} · {viewContract.contract_date}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => generateDOCX(viewContract)} className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition font-semibold">
-                  📝 Word
-                </button>
-                <button onClick={() => generatePDF(viewContract)} className="px-3 py-1.5 text-xs bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition">
-                  📄 PDF
-                </button>
-                <button onClick={() => sendByEmail(viewContract)} className="px-3 py-1.5 text-xs bg-yellow-700/30 text-yellow-400 rounded-lg hover:bg-yellow-700/50 transition">
-                  ✉️ Email
-                </button>
-                <button onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition">
-                  🖨️ Print
-                </button>
-                {isPremium && (
-                  <button
-                    onClick={() => { setModal(null); runAiAnalysis(viewContract, 'tahlil') }}
-                    className="px-3 py-1.5 text-xs bg-purple-600/20 text-purple-400 rounded-lg hover:bg-purple-600/30 transition"
-                  >
-                    AI Tahlil
-                  </button>
-                )}
-                <button onClick={() => setModal(null)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition text-xl">
-                  ×
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="overflow-y-auto flex-1 p-6">
-              {/* Info cards */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-800/50 rounded-xl p-3">
-                  <p className="text-xs text-gray-500 mb-1">Tashkilot</p>
-                  <p className="text-sm text-white font-medium">{viewContract.organizations?.name || '—'}</p>
-                  <p className="text-xs text-gray-500">INN: {viewContract.organizations?.inn || '—'}</p>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-3">
-                  <p className="text-xs text-gray-500 mb-1">Kontragent</p>
-                  <p className="text-sm text-white font-medium">{viewContract.counterparties?.name || '—'}</p>
-                  <p className="text-xs text-gray-500">INN: {viewContract.counterparties?.inn || '—'}</p>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-3">
-                  <p className="text-xs text-gray-500 mb-1">Summa</p>
-                  <p className="text-sm text-white font-semibold">{Number(viewContract.amount || 0).toLocaleString()} so'm</p>
-                  <p className="text-xs text-gray-500">{numberToWords(Number(viewContract.amount || 0), 'uz')} so'm</p>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-3">
-                  <p className="text-xs text-gray-500 mb-1">Holat</p>
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[viewContract.status] || 'bg-gray-700 text-gray-300'}`}>
-                    {STATUSES[viewContract.status] ? T(STATUSES[viewContract.status]) : viewContract.status}
-                  </span>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-3 col-span-2">
-                  <p className="text-xs text-gray-500 mb-2">Imzolash holati</p>
-                  <div className="flex gap-3">
-                    <button onClick={() => toggleSigned(viewContract, 'signed_us')}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${viewContract.signed_us ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
-                      {viewContract.signed_us ? '✅' : '⬜'} Biz imzoladik
-                    </button>
-                    <button onClick={() => toggleSigned(viewContract, 'signed_cp')}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${viewContract.signed_cp ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
-                      {viewContract.signed_cp ? '✅' : '⬜'} Kontragent imzoladi
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Contract text */}
-              {viewContract.content && (
-                <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-4">
-                  <pre className="text-sm text-gray-200 whitespace-pre-wrap font-sans leading-relaxed">
-                    {fillPlaceholders(viewContract.content, viewContract)}
-                  </pre>
-                </div>
-              )}
-
-              {/* Spec items */}
-              {viewContract.spec_items && viewContract.spec_items.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-sm font-semibold text-white mb-3">Spesifikatsiya</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="text-gray-500 border-b border-gray-700">
-                          <th className="text-left pb-2 pr-2">Nomi</th>
-                          <th className="text-left pb-2 pr-2">Birlik</th>
-                          <th className="text-right pb-2 pr-2">Miqdor</th>
-                          <th className="text-right pb-2 pr-2">Narxi</th>
-                          <th className="text-center pb-2 pr-2">QQS%</th>
-                          <th className="text-right pb-2">Jami</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {viewContract.spec_items.map((item, i) => (
-                          <tr key={i} className="border-b border-gray-800/50">
-                            <td className="py-1.5 pr-2 text-gray-200">{item.nomi}</td>
-                            <td className="py-1.5 pr-2 text-gray-400">{item.birlik}</td>
-                            <td className="py-1.5 pr-2 text-right text-gray-300">{item.miqdori}</td>
-                            <td className="py-1.5 pr-2 text-right text-gray-300">{item.narxi?.toLocaleString()}</td>
-                            <td className="py-1.5 pr-2 text-center text-gray-400">{item.qqs_foiz === 'siz' ? 'QQSsiz' : item.qqs_foiz + '%'}</td>
-                            <td className="py-1.5 text-right font-medium text-white">{item.summa?.toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td colSpan={5} className="pt-2 text-right text-gray-400 font-medium text-xs pr-2">Jami:</td>
-                          <td className="pt-2 text-right text-white font-bold text-sm">
-                            {viewContract.spec_items.reduce((s, i) => s + (i.summa || 0), 0).toLocaleString()} so'm
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <ViewContractModal
+          viewContract={viewContract}
+          onClose={() => setModal(null)}
+          onGenerateDOCX={generateDOCX}
+          onGeneratePDF={generatePDF}
+          onSendByEmail={sendByEmail}
+          onRunAiAnalysis={runAiAnalysis}
+          onToggleSigned={toggleSigned}
+          isPremium={isPremium}
+          lang={lang}
+        />
       )}
 
       {/* ── AI modal ── */}
       {aiModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
-              <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                <span className="text-purple-400">✦</span> AI Tahlil
-              </h2>
-              <button onClick={() => setAiModal(false)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition text-xl">
-                ×
-              </button>
-            </div>
+        <AiModal
+          aiContract={aiContract}
+          aiLoading={aiLoading}
+          aiError={aiError}
+          aiResult={aiResult}
+          aiTab={aiTab}
+          onTabChange={setAiTab}
+          onClose={() => setAiModal(false)}
+          onRunAiAnalysis={runAiAnalysis}
+          lang={lang}
+        />
+      )}
 
-            {/* Tabs */}
-            <div className="flex border-b border-gray-800 flex-shrink-0">
-              <button
-                onClick={() => { setAiTab('tahlil'); if (aiContract) runAiAnalysis(aiContract, 'tahlil') }}
-                className={`flex-1 py-2.5 text-sm font-medium transition ${aiTab === 'tahlil' ? 'text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
-              >
-                Shartnoma tahlili
-              </button>
-              <button
-                onClick={() => { setAiTab('grammatika'); if (aiContract) runAiAnalysis(aiContract, 'grammatika') }}
-                className={`flex-1 py-2.5 text-sm font-medium transition ${aiTab === 'grammatika' ? 'text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
-              >
-                Grammatika tekshirish
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="overflow-y-auto flex-1 p-6">
-              {aiLoading ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-3">
-                  <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
-                  <p className="text-gray-400 text-sm">AI tahlil qilmoqda...</p>
-                </div>
-              ) : aiError ? (
-                <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-4">
-                  <p className="text-red-300 text-sm">{aiError}</p>
-                </div>
-              ) : aiResult ? (
-                <div className="prose prose-invert max-w-none">
-                  <pre className="text-sm text-gray-200 whitespace-pre-wrap font-sans leading-relaxed bg-gray-800/30 rounded-xl p-4 border border-gray-700">
-                    {aiResult}
-                  </pre>
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm text-center py-8">Natija kutilmoqda...</p>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-800 flex-shrink-0">
-              <button
-                onClick={() => setAiModal(false)}
-                className="w-full border border-gray-700 text-gray-300 py-2 rounded-lg text-sm hover:bg-gray-800 transition"
-              >
-                {T(t.btn.close)}
-              </button>
-            </div>
-          </div>
-        </div>
+      {confirmDeleteId && (
+        <ConfirmModal
+          message={T(t.contracts.deleteConfirm)}
+          onConfirm={() => { const id = confirmDeleteId; setConfirmDeleteId(null); doDeleteContract(id) }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
       )}
     </div>
   )

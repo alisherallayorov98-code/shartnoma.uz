@@ -6,6 +6,8 @@ import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { Modal, ModalActions } from '../_components/Modal'
+import ConfirmModal from '../_components/ConfirmModal'
+import { useToast } from '@/lib/toast'
 import type { Counterparty } from '@/lib/types'
 
 const emptyCp = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', phone: '', qqsreg: '' }
@@ -14,6 +16,7 @@ export default function KontragentlarPage() {
   const { lang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { cps, contracts, reloadCps } = useDashboard()
+  const { toast } = useToast()
 
   const [cpSearch, setCpSearch] = useState('')
   const [editingCp, setEditingCp] = useState<Counterparty | null>(null)
@@ -21,6 +24,7 @@ export default function KontragentlarPage() {
   const [saving, setSaving] = useState(false)
   const [modal, setModal] = useState(false)
   const [cpDetail, setCpDetail] = useState<Counterparty | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const filteredCps = cps.filter(cp =>
     cp.name.toLowerCase().includes(cpSearch.toLowerCase()) ||
@@ -33,10 +37,10 @@ export default function KontragentlarPage() {
 
   async function saveCp(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
-    if (!cpForm.name.trim()) { alert(T(t.msg.nameRequired)); setSaving(false); return }
-    if (cpForm.inn && !/^\d{9}$/.test(cpForm.inn)) { alert(T(t.msg.innInvalid)); setSaving(false); return }
-    if (cpForm.mfo && !/^\d{5}$/.test(cpForm.mfo)) { alert(T(t.msg.mfoInvalid)); setSaving(false); return }
-    if (cpForm.bank_account && !/^\d{20}$/.test(cpForm.bank_account)) { alert(T(t.msg.accountInvalid)); setSaving(false); return }
+    if (!cpForm.name.trim()) { toast(T(t.msg.nameRequired), 'error'); setSaving(false); return }
+    if (cpForm.inn && !/^\d{9}$/.test(cpForm.inn)) { toast(T(t.msg.innInvalid), 'error'); setSaving(false); return }
+    if (cpForm.mfo && !/^\d{5}$/.test(cpForm.mfo)) { toast(T(t.msg.mfoInvalid), 'error'); setSaving(false); return }
+    if (cpForm.bank_account && !/^\d{20}$/.test(cpForm.bank_account)) { toast(T(t.msg.accountInvalid), 'error'); setSaving(false); return }
     const { data: { session } } = await supabase.auth.getSession()
     let cpErr = null
     if (editingCp) {
@@ -47,14 +51,17 @@ export default function KontragentlarPage() {
       cpErr = error
     }
     setSaving(false)
-    if (cpErr) { alert(`${T(t.msg.errorPrefix)}: ${cpErr.message}`); return }
+    if (cpErr) { toast(`${T(t.msg.errorPrefix)}: ${cpErr.message}`, 'error'); return }
     setModal(false); setCpForm(emptyCp); reloadCps()
   }
 
   async function deleteCp(id: string) {
-    if (!confirm(T(t.msg.deleteCpConfirm))) return
+    setConfirmDeleteId(id)
+  }
+
+  async function doDeleteCp(id: string) {
     const { error } = await supabase.from('counterparties').delete().eq('id', id)
-    if (error) { alert(`${T(t.msg.errorPrefix)}: ${error.message}`); return }
+    if (error) { toast(`${T(t.msg.errorPrefix)}: ${error.message}`, 'error'); return }
     setCpDetail(null); reloadCps(); setEditingCp(null)
   }
 
@@ -248,6 +255,14 @@ export default function KontragentlarPage() {
             <ModalActions onClose={() => { setModal(false); setEditingCp(null); setCpForm(emptyCp) }} saving={saving}/>
           </form>
         </Modal>
+      )}
+
+      {confirmDeleteId && (
+        <ConfirmModal
+          message={T(t.msg.deleteCpConfirm)}
+          onConfirm={() => { const id = confirmDeleteId; setConfirmDeleteId(null); doDeleteCp(id) }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
       )}
     </div>
   )

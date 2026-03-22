@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { useDashboard } from '../context'
-import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
+import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
+import { fetchAi } from '@/lib/fetchAi'
+import { saveAiDocument } from '@/lib/aiDocuments'
+import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 
 type BuxFeature = 'dalolatnoma' | 'schet_faktura' | 'talabnoma' | 'tolov_grafigi' | 'debitor_undirish'
 
@@ -68,8 +71,8 @@ const FEATURES: FeatureConfig[] = [
     icon: '📅',
     title: "To'lov grafigi",
     description: "Shartnoma bo'yicha to'lov grafigini tuzing",
-    apiType: 'dalolatnoma',
-    resultField: 'dalolatnoma',
+    apiType: 'tolov_grafigi',
+    resultField: 'tolov_grafigi',
     fields: [
       { key: 'kontragent', label: "Kontragent", placeholder: "Global Solutions LLC" },
       { key: 'jami_summa', label: "Jami summa (so'm)", placeholder: "120 000 000" },
@@ -104,6 +107,7 @@ export default function BuxgalterPage() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [savedKey, setSavedKey] = useState(0)
 
   const currentFeature = FEATURES.find(f => f.key === selected)
 
@@ -125,33 +129,39 @@ export default function BuxgalterPage() {
     setResult(null)
 
     try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: currentFeature.apiType,
-          lang: 'uz',
-          details: {
-            ...formData,
-            tashkilot: activeOrg.name,
-            tashkilot_inn: activeOrg.inn,
-            direktor: activeOrg.director_name,
-            bank_name: activeOrg.bank_name,
-            bank_account: activeOrg.bank_account,
-            mfo: activeOrg.mfo,
-          },
-        }),
+      const res = await fetchAi({
+        type: currentFeature.apiType,
+        lang: 'uz',
+        details: {
+          ...formData,
+          tashkilot: activeOrg.name,
+          tashkilot_inn: activeOrg.inn,
+          direktor: activeOrg.director_name,
+          bank_name: activeOrg.bank_name,
+          bank_account: activeOrg.bank_account,
+          mfo: activeOrg.mfo,
+        },
       })
 
       const data = await res.json()
       if (data.error) { setError(data.error); return }
 
       const text = data.result?.[currentFeature.resultField]
-        || data.result?.dalolatnoma
-        || data.result?.faktura
-        || data.result?.talabnoma
+        || data.result?.dalolatnoma || data.result?.faktura || data.result?.talabnoma
         || JSON.stringify(data.result, null, 2)
       setResult(text)
+
+      // Auto-save to Supabase
+      if (text && activeOrg) {
+        saveAiDocument({
+          organization_id: activeOrg.id,
+          section: 'buxgalter',
+          feature_key: selected!,
+          title: currentFeature.title,
+          content: text,
+          meta: {},
+        }).then(() => setSavedKey(k => k + 1)).catch(console.error)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Xatolik yuz berdi")
     } finally {
@@ -167,8 +177,10 @@ export default function BuxgalterPage() {
     })
   }
 
+  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder-gray-500'
+
   return (
-    <main className="flex-1 overflow-auto p-6 bg-gray-950">
+    <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-950">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}
@@ -201,7 +213,7 @@ export default function BuxgalterPage() {
         {isFree && (
           <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-4 flex items-center gap-3">
             <span className="text-xl">⭐</span>
-            <div className="flex-1 text-sm text-yellow-300">Bu funksiyalar Premium tarifda to&apos;liq ishlaydi. Bepul tarifda cheklangan miqdorda foydalanish mumkin.</div>
+            <div className="flex-1 text-sm text-yellow-300">Bu funksiyalar Premium tarifda to&apos;liq ishlaydi.</div>
           </div>
         )}
 
@@ -243,13 +255,12 @@ export default function BuxgalterPage() {
                     value={formData[field.key] || ''}
                     onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
                     placeholder={field.placeholder}
-                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder-gray-500"
+                    className={inp}
                   />
                 </div>
               ))}
             </div>
 
-            {/* Org info display */}
             {activeOrg && (
               <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-2 text-xs text-gray-400">
                 Tashkilot: <span className="text-white font-medium">{activeOrg.name}</span>
@@ -259,27 +270,17 @@ export default function BuxgalterPage() {
             )}
 
             {error && (
-              <div className="bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2 text-sm text-red-300">
-                ⚠ {error}
-              </div>
+              <div className="bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2 text-sm text-red-300">⚠ {error}</div>
             )}
 
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition"
-            >
+            <button onClick={handleGenerate} disabled={loading}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
               {loading ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  AI ishlamoqda…
-                </>
-              ) : (
-                <>🤖 AI bilan tayyorlash</>
-              )}
+                <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>AI ishlamoqda…</>
+              ) : <>🤖 AI bilan tayyorlash</>}
             </button>
 
             {/* Preview modal */}
@@ -291,19 +292,13 @@ export default function BuxgalterPage() {
                     <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6">
-                    <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap shadow-inner">
-                      {result}
-                    </div>
+                    <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap shadow-inner">{result}</div>
                   </div>
                   <div className="px-5 py-4 border-t border-gray-800 flex gap-3">
                     <button onClick={() => { downloadTextAsWord(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">
-                      📝 Word yuklash
-                    </button>
+                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">📝 Word</button>
                     <button onClick={() => { downloadTextAsPDF(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
-                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm font-semibold transition">
-                      📄 PDF yuklash
-                    </button>
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm transition">📄 PDF</button>
                   </div>
                 </div>
               </div>
@@ -313,27 +308,20 @@ export default function BuxgalterPage() {
             {result && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <h3 className="text-sm font-semibold text-white">Natija:</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-white">Natija:</h3>
+                    <span className="text-xs text-green-400">✓ Saqlandi</span>
+                  </div>
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setShowPreview(true)}
-                      className="flex items-center gap-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg transition">
-                      👁 Ko&apos;rish
-                    </button>
+                      className="flex items-center gap-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
                     <button onClick={() => downloadTextAsWord(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">
-                      📝 Word
-                    </button>
+                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
                     <button onClick={() => downloadTextAsPDF(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">
-                      📄 PDF
-                    </button>
+                      className="flex items-center gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
                     <button onClick={handleCopy}
                       className="flex items-center gap-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">
                       {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
-                    </button>
-                    <button onClick={() => { saveAiResult(currentFeature?.title || 'Hujjat', result); alert('Saqlandi!') }}
-                      className="flex items-center gap-1.5 text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg transition">
-                      💾 Saqlash
                     </button>
                   </div>
                 </div>
@@ -343,6 +331,11 @@ export default function BuxgalterPage() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Saved Documents */}
+        {activeOrg && (
+          <SavedDocumentsPanel orgId={activeOrg.id} section="buxgalter" accentColor="indigo" refreshKey={savedKey} />
         )}
       </div>
     </main>

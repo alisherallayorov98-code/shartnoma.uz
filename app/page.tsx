@@ -305,7 +305,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-4 gap-3 mb-4">
               {[
-                { label: l.nav[2] === 'Narxlar' ? 'Shartnomalar' : l.nav[0] === 'Возможности' ? 'Договоры' : 'Шартномалар', val: '24', color: 'from-blue-600 to-blue-800' },
+                { label: lang==='ru' ? 'Договоры' : lang==='oz' ? 'Шартномалар' : 'Shartnomalar', val: '24', color: 'from-blue-600 to-blue-800' },
                 { label: lang==='ru'?'Активных':lang==='oz'?'Фаол':'Faol', val: '12', color: 'from-emerald-600 to-emerald-800' },
                 { label: lang==='ru'?'Организации':lang==='oz'?'Ташкилотлар':'Tashkilotlar', val: '3', color: 'from-purple-600 to-purple-800' },
                 { label: lang==='ru'?'Контрагенты':lang==='oz'?'Контрагентлар':'Kontragentlar', val: '18', color: 'from-orange-600 to-orange-800' },

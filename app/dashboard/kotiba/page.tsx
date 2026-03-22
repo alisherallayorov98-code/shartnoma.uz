@@ -2,16 +2,14 @@
 
 import { useState } from 'react'
 import { useDashboard } from '../context'
-import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
+import { fetchAi } from '@/lib/fetchAi'
+import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
+import { saveAiDocument } from '@/lib/aiDocuments'
+import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 
 type KotibaFeature =
-  | 'bayonnoma'
-  | 'rasmiy_xat'
-  | 'taklifnoma'
-  | 'hisobot'
-  | 'eslatma'
-  | 'murojaatnoma'
-  | 'tushuntirish_xati'
+  | 'bayonnoma' | 'rasmiy_xat' | 'taklifnoma'
+  | 'hisobot' | 'eslatma' | 'murojaatnoma' | 'tushuntirish_xati'
 
 type FeatureConfig = {
   key: KotibaFeature
@@ -48,9 +46,9 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'rasmiy_xat',
     resultField: 'xat',
     fields: [
-      { key: 'kim_uchun', label: "Kimga (tashkilot/shaxs)", placeholder: 'Soliq inspeksiyasi boshlig\'iga' },
+      { key: 'kim_uchun', label: "Kimga (tashkilot/shaxs)", placeholder: "Soliq inspeksiyasi boshlig'iga" },
       { key: 'mavzu', label: 'Xat mavzusi', placeholder: "Ma'lumot so'rash haqida" },
-      { key: 'asosiy_mazmun', label: 'Asosiy mazmun/so\'rov', placeholder: "2024-yil 3-kvartal hisoboti bo'yicha ma'lumot so'rash...", textarea: true },
+      { key: 'asosiy_mazmun', label: "Asosiy mazmun/so'rov", placeholder: "2024-yil 3-kvartal hisoboti bo'yicha ma'lumot so'rash...", textarea: true },
       { key: 'muddati', label: 'Javob muddati (ixtiyoriy)', placeholder: '10 ish kuni ichida' },
     ],
   },
@@ -138,6 +136,7 @@ export default function KotibaPage() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [savedKey, setSavedKey] = useState(0)
 
   const currentFeature = FEATURES.find(f => f.key === selected)
 
@@ -153,31 +152,34 @@ export default function KotibaPage() {
     if (!currentFeature) return
     setLoading(true); setError(''); setResult(null)
     try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: currentFeature.apiType,
-          data: {
-            ...formData,
-            tashkilot: activeOrg?.name || '',
-            tashkilot_inn: activeOrg?.inn || '',
-            direktor: activeOrg?.director_name || '',
-          },
-        }),
+      const res = await fetchAi({
+        type: currentFeature.apiType,
+        data: {
+          ...formData,
+          tashkilot: activeOrg?.name || '',
+          tashkilot_inn: activeOrg?.inn || '',
+          direktor: activeOrg?.director_name || '',
+        },
       })
       const data = await res.json()
       if (!res.ok || data.error) { setError(data.error || 'Xatolik yuz berdi'); return }
       const text = data.result?.[currentFeature.resultField]
-        || data.result?.bayonnoma
-        || data.result?.xat
-        || data.result?.taklifnoma
-        || data.result?.hisobot
-        || data.result?.eslatma
-        || data.result?.murojaatnoma
-        || data.result?.tushuntirish
-        || JSON.stringify(data.result, null, 2)
+        || data.result?.bayonnoma || data.result?.xat || data.result?.taklifnoma
+        || data.result?.hisobot || data.result?.eslatma || data.result?.murojaatnoma
+        || data.result?.tushuntirish || JSON.stringify(data.result, null, 2)
       setResult(text)
+
+      // Auto-save to Supabase
+      if (text && activeOrg) {
+        saveAiDocument({
+          organization_id: activeOrg.id,
+          section: 'kotiba',
+          feature_key: selected!,
+          title: currentFeature.title,
+          content: text,
+          meta: {},
+        }).then(() => setSavedKey(k => k + 1)).catch(console.error)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Xatolik yuz berdi')
     } finally {
@@ -196,22 +198,22 @@ export default function KotibaPage() {
   const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 placeholder-gray-500'
 
   return (
-    <main className="flex-1 overflow-auto p-6 bg-gray-950">
+    <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-950">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <span className="w-10 h-10 bg-violet-900/50 rounded-xl flex items-center justify-center text-xl">🗂️</span>
+            <span className="w-10 h-10 bg-violet-900/50 rounded-xl flex items-center justify-center text-xl">🤖</span>
             Kotiba AI
           </h1>
-          <p className="text-gray-400 text-sm mt-1">AI yordamida rasmiy hujjatlar, xatlar va bayonnomalar tayyorlang</p>
+          <p className="text-gray-400 text-sm mt-1">Rasmiy hujjatlarni AI yordamida bir zumda tayyorlang</p>
         </div>
 
         {isFree && (
           <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-4 flex items-center gap-3">
             <span className="text-xl">⭐</span>
-            <div className="flex-1 text-sm text-yellow-300">Bu funksiyalar Premium tarifda to&apos;liq ishlaydi. Bepul tarifda cheklangan miqdorda foydalanish mumkin.</div>
+            <div className="flex-1 text-sm text-yellow-300">Bu funksiyalar Premium tarifda to&apos;liq ishlaydi.</div>
           </div>
         )}
 
@@ -246,15 +248,15 @@ export default function KotibaPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {currentFeature.fields.map(field => (
-                <div key={field.key} className={field.textarea ? 'col-span-full' : ''}>
+                <div key={field.key} className={field.textarea ? 'sm:col-span-2' : ''}>
                   <label className="block text-xs font-medium text-gray-400 mb-1.5">{field.label}</label>
                   {field.textarea ? (
                     <textarea
-                      rows={3}
                       value={formData[field.key] || ''}
                       onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
                       placeholder={field.placeholder}
-                      className={inp + ' resize-none'}
+                      rows={3}
+                      className={`${inp} resize-y`}
                     />
                   ) : (
                     <input
@@ -269,37 +271,24 @@ export default function KotibaPage() {
               ))}
             </div>
 
-            {/* Org info */}
             {activeOrg && (
               <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-2 text-xs text-gray-400">
-                Tashkilot: <span className="text-white font-medium">{activeOrg.name}</span>
-                {activeOrg.inn && <> · INN: {activeOrg.inn}</>}
-                {activeOrg.director_name && <> · Direktor: {activeOrg.director_name}</>}
+                Tashkilot: <span className="text-white font-medium">{activeOrg.name}</span> · Direktor: {activeOrg.director_name}
               </div>
             )}
 
             {error && (
-              <div className="bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2 text-sm text-red-300">
-                ⚠ {error}
-              </div>
+              <div className="bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2 text-sm text-red-300">⚠ {error}</div>
             )}
 
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition"
-            >
+            <button onClick={handleGenerate} disabled={loading}
+              className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
               {loading ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  AI ishlamoqda…
-                </>
-              ) : (
-                <>🤖 AI bilan tayyorlash</>
-              )}
+                <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>AI ishlamoqda…</>
+              ) : <>🤖 AI bilan tayyorlash</>}
             </button>
 
             {/* Preview modal */}
@@ -311,19 +300,13 @@ export default function KotibaPage() {
                     <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6">
-                    <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap shadow-inner">
-                      {result}
-                    </div>
+                    <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap shadow-inner">{result}</div>
                   </div>
                   <div className="px-5 py-4 border-t border-gray-800 flex gap-3">
                     <button onClick={() => { downloadTextAsWord(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">
-                      📝 Word yuklash
-                    </button>
+                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">📝 Word</button>
                     <button onClick={() => { downloadTextAsPDF(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
-                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm font-semibold transition">
-                      📄 PDF yuklash
-                    </button>
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm transition">📄 PDF</button>
                   </div>
                 </div>
               </div>
@@ -333,27 +316,20 @@ export default function KotibaPage() {
             {result && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <h3 className="text-sm font-semibold text-white">Natija:</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-white">Natija:</h3>
+                    <span className="text-xs text-green-400">✓ Saqlandi</span>
+                  </div>
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setShowPreview(true)}
-                      className="flex items-center gap-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg transition">
-                      👁 Ko&apos;rish
-                    </button>
+                      className="flex items-center gap-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
                     <button onClick={() => downloadTextAsWord(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">
-                      📝 Word
-                    </button>
+                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
                     <button onClick={() => downloadTextAsPDF(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">
-                      📄 PDF
-                    </button>
+                      className="flex items-center gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
                     <button onClick={handleCopy}
                       className="flex items-center gap-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">
                       {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
-                    </button>
-                    <button onClick={() => { saveAiResult(currentFeature?.title || 'Hujjat', result); alert('Saqlandi!') }}
-                      className="flex items-center gap-1.5 text-xs bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg transition">
-                      💾 Saqlash
                     </button>
                   </div>
                 </div>
@@ -363,6 +339,11 @@ export default function KotibaPage() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Saved Documents */}
+        {activeOrg && (
+          <SavedDocumentsPanel orgId={activeOrg.id} section="kotiba" accentColor="violet" refreshKey={savedKey} />
         )}
       </div>
     </main>

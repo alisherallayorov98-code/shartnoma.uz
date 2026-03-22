@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
+import { useToast } from '@/lib/toast'
 
 export default function ProfilPage() {
   const { lang } = useLang()
@@ -48,6 +49,7 @@ export default function ProfilPage() {
   const [orgExtSaving, setOrgExtSaving] = useState(false)
   const [orgExtMsg, setOrgExtMsg] = useState('')
 
+  const { toast } = useToast()
   const lbl = 'block text-xs text-gray-400 mb-1'
   const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500'
 
@@ -57,19 +59,23 @@ export default function ProfilPage() {
     const ext = file.name.split('.').pop()
     const path = `avatars/${session!.user.id}.${ext}`
     const { error: upErr } = await supabase.storage.from('org-assets').upload(path, file, { upsert: true })
-    if (upErr) { alert(`${T(t.msg.uploadError)}: ${upErr.message}`); setAvatarUploading(false); return }
+    if (upErr) { toast(`${T(t.msg.uploadError)}: ${upErr.message}`, 'error'); setAvatarUploading(false); return }
     const { data } = supabase.storage.from('org-assets').getPublicUrl(path)
     const updated = { ...profile, avatar_url: data.publicUrl }
-    setProfile(updated)
-    await supabase.from('profiles').upsert({ id: session!.user.id, ...updated, updated_at: new Date().toISOString() })
+    const { error: dbErr } = await supabase.from('profiles').upsert({ id: session!.user.id, ...updated, updated_at: new Date().toISOString() })
     setAvatarUploading(false)
+    if (dbErr) { toast(`Avatar saqlashda xato: ${dbErr.message}`, 'error'); return }
+    setProfile(updated)
+    toast('Avatar yangilandi')
   }
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault(); setProfileSaving(true); setProfileMsg('')
     const { data: { session } } = await supabase.auth.getSession()
-    await supabase.from('profiles').upsert({ id: session!.user.id, ...profile, updated_at: new Date().toISOString() })
-    setProfileMsg(T(t.msg.profileSaved)); setProfileSaving(false)
+    const { error } = await supabase.from('profiles').upsert({ id: session!.user.id, ...profile, updated_at: new Date().toISOString() })
+    setProfileSaving(false)
+    if (error) { toast(`Saqlashda xato: ${error.message}`, 'error'); return }
+    setProfileMsg(T(t.msg.profileSaved))
     setTimeout(() => setProfileMsg(''), 3000)
   }
 

@@ -6,6 +6,8 @@ import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { Modal, ModalActions } from '../_components/Modal'
+import ConfirmModal from '../_components/ConfirmModal'
+import { useToast } from '@/lib/toast'
 import type { Counterparty } from '@/lib/types'
 import { cyrillicToLatin } from '@/lib/downloadUtils'
 
@@ -33,6 +35,7 @@ export default function SpesifikatsiyalarPage() {
   const { lang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { activeOrg, contracts, cps } = useDashboard()
+  const { toast } = useToast()
 
   const [specs, setSpecs] = useState<Specification[]>([])
   const [specModal, setSpecModal] = useState(false)
@@ -40,6 +43,7 @@ export default function SpesifikatsiyalarPage() {
   const [specForm, setSpecForm] = useState(emptySpecForm)
   const [specItems, setSpecItems] = useState<SpecItem[]>([])
   const [saving, setSaving] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const lbl = 'block text-xs text-gray-400 mb-1'
   const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500'
@@ -60,7 +64,7 @@ export default function SpesifikatsiyalarPage() {
   async function saveSpec(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
     if (!activeOrg) return
-    if (specItems.length === 0) { alert(T(t.msg.addItem)); setSaving(false); return }
+    if (specItems.length === 0) { toast(T(t.msg.addItem), 'error'); setSaving(false); return }
     const payload = {
       organization_id: activeOrg.id,
       contract_id: specForm.contract_id || null,
@@ -77,15 +81,18 @@ export default function SpesifikatsiyalarPage() {
       specErr = error
     }
     setSaving(false)
-    if (specErr) { alert(`${T(t.msg.errorPrefix)}: ${specErr.message}`); return }
+    if (specErr) { toast(`${T(t.msg.errorPrefix)}: ${specErr.message}`, 'error'); return }
     setSpecModal(false); setEditingSpec(null); setSpecForm(emptySpecForm); setSpecItems([])
     loadSpecs(activeOrg.id)
   }
 
-  async function deleteSpec(id: string) {
-    if (!confirm(T(t.msg.deleteSpecConfirm))) return
+  function deleteSpec(id: string) {
+    setConfirmDeleteId(id)
+  }
+
+  async function doDeleteSpec(id: string) {
     const { error } = await supabase.from('specifications').delete().eq('id', id)
-    if (error) { alert(`${T(t.msg.errorPrefix)}: ${error.message}`); return }
+    if (error) { toast(`${T(t.msg.errorPrefix)}: ${error.message}`, 'error'); return }
     if (activeOrg) loadSpecs(activeOrg.id)
   }
 
@@ -579,6 +586,14 @@ export default function SpesifikatsiyalarPage() {
             <ModalActions onClose={() => { setSpecModal(false); setEditingSpec(null); setSpecForm(emptySpecForm); setSpecItems([]) }} saving={saving}/>
           </form>
         </Modal>
+      )}
+
+      {confirmDeleteId && (
+        <ConfirmModal
+          message={T(t.msg.deleteSpecConfirm)}
+          onConfirm={() => { const id = confirmDeleteId; setConfirmDeleteId(null); doDeleteSpec(id) }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
       )}
     </div>
   )

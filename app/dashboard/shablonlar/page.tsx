@@ -9,6 +9,8 @@ import { useDashboard } from '../context'
 import { DEFAULT_TEMPLATES, getTplField, type AppTemplate } from '@/lib/defaultTemplates'
 import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
 import { Modal, ModalActions } from '../_components/Modal'
+import ConfirmModal from '../_components/ConfirmModal'
+import { useToast } from '@/lib/toast'
 
 const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = {
   oldi_sotdi: { uz: 'Oldi-sotdi', oz: 'Олди-сотди', ru: 'Купля-продажа' },
@@ -54,6 +56,7 @@ export default function ShablonlarPage() {
   const { lang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { activeOrg, isFree } = useDashboard()
+  const { toast } = useToast()
 
   const [customTemplates, setCustomTemplates] = useState<AppTemplate[]>([])
   const [templateFilter, setTemplateFilter] = useState('barchasi')
@@ -64,6 +67,7 @@ export default function ShablonlarPage() {
   const [saving, setSaving] = useState(false)
   const [wordImporting, setWordImporting] = useState(false)
   const wordImportRef = useRef<HTMLInputElement>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const lbl = 'block text-xs text-gray-400 mb-1'
   const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500'
@@ -91,8 +95,8 @@ export default function ShablonlarPage() {
   async function saveCustomTemplate(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
     if (!activeOrg) return
-    if (!customTplForm.name.trim()) { alert(T(t.msg.tplNameRequired)); setSaving(false); return }
-    if (!customTplForm.content.trim()) { alert(T(t.msg.tplContentReq)); setSaving(false); return }
+    if (!customTplForm.name.trim()) { toast(T(t.msg.tplNameRequired), 'error'); setSaving(false); return }
+    if (!customTplForm.content.trim()) { toast(T(t.msg.tplContentReq), 'error'); setSaving(false); return }
     const payload = {
       organization_id: activeOrg.id,
       type: customTplForm.type,
@@ -109,13 +113,16 @@ export default function ShablonlarPage() {
       dbErr = error
     }
     setSaving(false)
-    if (dbErr) { alert(`${T(t.msg.errorPrefix)}: ${dbErr.message}`); return }
+    if (dbErr) { toast(`${T(t.msg.errorPrefix)}: ${dbErr.message}`, 'error'); return }
     setCustomTemplateModal(false); setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl)
     loadCustomTemplates(activeOrg.id)
   }
 
-  async function deleteCustomTemplate(id: string) {
-    if (!confirm(T(t.msg.deleteTplConfirm))) return
+  function deleteCustomTemplate(id: string) {
+    setConfirmDeleteId(id)
+  }
+
+  async function doDeleteCustomTemplate(id: string) {
     await supabase.from('custom_templates').delete().eq('id', id)
     if (activeOrg) loadCustomTemplates(activeOrg.id)
   }
@@ -123,7 +130,7 @@ export default function ShablonlarPage() {
   async function handleWordImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.name.endsWith('.docx')) { alert('Faqat .docx formatdagi fayllar qabul qilinadi'); return }
+    if (!file.name.endsWith('.docx')) { toast('Faqat .docx formatdagi fayllar qabul qilinadi', 'error'); return }
     setWordImporting(true)
     try {
       const { convertToHtml } = await import('mammoth')
@@ -132,13 +139,13 @@ export default function ShablonlarPage() {
       const div = document.createElement('div')
       div.innerHTML = result.value
       const text = div.innerText.trim()
-      if (!text) { alert("Fayl bo'sh yoki o'qib bo'lmadi"); setWordImporting(false); return }
+      if (!text) { toast("Fayl bo'sh yoki o'qib bo'lmadi", 'error'); setWordImporting(false); return }
       const baseName = file.name.replace(/\.docx$/i, '')
       setEditingCustomTemplate(null)
       setCustomTplForm({ type: 'boshqa', name: baseName, description: `Word fayldan import: ${file.name}`, content: text })
       setCustomTemplateModal(true)
     } catch {
-      alert("Faylni o'qishda xatolik yuz berdi")
+      toast("Faylni o'qishda xatolik yuz berdi", 'error')
     } finally {
       setWordImporting(false)
       if (wordImportRef.current) wordImportRef.current.value = ''
@@ -344,6 +351,14 @@ export default function ShablonlarPage() {
             <ModalActions onClose={() => { setCustomTemplateModal(false); setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl) }} saving={saving}/>
           </form>
         </Modal>
+      )}
+
+      {confirmDeleteId && (
+        <ConfirmModal
+          message={T(t.msg.deleteTplConfirm)}
+          onConfirm={() => { const id = confirmDeleteId; setConfirmDeleteId(null); doDeleteCustomTemplate(id) }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
       )}
     </div>
   )

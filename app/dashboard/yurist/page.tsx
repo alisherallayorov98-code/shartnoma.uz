@@ -6,6 +6,8 @@ import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { getAiUsedToday, incrementAiUsage } from '@/lib/aiUsage'
 import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
+import { fetchAi } from '@/lib/fetchAi'
+import { useToast } from '@/lib/toast'
 
 const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = {
   oldi_sotdi: { uz: 'Oldi-sotdi', oz: 'Олди-сотди', ru: 'Купля-продажа' },
@@ -36,6 +38,7 @@ const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; nee
 
 export default function YuristPage() {
   const { lang } = useLang()
+  const { toast } = useToast()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { contracts, activeOrg, isFree, subscription, openUpgradeModal } = useDashboard()
 
@@ -86,7 +89,7 @@ export default function YuristPage() {
       if (hubFeature === 'tarjima')   body.target_lang = hubTargetLang
       if (hubFeature === 'recommend') { body.description = hubDescription; delete body.content }
       if (hubFeature === 'write')     { body.details = hubWriteDetails; delete body.content }
-      const res  = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const res  = await fetchAi(body)
       const data = await res.json()
       if (!res.ok || data.error) { setHubError(data.error || 'Xatolik'); return }
       const result = data.result
@@ -401,7 +404,7 @@ export default function YuristPage() {
                     className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                   <button onClick={() => navigator.clipboard.writeText(String(hubResult.xulosa || ''))}
                     className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
-                  <button onClick={() => { saveAiResult('Yurist xulosa', String(hubResult.xulosa || '')); alert('Saqlandi!') }}
+                  <button onClick={() => { saveAiResult('Yurist xulosa', String(hubResult.xulosa || '')); toast('Saqlandi!', 'success') }}
                     className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                 </div>
               </div>
@@ -420,7 +423,7 @@ export default function YuristPage() {
                       className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                     <button onClick={() => navigator.clipboard.writeText(String(hubResult.tarjima || ''))}
                       className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
-                    <button onClick={() => { saveAiResult('Tarjima', String(hubResult.tarjima || '')); alert('Saqlandi!') }}
+                    <button onClick={() => { saveAiResult('Tarjima', String(hubResult.tarjima || '')); toast('Saqlandi!', 'success') }}
                       className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                   </div>
                 </div>
@@ -519,7 +522,7 @@ export default function YuristPage() {
                     className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                   <button onClick={() => navigator.clipboard.writeText(String(hubResult.band || ''))}
                     className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
-                  <button onClick={() => { saveAiResult('Yuridik band', String(hubResult.band || '')); alert('Saqlandi!') }}
+                  <button onClick={() => { saveAiResult('Yuridik band', String(hubResult.band || '')); toast('Saqlandi!', 'success') }}
                     className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                 </div>
               </div>
@@ -557,7 +560,7 @@ export default function YuristPage() {
                       className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                     <button onClick={() => navigator.clipboard.writeText(String(hubResult.shartnoma || ''))}
                       className="text-xs text-purple-400 hover:text-purple-300">📋 Nusxa</button>
-                    <button onClick={() => { saveAiResult('AI shartnoma', String(hubResult.shartnoma || '')); alert('Saqlandi!') }}
+                    <button onClick={() => { saveAiResult('AI shartnoma', String(hubResult.shartnoma || '')); toast('Saqlandi!', 'success') }}
                       className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                   </div>
                 </div>
