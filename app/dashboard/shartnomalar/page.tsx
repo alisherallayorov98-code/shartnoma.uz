@@ -14,6 +14,7 @@ import ContractModal, { type ContractForm } from './_components/ContractModal'
 import ViewContractModal from './_components/ViewContractModal'
 import AiModal from './_components/AiModal'
 import { cyrillicToLatin } from '@/lib/downloadUtils'
+import { latinToCyrillic } from '@/lib/scriptNorm'
 import { fillPlaceholders, type PlaceholderData } from '@/lib/contractUtils'
 import { fetchAi } from '@/lib/fetchAi'
 import { logAudit } from '@/lib/audit'
@@ -247,6 +248,7 @@ export default function ShartnomalarPage() {
         cp,
         contract_type: contractForm.contract_type,
       })
+      if (lang === 'oz') content = latinToCyrillic(content)
     } else {
       // Template-based content: fill all {{PLACEHOLDER}} variables now so DB stores clean text
       content = fillPlaceholders(content, {
