@@ -248,7 +248,7 @@ export default function ShartnomalarPage() {
         cp,
         contract_type: contractForm.contract_type,
       })
-      if (lang === 'oz') content = latinToCyrillic(content)
+      if (lang === 'oz' || lang === 'ru') content = latinToCyrillic(content)
     } else {
       // Template-based content: fill all {{PLACEHOLDER}} variables now so DB stores clean text
       content = fillPlaceholders(content, {
