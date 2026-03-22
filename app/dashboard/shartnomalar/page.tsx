@@ -906,7 +906,7 @@ export default function ShartnomalarPage() {
     const doc = new Document({
       sections: [{
         properties: {
-          page: { margin: { top: 1134, bottom: 1134, left: 1134, right: 851 } },
+          page: { margin: { top: 1134, bottom: 1134, left: 567, right: 851 } },
         },
         footers: { default: footer },
         children: [
