@@ -7,6 +7,9 @@ export type ContractType =
   | 'moliyaviy'
   | 'daval'
   | 'xalqaro'
+  | 'agentlik'
+  | 'transport'
+  | 'lizing'
   | 'boshqa'
 
 export const CONTRACT_TYPE_NAMES: Record<ContractType, string> = {
@@ -18,6 +21,9 @@ export const CONTRACT_TYPE_NAMES: Record<ContractType, string> = {
   moliyaviy:   'Moliyaviy yordam shartnomasi',
   daval:       'Daval shartnomasi',
   xalqaro:     'Xalqaro shartnoma',
+  agentlik:    'Agentlik shartnomasi',
+  transport:   'Transport shartnomasi',
+  lizing:      'Lizing shartnomasi',
   boshqa:      'Boshqa shartnoma',
 }
 
@@ -540,6 +546,11 @@ Director: {{BUYURTMACHI_RAHBAR}}           Director: {{IJROCHI_RAHBAR}}
 
 ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
         SEAL                                        SEAL`,
+
+  // ─────────────────────────────────────────────────
+  agentlik: '',
+  transport: '',
+  lizing: '',
 
   // ─────────────────────────────────────────────────
   boshqa: `SHARTNOMA

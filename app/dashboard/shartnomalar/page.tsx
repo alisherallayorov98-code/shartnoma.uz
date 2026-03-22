@@ -210,6 +210,33 @@ export default function ShartnomalarPage() {
         cp_director: cp?.director_name || '',
         amount,
         amount_text: amount > 0 ? numberToWords(amount, 'uz') + " so'm" : '___',
+        extra: {
+          ...(contractForm.product_name ? { TOVAR_NOMI: contractForm.product_name } : {}),
+          ...(contractForm.yetkazish_muddat ? { YETKAZISH_MUDDAT: contractForm.yetkazish_muddat } : { YETKAZISH_MUDDAT: '20 (yigirma) ish kuni' }),
+          // Agentlik
+          ...(contractForm.xizmat_tavsif ? { AGENT_VAZIFA: contractForm.xizmat_tavsif } : {}),
+          ...(contractForm.qarz_foiz ? { AGENT_FOZ: contractForm.qarz_foiz } : {}),
+          ...(contractForm.yetkazish_joy ? { AGENT_HUDUD: contractForm.yetkazish_joy } : {}),
+          // Transport
+          ...(contractForm.ijara_manzil ? { YETKAZISH_JOY: contractForm.yetkazish_joy || '___', QABUL_JOY: contractForm.ijara_manzil } : {}),
+          // Lizing
+          ...(contractForm.pudrat_obekt ? { LIZING_OBEKT: contractForm.pudrat_obekt } : {}),
+          ...(contractForm.ijara_muddat ? { LIZING_MUDDAT: contractForm.ijara_muddat } : {}),
+          ...(contractForm.oylik_tolov ? { LIZING_FOIZ: contractForm.oylik_tolov } : {}),
+          ...(contractForm.qarz_foiz ? { BOSHLANGICH_BADAL: contractForm.qarz_foiz } : {}),
+          QOLDIQ_QIYMAT: '___',
+          ...(contractForm.asosiy_raqam ? { ASOSIY_RAQAM: contractForm.asosiy_raqam } : {}),
+          ...(contractForm.asosiy_sana ? { ASOSIY_SANA: contractForm.asosiy_sana.split('-').reverse().join('.') + '-yil' } : {}),
+          ...(() => {
+            const parts: string[] = []
+            if (contractForm.yangi_muddat) {
+              const d = contractForm.yangi_muddat.split('-').reverse().join('.') + '-yil'
+              parts.push(`Asosiy shartnomaning amal qilish muddati ${d} gacha uzaytirilsin`)
+            }
+            if (contractForm.ozgartirish) parts.push(contractForm.ozgartirish)
+            return parts.length ? { OZGARTIRISH: parts.join('. ') } : {}
+          })(),
+        },
       })
       content = structureToText(structure, {
         type_name: (CONTRACT_TYPE_NAMES as Record<string, string>)[contractForm.contract_type] || contractForm.contract_type,
@@ -642,7 +669,8 @@ export default function ShartnomalarPage() {
     const CONTRACT_TYPE_NAMES_LOCAL: Record<string, string> = {
       oldi_sotdi: 'Oldi-sotdi', xizmat: "Xizmat ko'rsatish", ijara: 'Ijara',
       pudrat: 'Pudrat', qoshimcha: "Qo'shimcha", moliyaviy: 'Moliyaviy yordam',
-      daval: 'Daval', xalqaro: 'Xalqaro', boshqa: 'Boshqa',
+      daval: 'Daval', xalqaro: 'Xalqaro', agentlik: 'Agentlik',
+      transport: 'Transport', lizing: 'Lizing', boshqa: 'Boshqa',
     }
     const headers = ['Raqam', 'Sana', 'Tur', 'Holat', 'Summa', 'Kontragent', 'Tashkilot', 'Shahar']
     const rows = list.map(c => [

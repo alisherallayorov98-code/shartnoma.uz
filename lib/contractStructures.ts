@@ -27,11 +27,19 @@ function formatDateUz(dateStr: string | undefined): string {
   return `${d}.${m}.${y}-yil`
 }
 
+function yearEnd(dateStr: string | undefined): string {
+  if (!dateStr) return '___'
+  const year = dateStr.split('-')[0]
+  if (!year || year.length !== 4) return '___'
+  return `31.12.${year}-yil`
+}
+
 function fill(text: string, d: Partial<TemplateData>): string {
   let result = text
     .replace(/\[RAQAM\]/g, d.contract_number || '___')
     .replace(/\[SANA\]/g, formatDateUz(d.contract_date))
     .replace(/\[SHAHAR\]/g, d.city || 'Toshkent')
+    .replace(/\[YIL_OXIRI\]/g, yearEnd(d.contract_date))
     .replace(/\[BUYURTMACHI\]/g, d.org_name || '_________________')
     .replace(/\[BUYURTMACHI_INN\]/g, d.org_inn || '___')
     .replace(/\[BUYURTMACHI_RAHBAR\]/g, d.org_director || '___')
@@ -42,7 +50,7 @@ function fill(text: string, d: Partial<TemplateData>): string {
     .replace(/\[SUMMA_MATN\]/g, (d.amount && d.amount_text) ? d.amount_text : '___')
   if (d.extra) {
     for (const [key, value] of Object.entries(d.extra)) {
-      if (value) result = result.replace(new RegExp(`\\[${key.toUpperCase()}\\]`, 'g'), value)
+      result = result.replace(new RegExp(`\\[${key.toUpperCase()}\\]`, 'g'), value || '___')
     }
   }
   return result
@@ -157,7 +165,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     { sarlavha: "SHARTNOMA PREDMETI", bandlar: [
       { matn: `[BUYURTMACHI] (keyingi o'rinlarda "Sotuvchi") va [IJROCHI] (keyingi o'rinlarda "Xaridor") o'rtasida ushbu Tovar yetkazib berish shartnomasi (keyingi o'rinlarda "Shartnoma") tuzildi.` },
       { matn: `Sotuvchi ushbu Shartnoma amal qilish davrida Xaridorga tovarlarni (keyingi o'rinlarda "Tovar") mulk sifatida topshirish, Xaridor esa Tovarni qabul qilib, ushbu Shartnoma va unga ilovalar bilan belgilangan tartibda, muddatlarda va shartlarda to'lash majburiyatini oladi.` },
-      { matn: "Tovarning nomenklaturasi va narxi ushbu Shartnomaga 1-ilova sifatida biriktirilgan Narxni kelishish protokolida belgilanadi. Tovar miqdori Xaridor tomonidan beriladigan So'rovnoma asosida aniqlanadi. Har bir tovar partiyasiga alohida tovar-xat rasmiylashtiriladi va Shartnomaning ajralmas qismi hisoblanadi." },
+      { matn: `Tovarning nomenklaturasi: [TOVAR_NOMI]. Tovarning narxi ushbu Shartnomaga 1-ilova sifatida biriktirilgan Narxni kelishish protokolida belgilanadi. Tovar miqdori Xaridor tomonidan beriladigan So'rovnoma asosida aniqlanadi. Har bir tovar partiyasiga alohida tovar-xat rasmiylashtiriladi va Shartnomaning ajralmas qismi hisoblanadi.` },
       { matn: `Ushbu Shartnoma bo'yicha tovarlarning taxminiy umumiy qiymati [SUMMA] ([SUMMA_MATN]) so'mni tashkil etadi, QQS hisobga olingan holda. Shartnomaning yakuniy summasi barcha tovar-xatlar summasini qo'shish yo'li bilan aniqlanadi.` },
     ]},
 
@@ -165,7 +173,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
       { matn: "Yetkazib berish Sotuvchi bilan kelishilgan Xaridor So'rovnomasi asosida amalga oshiriladi. So'rovnomada Tovarning nomenklaturasi va miqdori ko'rsatilishi shart. So'rovnomada Tovarga bo'lgan maxsus talablar, yetkazib berish kerak bo'lgan sana va vaqt ham ko'rsatilishi mumkin." },
       { matn: "So'rovnoma og'zaki yoki yozma shaklda (elektron pochta yoki faks orqali) yuborilishi mumkin. Agar Sotuvchi belgilangan muddatda So'rovnomani bajarib bo'lmasligini Xaridorga ma'lum qilmasa, So'rovnoma Tomonlar tomonidan qabul qilingan va kelishilgan hisoblanadi." },
       { matn: "Agar Sotuvchi So'rovnomani Xaridor shartlarida qabul qila olmasa, u So'rovnomani olgan kundan boshlab 3 (uch) ish kuni ichida Xaridorga xabar berishi shart. Bunda Xaridor Sotuvchi takliflari hisobga olingan holda So'rovnomani qayta yuborishi mumkin. Qayta yuborilgan So'rovnoma yuborilgan zahoti Sotuvchi tomonidan qabul qilingan hisoblanadi." },
-      { matn: "Tovar Sotuvchi tomonidan So'rovnoma qabul qilingan va oldindan to'lov summasi Sotuvchining hisob raqamiga kelib tushgan kundan boshlab eng ko'pi bilan 20 (yigirma) ish kuni ichida beriladi." },
+      { matn: `Tovar Sotuvchi tomonidan So'rovnoma qabul qilingan va oldindan to'lov summasi Sotuvchining hisob raqamiga kelib tushgan kundan boshlab eng ko'pi bilan [YETKAZISH_MUDDAT] ichida beriladi.` },
       { matn: "Yetkazib berish sharti — Sotuvchining omborxonasidan Xaridor kuchi va vositalari bilan olib ketish (EXW). Tovarni miqdor va sifat jihatidan qabul qilib-topshirish Sotuvchining omborxonasida amalga oshiriladi." },
       { matn: "Tomonlar kelishib olgan jo'natish sanasi va vaqtidan boshlab 5 (besh) ish kuni ichida Xaridor kelmasa, Sotuvchi omborxonada Tovar mavjud emasligi uchun javobgar emas." },
       { matn: "Tovarni qabul qilish Xaridorning vakolatli vakili (berilgan Ishonchnomaga asosan) tomonidan Sotuvchi taqdim etgan tovar-xatni imzolash yo'li bilan amalga oshiriladi." },
@@ -214,8 +222,8 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
-      { matn: "Shartnoma Tomonlar tomonidan imzolangan kundan kuchga kiradi va Tomonlar majburiyatlarini to'liq bajargunga qadar amal qiladi." },
-      { matn: "Shartnoma muddati tugagandan so'ng Tomonlardan biri uni tugatish haqida kamida 30 (o'ttiz) kalendar kuni oldin yozma xabar bermasa, Shartnoma keyingi bir yilga uzaytirilgan hisoblanadi." },
+      { matn: `Shartnoma Tomonlar tomonidan imzolangan kundan kuchga kiradi va [YIL_OXIRI] gacha amal qiladi.` },
+      { matn: "Shartnoma muddati tugagandan so'ng Tomonlardan biri uni tugatish haqida kamida 30 (o'ttiz) kalendar kuni oldin yozma xabar bermasa, Shartnoma keyingi bir yilga avtomatik uzaytirilgan hisoblanadi." },
       { matn: "Tomonlar bir-birlarini Shartnoma bo'yicha majburiyatlarini bajarishiga sezilarli ta'sir ko'rsatishi mumkin bo'lgan barcha o'zgarishlar (yuridik va faktik manzillarning, bank rekvizitlarining o'zgarishi, qayta tashkil etilishi, tugatilishi va boshqa shu kabi o'zgarishlar) haqida darhol — 3 (uch) ish kuni ichida yozma ravishda xabardor qilish majburiyatini oladilar." },
       { matn: "Shartnomaga o'zgartirishlar va qo'shimchalar faqat yozma shaklda — qo'shimcha kelishuvlar bilan rasmiylashtiriladi va ikki tomon imzolagandan keyingina kuchga kiradi." },
       { matn: "Shartnoma o'zbek tilida 2 (ikki) nusxada tuzilgan bo'lib, barcha nusxalar teng yuridik kuchga ega. Shartnoma imzolanganidan so'ng unga oid barcha oldindan tuzilgan shartnomalar, yozishmalar, dastlabki kelishuvlar va niyat protokollari yuridik kuchini yo'qotadi." },
@@ -290,7 +298,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
-      { matn: "Shartnoma Tomonlar tomonidan imzolangan kundan kuchga kiradi va majburiyatlar to'liq bajarilgunga qadar amal qiladi." },
+      { matn: "Shartnoma Tomonlar tomonidan imzolangan kundan kuchga kiradi va Tomonlar majburiyatlarini to'liq bajargunga qadar amal qiladi." },
       { matn: "Shartnomani muddatidan oldin bekor qilish faqat Tomonlarning yozma kelishuviga binoan yoki sud qarori bilan amalga oshiriladi. Buyurtmachi Shartnomani muddatidan oldin bir tomonlama bekor qilishni xohlasa, Ijrochiga kamida 30 (o'ttiz) kun oldin yozma xabar berishi va amalda ko'rsatilgan xizmatlar uchun to'lovni amalga oshirishi shart." },
       { matn: "Shartnomaga o'zgartirishlar va qo'shimchalar faqat yozma shaklda qo'shimcha kelishuvlar bilan rasmiylashtiriladi. Shartnomada tartibga solinmagan masalalar O'zbekiston Respublikasi Fuqarolik kodeksining 703–730-moddalari bilan tartibga solinadi." },
     ]},
@@ -599,14 +607,13 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
 
     { sarlavha: "ASOSIY SHARTNOMA TO'G'RISIDA MA'LUMOT", bandlar: [
       { matn: `[BUYURTMACHI] (keyingi o'rinlarda "1-tomon") va [IJROCHI] (keyingi o'rinlarda "2-tomon") o'rtasida ushbu Qo'shimcha kelishuv tuzildi.` },
-      { matn: `Ushbu Qo'shimcha kelishuv Tomonlar o'rtasida ilgari tuzilgan asosiy shartnomaning (keyingi o'rinlarda "Asosiy shartnoma") ajralmas qismi hisoblanadi va uning shartlarini o'zgartiradi yoki to'ldiradi.` },
+      { matn: `Ushbu Qo'shimcha kelishuv Tomonlar o'rtasida [ASOSIY_SANA] kuni tuzilgan №[ASOSIY_RAQAM]-sonli asosiy shartnomaning (keyingi o'rinlarda "Asosiy shartnoma") ajralmas qismi hisoblanadi va uning shartlarini o'zgartiradi yoki to'ldiradi.` },
       { matn: "Asosiy shartnomaning ushbu Qo'shimcha kelishuvda o'zgartirilmagan barcha bandlari o'z kuchini saqlab qoladi." },
     ]},
 
     { sarlavha: "KIRITILAYOTGAN O'ZGARTIRISHLAR", bandlar: [
-      { matn: "Tomonlar Asosiy shartnomaga quyidagi o'zgartirish va qo'shimchalarni kiritish to'g'risida kelishib oldilar: _____________________________." },
-      { matn: "O'zgartirilayotgan band(lar): Asosiy shartnomaning ___ bandining mavjud tahriri o'rniga quyidagi yangi tahrir qabul qilinsin: _____________________________." },
-      { matn: "O'zgartirish asoslari va sabablari: _____________________________. Ushbu o'zgartirishlar Tomonlarning o'zaro manfaatlari va amaldagi qonunchilik talablari asosida amalga oshirilmoqda." },
+      { matn: `Tomonlar Asosiy shartnomaga quyidagi o'zgartirish va qo'shimchalarni kiritish to'g'risida kelishib oldilar: [OZGARTIRISH].` },
+      { matn: "O'zgartirish asoslari va sabablari: Tomonlarning o'zaro manfaatlari va amaldagi qonunchilik talablari asosida amalga oshirilmoqda." },
     ]},
 
     { sarlavha: "MOLIYAVIY SHARTLAR", bandlar: [
@@ -615,14 +622,153 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "KUCHGA KIRISH TARTIBI", bandlar: [
-      { matn: "Ushbu Qo'shimcha kelishuv ikki tomon imzolagan kundan kuchga kiradi va Asosiy shartnoma doirasida amalga oshirilayotgan operatsiyalarga nisbatan qo'llaniladi." },
+      { matn: "Ushbu Qo'shimcha kelishuv ikki tomon imzolagan kundan kuchga kiradi. Ushbu Qo'shimcha kelishuvda o'zgartirilgan shartlar imzolangan kundan boshlab amal qiladi; o'zgartirilmagan barcha bandlar Asosiy shartnoma tahririda qoladi." },
       { matn: "Ushbu Qo'shimcha kelishuv 2 (ikki) nusxada tuzilgan bo'lib, barcha nusxalar teng yuridik kuchga ega — Tomonlarning har biriga bittadan. Shartnomada tartibga solinmagan masalalar O'zbekiston Respublikasining amaldagi qonunchiligi bilan tartibga solinadi." },
     ]},
 
   ]}),
 
   // ══════════════════════════════════════════════════════════════════════════
-  // 9. BOSHQA (UMUMIY) SHARTNOMA
+  // 9. AGENTLIK SHARTNOMASI
+  //    org=[BUYURTMACHI]=Principal | cp=[IJROCHI]=Agent
+  // ══════════════════════════════════════════════════════════════════════════
+  agentlik: (d) => ({ bolimlar: [
+
+    { sarlavha: "SHARTNOMA PREDMETI", bandlar: [
+      { matn: `[BUYURTMACHI] (keyingi o'rinlarda "Principal") va [IJROCHI] (keyingi o'rinlarda "Agent") o'rtasida ushbu Agentlik shartnomasi (keyingi o'rinlarda "Shartnoma") tuzildi.` },
+      { matn: `Agent Principalning topshirig'i va hisobidan uning nomidan [AGENT_VAZIFA] bo'yicha yuridik va faktik harakatlar amalga oshirish majburiyatini oladi. Principal esa Agent xizmatlarini qabul qilib, ushbu Shartnomada belgilangan tartibda haq to'lash majburiyatini oladi.` },
+      { matn: `Agentlik vakolati geografik doirasi: [AGENT_HUDUD]. Agent Principalning yozma roziligisiz ushbu hudud doirasidan chiqib harakat qilish huquqiga ega emas.` },
+      { matn: `Shartnoma bo'yicha taxminiy aylanma hajmi [SUMMA] ([SUMMA_MATN]) so'mni tashkil etadi. Agentlik haqi bajarilgan bitimlar summasi asosida hisoblanadi.` },
+    ]},
+
+    { sarlavha: "AGENTNING HUQUQ VA MAJBURIYATLARI", bandlar: [
+      { matn: `Agent quyidagi majburiyatlarni oladi: a) Principalning manfaatlarini vijdonan himoya qilish va Principalga zarar yetkazishi mumkin bo'lgan harakatlardan tiyilish; b) Principal tomonidan belgilangan narx va shartlarda bitimlar tuzish; v) Har oy oxirida bajarilgan ishlar to'g'risida hisobot taqdim etish; g) Tijorat siri saqlanishi va Principalning ishbilarmonlik obro'sini himoya qilish.` },
+      { matn: `Agent quyidagi huquqlarga ega: a) O'z vazifalarini bajarish uchun zarur ma'lumot va hujjatlarni Principaldan talab qilish; b) Shartnomada belgilangan agentlik haqini o'z vaqtida olish; v) Principalning yozma roziligi bilan quyi agentlar jalb etish.` },
+      { matn: `Agent Principalning raqobatchilari bilan bir vaqtda agentlik shartnomalari tuzishdan manfaatdorlik to'qnashuvi yuzaga kelgan taqdirda Principalga darhol xabar berishi shart.` },
+    ]},
+
+    { sarlavha: "PRINCIPALNING HUQUQ VA MAJBURIYATLARI", bandlar: [
+      { matn: `Principal quyidagi majburiyatlarni oladi: a) Agent faoliyati uchun zarur vakolatlar, hujjatlar va ma'lumotlarni taqdim etish; b) Agentlik haqini belgilangan muddatlarda to'liq to'lash; v) Agent tuzgan bitimlarni o'z vaqtida bajarish; g) Agentning makul harakatlaridan kelib chiqadigan majburiyatlarni qabul qilish.` },
+      { matn: `Principal ixtiyoriy vaqtda Agentga yangi topshiriqlar berish, mavjud topshiriqlarni o'zgartirish yoki bekor qilish huquqiga ega. Topshiriqni o'zgartirish yoki bekor qilish yozma shaklda kamida 5 (besh) ish kuni oldin bildirilishi shart.` },
+    ]},
+
+    { sarlavha: "AGENTLIK HAQI VA TO'LOV TARTIBI", bandlar: [
+      { matn: `Agentlik haqi Agent tomonidan amalga oshirilgan bitimlar umumiy summasining [AGENT_FOZ] foizini tashkil etadi. Minimal oylik agentlik haqi [SUMMA] so'mdan kam bo'lmasligi kerak.` },
+      { matn: `Agentlik haqi Agent hisoboti tasdiqlangandan keyin 10 (o'n) ish kuni ichida bank o'tkazma orqali to'lanadi. Hisob-kitob O'zbekiston Respublikasi milliy valyutasida — so'mda amalga oshiriladi.` },
+      { matn: `Agent xarajatlari (transport, aloqa, reklama) Principalning oldindan yozma roziligi bilan qoplanadi. Roziliksiz qilingan xarajatlar Agent hisobidan to'lanadi.` },
+    ]},
+
+    { sarlavha: "HISOBOT TARTIBI", bandlar: [
+      { matn: `Agent har oy 25-sanasiga qadar Principalga quyidagi ma'lumotlarni o'z ichiga olgan hisobot taqdim etadi: tuzilgan bitimlar soni va umumiy summasi; potentsial mijozlar ro'yxati; bozor holati to'g'risida ma'lumot; kelgusi oy uchun harakat rejasi.` },
+      { matn: `Principal hisobotni olganidan keyin 5 (besh) ish kuni ichida uni tasdiqlaydi yoki asosli e'tirozlarini yozma shaklda bildiradi. Muddatida javob berilmasa, hisobot tasdiqlanган hisoblanadi.` },
+    ]},
+
+    { sarlavha: "TOMONLARNING JAVOBGARLIGI", bandlar: [
+      { matn: `Agent o'z majburiyatlarini bajarmaganlik yoki lozim darajada bajarmaganlik uchun Principalga yetkazilgan haqiqiy zararni to'liq qoplash majburiyatini oladi. Agent tomonidan ruxsatsiz tuzilgan bitimlar bo'yicha javobgarlik Agentga yuklanadi.` },
+      { matn: `To'lov muddati buzilganda aybdor tomon kechiktirilgan summadan har bir kechikkan kun uchun 0,5 (nol butun besh) foiz miqdorida penya to'laydi, lekin penyaning umumiy miqdori asosiy qarzdorlik summasining 50 (ellik) foizidan oshmasligi kerak.` },
+      { matn: `Tomonlar fors-major holatlari — tabiiy ofatlar, harbiy harakatlar, epidemiyalar, hokimiyat organlarining majburiy aktlari tufayli majburiyatlarni bajara olmaslik uchun javobgarlikdan ozod etiladi. Ta'sirlangan tomon 5 (besh) kalendar kuni ichida yozma xabar berishi shart.` },
+    ]},
+
+    { sarlavha: "NIZOLARNI HAL ETISH", bandlar: [
+      { matn: `Shartnomadan kelib chiqadigan barcha nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi. Kelishuv bo'lmagan taqdirda nizo O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilib, 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak.` },
+    ]},
+
+    { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
+      { matn: `Shartnoma Tomonlar tomonidan imzolangan kundan kuchga kiradi va [YIL_OXIRI] gacha amal qiladi. Shartnoma muddati tugagandan so'ng hech biri tugatish haqida kamida 30 (o'ttiz) kun oldin yozma xabar bermasa, Shartnoma keyingi bir yilga avtomatik uzaytirilgan hisoblanadi.` },
+      { matn: `Har bir Tomon Shartnomani 30 (o'ttiz) kun oldin yozma xabar berish orqali bir tomonlama bekor qilish huquqiga ega. Shartnoma bekor qilingan taqdirda Agent bekor qilish sanasigacha bajarilgan ishlar uchun agentlik haqini olish huquqini saqlab qoladi.` },
+      { matn: `Shartnoma o'zbek tilida 2 (ikki) nusxada tuzilgan bo'lib, barcha nusxalar teng yuridik kuchga ega. Shartnomada tartibga solinmagan masalalar O'zbekiston Respublikasi Fuqarolik kodeksining 817–833-moddalari bilan tartibga solinadi.` },
+    ]},
+
+  ]}),
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 10. TRANSPORT (YUK TASHISH) SHARTNOMASI
+  //     org=[BUYURTMACHI]=Jo'natuvchi | cp=[IJROCHI]=Tashuvchi
+  // ══════════════════════════════════════════════════════════════════════════
+  transport: (d) => ({ bolimlar: [
+
+    { sarlavha: "SHARTNOMA PREDMETI", bandlar: [
+      { matn: `[BUYURTMACHI] (keyingi o'rinlarda "Jo'natuvchi") va [IJROCHI] (keyingi o'rinlarda "Tashuvchi") o'rtasida ushbu Transport xizmatlarini ko'rsatish shartnomasi (keyingi o'rinlarda "Shartnoma") tuzildi.` },
+      { matn: `Tashuvchi Jo'natuvchining yukini [YETKAZISH_JOY] manzilidan [QABUL_JOY] manziliga yetkazib berish majburiyatini oladi. Jo'natuvchi esa transport xizmatlarini qabul qilib, belgilangan haqni to'lash majburiyatini oladi.` },
+      { matn: `Har bir yuk tashish Tomonlar imzolagan Buyurtma (yo'llanma) asosida amalga oshiriladi. Buyurtmada yukнинг nomi, og'irligi, hajmi, qadoqlash turi, jo'natish va yetkazib berish manzillari, muddati ko'rsatiladi.` },
+      { matn: `Shartnoma bo'yicha taxminiy transport xizmatlari umumiy qiymati [SUMMA] ([SUMMA_MATN]) so'mni tashkil etadi.` },
+    ]},
+
+    { sarlavha: "YUK TOPSHIRISH VA QABUL QILISH TARTIBI", bandlar: [
+      { matn: `Jo'natuvchi yukni Tashuvchiga topshirishdan kamida 24 (yigirma to'rt) soat oldin yozma yoki elektron shaklda Buyurtma yuborishi shart. Buyurtmada yukнинг barcha xususiyatlari va maxsus tashish talablari ko'rsatilishi shart.` },
+      { matn: `Yuk topshirishda tovar-transport hujjatlari (TTH) 3 (uch) nusxada rasmiylashtiriladi: biri Jo'natuvchida, biri Tashuvchida, biri Qabul qiluvchida qoladi. TTH imzolangandan so'ng yuk Tashuvchi mas'uliyatiga o'tadi.` },
+      { matn: `Yuk yetkazib berilganda qabul qiluvchi hujjatlarni tekshirish va yukнинг tashqi ko'rinishini ko'zdan kechirish huquqiga ega. Shikoyatlar yukni qabul qilish vaqtida TTH ga kiritilishi kerak; keyinroq bildirish qabul qilinmaydi, yashirin nuqsonlar bundan mustasno.` },
+      { matn: `Yashirin nuqsonlar aniqlanganda Jo'natuvchi yuk qabul qilinganidan keyin 3 (uch) kun ichida yozma da'vo taqdim etishi shart. Tashuvchi 10 (o'n) ish kuni ichida da'voni ko'rib chiqishi va javob berishi shart.` },
+    ]},
+
+    { sarlavha: "NARX VA TO'LOV TARTIBI", bandlar: [
+      { matn: `Transport xizmatlarining narxi har bir Buyurtmaga ko'ra alohida belgilanadi va TTH da ko'rsatiladi. Yonilg'i narxining keskin o'zgarishi (20 foizdan ortiq) yoki yo'l yopilishi kabi fors-major holatlarda narx Tomonlarning yozma kelishuviga asosan qayta ko'rib chiqilishi mumkin.` },
+      { matn: `To'lov yuk muvaffaqiyatli yetkazib berilgandan keyin 5 (besh) ish kuni ichida bank o'tkazma orqali amalga oshiriladi. Katta hajmdagi buyurtmalar uchun 30 (o'ttiz) foizgacha oldindan to'lov talab qilinishi mumkin.` },
+      { matn: `To'lov kechiktirilganda Jo'natuvchi kechiktirilgan summadan har bir kechikkan kun uchun 0,5 (nol butun besh) foiz miqdorida penya to'laydi, lekin umumiy penya asosiy summaning 30 (o'ttiz) foizidan oshmasligi kerak.` },
+    ]},
+
+    { sarlavha: "TASHUVCHINING JAVOBGARLIGI", bandlar: [
+      { matn: `Tashuvchi yukнинg yo'qolishi yoki shikastlanishi uchun TTH da ko'rsatilgan qiymat miqdorida to'liq javobgar hisoblanadi. Yuk sigortasi Jo'natuvchining talabiga ko'ra amalga oshiriladi va sug'urta xarajatlari alohida to'lanadi.` },
+      { matn: `Tashuvchi yuk yetkazib berishning kechikishi uchun har bir kechikkan soat uchun transport xizmatlari summasining 0,1 (nol butun bir) foizi miqdorida penya to'laydi. Penyaning umumiy miqdori transport xizmatlari summasining 50 (ellik) foizidan oshmasligi kerak.` },
+      { matn: `Tashuvchi quyidagi holatlarda javobgarlikdan ozod etiladi: fors-major holatlari; Jo'natuvchi tomonidan noto'g'ri deklaratsiya qilingan yuk xususiyatlari; yuk noto'g'ri qadoqlangan bo'lsa; yo'l harakati qoidalari buzilmagan holda tabiiy yo'qotishlar (quritish, bug'lanish va h.k.) doirasida.` },
+    ]},
+
+    { sarlavha: "NIZOLARNI HAL ETISH", bandlar: [
+      { matn: `Shartnomadan kelib chiqadigan barcha nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi. Kelishuv bo'lmagan taqdirda nizo O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilib, 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak.` },
+    ]},
+
+    { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
+      { matn: `Shartnoma Tomonlar tomonidan imzolangan kundan kuchga kiradi va [YIL_OXIRI] gacha amal qiladi. Shartnoma muddati tugagandan so'ng hech biri tugatish haqida kamida 30 (o'ttiz) kun oldin yozma xabar bermasa, Shartnoma keyingi bir yilga avtomatik uzaytirilgan hisoblanadi.` },
+      { matn: `Shartnoma o'zbek tilida 2 (ikki) nusxada tuzilgan bo'lib, barcha nusxalar teng yuridik kuchga ega. Shartnomada tartibga solinmagan masalalar O'zbekiston Respublikasi Fuqarolik kodeksining 688–730-moddalari bilan tartibga solinadi.` },
+    ]},
+
+  ]}),
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 11. LIZING SHARTNOMASI
+  //     org=[BUYURTMACHI]=Lizingberuvchi | cp=[IJROCHI]=Lizingoluvchi
+  // ══════════════════════════════════════════════════════════════════════════
+  lizing: (d) => ({ bolimlar: [
+
+    { sarlavha: "SHARTNOMA PREDMETI", bandlar: [
+      { matn: `[BUYURTMACHI] (keyingi o'rinlarda "Lizingberuvchi") va [IJROCHI] (keyingi o'rinlarda "Lizingoluvchi") o'rtasida ushbu Moliyaviy lizing shartnomasi (keyingi o'rinlarda "Shartnoma") tuzildi.` },
+      { matn: `Lizingberuvchi Lizingoluvchi ko'rsatgan [LIZING_OBEKT] (keyingi o'rinlarda "Lizing ob'ekti") ni sotib olib, Lizingoluvchiga vaqtincha egalik qilish va foydalanish uchun beradi. Lizing muddati tugagandan so'ng Lizingoluvchi Lizing ob'ektini to'liq sotib olish huquqiga ega.` },
+      { matn: `Lizing ob'ektining umumiy qiymati [SUMMA] ([SUMMA_MATN]) so'mni tashkil etadi. Lizing to'lovlari jadvali ushbu Shartnomaga 1-ilova sifatida biriktiriladi va Shartnomaning ajralmas qismi hisoblanadi.` },
+      { matn: `Lizing muddati [LIZING_MUDDAT] bo'lib, Lizing ob'ekti Lizingoluvchiga topshirilgan kundan boshlanadi. Muddат tugagandan so'ng Lizingoluvchi qoldiq qiymatni to'lab, mulk huquqini rasmiylashtirish huquqiga ega.` },
+    ]},
+
+    { sarlavha: "LIZING TO'LOVLARI TARTIBI", bandlar: [
+      { matn: `Lizingoluvchi dastlabki badal sifatida Lizing ob'ekti qiymatining [BOSHLANGICH_BADAL] foizini Shartnoma imzolanganidan keyin 5 (besh) ish kuni ichida to'laydi. Qolgan summa lizing to'lovlari jadvaliga muvofiq oylik to'lovlar shaklida amalga oshiriladi.` },
+      { matn: `Oylik lizing to'lovi asosiy qarz qismi, lizing foizi va sug'urta xarajatlarini o'z ichiga oladi. Oylik to'lov miqdori har oy 5-sanasiga qadar Lizingberuvchining hisob raqamiga o'tkaziladi.` },
+      { matn: `Lizing to'lovlari kechiktirilganda Lizingoluvchi kechiktirilgan summadan har bir kechikkan kun uchun 0,05 (nol butun besh yuzdan besh) foiz miqdorida penya to'laydi. 30 (o'ttiz) kundan ortiq kechikish Lizingberuvchiga Shartnomani bir tomonlama bekor qilish va Lizing ob'ektini qaytarib olish huquqini beradi.` },
+      { matn: `Lizing foiz stavkasi yillik [LIZING_FOIZ] foizni tashkil etadi va O'zbekiston Respublikasi Markaziy banki qayta moliyalashtirish stavkasi o'zgargan taqdirda Tomonlarning yozma kelishuviga asosan qayta ko'rib chiqilishi mumkin.` },
+    ]},
+
+    { sarlavha: "LIZING OB'EKTINI FOYDALANISH SHARTLARI", bandlar: [
+      { matn: `Lizingoluvchi Lizing ob'ektidan faqat uning maqsadli vazifalari doirasida foydalanish, texnik xizmat ko'rsatish va to'g'ri saqlash majburiyatini oladi. Lizing ob'ektini uchinchi shaxslarga ijaraga berish, garovga qo'yish yoki boshqa har qanday shakldagi yuklama solish taqiqlanadi.` },
+      { matn: `Lizingoluvchi Lizing ob'ektini texnik ko'rik va xizmat ko'rsatishga o'z vaqtida topshirish, sug'urtasini saqlash majburiyatini oladi. Sug'urta xarajatlari Lizingoluvchi tomonidan to'lanadi, sug'urta benefitsiari Lizingberuvchi hisoblanadi.` },
+      { matn: `Lizing ob'ektida ro'y bergan har qanday shikast yoki yo'qolish Lizingberuvchiga darhol — 24 (yigirma to'rt) soat ichida xabar qilinishi shart. Lizingoluvchi Lizing ob'ektining yo'qolishi yoki to'liq shikastlanishi uchun uning to'liq bozor qiymatini qoplash majburiyatini oladi.` },
+    ]},
+
+    { sarlavha: "MULK HUQUQI VA LIZING MUDDATI TUGASHI", bandlar: [
+      { matn: `Lizing muddati davomida Lizing ob'ektiga mulk huquqi Lizingberuvchida qoladi. Lizingoluvchi barcha lizing to'lovlarini to'liq to'laganidan keyin qoldiq qiymatni — [QOLDIQ_QIYMAT] so'mni to'lab, mulk huquqini o'z nomiga rasmiylashtirish huquqiga ega.` },
+      { matn: `Lizingoluvchi muddatidan oldin to'liq to'lov qilish huquqiga ega, bunda qolgan muddatga to'g'ri keladigan lizing foizlari qaytariladi. Muddatdan oldin to'lash niyati kamida 30 (o'ttiz) kun oldin yozma shaklda bildirilishi kerak.` },
+    ]},
+
+    { sarlavha: "TOMONLARNING JAVOBGARLIGI VA NIZOLARNI HAL ETISH", bandlar: [
+      { matn: `Lizingberuvchi Lizing ob'ektini o'z vaqtida yetkazib bermagan taqdirda Lizingoluvchi kechiktirilgan har bir kun uchun lizing ob'ekti qiymatining 0,05 foizi miqdorida penya talab qilish huquqiga ega.` },
+      { matn: `Shartnomadan kelib chiqadigan barcha nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi. Kelishuv bo'lmagan taqdirda nizo O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi.` },
+    ]},
+
+    { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI", bandlar: [
+      { matn: `Shartnoma Tomonlar tomonidan imzolangan kundan kuchga kiradi va barcha lizing to'lovlari to'liq amalga oshirilgunga hamda mulk huquqi rasmiylashtirilgunga qadar amal qiladi.` },
+      { matn: `Shartnoma o'zbek tilida 2 (ikki) nusxada tuzilgan bo'lib, barcha nusxalar teng yuridik kuchga ega. Shartnomada tartibga solinmagan masalalar O'zbekiston Respublikasining "Lizing to'g'risida"gi Qonuni va Fuqarolik kodeksining 595–625-moddalari bilan tartibga solinadi.` },
+    ]},
+
+  ]}),
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 12. BOSHQA (UMUMIY) SHARTNOMA
   // ══════════════════════════════════════════════════════════════════════════
   boshqa: (d) => ({ bolimlar: [
 
@@ -658,7 +804,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
-      { matn: "Shartnoma Tomonlar tomonidan imzolanganidan kuchga kiradi va Tomonlar o'z majburiyatlarini to'liq bajargunga qadar amal qiladi. Shartnoma muddati tugagandan so'ng hech biri tugatish haqida kamida 30 (o'ttiz) kun oldin yozma xabar bermasa, Shartnoma keyingi bir yilga uzaytirilgan hisoblanadi." },
+      { matn: `Shartnoma Tomonlar tomonidan imzolanganidan kuchga kiradi va [YIL_OXIRI] gacha amal qiladi. Shartnoma muddati tugagandan so'ng hech biri tugatish haqida kamida 30 (o'ttiz) kun oldin yozma xabar bermasa, Shartnoma keyingi bir yilga avtomatik uzaytirilgan hisoblanadi.` },
       { matn: "Shartnomaga o'zgartirishlar va qo'shimchalar faqat yozma shaklda — qo'shimcha kelishuvlar bilan rasmiylashtiriladi va ikki tomon imzolagandan keyingina kuchga kiradi." },
       { matn: "Shartnoma o'zbek tilida 2 (ikki) nusxada tuzilgan bo'lib, barcha nusxalar teng yuridik kuchga ega. Shartnomada tartibga solinmagan masalalar O'zbekiston Respublikasining amaldagi qonunchiligi bilan tartibga solinadi." },
     ]},
@@ -690,6 +836,9 @@ const TYPE_LABELS: Record<string, [string, string]> = {
   moliyaviy:  ['QARZ BERUVCHI',   'QARZ OLUVCHI'],
   daval:      ['BUYURTMACHI',     'QAYTA ISHLOVCHI'],
   xalqaro:    ['SELLER',          'BUYER'],
+  agentlik:   ['PRINCIPAL',       'AGENT'],
+  transport:  ['JO\'NATUVCHI',    'TASHUVCHI'],
+  lizing:     ['LIZINGBERUVCHI',  'LIZINGOLUVCHI'],
   boshqa:     ['1-TOMON',         '2-TOMON'],
 }
 

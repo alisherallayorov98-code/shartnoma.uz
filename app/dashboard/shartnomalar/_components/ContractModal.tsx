@@ -68,6 +68,7 @@ export type ContractForm = {
   asosiy_raqam?: string
   asosiy_sana?: string
   ozgartirish?: string
+  yangi_muddat?: string
   yetkazish_muddat?: string
   yetkazish_place?: string
 }
@@ -173,6 +174,9 @@ const CONTRACT_TYPES = [
   { key: 'moliyaviy',  icon: '💰' },
   { key: 'daval',      icon: '🔄' },
   { key: 'xalqaro',   icon: '🌐' },
+  { key: 'agentlik',  icon: '🤝' },
+  { key: 'transport', icon: '🚚' },
+  { key: 'lizing',    icon: '🏭' },
   { key: 'qoshimcha', icon: '📎' },
   { key: 'boshqa',    icon: '📄' },
 ]
@@ -954,22 +958,86 @@ export default function ContractModal({
                       </div>
                     </div>
                     <div>
-                      <label className={lbl}>O'zgartirishlar mazmuni</label>
-                      <textarea value={form.ozgartirish || ''} onChange={e => setForm(f => ({ ...f, ozgartirish: e.target.value }))} className={inp} rows={4} placeholder="Qanday o'zgartirishlar kiritilmoqda..." />
+                      <label className={lbl}>Yangi tugash sanasi <span className="text-gray-600 font-normal">(muddat uzaytirilsa)</span></label>
+                      <input type="date" value={form.yangi_muddat || ''} onChange={e => setForm(f => ({ ...f, yangi_muddat: e.target.value }))} className={inp} />
+                      <p className="text-xs text-gray-600 mt-1">To'ldirilsa — muddat uzaytirish bandi avtomatik qo'shiladi</p>
+                    </div>
+                    <div>
+                      <label className={lbl}>Boshqa o'zgartirishlar <span className="text-gray-600 font-normal">(ixtiyoriy)</span></label>
+                      <textarea value={form.ozgartirish || ''} onChange={e => setForm(f => ({ ...f, ozgartirish: e.target.value }))} className={inp} rows={3} placeholder="Narx, miqdor yoki boshqa shartlar o'zgartirilsa..." />
                     </div>
                   </>
                 )}
 
                 {/* Oldi-sotdi */}
                 {form.contract_type === 'oldi_sotdi' && (
+                  <div>
+                    <label className={lbl}>Yetkazib berish muddati</label>
+                    <input value={form.yetkazish_muddat || ''} onChange={e => setForm(f => ({ ...f, yetkazish_muddat: e.target.value }))} className={inp} placeholder="Masalan: 20 ish kuni, 30 kalendar kun" />
+                    <p className="text-xs text-gray-600 mt-1">Bo'sh qoldirilsa: "20 (yigirma) ish kuni" ishlatiladi</p>
+                  </div>
+                )}
+
+                {/* Agentlik */}
+                {form.contract_type === 'agentlik' && (
                   <>
                     <div>
-                      <label className={lbl}>Yetkazib berish muddati</label>
-                      <input value={form.yetkazish_muddat || ''} onChange={e => setForm(f => ({ ...f, yetkazish_muddat: e.target.value }))} className={inp} placeholder="Masalan: 30 kalendar kun ichida" />
+                      <label className={lbl}>Agent vazifasi</label>
+                      <textarea value={form.xizmat_tavsif || ''} onChange={e => setForm(f => ({ ...f, xizmat_tavsif: e.target.value }))} className={inp} rows={2} placeholder="Masalan: tovarlarni sotish, mijozlar topish..." />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={lbl}>Agentlik haqi (%)</label>
+                        <input value={form.qarz_foiz || ''} onChange={e => setForm(f => ({ ...f, qarz_foiz: e.target.value }))} className={inp} placeholder="Masalan: 5" />
+                      </div>
+                      <div>
+                        <label className={lbl}>Hudud</label>
+                        <input value={form.yetkazish_joy || ''} onChange={e => setForm(f => ({ ...f, yetkazish_joy: e.target.value }))} className={inp} placeholder="Masalan: Toshkent viloyati" />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Transport */}
+                {form.contract_type === 'transport' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={lbl}>Yuklash manzili</label>
+                        <input value={form.ijara_manzil || ''} onChange={e => setForm(f => ({ ...f, ijara_manzil: e.target.value }))} className={inp} placeholder="Shahar, ko'cha..." />
+                      </div>
+                      <div>
+                        <label className={lbl}>Yetkazish manzili</label>
+                        <input value={form.yetkazish_joy || ''} onChange={e => setForm(f => ({ ...f, yetkazish_joy: e.target.value }))} className={inp} placeholder="Shahar, ko'cha..." />
+                      </div>
                     </div>
                     <div>
-                      <label className={lbl}>Yetkazib berish joyi</label>
-                      <input value={form.yetkazish_joy || ''} onChange={e => setForm(f => ({ ...f, yetkazish_joy: e.target.value }))} className={inp} placeholder="Xaridorning yuridik manzili" />
+                      <label className={lbl}>Yuk turi / tavsifi</label>
+                      <input value={form.xizmat_tavsif || ''} onChange={e => setForm(f => ({ ...f, xizmat_tavsif: e.target.value }))} className={inp} placeholder="Masalan: qurilish materiallari, oziq-ovqat..." />
+                    </div>
+                  </>
+                )}
+
+                {/* Lizing */}
+                {form.contract_type === 'lizing' && (
+                  <>
+                    <div>
+                      <label className={lbl}>Lizing ob'ekti</label>
+                      <input value={form.pudrat_obekt || ''} onChange={e => setForm(f => ({ ...f, pudrat_obekt: e.target.value }))} className={inp} placeholder="Masalan: Nexia 3 avtomobili, CNC stanogi..." />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={lbl}>Lizing muddati</label>
+                        <input value={form.ijara_muddat || ''} onChange={e => setForm(f => ({ ...f, ijara_muddat: e.target.value }))} className={inp} placeholder="Masalan: 36 oy" />
+                      </div>
+                      <div>
+                        <label className={lbl}>Boshlang'ich badal (%)</label>
+                        <input value={form.qarz_foiz || ''} onChange={e => setForm(f => ({ ...f, qarz_foiz: e.target.value }))} className={inp} placeholder="Masalan: 20" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={lbl}>Yillik foiz stavkasi (%)</label>
+                      <input value={form.oylik_tolov || ''} onChange={e => setForm(f => ({ ...f, oylik_tolov: e.target.value }))} className={inp} placeholder="Masalan: 18" />
                     </div>
                   </>
                 )}
