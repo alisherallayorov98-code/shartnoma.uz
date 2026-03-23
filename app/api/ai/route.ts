@@ -1151,12 +1151,94 @@ ${jOnly}
 {"tolov_grafigi":"to'liq to'lov grafigi matni..."}`
     }
 
+    // ── KAFOLAT XATI ────────────────────────────────────────
+    else if (type === 'kafolat_xat') {
+      const d = details || {}
+      prompt = `Siz O'zbekiston Respublikasi qonunchiligini biladigan professional hujjat tuzuvchisiz. Quyidagi ma'lumotlar asosida rasmiy kafolat xati yarating.
+
+TASHKILOT: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'})
+RAHBAR: ${d.direktor || '___'}
+KIMGA: ${d.kimga || '___'}
+KAFOLAT MAQSADI: ${d.kafolat_maqsad || '___'}
+KAFOLAT SUMMASI: ${d.kafolat_miqdori || 'ko\'rsatilmagan'}
+KAFOLAT MUDDATI: ${d.kafolat_muddati || '___'}
+QO'SHIMCHA SHARTLAR: ${d.qoshimcha || 'yo\'q'}
+
+HUJJAT TUZILMASI:
+1. Kimga yo'naltirilganligi (o'ng yuqori burchak)
+2. Kimdan (chap yuqori burchak)
+3. KAFOLAT XATI sarlavhasi (markazda)
+4. Kirish: tashkilot o'zini tanitadi
+5. Kafolat predmeti: nima kafolatlanayapti
+6. Kafolat shartlari va majburiyatlar
+7. Muddati
+8. Huquqiy asos (O'zbekiston Respublikasi Fuqarolik kodeksi)
+9. Imzo bloki: direktor, M.O., sana
+
+Kafolat xati ishonchli, aniq va yuridik jihatdan to'g'ri bo'lsin. Kamida 250 so'z.
+${jOnly}
+{"kafolat_xat":"to'liq kafolat xati matni..."}`
+    }
+
+    // ── TABRIKLASH XATI ─────────────────────────────────────
+    else if (type === 'tabriklash_xat') {
+      const d = details || {}
+      prompt = `Siz rasmiy ish yuritish uslubini biladigan professional kotib yordamchisiz. Quyidagi ma'lumotlar asosida rasmiy, samimiy va chiroyli tabriklash xati yarating.
+
+TASHKILOT: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'})
+RAHBAR: ${d.direktor || '___'}
+KIMGA: ${d.kimga || '___'}
+BAYRAM/TADBIR: ${d.bayram || '___'}
+QO'SHIMCHA MAZMUN: ${d.asosiy_mazmun || 'umumiy tabrik'}
+
+HUJJAT TUZILMASI:
+1. Kimga (o'ng yuqori burchak)
+2. Kimdan (chap)
+3. TABRIKLASH XATI sarlavhasi
+4. Murojaat (hurmatli...)
+5. Tabrik matni: samimiy, rasmiy uslubda, hamkorlikni qadrlab
+6. Kelajakka ezgu tilaklar
+7. Imzo bloki
+
+Ton: rasmiy lekin iliq, samimiy. 150-200 so'z.
+${jOnly}
+{"tabriklash_xat":"to'liq tabriklash xati matni..."}`
+    }
+
+    // ── REKVIZITLAR XATI ────────────────────────────────────
+    else if (type === 'rekvizitlar_xat') {
+      const d = details || {}
+      prompt = `Siz rasmiy ish yuritish uslubini biladigan professional kotib yordamchisiz. Quyidagi ma'lumotlar asosida rasmiy so'rov xati yarating.
+
+TASHKILOT: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'})
+RAHBAR: ${d.direktor || '___'}
+KIMGA: ${d.kimga || '___'}
+SO'ROV TURI: ${d.sorov_turi || '___'}
+MAQSAD: ${d.maqsad || '___'}
+JAVOB MUDDATI: ${d.muddat || '2 ish kuni ichida'}
+
+HUJJAT TUZILMASI:
+1. Kimga (o'ng yuqori burchak)
+2. Kimdan (chap)
+3. SO'ROV XATI sarlavhasi
+4. Murojaat
+5. So'rov sababi va maqsadi
+6. Aniq so'ralayotgan ma'lumotlar/hujjatlar ro'yxati
+7. Javob muddati
+8. Minnatdorchilik
+9. Imzo bloki
+
+Uslub: qisqa, aniq, rasmiy. 150-200 so'z.
+${jOnly}
+{"rekvizitlar_xat":"to'liq so'rov xati matni..."}`
+    }
+
     else {
       return NextResponse.json({ error: "Noto'g'ri type" }, { status: 400 })
     }
 
-    const longTypes = ['analysis', 'grammar', 'write', 'fix', 'fix_grammar', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi', 'bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati']
-    const kotibaTypes = ['bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati']
+    const longTypes = ['analysis', 'grammar', 'write', 'fix', 'fix_grammar', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi', 'bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati', 'kafolat_xat', 'tabriklash_xat', 'rekvizitlar_xat']
+    const kotibaTypes = ['bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati', 'kafolat_xat', 'tabriklash_xat', 'rekvizitlar_xat']
     const kadrTypes = ['mehnat_shartnoma', 'buyruq', 'ishonchnoma']
     const buxTypes = ['dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi']
     const professionalTypes = [...kotibaTypes, ...kadrTypes, ...buxTypes]

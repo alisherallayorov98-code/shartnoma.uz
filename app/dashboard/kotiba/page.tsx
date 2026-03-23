@@ -11,6 +11,7 @@ import BayonnomaMaker from './_components/BayonnomaMaker'
 type KotibaFeature =
   | 'bayonnoma' | 'rasmiy_xat' | 'taklifnoma'
   | 'hisobot' | 'eslatma' | 'murojaatnoma' | 'tushuntirish_xati'
+  | 'ishonchnoma' | 'dalolatnoma' | 'kafolat_xat' | 'tabriklash_xat' | 'rekvizitlar_xat'
 
 type FeatureConfig = {
   key: KotibaFeature
@@ -117,6 +118,79 @@ const FEATURES: FeatureConfig[] = [
       { key: 'hodisa', label: "Voqea/holat", placeholder: "3-aprel kuni kechikib kelgan" },
       { key: 'sabab', label: "Sabab va izoh", placeholder: "Transport muammosi tufayli...", textarea: true },
       { key: 'qayta_takrorlanmasligi', label: "Takrorlanmaslik choralari (ixtiyoriy)", placeholder: "Bundan buyon erta chiqishga harakat qilaman..." },
+    ],
+  },
+  {
+    key: 'ishonchnoma',
+    icon: '📜',
+    title: 'Ishonchnoma',
+    description: "Kompaniya nomidan vakil tayinlash — bank, hujjat, tender...",
+    apiType: 'ishonchnoma',
+    resultField: 'ishonchnoma',
+    fields: [
+      { key: 'vakil_ism', label: "Vakil F.I.Sh.", placeholder: "Rahimov Bobur Aliyevich" },
+      { key: 'vakil_lavozim', label: "Vakil lavozimi", placeholder: "Bosh buxgalter" },
+      { key: 'vakil_passport', label: "Pasport seriya/raqami", placeholder: "AB1234567" },
+      { key: 'vakolat_maqsad', label: "Vakolat maqsadi", placeholder: "Soliq inspeksiyasidan hujjat olish, bank operatsiyalarini amalga oshirish...", textarea: true },
+      { key: 'amal_muddati', label: "Amal qilish muddati", placeholder: "6 oy / 1 yil / 2026 yil 31 dekabrgacha" },
+    ],
+  },
+  {
+    key: 'dalolatnoma',
+    icon: '📑',
+    title: 'Dalolatnoma',
+    description: "Qabul-topshirish, yo'qotish, inventarizatsiya dalolatnomasi",
+    apiType: 'dalolatnoma',
+    resultField: 'dalolatnoma',
+    fields: [
+      { key: 'dalolatnoma_turi', label: "Dalolatnoma turi", placeholder: "Qabul-topshirish / Yo'qotish / Inventarizatsiya / Tekshiruv" },
+      { key: 'sana', label: "Sana", placeholder: "2026-03-23", type: 'date' },
+      { key: 'joy', label: "O'tkazilgan joy", placeholder: "Tashkilot omborxonasi, Toshkent" },
+      { key: 'ishtirokchilar', label: "Ishtirokchilar (lavozim, ism)", placeholder: "Ombor mudiri Karimov A., Buxgalter Rahimova N.", textarea: false },
+      { key: 'predmet', label: "Dalolatnoma predmeti", placeholder: "Nima topshirildi / tekshirildi / yo'qoldi", textarea: true },
+      { key: 'xulosa', label: "Xulosa va qaror", placeholder: "Hujjatlar to'liq topshirildi / Yo'qotish summasi aniqlandi...", textarea: true },
+    ],
+  },
+  {
+    key: 'kafolat_xat',
+    icon: '🔒',
+    title: 'Kafolat xati',
+    description: "Hamkor, bank yoki davlat organiga kafolat xati",
+    apiType: 'kafolat_xat',
+    resultField: 'kafolat_xat',
+    fields: [
+      { key: 'kimga', label: "Kimga (tashkilot/organ)", placeholder: "Ipoteka-bank bosh ofisi / Tender komissiyasi" },
+      { key: 'kafolat_maqsad', label: "Kafolat maqsadi", placeholder: "Kredit to'lovlari / Shartnoma bajarish / Tender ishtirokchisi" },
+      { key: 'kafolat_miqdori', label: "Kafolat summasi (ixtiyoriy)", placeholder: "500 000 000 so'm" },
+      { key: 'kafolat_muddati', label: "Kafolat muddati", placeholder: "2026 yil 31 dekabrgacha" },
+      { key: 'qoshimcha', label: "Qo'shimcha shartlar (ixtiyoriy)", placeholder: "Shartnoma bajarilmagan taqdirda...", textarea: true },
+    ],
+  },
+  {
+    key: 'tabriklash_xat',
+    icon: '🎉',
+    title: 'Tabriklash xati',
+    description: "Sherik, mijoz yoki tashkilotga rasmiy tabrik xati",
+    apiType: 'tabriklash_xat',
+    resultField: 'tabriklash_xat',
+    fields: [
+      { key: 'kimga', label: "Kimga (tashkilot/shaxs)", placeholder: "\"Alfa\" MChJ direktori Karimov Alisher" },
+      { key: 'bayram', label: "Bayram/tadbir nomi", placeholder: "Yangi yil / Navro'z / Tashkilot yubileyi / Shartnoma imzolash" },
+      { key: 'asosiy_mazmun', label: "Tabrik mazmuni (ixtiyoriy)", placeholder: "Hamkorlik uchun minnatdorchilik, kelajakda...", textarea: true },
+    ],
+  },
+  {
+    key: 'rekvizitlar_xat',
+    icon: '📨',
+    title: 'Rekvizitlar xati',
+    description: "Hamkordan bank rekvizitlari yoki hujjat so'rash",
+    apiType: 'rekvizitlar_xat',
+    resultField: 'rekvizitlar_xat',
+    fields: [
+      { key: 'kimga', label: "Kimga (tashkilot)", placeholder: "\"Beta Savdo\" MChJ" },
+      { key: 'sorov_turi', label: "So'rov turi", placeholder: "Bank rekvizitlari / Ustav nusxasi / Litsenziya / Sertifikat" },
+      { key: 'maqsad', label: "So'rov maqsadi", placeholder: "Shartnoma tuzish / To'lov amalga oshirish uchun" },
+      { key: 'muddat', label: "Javob muddati", placeholder: "2 ish kuni ichida" },
     ],
   },
 ]
