@@ -83,6 +83,7 @@ ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Ish beruvchi" deb yuritiladi,
 direktori ${org.director_name} tomonidan vakilligi qilinadi,
 
 va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+JSHSHIR: ${blank(f.jshshir, '______________')},
 yashash manzili: ${blank(f.xodim_manzil)},
 keyingi o'rinlarda "Xodim" deb yuritiladi,
 
@@ -272,9 +273,9 @@ TOMONLARNING REKVIZITLARI VA IMZOLARI
 ISH BERUVCHI:                              XODIM:
 ${org.name}                                ${blank(f.xodim_ism)}
 INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
-Manzil: ${blank(f.org_manzil)}             Manzil: ${blank(f.xodim_manzil)}
-Tel: ${blank(f.org_tel)}                   Tel: ${blank(f.xodim_tel)}
-Hisob: ${blank(f.org_hisob)}
+Manzil: ${blank(f.org_manzil)}             JSHSHIR: ${blank(f.jshshir, '______________')}
+Tel: ${blank(f.org_tel)}                   Manzil: ${blank(f.xodim_manzil)}
+Hisob: ${blank(f.org_hisob)}               Tel: ${blank(f.xodim_tel)}
 
 Direktor: ___________________              Imzo: ___________________
 ${org.director_name}
@@ -300,6 +301,7 @@ ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Ish beruvchi" deb yuritiladi,
 direktori ${org.director_name} tomonidan vakilligi qilinadi,
 
 va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+JSHSHIR: ${blank(f.jshshir, '______________')},
 yashash manzili: ${blank(f.xodim_manzil)},
 keyingi o'rinlarda "Xodim" deb yuritiladi,
 
@@ -386,8 +388,9 @@ tashqi o'rindoshlik mehnat shartnomasini tuzdik:
 ISH BERUVCHI:                              XODIM:
 ${org.name}                                ${blank(f.xodim_ism)}
 INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
-Manzil: ${blank(f.org_manzil)}             Manzil: ${blank(f.xodim_manzil)}
-Tel: ${blank(f.org_tel)}                   Tel: ${blank(f.xodim_tel)}
+Manzil: ${blank(f.org_manzil)}             JSHSHIR: ${blank(f.jshshir, '______________')}
+Tel: ${blank(f.org_tel)}                   Manzil: ${blank(f.xodim_manzil)}
+                                           Tel: ${blank(f.xodim_tel)}
 
 Direktor: ___________________              Imzo: ___________________
 ${org.director_name}
@@ -413,6 +416,7 @@ ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Buyurtmachi" deb yuritiladi,
 direktori ${org.director_name} tomonidan vakilligi qilinadi,
 
 va fuqaro ${blank(f.ijrochi_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+JSHSHIR: ${blank(f.ijrochi_jshshir, '______________')},
 STIR: ${blank(f.ijrochi_stir, '___________')},
 yashash manzili: ${blank(f.ijrochi_manzil)},
 keyingi o'rinlarda "Ijrochi" deb yuritiladi,
@@ -546,9 +550,10 @@ TOMONLARNING REKVIZITLARI
 BUYURTMACHI:                               IJROCHI:
 ${org.name}                                ${blank(f.ijrochi_ism)}
 INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
-Manzil: ${blank(f.org_manzil)}             STIR: ${blank(f.ijrochi_stir)}
-Tel: ${blank(f.org_tel)}                   Manzil: ${blank(f.ijrochi_manzil)}
-Hisob: ${blank(f.org_hisob)}               Tel: ${blank(f.ijrochi_tel)}
+Manzil: ${blank(f.org_manzil)}             JSHSHIR: ${blank(f.ijrochi_jshshir, '______________')}
+Tel: ${blank(f.org_tel)}                   STIR: ${blank(f.ijrochi_stir)}
+Hisob: ${blank(f.org_hisob)}               Manzil: ${blank(f.ijrochi_manzil)}
+                                           Tel: ${blank(f.ijrochi_tel)}
                                            Hisob/Karta: ${blank(f.ijrochi_hisob)}
 
 Direktor: ___________________              Imzo: ___________________
@@ -577,6 +582,7 @@ ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Tashkilot" deb yuritiladi,
 direktori ${org.director_name} tomonidan vakilligi qilinadi,
 
 va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+JSHSHIR: ${blank(f.jshshir, '______________')},
 lavozim: "${blank(f.lavozim)}",
 keyingi o'rinlarda "Xodim" deb yuritiladi,
 
@@ -680,6 +686,7 @@ TOMONLARNING REKVIZITLARI VA IMZOLARI
 TASHKILOT:                                 XODIM:
 ${org.name}                                ${blank(f.xodim_ism)}
 INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
+                                           JSHSHIR: ${blank(f.jshshir, '______________')}
                                            Lavozim: ${blank(f.lavozim)}
 
 Direktor: ___________________              Imzo: ___________________
@@ -712,7 +719,7 @@ Manzil: ${blank(f.org_manzil)}
 
 O'QITAMAN / BUYURAMAN:
 
-Fuqaro ${blank(f.xodim_ism)}, pasport ${blank(f.passport, 'AA 0000000')},
+Fuqaro ${blank(f.xodim_ism)}, pasport ${blank(f.passport, 'AA 0000000')}, JSHSHIR: ${blank(f.jshshir, '______________')},
 "${blank(f.lavozim)}" lavozimiga${f.bolim ? ` "${f.bolim}" bo'limiga` : ''},
 ${fmtD(f.sana)} sanasidan boshlab,
 ish haqi oyiga ${blank(f.maosh)} so'm miqdorida,

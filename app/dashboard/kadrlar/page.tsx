@@ -55,6 +55,7 @@ const FEATURES: FeatureConfig[] = [
     description: "Doimiy, muddatli, yarim stavkali, masofaviy yoki amaliyot — to'liq matn avtomatik",
     fields: [
       { key: 'xodim_ism',     label: 'Xodim F.I.O.',       placeholder: 'Rahimov Bobur Aliyevich' },
+      { key: 'jshshir',       label: 'JSHSHIR (14 raqam)', placeholder: '12345678901234' },
       { key: 'passport',      label: 'Pasport seriya/raqam', placeholder: 'AB 1234567', optional: true },
       { key: 'lavozim',       label: 'Lavozim',              placeholder: 'Dasturchi' },
       { key: 'bolim',         label: "Bo'lim",               placeholder: 'IT bo\'limi', optional: true },
@@ -73,6 +74,7 @@ const FEATURES: FeatureConfig[] = [
     description: "Asosiy ish joyini saqlab, qo'shimcha ravishda ishlash uchun mehnat shartnomasi",
     fields: [
       { key: 'xodim_ism',  label: 'Xodim F.I.O.',       placeholder: 'Karimov Jasur Hamidovich' },
+      { key: 'jshshir',    label: 'JSHSHIR (14 raqam)', placeholder: '12345678901234' },
       { key: 'passport',   label: 'Pasport seriya/raqam', placeholder: 'AB 1234567' },
       { key: 'lavozim',    label: 'Lavozim',              placeholder: 'Konsultant' },
       { key: 'maosh',      label: "Ish haqi (so'm)",      placeholder: '2 000 000' },
@@ -90,6 +92,7 @@ const FEATURES: FeatureConfig[] = [
     description: "Mehnat shartnomasi emas — bir martalik yoki vaqtinchalik xizmat uchun podryad shartnomasi",
     fields: [
       { key: 'ijrochi_ism',    label: 'Ijrochi F.I.O.',         placeholder: 'Toshmatov Alisher Baxtiyorovich' },
+      { key: 'ijrochi_jshshir', label: 'JSHSHIR (14 raqam)',    placeholder: '12345678901234' },
       { key: 'passport',       label: 'Pasport seriya/raqam',    placeholder: 'AB 1234567' },
       { key: 'ijrochi_stir',   label: "Ijrochi STIR (ixtiyoriy)", placeholder: '123456789', optional: true },
       { key: 'xizmat_nomi',    label: 'Xizmat/ish tavsifi',      placeholder: "Veb-sayt dizayni, mobil ilova ishlab chiqish...", textarea: true },
@@ -107,6 +110,7 @@ const FEATURES: FeatureConfig[] = [
     description: "Tijorat siri va maxfiy ma'lumotlarni muhofaza qilish uchun konfidensiallik shartnomasi",
     fields: [
       { key: 'xodim_ism', label: 'Xodim F.I.O.',        placeholder: 'Nazarov Dilshod Karimovich' },
+      { key: 'jshshir',   label: 'JSHSHIR (14 raqam)', placeholder: '12345678901234' },
       { key: 'passport',  label: 'Pasport seriya/raqam', placeholder: 'AB 1234567', optional: true },
       { key: 'lavozim',   label: 'Lavozim',              placeholder: 'Dasturchi' },
       { key: 'muddat',    label: 'Maxfiylik muddati',    placeholder: '3 yil' },
@@ -122,6 +126,7 @@ const FEATURES: FeatureConfig[] = [
     description: "Xodimni ishga qabul qilish bo'yicha rasmiy buyruq",
     fields: [
       { key: 'xodim_ism',    label: 'Xodim F.I.O.',       placeholder: 'Umarov Sardor Bekovich' },
+      { key: 'jshshir',      label: 'JSHSHIR (14 raqam)', placeholder: '12345678901234' },
       { key: 'lavozim',      label: 'Lavozim',              placeholder: 'Bosh muhandis' },
       { key: 'bolim',        label: "Bo'lim (ixtiyoriy)",   placeholder: 'Ishlab chiqarish bo\'limi', optional: true },
       { key: 'maosh',        label: "Ish haqi (so'm)",      placeholder: '7 000 000' },
@@ -138,6 +143,7 @@ const FEATURES: FeatureConfig[] = [
     description: "Xodimni ishdan bo'shatish bo'yicha rasmiy buyruq",
     fields: [
       { key: 'xodim_ism',    label: 'Xodim F.I.O.',         placeholder: 'Karimov Jasur Hamidovich' },
+      { key: 'jshshir',      label: 'JSHSHIR (14 raqam)',   placeholder: '12345678901234' },
       { key: 'lavozim',      label: 'Lavozim',               placeholder: 'Menejer' },
       { key: 'bolim',        label: "Bo'lim (ixtiyoriy)",    placeholder: '', optional: true },
       { key: 'sana',         label: "Bo'shatish sanasi",     placeholder: '', type: 'date' },
@@ -154,6 +160,7 @@ const FEATURES: FeatureConfig[] = [
     description: "Xodimga yillik asosiy yoki qo'shimcha ta'til berish buyrug'i",
     fields: [
       { key: 'xodim_ism',        label: 'Xodim F.I.O.',       placeholder: 'Usmonov Qodir Rustamovich' },
+      { key: 'jshshir',          label: 'JSHSHIR (14 raqam)', placeholder: '12345678901234' },
       { key: 'lavozim',          label: 'Lavozim',              placeholder: 'Buxgalter' },
       { key: 'bolim',            label: "Bo'lim (ixtiyoriy)",   placeholder: '', optional: true },
       { key: 'tatil_boshlanish', label: "Ta'til boshlanishi",  placeholder: '', type: 'date' },
@@ -172,6 +179,7 @@ const FEATURES: FeatureConfig[] = [
     description: "Xodimni boshqa lavozimga yoki bo'limga o'tkazish buyrug'i",
     fields: [
       { key: 'xodim_ism',    label: 'Xodim F.I.O.',           placeholder: 'Mirzayev Bobur Aliyevich' },
+      { key: 'jshshir',      label: 'JSHSHIR (14 raqam)',     placeholder: '12345678901234' },
       { key: 'eski_lavozim', label: 'Hozirgi lavozim',         placeholder: 'Kichik menejer' },
       { key: 'yangi_lavozim', label: 'Yangi lavozim',          placeholder: 'Katta menejer' },
       { key: 'yangi_bolim',  label: "Yangi bo'lim (ixtiyoriy)", placeholder: 'Savdo bo\'limi', optional: true },
@@ -189,6 +197,7 @@ const FEATURES: FeatureConfig[] = [
     description: "Xodimga pul mukofoti yoki rag'bat berish buyrug'i",
     fields: [
       { key: 'xodim_ism',        label: 'Xodim F.I.O.',          placeholder: 'Qodirov Anvar Sobirovich' },
+      { key: 'jshshir',          label: 'JSHSHIR (14 raqam)',    placeholder: '12345678901234' },
       { key: 'lavozim',          label: 'Lavozim',                placeholder: 'Savdo menejeri' },
       { key: 'mukofot_miqdori',  label: "Mukofot miqdori (so'm)", placeholder: '1 500 000' },
       { key: 'mukofot_turi',     label: "Mukofot turi (ixtiyoriy)", placeholder: 'Bir martalik pul mukofoti', optional: true },
@@ -205,6 +214,7 @@ const FEATURES: FeatureConfig[] = [
     description: "Xodimga hayfsan, qattiq hayfsan yoki boshqa intizomiy jazo qo'llash buyrug'i",
     fields: [
       { key: 'xodim_ism',            label: 'Xodim F.I.O.',          placeholder: 'Ergashev Timur Navruzovich' },
+      { key: 'jshshir',              label: 'JSHSHIR (14 raqam)',    placeholder: '12345678901234' },
       { key: 'lavozim',              label: 'Lavozim',                placeholder: 'Ombor mudiri' },
       { key: 'bolim',                label: "Bo'lim (ixtiyoriy)",     placeholder: '', optional: true },
       { key: 'jazo_turi',            label: 'Jazo turi',              placeholder: "Hayfsan (ogoh qilish)" },
