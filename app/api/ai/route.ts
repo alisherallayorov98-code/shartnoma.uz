@@ -1326,8 +1326,15 @@ ${jOnly}
     return NextResponse.json({ result })
 
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Noma'lum xatolik"
-    console.error('[AI route error]', msg, err)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    // Log full error server-side, return safe message to client
+    console.error('[AI route]', new Date().toISOString(), err)
+    const status = (err as { status?: number })?.status
+    const userMsg =
+      status === 529 || status === 529
+        ? "AI xizmati vaqtincha band. Biroz kutib qayta urinib ko'ring."
+        : status === 401
+        ? 'API kalit xatoligi. Administrator bilan bog\'laning.'
+        : "Xatolik yuz berdi. Qayta urinib ko'ring yoki sahifani yangilang."
+    return NextResponse.json({ error: userMsg }, { status: 500 })
   }
 }

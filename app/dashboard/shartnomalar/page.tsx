@@ -99,8 +99,8 @@ export default function ShartnomalarPage() {
   const { toast } = useToast()
 
   const {
-    contracts, orgs, cps, activeOrg, subscription, isFree,
-    reloadContracts, reloadCps, canCreateContract, openUpgradeModal, userId,
+    contracts, contractsTotal, orgs, cps, activeOrg, subscription, isFree,
+    reloadContracts, loadMoreContracts, reloadCps, canCreateContract, openUpgradeModal, userId,
   } = useDashboard()
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -1433,6 +1433,16 @@ export default function ShartnomalarPage() {
           </div>
         )}
       </div>
+
+      {/* ── Load more ── */}
+      {contracts.length < contractsTotal && (
+        <div className="mt-3 text-center">
+          <button onClick={loadMoreContracts}
+            className="text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 px-4 py-2 rounded-lg transition">
+            Ko&apos;proq yuklash ({contracts.length} / {contractsTotal})
+          </button>
+        </div>
+      )}
 
       {/* ── Total for active contracts ── */}
       {filtered.length > 0 && (

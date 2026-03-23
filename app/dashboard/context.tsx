@@ -55,6 +55,7 @@ type DashboardContextType = {
   reloadOrgs: () => Promise<void>
   reloadCps: () => Promise<void>
   reloadContracts: () => Promise<void>
+  loadMoreContracts: () => Promise<void>
   reloadSubscription: () => Promise<void>
   canCreateContract: () => boolean
   getQuotaInfo: () => QuotaInfo | null
@@ -78,7 +79,7 @@ export const DashboardContext = createContext<DashboardContextType>({
   initialLoading: true,
   isFree: true, isDemoActive: false, isSubValid: false, subDaysLeft: null,
   switchOrg: () => {}, reloadOrgs: async () => {}, reloadCps: async () => {},
-  reloadContracts: async () => {}, reloadSubscription: async () => {},
+  reloadContracts: async () => {}, loadMoreContracts: async () => {}, reloadSubscription: async () => {},
   canCreateContract: () => false, getQuotaInfo: () => null,
   openUpgradeModal: () => {}, closeUpgradeModal: () => {}, upgradeModalOpen: false,
   logout: async () => {},
@@ -163,8 +164,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setCps(data || [])
   }, [])
 
-  const loadContracts = useCallback(async (orgId?: string) => {
-    const base = supabase.from('contracts').select('*, organizations(*), counterparties(*)', { count: 'exact' }).order('created_at', { ascending: false }).limit(200)
+  const loadContracts = useCallback(async (orgId?: string, limit = 50) => {
+    const base = supabase.from('contracts').select('*, organizations(*), counterparties(*)', { count: 'exact' }).order('created_at', { ascending: false }).limit(limit)
     const { data, count, error } = orgId ? await base.eq('organization_id', orgId) : await base
     if (error) { console.error('loadContracts:', error.message); return }
     setContracts(data || [])
@@ -264,6 +265,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     await loadContracts(activeOrg?.id)
   }, [loadContracts, activeOrg?.id])
 
+  const loadMoreContracts = useCallback(async () => {
+    if (!activeOrg) return
+    const offset = contracts.length
+    const { data, error } = await supabase.from('contracts')
+      .select('*, organizations(*), counterparties(*)')
+      .eq('organization_id', activeOrg.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + 49)
+    if (error || !data) return
+    setContracts(prev => [...prev, ...data])
+  }, [activeOrg, contracts.length])
+
   const reloadSubscription = useCallback(async () => {
     if (activeOrg) await loadSubscription(activeOrg.id)
   }, [loadSubscription, activeOrg?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -276,7 +289,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       initialLoading,
       isFree, isDemoActive, isSubValid, subDaysLeft,
       switchOrg,
-      reloadOrgs, reloadCps, reloadContracts, reloadSubscription,
+      reloadOrgs, reloadCps, reloadContracts, loadMoreContracts, reloadSubscription,
       canCreateContract, getQuotaInfo,
       openUpgradeModal: () => setUpgradeModalOpen(true),
       closeUpgradeModal: () => setUpgradeModalOpen(false),
