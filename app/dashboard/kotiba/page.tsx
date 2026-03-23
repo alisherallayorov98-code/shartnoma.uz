@@ -6,6 +6,7 @@ import { fetchAi } from '@/lib/fetchAi'
 import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
 import { saveAiDocument } from '@/lib/aiDocuments'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
+import BayonnomaMaker from './_components/BayonnomaMaker'
 
 type KotibaFeature =
   | 'bayonnoma' | 'rasmiy_xat' | 'taklifnoma'
@@ -26,17 +27,10 @@ const FEATURES: FeatureConfig[] = [
     key: 'bayonnoma',
     icon: '📝',
     title: "Yig'ilish bayonnomasi",
-    description: "Yig'ilish yoki kengash bayonnomasini avtomatik tayyorlang",
+    description: "Kredit, dividend, xarid, ta'sischi va boshqa turlari",
     apiType: 'bayonnoma',
     resultField: 'bayonnoma',
-    fields: [
-      { key: 'sana', label: "Yig'ilish sanasi", placeholder: '2025-04-15', type: 'date' },
-      { key: 'joyi', label: "O'tkazilgan joy", placeholder: 'Bosh ofis, majlis xonasi' },
-      { key: 'raislik_qilgan', label: 'Raislik qilgan', placeholder: 'Karimov Alisher Raximovich' },
-      { key: 'ishtirokchilar', label: 'Ishtirokchilar (vergul bilan)', placeholder: 'Rahimov B., Usmonov S., Toshmatov D.' },
-      { key: 'kun_tartibi', label: "Kun tartibi (masalalar)", placeholder: "1. Moliyaviy hisobot\n2. Yangi loyiha muhokamasi", textarea: true },
-      { key: 'qarorlar', label: "Qabul qilingan qarorlar", placeholder: "1. Hisobotni tasdiqlash\n2. Loyihani boshlash", textarea: true },
-    ],
+    fields: [],
   },
   {
     key: 'rasmiy_xat',
@@ -246,50 +240,72 @@ export default function KotibaPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {currentFeature.fields.map(field => (
-                <div key={field.key} className={field.textarea ? 'sm:col-span-2' : ''}>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">{field.label}</label>
-                  {field.textarea ? (
-                    <textarea
-                      value={formData[field.key] || ''}
-                      onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
-                      placeholder={field.placeholder}
-                      rows={3}
-                      className={`${inp} resize-y`}
-                    />
-                  ) : (
-                    <input
-                      type={field.type || 'text'}
-                      value={formData[field.key] || ''}
-                      onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
-                      placeholder={field.placeholder}
-                      className={inp}
-                    />
-                  )}
+            {selected === 'bayonnoma' ? (
+              <BayonnomaMaker
+                orgName={activeOrg?.name || ''}
+                orgInn={activeOrg?.inn || ''}
+                direktorName={activeOrg?.director_name || ''}
+                onSave={text => {
+                  if (activeOrg) {
+                    saveAiDocument({
+                      organization_id: activeOrg.id,
+                      section: 'kotiba',
+                      feature_key: 'bayonnoma',
+                      title: "Yig'ilish bayonnomasi",
+                      content: text,
+                      meta: {},
+                    }).then(() => setSavedKey(k => k + 1)).catch(console.error)
+                  }
+                }}
+              />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {currentFeature.fields.map(field => (
+                    <div key={field.key} className={field.textarea ? 'sm:col-span-2' : ''}>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5">{field.label}</label>
+                      {field.textarea ? (
+                        <textarea
+                          value={formData[field.key] || ''}
+                          onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                          placeholder={field.placeholder}
+                          rows={3}
+                          className={`${inp} resize-y`}
+                        />
+                      ) : (
+                        <input
+                          type={field.type || 'text'}
+                          value={formData[field.key] || ''}
+                          onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                          placeholder={field.placeholder}
+                          className={inp}
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            {activeOrg && (
-              <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-2 text-xs text-gray-400">
-                Tashkilot: <span className="text-white font-medium">{activeOrg.name}</span> · Direktor: {activeOrg.director_name}
-              </div>
+                {activeOrg && (
+                  <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-2 text-xs text-gray-400">
+                    Tashkilot: <span className="text-white font-medium">{activeOrg.name}</span> · Direktor: {activeOrg.director_name}
+                  </div>
+                )}
+
+                {error && (
+                  <div className="bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2 text-sm text-red-300">⚠ {error}</div>
+                )}
+
+                <button onClick={handleGenerate} disabled={loading}
+                  className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
+                  {loading ? (
+                    <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>AI ishlamoqda…</>
+                  ) : <>🤖 AI bilan tayyorlash</>}
+                </button>
+              </>
             )}
-
-            {error && (
-              <div className="bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2 text-sm text-red-300">⚠ {error}</div>
-            )}
-
-            <button onClick={handleGenerate} disabled={loading}
-              className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
-              {loading ? (
-                <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>AI ishlamoqda…</>
-              ) : <>🤖 AI bilan tayyorlash</>}
-            </button>
 
             {/* Preview modal */}
             {showPreview && result && (
