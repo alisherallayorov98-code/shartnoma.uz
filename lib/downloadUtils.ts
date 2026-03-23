@@ -191,96 +191,187 @@ export async function downloadTextAsPDF(text: string, filename: string) {
 }
 
 export async function downloadTextAsWord(text: string, filename: string) {
-  const { Document, Packer, Paragraph, TextRun, AlignmentType, Footer, PageNumber } = await import('docx')
+  const {
+    Document, Packer, Paragraph, TextRun, AlignmentType, Footer, PageNumber,
+    Table, TableRow, TableCell, WidthType, BorderStyle,
+  } = await import('docx')
 
   const F = 'Times New Roman'
+  const NB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' } as const
+  const noBorders = { top: NB, bottom: NB, left: NB, right: NB }
 
-  // Improved line classifier for Word output
-  function detectKind(line: string): 'empty' | 'title' | 'main' | 'sub' | 'label' | 'bullet' | 'body' {
+  type LineKind = 'empty' | 'separator' | 'title' | 'main' | 'sub' | 'label' | 'bullet' | 'twocol' | 'body'
+
+  function detectKind(line: string): LineKind {
     const t = line.trim()
-    if (!t || /^={3,}$|^-{3,}$/.test(t)) return 'empty'
-    // Main numbered section: "1. TEXT", "2. TEXT" (not subsection like 1.1)
+    if (!t) return 'empty'
+    // Decorator lines: ════, ────, ===, --- etc.
+    if (/^[═─=\-]{3,}$/.test(t)) return 'separator'
+    // Two-column line: content on left, 5+ spaces gap, content on right (rekvizitlar blocks)
+    if (/\S[ \t]{5,}\S/.test(line) && !(/^\d+\.\s/.test(t))) return 'twocol'
+    // Main numbered section: "1. TEXT" but not "1.1."
     if (/^(\d+\.\s+\S|§\s*\d)/.test(t) && !/^\d+\.\d/.test(t)) return 'main'
     // Subsection: "1.1.", "1.2.3"
     if (/^\d+\.\d+/.test(t)) return 'sub'
-    // Title: short line, starts with uppercase, mostly uppercase letters
+    // Signature placeholder lines: lines with only underscores
+    if (/^_+(\s+_+)*$/.test(t)) return 'body'
+    // Title: short, starts uppercase, ≥65% uppercase letters
     if (t.length <= 80 && /^[A-ZА-ЯЁЎҚҒҲ]/.test(t)) {
       const letters = t.replace(/\s+/g, '').replace(/[^a-zA-ZА-ЯЁа-яёЎҚҒҲўқғҳ]/g, '')
       const uppers = t.replace(/[^A-ZА-ЯЁЎҚҒҲ]/g, '')
       if (letters.length >= 4 && uppers.length / letters.length >= 0.65) return 'title'
     }
-    // Label: "BUYURTMACHI:", "IJROCHI:" etc.
-    if (/^[A-ZА-ЯЁЎҚҒҲ][A-ZА-ЯЁЎҚҒҲ\s]{2,20}:\s*$/.test(t)) return 'label'
+    // Label: "BUYURTMACHI:", "ISH BERUVCHI:" etc. (standalone label on own line)
+    if (/^[A-ZА-ЯЁЎҚҒҲ][A-ZА-ЯЁЎҚҒҲ\s]{1,25}:\s*$/.test(t)) return 'label'
     // Bullet
     if (/^[-–•]\s/.test(t)) return 'bullet'
     return 'body'
   }
 
-  const lines = text.split('\n')
-  const paragraphs = lines.map((line, i, arr) => {
+  // Split a two-column line into [left, right]
+  function splitTwoCol(line: string): [string, string] {
+    const m = line.match(/^(.+?)[ \t]{5,}(.+)$/)
+    if (m) return [m[1].trim(), m[2].trim()]
+    return [line.trim(), '']
+  }
+
+  // Build blocks: group consecutive twocol lines into table blocks
+  type ParaBlock = { type: 'para'; line: string; bi: number }
+  type TableBlock = { type: 'table'; rows: [string, string][] }
+  type Block = ParaBlock | TableBlock
+
+  const rawLines = text.split('\n')
+  const blocks: Block[] = []
+  let li = 0
+  while (li < rawLines.length) {
+    const k = detectKind(rawLines[li])
+    if (k === 'twocol') {
+      const rows: [string, string][] = []
+      while (li < rawLines.length) {
+        const kk = detectKind(rawLines[li])
+        if (kk === 'twocol') { rows.push(splitTwoCol(rawLines[li])); li++ }
+        else if (kk === 'empty' && li + 1 < rawLines.length && detectKind(rawLines[li + 1]) === 'twocol') { li++ } // skip blank between twocol rows
+        else break
+      }
+      if (rows.length > 0) blocks.push({ type: 'table', rows })
+    } else {
+      blocks.push({ type: 'para', line: rawLines[li], bi: blocks.length })
+      li++
+    }
+  }
+
+  // Helper: make a no-border table cell with one paragraph
+  function makeCell(txt: string, bold = false, align = AlignmentType.LEFT) {
+    return new TableCell({
+      width: { size: 50, type: WidthType.PERCENTAGE },
+      borders: noBorders,
+      children: [new Paragraph({
+        alignment: align,
+        spacing: { after: 30 },
+        children: [new TextRun({ text: txt, bold, size: 24, font: F, color: '000000' })],
+      })],
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const children: any[] = []
+
+  for (let bi = 0; bi < blocks.length; bi++) {
+    const block = blocks[bi]
+
+    // ── Table block (two-column rekvizitlar) ────────────────────────────────
+    if (block.type === 'table') {
+      children.push(new Paragraph({ text: '', spacing: { before: 80, after: 0 } }))
+      children.push(new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: noBorders,
+        rows: block.rows.map(([l, r]) => {
+          const isHeader = /^[A-ZА-ЯЁЎҚҒҲ\s]{3,}:?\s*$/.test(l.trim())
+          return new TableRow({
+            children: [makeCell(l, isHeader), makeCell(r, isHeader)],
+          })
+        }),
+      }))
+      children.push(new Paragraph({ text: '', spacing: { before: 0, after: 60 } }))
+      continue
+    }
+
+    // ── Paragraph block ──────────────────────────────────────────────────────
+    const { line } = block
     const t = line.trim()
     const kind = detectKind(line)
 
-    if (kind === 'empty') {
-      return new Paragraph({ text: '', spacing: { after: 20 } })
+    if (kind === 'empty' || kind === 'separator') {
+      children.push(new Paragraph({ text: '', spacing: { after: kind === 'separator' ? 40 : 20 } }))
+      continue
     }
 
     if (kind === 'title') {
-      return new Paragraph({
+      children.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: i > 0 ? 120 : 0, after: 80 },
-        children: [new TextRun({ text: t, bold: true, italics: false, underline: {}, size: 28, font: F, color: '000000' })],
-      })
+        spacing: { before: bi > 0 ? 160 : 0, after: 100 },
+        children: [new TextRun({ text: t, bold: true, underline: {}, size: 28, font: F, color: '000000' })],
+      }))
+      continue
     }
 
     if (kind === 'main') {
-      return new Paragraph({
+      children.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 160, after: 60 },
-        children: [new TextRun({ text: t, bold: true, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
-      })
+        spacing: { before: 200, after: 80 },
+        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+      }))
+      continue
     }
 
     if (kind === 'sub') {
-      return new Paragraph({
+      children.push(new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { before: 0, after: 40 },
-        children: [new TextRun({ text: t, bold: false, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
-      })
+        spacing: { before: 80, after: 40 },
+        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+      }))
+      continue
     }
 
     if (kind === 'label') {
-      return new Paragraph({
-        spacing: { before: 120, after: 40 },
-        children: [new TextRun({ text: t, bold: true, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
-      })
+      children.push(new Paragraph({
+        spacing: { before: 160, after: 60 },
+        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+      }))
+      continue
     }
 
     if (kind === 'bullet') {
       const bt = t.replace(/^[-–•]\s*/, '')
-      return new Paragraph({
-        alignment: AlignmentType.LEFT,
-        indent: { left: 360, hanging: 180 },
-        spacing: { after: 30 },
-        children: [new TextRun({ text: `– ${bt}`, bold: false, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
-      })
+      children.push(new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        indent: { left: 360, hanging: 200 },
+        spacing: { after: 40 },
+        children: [new TextRun({ text: `– ${bt}`, size: 24, font: F, color: '000000' })],
+      }))
+      continue
     }
 
-    // body
-    const prevKind = i > 0 ? detectKind(arr[i - 1]) : 'empty'
-    const isParaStart = prevKind === 'empty' || prevKind === 'title' || prevKind === 'main' || prevKind === 'sub' || prevKind === 'label'
-    return new Paragraph({
+    // body — determine paragraph start for first-line indent
+    const prevBlock = bi > 0 ? blocks[bi - 1] : null
+    let prevKind: LineKind | 'table' = 'empty'
+    if (prevBlock?.type === 'para') prevKind = detectKind(prevBlock.line)
+    else if (prevBlock?.type === 'table') prevKind = 'table'
+    const isParaStart = prevKind === 'empty' || prevKind === 'separator' || prevKind === 'table'
+      || prevKind === 'title' || prevKind === 'main' || prevKind === 'sub' || prevKind === 'label'
+    children.push(new Paragraph({
       alignment: AlignmentType.JUSTIFIED,
       indent: isParaStart ? { firstLine: 360 } : {},
-      spacing: { after: 40, line: 240 },
-      children: [new TextRun({ text: t, bold: false, italics: false, underline: {}, size: 24, font: F, color: '000000' })],
-    })
-  })
+      spacing: { after: 40, line: 276 },
+      children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
+    }))
+  }
 
   const doc = new Document({
     sections: [{
       properties: {
-        page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 1134 } },
+        // Standard Uzbek legal doc margins: left 3cm, right 1.5cm, top/bottom 2cm
+        page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } },
       },
       footers: {
         default: new Footer({
@@ -295,7 +386,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
           })],
         }),
       },
-      children: paragraphs,
+      children,
     }],
   })
 
