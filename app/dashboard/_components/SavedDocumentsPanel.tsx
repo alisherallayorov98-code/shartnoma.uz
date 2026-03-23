@@ -28,7 +28,8 @@ const FEATURE_LABELS: Record<string, string> = {
   talabnoma: 'Talabnoma', tolov_grafigi: "To'lov grafigi", debitor_undirish: 'Debitor undirish',
   bayonnoma: "Bayonnoma", rasmiy_xat: 'Rasmiy xat', taklifnoma: 'Taklifnoma',
   hisobot: 'Hisobot', eslatma: 'Eslatma', murojaatnoma: 'Murojaatnoma',
-  tushuntirish_xati: 'Tushuntirish xati',
+  tushuntirish_xati: 'Tushuntirish xati', kafolat_xat: 'Kafolat xati',
+  tabriklash_xat: 'Tabriklash xati', rekvizitlar_xat: 'Rekvizitlar xati',
 }
 
 const CONTRACT_TYPE_LABELS: Record<string, string> = {
@@ -55,6 +56,7 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [activeFilter, setActiveFilter] = useState<string>('all')
 
   const reload = useCallback(async () => {
     setLoading(true)
@@ -116,6 +118,25 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
         </button>
       </div>
 
+      {!loading && docs.length > 0 && (() => {
+        const keys = [...new Set(docs.map(d => d.feature_key))]
+        if (keys.length <= 1) return null
+        return (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            <button onClick={() => setActiveFilter('all')}
+              className={`px-2.5 py-1 rounded-lg text-xs transition ${activeFilter === 'all' ? `${ac.btn} text-white` : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+              Barchasi <span className="text-gray-500 ml-0.5">{docs.length}</span>
+            </button>
+            {keys.map(k => (
+              <button key={k} onClick={() => setActiveFilter(k)}
+                className={`px-2.5 py-1 rounded-lg text-xs transition ${activeFilter === k ? `${ac.btn} text-white` : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                {FEATURE_LABELS[k] || k} <span className="text-gray-500 ml-0.5">{docs.filter(d => d.feature_key === k).length}</span>
+              </button>
+            ))}
+          </div>
+        )
+      })()}
+
       {loading ? (
         <div className="text-center py-8 text-gray-600 text-sm">Yuklanmoqda…</div>
       ) : docs.length === 0 ? (
@@ -124,7 +145,7 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
         </div>
       ) : (
         <div className="space-y-2">
-          {docs.map(doc => (
+          {docs.filter(d => activeFilter === 'all' || d.feature_key === activeFilter).map(doc => (
             <div key={doc.id}
               className="bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3 flex items-center gap-3 group hover:border-gray-600 transition">
               {/* Info */}
