@@ -48,21 +48,26 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
 
-        {/* Til tanlash */}
-        <div className="flex justify-end gap-1 mb-4">
-          {(Object.keys(LANG_LABELS) as Lang[]).map(l => (
-            <button
-              key={l}
-              onClick={() => setLang(l)}
-              className={`px-3 py-1 text-xs rounded-lg transition ${
-                lang === l
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-white'
-              }`}
-            >
-              {LANG_LABELS[l]}
-            </button>
-          ))}
+        {/* Bosh sahifa + Til tanlash */}
+        <div className="flex items-center justify-between mb-4">
+          <Link href="/" className="text-sm text-gray-400 hover:text-white transition flex items-center gap-1">
+            ← Bosh sahifa
+          </Link>
+          <div className="flex gap-1">
+            {(Object.keys(LANG_LABELS) as Lang[]).map(l => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`px-3 py-1 text-xs rounded-lg transition ${
+                  lang === l
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-800 text-gray-400 hover:text-white'
+                }`}
+              >
+                {LANG_LABELS[l]}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="text-center mb-8">
