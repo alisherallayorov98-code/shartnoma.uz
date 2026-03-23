@@ -4,17 +4,48 @@ import { createClient } from '@supabase/supabase-js'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-// ── Auth helper ───────────────────────────────────────────────────────────────
-async function verifyUser(req: NextRequest): Promise<string | null> {
+// ── Auth + Subscription helpers ───────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SbClient = ReturnType<typeof createClient<any>>
+
+async function verifyUser(req: NextRequest): Promise<{ userId: string; sb: SbClient } | null> {
   const token = req.headers.get('Authorization')?.replace('Bearer ', '')
   if (!token) return null
+  // Pass user's JWT so RLS applies correctly
   const sb = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
+    {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    }
   )
   const { data: { user } } = await sb.auth.getUser(token)
-  return user?.id ?? null
+  if (!user) return null
+  return { userId: user.id, sb }
+}
+
+async function hasActiveAccess(userId: string, sb: SbClient): Promise<boolean> {
+  // Admins always have full access
+  const { data: admin } = await sb.from('admins').select('id').eq('user_id', userId).maybeSingle()
+  if (admin) return true
+
+  // Get user's organizations
+  const { data: orgs } = await sb.from('organizations').select('id').eq('user_id', userId)
+  if (!orgs?.length) return false
+  const orgIds = (orgs as { id: string }[]).map(o => o.id)
+
+  // Active paid subscription?
+  const { data: sub } = await sb.from('subscriptions').select('id')
+    .in('organization_id', orgIds).eq('is_active', true).neq('plan', 'free')
+    .gt('period_end', new Date().toISOString()).limit(1).maybeSingle()
+  if (sub) return true
+
+  // Demo access?
+  const { data: demo } = await sb.from('demo_access').select('id')
+    .in('organization_id', orgIds).eq('is_active', true)
+    .gt('expires_at', new Date().toISOString()).limit(1).maybeSingle()
+  return !!demo
 }
 
 // ── In-memory rate limiter: max 30 req/min per user ──────────────────────────
@@ -102,13 +133,21 @@ function extractJSON(raw: string): unknown {
 
 export async function POST(req: NextRequest) {
   // Auth check
-  const userId = await verifyUser(req)
-  if (!userId) {
+  const auth = await verifyUser(req)
+  if (!auth) {
     return NextResponse.json({ error: 'Autentifikatsiya talab qilinadi' }, { status: 401 })
   }
+  const { userId, sb } = auth
+
   // Rate limit
   if (!checkRate(userId)) {
     return NextResponse.json({ error: "So'rovlar chegarasidan oshib ketdi. 1 daqiqa kuting." }, { status: 429 })
+  }
+
+  // Subscription check — free users cannot use AI
+  const canUse = await hasActiveAccess(userId, sb)
+  if (!canUse) {
+    return NextResponse.json({ error: 'premium_required' }, { status: 403 })
   }
 
   try {

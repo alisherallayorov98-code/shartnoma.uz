@@ -271,7 +271,7 @@ const CATS: { key: Category; label: string; icon: string }[] = [
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function KadrlarPage() {
-  const { activeOrg, isFree } = useDashboard()
+  const { activeOrg, isFree, openUpgradeModal } = useDashboard()
   const [activeCat, setActiveCat] = useState<Category>('shartnoma')
   const [selected, setSelected] = useState<KadrFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
@@ -345,6 +345,7 @@ export default function KadrlarPage() {
           },
         })
         const data = await res.json()
+        if (data.error === 'premium_required') { openUpgradeModal(); return }
         if (data.error) { setError(data.error); return }
         text = data.result?.[currentFeature.resultField!]
           || data.result?.shartnoma || data.result?.ishonchnoma

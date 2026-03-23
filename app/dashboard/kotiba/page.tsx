@@ -207,7 +207,7 @@ const FEATURES: FeatureConfig[] = [
 ]
 
 export default function KotibaPage() {
-  const { activeOrg, isFree } = useDashboard()
+  const { activeOrg, isFree, openUpgradeModal } = useDashboard()
   const [selected, setSelected] = useState<KotibaFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [result, setResult] = useState<string | null>(null)
@@ -241,6 +241,7 @@ export default function KotibaPage() {
         },
       })
       const data = await res.json()
+      if (data.error === 'premium_required') { openUpgradeModal(); return }
       if (!res.ok || data.error) { setError(data.error || 'Xatolik yuz berdi'); return }
       const text = data.result?.[currentFeature.resultField]
         || data.result?.bayonnoma || data.result?.xat || data.result?.taklifnoma

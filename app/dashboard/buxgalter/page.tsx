@@ -83,7 +83,7 @@ const FEATURES: FeatureConfig[] = [
 ]
 
 export default function BuxgalterPage() {
-  const { activeOrg, isFree, contracts } = useDashboard()
+  const { activeOrg, isFree, contracts, openUpgradeModal } = useDashboard()
   const [selected, setSelected] = useState<BuxFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -128,6 +128,7 @@ export default function BuxgalterPage() {
       })
 
       const data = await res.json()
+      if (data.error === 'premium_required') { openUpgradeModal(); return }
       if (data.error) { setError(data.error); return }
 
       const text = data.result?.[currentFeature.resultField]
