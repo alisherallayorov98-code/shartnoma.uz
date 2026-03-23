@@ -70,14 +70,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 // ─── Empty form factory ───────────────────────────────────────────────────────
 
-// Extract city from org address: "Samarqand shahri, ko'cha..." → "Samarqand shahri"
-function extractCity(address?: string): string {
-  if (!address) return 'Toshkent'
-  const before = address.split(',')[0].trim()
-  return before || 'Toshkent'
-}
-
-function makeEmptyForm(orgId: string, orgCity?: string): ContractForm {
+function makeEmptyForm(orgId: string): ContractForm {
   return {
     id: '',
     contract_number: '',
@@ -88,7 +81,7 @@ function makeEmptyForm(orgId: string, orgCity?: string): ContractForm {
     counterparty_id: '',
     status: 'active',
     content: '',
-    city: orgCity || 'Toshkent',
+    city: '',
     product_name: '',
     spec_items: [],
     qqs_enabled: false,
@@ -148,7 +141,7 @@ export default function ShartnomalarPage() {
       const { type, content } = JSON.parse(raw) as { type: string; content: string }
       localStorage.removeItem('tpl_to_contract')
       if (!canCreateContract()) { openUpgradeModal(); return }
-      const form = makeEmptyForm(activeOrg.id, extractCity(activeOrg.address))
+      const form = makeEmptyForm(activeOrg.id)
       form.contract_number = autoContractNum()
       form.contract_type = type || 'oldi_sotdi'
       form.content = content || ''
@@ -213,7 +206,7 @@ export default function ShartnomalarPage() {
   function openNewContract() {
     if (!canCreateContract()) { openUpgradeModal(); return }
     if (!activeOrg) { toast(T(t.msg.noOrgs), 'error'); return }
-    const form = makeEmptyForm(activeOrg.id, extractCity(activeOrg.address))
+    const form = makeEmptyForm(activeOrg.id)
     form.contract_number = autoContractNum()
     setContractForm(form)
     setModal('contract')
