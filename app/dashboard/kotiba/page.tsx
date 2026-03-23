@@ -7,11 +7,13 @@ import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
 import { saveAiDocument } from '@/lib/aiDocuments'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 import BayonnomaMaker from './_components/BayonnomaMaker'
+import BuyruqMaker from './_components/BuyruqMaker'
 
 type KotibaFeature =
   | 'bayonnoma' | 'rasmiy_xat' | 'taklifnoma'
   | 'hisobot' | 'eslatma' | 'murojaatnoma' | 'tushuntirish_xati'
   | 'ishonchnoma' | 'dalolatnoma' | 'kafolat_xat' | 'tabriklash_xat' | 'rekvizitlar_xat'
+  | 'buyruq'
 
 type FeatureConfig = {
   key: KotibaFeature
@@ -193,6 +195,15 @@ const FEATURES: FeatureConfig[] = [
       { key: 'muddat', label: "Javob muddati", placeholder: "2 ish kuni ichida" },
     ],
   },
+  {
+    key: 'buyruq',
+    icon: '📜',
+    title: 'Tashkiliy buyruqlar',
+    description: "Asosiy vosita, komissiya, safari, vazifa yuklatish va boshqa tashkiliy buyruqlar",
+    apiType: '',
+    resultField: '',
+    fields: [],
+  },
 ]
 
 export default function KotibaPage() {
@@ -326,6 +337,23 @@ export default function KotibaPage() {
                       section: 'kotiba',
                       feature_key: 'bayonnoma',
                       title: "Yig'ilish bayonnomasi",
+                      content: text,
+                      meta: {},
+                    }).then(() => setSavedKey(k => k + 1)).catch(console.error)
+                  }
+                }}
+              />
+            ) : selected === 'buyruq' ? (
+              <BuyruqMaker
+                orgName={activeOrg?.name || ''}
+                orgDirector={activeOrg?.director_name || ''}
+                onSave={(text, title) => {
+                  if (activeOrg) {
+                    saveAiDocument({
+                      organization_id: activeOrg.id,
+                      section: 'kotiba',
+                      feature_key: 'buyruq',
+                      title,
                       content: text,
                       meta: {},
                     }).then(() => setSavedKey(k => k + 1)).catch(console.error)

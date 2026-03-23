@@ -40,6 +40,7 @@ const FEATURE_LABELS: Record<string, string> = {
   dalolatnoma: 'Dalolatnoma',
   talabnoma: 'Talabnoma', tolov_grafigi: "To'lov grafigi", debitor_undirish: 'Debitor undirish',
   // Kotiba
+  buyruq: 'Tashkiliy buyruq',
   bayonnoma: "Bayonnoma", rasmiy_xat: 'Rasmiy xat', taklifnoma: 'Taklifnoma',
   hisobot: 'Hisobot', eslatma: 'Eslatma', murojaatnoma: 'Murojaatnoma',
   tushuntirish_xati: 'Tushuntirish xati', kafolat_xat: 'Kafolat xati',
