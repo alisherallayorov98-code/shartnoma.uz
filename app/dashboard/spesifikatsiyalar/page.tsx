@@ -8,8 +8,9 @@ import { useDashboard } from '../context'
 import { Modal, ModalActions } from '../_components/Modal'
 import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
-import type { Counterparty } from '@/lib/types'
 import { cyrillicToLatin } from '@/lib/downloadUtils'
+import type { Counterparty } from '@/lib/types'
+import { numberToWords, formatDateUz } from '@/lib/contractStructures'
 
 type SpecItem = {
   nomi: string; birlik: string; miqdori: number; narxi: number
@@ -98,72 +99,115 @@ export default function SpesifikatsiyalarPage() {
   }
 
   async function generateSpecWord(spec: Specification) {
-    const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, WidthType, AlignmentType, BorderStyle, Footer, PageNumber, ShadingType } = await import('docx')
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, WidthType, AlignmentType, BorderStyle, Footer, PageNumber } = await import('docx')
     const items: SpecItem[] = Array.isArray(spec.items) ? spec.items : []
-    const jami = items.reduce((s, i) => s + (i.summa || 0), 0)
-    const qqsJami = items.reduce((s, i) => s + (i.qqs_summa || 0), 0)
-    const asosiy = items.reduce((s, i) => s + i.miqdori * i.narxi, 0)
+    const totalBase = items.reduce((s, i) => s + i.miqdori * i.narxi, 0)
+    const totalQqs  = items.reduce((s, i) => s + (i.qqs_summa || 0), 0)
+    const totalJami = items.reduce((s, i) => s + (i.summa || 0), 0)
     const F = 'Times New Roman'
+    const fmt = (n: number) => n.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-    const hBorder = { style: BorderStyle.SINGLE, size: 8, color: '333333' }
-    const dBorder = { style: BorderStyle.SINGLE, size: 4, color: '888888' }
-    const hCellBorders = { top: hBorder, bottom: hBorder, left: hBorder, right: hBorder }
-    const dCellBorders = { top: dBorder, bottom: dBorder, left: dBorder, right: dBorder }
+    const thinBorder = { style: BorderStyle.SINGLE, size: 6, color: '888888' }
+    const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder }
+    const headerBg = '1F3864'
 
-    const COLS = [
-      { label: '№',        w: 5  },
-      { label: 'Nomi',     w: 28 },
-      { label: 'Birlik',   w: 9  },
-      { label: 'Miqdori',  w: 10 },
-      { label: 'Narxi',    w: 14 },
-      { label: 'QQS%',     w: 8  },
-      { label: 'QQS summa', w: 13 },
-      { label: 'Jami',     w: 13 },
-    ]
-
-    const headerRow = new TableRow({
-      children: COLS.map(col =>
-        new TableCell({
-          borders: hCellBorders,
-          width: { size: col.w, type: WidthType.PERCENTAGE },
-          shading: { type: ShadingType.SOLID, fill: 'E8E8E8', color: 'auto' },
-          margins: { top: 80, bottom: 80, left: 100, right: 100 },
-          children: [new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: col.label, bold: true, size: 20, font: F })],
-          })],
-        })
-      ),
-    })
-
-    const dataRows = items.map((item, idx) => {
-      const vals = [
-        String(idx + 1),
-        item.nomi,
-        item.birlik,
-        item.miqdori.toLocaleString(),
-        item.narxi.toLocaleString(),
-        item.qqs_foiz === 'siz' ? 'QQSsiz' : `${item.qqs_foiz}%`,
-        item.qqs_summa > 0 ? item.qqs_summa.toLocaleString() : '—',
-        item.summa.toLocaleString(),
-      ]
-      const aligns = [AlignmentType.CENTER, AlignmentType.LEFT, AlignmentType.CENTER, AlignmentType.RIGHT, AlignmentType.RIGHT, AlignmentType.CENTER, AlignmentType.RIGHT, AlignmentType.RIGHT]
-      return new TableRow({
-        children: vals.map((val, ci) => new TableCell({
-          borders: dCellBorders,
-          width: { size: COLS[ci].w, type: WidthType.PERCENTAGE },
-          margins: { top: 60, bottom: 60, left: 100, right: 100 },
-          children: [new Paragraph({ alignment: aligns[ci], children: [new TextRun({ text: val, size: 20, font: F })] })],
-        })),
+    const headerCell = (text: string, w: number, align: string = AlignmentType.CENTER) =>
+      new TableCell({
+        width: { size: w, type: WidthType.PERCENTAGE },
+        shading: { fill: headerBg },
+        borders: cellBorders,
+        margins: { top: 60, bottom: 60, left: 100, right: 100 },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        children: [new Paragraph({ alignment: align as any, children: [new TextRun({ text, bold: true, size: 18, font: F, color: 'FFFFFF' })] })],
       })
+
+    const dataCell = (text: string, w: number, align: string = AlignmentType.CENTER, bold = false, color = '000000') =>
+      new TableCell({
+        width: { size: w, type: WidthType.PERCENTAGE },
+        borders: cellBorders,
+        margins: { top: 50, bottom: 50, left: 100, right: 100 },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        children: [new Paragraph({ alignment: align as any, children: [new TextRun({ text, bold, size: 20, font: F, color })] })],
+      })
+
+    const specTable = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({
+          tableHeader: true,
+          children: [
+            headerCell('№', 4),
+            headerCell('Tovarlar (ish, xizmatlar) nomi', 26, AlignmentType.LEFT),
+            headerCell("O'lchov birligi", 9),
+            headerCell('Miqdori', 7),
+            headerCell("Narxi (so'm)", 12),
+            headerCell('Yetkazib berish qiymati', 13),
+            headerCell('QQS stavkasi', 9),
+            headerCell('QQS summasi', 10),
+            headerCell('QQS bilan jami', 10),
+          ],
+        }),
+        ...items.map((item, i) => {
+          const base = item.miqdori * item.narxi
+          const qqs = item.qqs_foiz === 'siz' ? 'QQSsiz' : item.qqs_foiz + '%'
+          return new TableRow({
+            children: [
+              dataCell(String(i + 1), 4),
+              dataCell(item.nomi || '—', 26, AlignmentType.LEFT),
+              dataCell(item.birlik || 'dona', 9),
+              dataCell(String(item.miqdori), 7, AlignmentType.RIGHT),
+              dataCell(fmt(item.narxi), 12, AlignmentType.RIGHT),
+              dataCell(fmt(base), 13, AlignmentType.RIGHT),
+              dataCell(qqs, 9),
+              dataCell(fmt(item.qqs_summa), 10, AlignmentType.RIGHT),
+              dataCell(fmt(item.summa), 10, AlignmentType.RIGHT, true, 'CC0000'),
+            ],
+          })
+        }),
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 5, borders: cellBorders,
+              shading: { fill: 'F2F2F2' },
+              margins: { top: 60, bottom: 60, left: 100, right: 100 },
+              children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'JAMI:', bold: true, size: 22, font: F })] })],
+            }),
+            dataCell(fmt(totalBase), 13, AlignmentType.RIGHT, true),
+            dataCell('', 9),
+            dataCell(fmt(totalQqs), 10, AlignmentType.RIGHT, true),
+            dataCell(fmt(totalJami), 10, AlignmentType.RIGHT, true, 'CC0000'),
+          ],
+        }),
+      ],
     })
 
-    // Totals row
-    const totalsRow = new TableRow({
-      children: [
-        new TableCell({ borders: hCellBorders, columnSpan: 7, margins: { top: 80, bottom: 80, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'JAMI:', bold: true, size: 22, font: F })] })] }),
-        new TableCell({ borders: hCellBorders, margins: { top: 80, bottom: 80, left: 100, right: 100 }, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: jami.toLocaleString(), bold: true, size: 22, font: F })] })] }),
-      ],
+    // Signature table
+    const B = { font: F, color: '000000', bold: true }
+    const contract = spec.contracts
+    const cp = contract?.counterparties as { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | undefined
+
+    function orgCell(title: string, org: { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | null | undefined) {
+      const mfoInn = [org?.mfo ? `MFO: ${org.mfo}` : '', org?.inn ? `INN: ${org.inn}` : ''].filter(Boolean).join('   ')
+      return new TableCell({
+        borders: cellBorders,
+        margins: { top: 160, bottom: 160, left: 220, right: 220 },
+        children: [
+          new Paragraph({ children: [new TextRun({ ...B, text: title, size: 24 })], spacing: { after: 80 } }),
+          new Paragraph({ children: [new TextRun({ ...B, text: org?.name || '___', size: 22 })], spacing: { after: 50 } }),
+          ...(org?.address ? [new Paragraph({ children: [new TextRun({ ...B, text: `Manzil: ${org.address}`, size: 20 })], spacing: { after: 40 } })] : []),
+          ...(org?.bank_account ? [new Paragraph({ children: [new TextRun({ ...B, text: `H/R: ${org.bank_account}`, size: 20 })], spacing: { after: 40 } })] : []),
+          ...(org?.bank_name ? [new Paragraph({ children: [new TextRun({ ...B, text: `Bank: ${org.bank_name}`, size: 20 })], spacing: { after: 40 } })] : []),
+          ...(mfoInn ? [new Paragraph({ children: [new TextRun({ ...B, text: mfoInn, size: 20 })], spacing: { after: 40 } })] : []),
+          new Paragraph({ children: [new TextRun({ ...B, text: `Rahbar: ${org?.director_name || '___'}`, size: 20 })], spacing: { after: 160 } }),
+          new Paragraph({ children: [new TextRun({ ...B, text: '_________________________', size: 22 })], spacing: { after: 20 } }),
+          new Paragraph({ children: [new TextRun({ ...B, text: 'M.O.', size: 20 })] }),
+        ],
+      })
+    }
+
+    const sigTable = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [new TableRow({ children: [orgCell('SOTUVCHI', activeOrg), orgCell('XARIDOR', cp)] })],
     })
 
     const footer = new Footer({
@@ -178,25 +222,41 @@ export default function SpesifikatsiyalarPage() {
       })],
     })
 
+    const contractDate = contract?.contract_date ? formatDateUz(contract.contract_date) : ''
+
     const doc = new Document({
       sections: [{
-        properties: {
-          page: {
-            margin: { top: 1134, bottom: 1134, left: 1701, right: 1134 },
-            size: { width: 16838, height: 11906 }, // A4 landscape for wide table
-          },
-        },
+        properties: { page: { margin: { top: 1134, bottom: 1134, left: 567, right: 851 } } },
         footers: { default: footer },
         children: [
-          new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [new TextRun({ text: `SPESIFIKATSIYA № ${spec.spec_number}`, bold: true, size: 30, font: F })] }),
-          ...(spec.contracts ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: `Shartnoma № ${spec.contracts.contract_number} ga ilova`, size: 22, font: F })] })] : []),
-          new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 80 }, children: [new TextRun({ text: `Sana: ${new Date(spec.created_at).toLocaleDateString('uz-UZ')}`, size: 20, font: F })] }),
-          new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: `Tashkilot: ${activeOrg?.name || ''}`, size: 20, font: F })] }),
-          new Paragraph({ spacing: { after: 200 }, children: [new TextRun({ text: `INN: ${activeOrg?.inn || ''}`, size: 20, font: F, color: '555555' })] }),
-          new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [headerRow, ...dataRows, totalsRow] }),
-          new Paragraph({ spacing: { before: 200, after: 60 }, children: [new TextRun({ text: `Asosiy summa: ${asosiy.toLocaleString()} so'm`, size: 22, font: F })] }),
-          new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: `QQS jami: ${qqsJami.toLocaleString()} so'm`, size: 22, font: F })] }),
-          new Paragraph({ spacing: { after: 0 }, children: [new TextRun({ text: `JAMI TO'LOV: ${jami.toLocaleString()} so'm`, bold: true, size: 24, font: F })] }),
+          // Right-aligned ilova info
+          ...(contract ? [
+            new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 40 }, children: [new TextRun({ text: '1-ILOVA', bold: true, size: 22, font: F })] }),
+            new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 40 }, children: [new TextRun({ text: `№${contract.contract_number}-sonli shartnomaga`, size: 20, font: F })] }),
+            new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 200 }, children: [new TextRun({ text: `${contractDate} dan`, size: 20, font: F })] }),
+          ] : [
+            new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 200 }, children: [new TextRun({ text: `Sana: ${formatDateUz(spec.created_at.split('T')[0])}`, size: 20, font: F })] }),
+          ]),
+          // Title
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 0, after: 200 },
+            children: [new TextRun({ text: 'NARXNI KELISHISH PROTOKOLI', bold: true, size: 26, font: F, underline: {} })],
+          }),
+          // Table
+          specTable,
+          // Totals in words
+          new Paragraph({
+            spacing: { before: 120, after: 80 },
+            children: [new TextRun({ text: `Jami so'z bilan: ${numberToWords(Math.round(totalJami), 'uz')} so'm`, bold: true, size: 22, font: F })],
+          }),
+          new Paragraph({
+            spacing: { after: 240 },
+            children: [new TextRun({ text: "Ushbu Protokol Shartnomaning ajralmas qismi hisoblanadi va ikki nusxada tuzilgan.", size: 20, font: F, italics: true })],
+          }),
+          new Paragraph({ text: '', spacing: { after: 240 } }),
+          // Signatures
+          sigTable,
         ],
       }],
     })
