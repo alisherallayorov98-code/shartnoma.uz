@@ -8,7 +8,7 @@ import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import type { Contract } from '@/lib/types'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
-import { getStructure, structureToText, numberToWords } from '@/lib/contractStructures'
+import { getStructure, structureToText, numberToWords, formatDateUz } from '@/lib/contractStructures'
 import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
 import ContractModal, { type ContractForm } from './_components/ContractModal'
 import ViewContractModal from './_components/ViewContractModal'
@@ -70,7 +70,14 @@ const TYPE_COLORS: Record<string, string> = {
 
 // ─── Empty form factory ───────────────────────────────────────────────────────
 
-function makeEmptyForm(orgId: string): ContractForm {
+// Extract city from org address: "Samarqand shahri, ko'cha..." → "Samarqand shahri"
+function extractCity(address?: string): string {
+  if (!address) return 'Toshkent'
+  const before = address.split(',')[0].trim()
+  return before || 'Toshkent'
+}
+
+function makeEmptyForm(orgId: string, orgCity?: string): ContractForm {
   return {
     id: '',
     contract_number: '',
@@ -81,7 +88,7 @@ function makeEmptyForm(orgId: string): ContractForm {
     counterparty_id: '',
     status: 'active',
     content: '',
-    city: 'Toshkent',
+    city: orgCity || 'Toshkent',
     product_name: '',
     spec_items: [],
     qqs_enabled: false,
@@ -141,7 +148,7 @@ export default function ShartnomalarPage() {
       const { type, content } = JSON.parse(raw) as { type: string; content: string }
       localStorage.removeItem('tpl_to_contract')
       if (!canCreateContract()) { openUpgradeModal(); return }
-      const form = makeEmptyForm(activeOrg.id)
+      const form = makeEmptyForm(activeOrg.id, extractCity(activeOrg.address))
       form.contract_number = autoContractNum()
       form.contract_type = type || 'oldi_sotdi'
       form.content = content || ''
@@ -206,7 +213,7 @@ export default function ShartnomalarPage() {
   function openNewContract() {
     if (!canCreateContract()) { openUpgradeModal(); return }
     if (!activeOrg) { toast(T(t.msg.noOrgs), 'error'); return }
-    const form = makeEmptyForm(activeOrg.id)
+    const form = makeEmptyForm(activeOrg.id, extractCity(activeOrg.address))
     form.contract_number = autoContractNum()
     setContractForm(form)
     setModal('contract')
@@ -482,7 +489,7 @@ export default function ShartnomalarPage() {
     y += 5
     doc.setFontSize(9.5)
     doc.setTextColor(80, 80, 80)
-    const dateStr = cyrillicToLatin(`${c.city || 'Toshkent'} shahri,  "${c.contract_date}"`)
+    const dateStr = cyrillicToLatin(`${c.city || 'Toshkent'} shahri,  ${formatDateUz(c.contract_date)}`)
     doc.text(dateStr, pageWidth / 2, y, { align: 'center' })
     y += 6
 
@@ -858,7 +865,7 @@ export default function ShartnomalarPage() {
             children: [new Paragraph({
               alignment: AlignmentType.RIGHT,
               spacing: { after: 320 },
-              children: [new TextRun({ text: c.contract_date || '', size: 22, font: F })],
+              children: [new TextRun({ text: formatDateUz(c.contract_date) || '', size: 22, font: F })],
             })],
           }),
         ],

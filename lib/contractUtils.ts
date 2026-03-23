@@ -1,4 +1,5 @@
 // ─── Contract template placeholder utilities ──────────────────────────────────
+import { formatDateUz } from './contractStructures'
 
 export type PlaceholderData = {
   contract_number?: string
@@ -45,7 +46,7 @@ export function fillPlaceholders(content: string, c: PlaceholderData): string {
   const map: Record<string, string> = {
     // Core
     '{{RAQAM}}':              c.contract_number || '',
-    '{{SANA}}':               c.contract_date || '',
+    '{{SANA}}':               formatDateUz(c.contract_date),
     '{{SHAHAR}}':             c.city || 'Toshkent',
     // Parties
     '{{BUYURTMACHI}}':        c.organizations?.name || '___',

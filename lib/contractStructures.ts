@@ -19,7 +19,7 @@ export type TemplateData = {
 }
 
 // "2026-03-22" → "22.03.2026-yil"
-function formatDateUz(dateStr: string | undefined): string {
+export function formatDateUz(dateStr: string | undefined): string {
   if (!dateStr) return '___'
   const parts = dateStr.split('-')
   if (parts.length !== 3) return dateStr
