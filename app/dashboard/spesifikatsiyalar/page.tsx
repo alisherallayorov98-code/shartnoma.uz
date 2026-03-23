@@ -184,7 +184,11 @@ export default function SpesifikatsiyalarPage() {
     // Signature table
     const B = { font: F, color: '000000', bold: true }
     const contract = spec.contracts
-    const cp = contract?.counterparties as { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | undefined
+    // Get full counterparty data from cps array (contracts join only has name)
+    const cpFull = contract?.counterparty_id
+      ? cps.find(c => c.id === contract.counterparty_id) || null
+      : null
+    const cp = cpFull || contract?.counterparties as { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | undefined
 
     function orgCell(title: string, org: { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | null | undefined) {
       const mfoInn = [org?.mfo ? `MFO: ${org.mfo}` : '', org?.inn ? `INN: ${org.inn}` : ''].filter(Boolean).join('   ')
