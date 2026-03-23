@@ -21,11 +21,25 @@ const ACCENT: Record<AccentColor, { border: string; text: string; btn: string; b
 }
 
 const FEATURE_LABELS: Record<string, string> = {
-  mehnat_shartnoma: 'Mehnat shartnomasi', buyruq_qabul: 'Buyruq: Qabul',
-  buyruq_boshtash: "Buyruq: Bo'shatish", tatil_buyruq: "Ta'til buyrug'i",
-  ishonchnoma: 'Ishonchnoma', lavozim_yoriqnoma: "Lavozim yo'riqnomasi",
+  // Kadrlar — shartnomalar
+  mehnat_shartnoma: 'Mehnat shartnomasi',
+  orindoshlik_shartnoma: "Tashqi o'rindoshlik shartnomasi",
+  fuqaroviy_shartnoma: 'Fuqaroviy-huquqiy yollanma',
+  maxfiylik_shartnoma: 'Maxfiylik (NDA) shartnomasi',
+  // Kadrlar — buyruqlar
+  buyruq_qabul: 'Buyruq: Ishga qabul',
+  buyruq_boshtash: "Buyruq: Ishdan bo'shatish",
+  tatil_buyruq: "Buyruq: Ta'til",
+  buyruq_lavozim: "Buyruq: Lavozim o'zgartirish",
+  buyruq_mukofot: 'Buyruq: Mukofot',
+  buyruq_jazo: "Buyruq: Intizomiy jazo",
+  // Kadrlar — boshqa
+  ishonchnoma: 'Ishonchnoma',
+  lavozim_yoriqnoma: "Lavozim yo'riqnomasi",
+  // Buxgalter
   dalolatnoma: 'Dalolatnoma', schet_faktura: 'Schyot-faktura',
   talabnoma: 'Talabnoma', tolov_grafigi: "To'lov grafigi", debitor_undirish: 'Debitor undirish',
+  // Kotiba
   bayonnoma: "Bayonnoma", rasmiy_xat: 'Rasmiy xat', taklifnoma: 'Taklifnoma',
   hisobot: 'Hisobot', eslatma: 'Eslatma', murojaatnoma: 'Murojaatnoma',
   tushuntirish_xati: 'Tushuntirish xati', kafolat_xat: 'Kafolat xati',
