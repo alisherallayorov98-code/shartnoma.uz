@@ -1,16 +1,9 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(req: NextRequest) {
-  if (req.nextUrl.pathname.startsWith('/dashboard')) {
-    // Supabase stores auth token in a cookie named "sb-<ref>-auth-token"
-    const hasAuth = req.cookies.getAll().some(c =>
-      c.name.includes('auth-token') || c.name.startsWith('sb-')
-    )
-    if (!hasAuth) {
-      return NextResponse.redirect(new URL('/login', req.url))
-    }
-  }
+// Auth check is handled client-side in dashboard/context.tsx
+// Supabase uses localStorage (not cookies) with the standard JS client
+export function middleware(_req: NextRequest) {
   return NextResponse.next()
 }
 
