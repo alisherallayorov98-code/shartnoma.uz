@@ -91,6 +91,7 @@ export default function YuristPage() {
       if (hubFeature === 'write')     { body.details = hubWriteDetails; delete body.content }
       const res  = await fetchAi(body)
       const data = await res.json()
+      if (data.error === 'premium_required') { openUpgradeModal(); return }
       if (!res.ok || data.error) { setHubError(data.error || 'Xatolik'); return }
       const result = data.result
       if (!result || typeof result !== 'object' || Object.keys(result).length === 0) {

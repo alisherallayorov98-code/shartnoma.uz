@@ -70,6 +70,8 @@ export default function TashkilotlarPage() {
 
   async function uploadImage(file: File, field: 'stamp_url' | 'signature_url') {
     if (!activeOrg) return
+    if (!file.type.startsWith('image/')) { toast('Faqat rasm fayllari qabul qilinadi', 'error'); return }
+    if (file.size > 2 * 1024 * 1024) { toast('Fayl hajmi 2MB dan oshmasligi kerak', 'error'); return }
     const ext = file.name.split('.').pop()
     const path = `${userId}/${activeOrg.id}/${field}.${ext}`
     const { error: upErr } = await supabase.storage.from('org-assets').upload(path, file, { upsert: true })

@@ -123,7 +123,8 @@ export default function ShablonlarPage() {
   }
 
   async function doDeleteCustomTemplate(id: string) {
-    await supabase.from('custom_templates').delete().eq('id', id)
+    const { error } = await supabase.from('custom_templates').delete().eq('id', id)
+    if (error) { toast(`O'chirishda xato: ${error.message}`, 'error'); return }
     if (activeOrg) loadCustomTemplates(activeOrg.id)
   }
 

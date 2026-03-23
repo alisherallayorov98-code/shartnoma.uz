@@ -47,7 +47,6 @@ export default function ProfilPage() {
     sender_name: (activeOrg as Record<string, unknown>)?.sender_name as string || '',
   }))
   const [orgExtSaving, setOrgExtSaving] = useState(false)
-  const [orgExtMsg, setOrgExtMsg] = useState('')
 
   const { toast } = useToast()
   const lbl = 'block text-xs text-gray-400 mb-1'
@@ -92,11 +91,11 @@ export default function ProfilPage() {
   async function saveOrgExt(e: React.FormEvent) {
     e.preventDefault()
     if (!activeOrg) return
-    setOrgExtSaving(true); setOrgExtMsg('')
+    setOrgExtSaving(true)
     const { error } = await supabase.from('organizations').update(orgExtForm).eq('id', activeOrg.id)
-    if (error) { setOrgExtMsg(`${T(t.msg.errorPrefix)}: ${error.message}`); setOrgExtSaving(false); return }
-    setOrgExtMsg(T(t.msg.saved)); setOrgExtSaving(false)
-    setTimeout(() => setOrgExtMsg(''), 3000)
+    setOrgExtSaving(false)
+    if (error) { toast(`${T(t.msg.errorPrefix)}: ${error.message}`, 'error'); return }
+    toast(T(t.msg.saved))
     reloadOrgs()
   }
 
@@ -427,9 +426,6 @@ export default function ProfilPage() {
               </div>
             </div>
 
-            {orgExtMsg && (
-              <div className="bg-emerald-900/40 border border-emerald-700 text-emerald-300 text-sm px-4 py-2.5 rounded-lg">{orgExtMsg}</div>
-            )}
             <button type="submit" disabled={orgExtSaving}
               className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-3 rounded-xl text-sm font-semibold transition">
               {orgExtSaving ? T(t.btn.saving) : T(t.profileTab.saveChanges)}

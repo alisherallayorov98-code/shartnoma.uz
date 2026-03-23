@@ -105,6 +105,8 @@ export default function ShartnomalarPage() {
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [search, setSearch] = useState('')
+  const [serverResults, setServerResults] = useState<Contract[] | null>(null)
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [statusFilter, setStatusFilter] = useState('all')
   const [modal, setModal] = useState<null | 'contract' | 'viewContract'>(null)
   const [contractForm, setContractForm] = useState<ContractForm>(makeEmptyForm(activeOrg?.id || ''))
@@ -148,6 +150,24 @@ export default function ShartnomalarPage() {
     } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, activeOrg])
+
+  // ── Server-side search (debounced, falls back to client filter) ────────────
+  useEffect(() => {
+    if (searchDebounce.current) clearTimeout(searchDebounce.current)
+    if (search.length < 3) { setServerResults(null); return }
+    searchDebounce.current = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(search)}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+        if (!res.ok) { setServerResults(null); return }
+        const json = await res.json()
+        setServerResults(json.results ?? null)
+      } catch { setServerResults(null) }
+    }, 400)
+  }, [search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadCustomTemplates(orgId: string) {
     const { data } = await supabase
@@ -1093,6 +1113,7 @@ export default function ShartnomalarPage() {
         contract_number: c.contract_number,
       })
       const data = await res.json()
+      if (data.error === 'premium_required') { setAiModal(false); openUpgradeModal(); return }
       if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
       setAiResult(data.result ?? null)
     } catch (err) {
@@ -1115,6 +1136,7 @@ export default function ShartnomalarPage() {
         lang,
       })
       const data = await res.json()
+      if (data.error === 'premium_required') { setAiModal(false); openUpgradeModal(); return }
       if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
       const r = data.result as { shartnoma_yangi?: string; o_zgartirishlar?: string[] }
       if (!r?.shartnoma_yangi) throw new Error("AI bo'sh natija qaytardi")
@@ -1150,8 +1172,9 @@ export default function ShartnomalarPage() {
     !activeOrg || c.organization_id === activeOrg.id
   )
 
-  const filtered = orgContracts.filter(c => {
-    const matchSearch = !search ||
+  const searchBase = serverResults !== null ? serverResults : orgContracts
+  const filtered = searchBase.filter(c => {
+    const matchSearch = serverResults !== null || !search ||
       c.contract_number?.toLowerCase().includes(search.toLowerCase()) ||
       c.organizations?.name?.toLowerCase().includes(search.toLowerCase()) ||
       c.counterparties?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -1225,8 +1248,13 @@ export default function ShartnomalarPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={T(t.contracts.search)}
-            className="w-full bg-gray-900 border border-gray-800 text-white pl-9 pr-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-blue-500 placeholder-gray-600"
+            className={`w-full bg-gray-900 border text-white pl-9 pr-4 py-2.5 rounded-xl text-sm focus:outline-none placeholder-gray-600 ${serverResults !== null ? 'border-blue-600 focus:border-blue-400' : 'border-gray-800 focus:border-blue-500'}`}
           />
+          {serverResults !== null && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-blue-400">
+              {serverResults.length} natija
+            </span>
+          )}
         </div>
         <select
           value={statusFilter}
