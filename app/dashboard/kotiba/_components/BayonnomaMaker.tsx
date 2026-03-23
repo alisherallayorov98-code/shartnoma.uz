@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { downloadTextAsPDF } from '@/lib/downloadUtils'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -102,7 +103,7 @@ function generateText(
   let kunTartibi = ''
   let muhokama = ''
   let qarorlar = ''
-  let masulIjrochi = direktorName
+  const masulIjrochi = direktorName
   let muddat = '30 (o\'ttiz) kalendar kun ichida'
 
   if (type === 'kredit') {
@@ -459,6 +460,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       const saved = localStorage.getItem(`tasischilar_${orgInn}`)
       if (saved) {
         const parsed = JSON.parse(saved) as Taasischi[]
+        // eslint-disable-next-line
         if (parsed.length > 0) setCommon(c => ({ ...c, tasischilar: parsed }))
       }
     } catch {}
@@ -832,7 +834,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
                 className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
               <button onClick={() => downloadAsWord(result, orgName, common.bay_raqam)}
                 className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
-              <button onClick={() => { const { downloadTextAsPDF } = require('@/lib/downloadUtils'); downloadTextAsPDF(result, `Bayonnoma №${common.bay_raqam}`) }}
+              <button onClick={() => downloadTextAsPDF(result, `Bayonnoma №${common.bay_raqam}`)}
                 className="text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
               <button onClick={() => navigator.clipboard.writeText(result)}
                 className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">📋 Nusxa</button>

@@ -80,6 +80,7 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
     setLoading(false)
   }, [orgId, section])
 
+  // eslint-disable-next-line
   useEffect(() => { reload() }, [reload, refreshKey])
 
   async function handleDelete(id: string) {

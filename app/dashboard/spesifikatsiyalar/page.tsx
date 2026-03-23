@@ -251,7 +251,7 @@ export default function SpesifikatsiyalarPage() {
     const cols = [8, 60, 20, 20, 25, 20, 15, 25]
     const headers = ['№', 'Nomi', "O'lchov", 'Miqdori', 'Narx', 'QQS', 'QQS sm', 'Jami']
     const rowH = 7
-    let x = mL
+    const x = mL
 
     doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(255, 255, 255)
     doc.setFillColor(30, 60, 120)

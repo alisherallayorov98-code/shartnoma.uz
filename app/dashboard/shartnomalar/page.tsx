@@ -167,7 +167,7 @@ export default function ShartnomalarPage() {
         setServerResults(json.results ?? null)
       } catch { setServerResults(null) }
     }, 400)
-  }, [search]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [search])  
 
   async function loadCustomTemplates(orgId: string) {
     const { data } = await supabase
