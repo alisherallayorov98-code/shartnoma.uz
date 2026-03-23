@@ -7,7 +7,7 @@ import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 
-type BuxFeature = 'dalolatnoma' | 'schet_faktura' | 'talabnoma' | 'tolov_grafigi' | 'debitor_undirish'
+type BuxFeature = 'dalolatnoma' | 'talabnoma' | 'tolov_grafigi' | 'debitor_undirish'
 
 type FeatureConfig = {
   key: BuxFeature
@@ -33,22 +33,6 @@ const FEATURES: FeatureConfig[] = [
       { key: 'shartnoma_raqam', label: "Shartnoma raqami", placeholder: "2025/03-15" },
       { key: 'summa', label: "Summa (so'm)", placeholder: "15 000 000" },
       { key: 'sana', label: "Dalolatnoma sanasi", placeholder: "2025-03-20", type: 'date' },
-    ],
-  },
-  {
-    key: 'schet_faktura',
-    icon: '🧾',
-    title: 'Schyot-faktura',
-    description: "To'lov uchun schyot-faktura hujjatini tayyorlang",
-    apiType: 'schet_faktura',
-    resultField: 'faktura',
-    fields: [
-      { key: 'xaridor', label: "Xaridor nomi", placeholder: "Innovatsiya Markazi AJ" },
-      { key: 'mahsulot_xizmat', label: "Mahsulot/xizmat nomi", placeholder: "Veb-sayt ishlab chiqish" },
-      { key: 'miqdor', label: "Miqdor", placeholder: "1" },
-      { key: 'narx', label: "Narx (so'm)", placeholder: "25 000 000" },
-      { key: 'qqs', label: "QQS foizi (%)", placeholder: "12" },
-      { key: 'sana', label: "Sana", placeholder: "2025-03-20", type: 'date' },
     ],
   },
   {
