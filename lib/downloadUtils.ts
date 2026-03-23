@@ -205,23 +205,28 @@ export async function downloadTextAsWord(text: string, filename: string) {
   function detectKind(line: string): LineKind {
     const t = line.trim()
     if (!t) return 'empty'
-    // Decorator lines: ════, ────, ===, --- etc.
+    // Decorator lines: ════, ────, ═══, === etc.
     if (/^[═─=\-]{3,}$/.test(t)) return 'separator'
-    // Two-column line: content on left, 5+ spaces gap, content on right (rekvizitlar blocks)
-    if (/\S[ \t]{5,}\S/.test(line) && !(/^\d+\.\s/.test(t))) return 'twocol'
+    // Signature lines: only underscores and spaces  ← MUST be before twocol
+    if (/^_+(\s+_+)*$/.test(t)) return 'body'
+    // Two-column line: non-whitespace, 5+ spaces gap, non-whitespace
+    // Excluded: numbered lists, pure underscore/dash lines
+    if (
+      /\S[ \t]{5,}\S/.test(line) &&
+      !/^\d+\.\s/.test(t) &&
+      !/^[_\-\s]+$/.test(t)
+    ) return 'twocol'
     // Main numbered section: "1. TEXT" but not "1.1."
     if (/^(\d+\.\s+\S|§\s*\d)/.test(t) && !/^\d+\.\d/.test(t)) return 'main'
     // Subsection: "1.1.", "1.2.3"
     if (/^\d+\.\d+/.test(t)) return 'sub'
-    // Signature placeholder lines: lines with only underscores
-    if (/^_+(\s+_+)*$/.test(t)) return 'body'
     // Title: short, starts uppercase, ≥65% uppercase letters
     if (t.length <= 80 && /^[A-ZА-ЯЁЎҚҒҲ]/.test(t)) {
       const letters = t.replace(/\s+/g, '').replace(/[^a-zA-ZА-ЯЁа-яёЎҚҒҲўқғҳ]/g, '')
       const uppers = t.replace(/[^A-ZА-ЯЁЎҚҒҲ]/g, '')
       if (letters.length >= 4 && uppers.length / letters.length >= 0.65) return 'title'
     }
-    // Label: "BUYURTMACHI:", "ISH BERUVCHI:" etc. (standalone label on own line)
+    // Label: "ISH BERUVCHI:", "XODIM:" etc. (standalone label on own line)
     if (/^[A-ZА-ЯЁЎҚҒҲ][A-ZА-ЯЁЎҚҒҲ\s]{1,25}:\s*$/.test(t)) return 'label'
     // Bullet
     if (/^[-–•]\s/.test(t)) return 'bullet'
