@@ -10,6 +10,7 @@ import { getStructure, structureToText, numberToWords } from '@/lib/contractStru
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
 import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
 import { useToast } from '@/lib/toast'
+import CityPicker from './CityPicker'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -589,11 +590,9 @@ export default function ContractModal({
                 {/* City */}
                 <div>
                   <label className={lbl}>{T(t.modal.city)}</label>
-                  <input
+                  <CityPicker
                     value={form.city}
-                    onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
-                    className={inp}
-                    placeholder="Toshkent"
+                    onChange={v => setForm(f => ({ ...f, city: v }))}
                   />
                 </div>
 
