@@ -1,7 +1,17 @@
-// Kadrlar bo'limi – shablonlar (template-based, AI ishlatilmaydi)
+/**
+ * Kadrlar bo'limi — yuridik kuchga ega shablon hujjatlar
+ *
+ * Asoslar:
+ *  — O'zbekiston Respublikasi Mehnat kodeksi (MK), 2022-yil tahririda
+ *  — O'zbekiston Respublikasi Fuqarolik kodeksi (FK)
+ *  — "Tijorat siri to'g'risida"gi O'zR Qonuni (2008-yil 11-dekabr, № ЗРУ-190)
+ *  — "Hujjatlashtirish va hujjatlar aylanmasi" davlat standarti (O'z DSt 1212)
+ */
 
 type Org = { name: string; inn: string; director_name: string }
-type F = Record<string, string>
+type F   = Record<string, string>
+
+// ─── Yordamchi funksiyalar ────────────────────────────────────────────────────
 
 export function fmtD(iso?: string): string {
   if (!iso) {
@@ -9,144 +19,262 @@ export function fmtD(iso?: string): string {
     const p = (n: number) => String(n).padStart(2, '0')
     return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`
   }
-  const parts = iso.split('-')
-  return parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : iso
+  const pts = iso.split('-')
+  return pts.length === 3 ? `${pts[2]}.${pts[1]}.${pts[0]}` : iso
 }
 
-// ─────────────────────────────────────────────────────────────
-// 1. MEHNAT SHARTNOMASI
-// ─────────────────────────────────────────────────────────────
-export function tplMehnatShartnoma(f: F, org: Org, tur: string): string {
-  const TURLABEL: Record<string, string> = {
-    belgilanmagan_muddatli: 'belgilanmagan muddatli (doimiy)',
-    belgilangan_muddatli: 'belgilangan muddatli (muddatli)',
-    yarim_stavkada: 'yarim stavkali (0,5 stavka)',
-    masofaviy: 'masofaviy (distant)',
-    amaliyot: 'amaliyot / stajyorlik',
-  }
-  const sana = fmtD(f.boshlanish_sana)
-  const turText = TURLABEL[tur] || tur
-  const stavka = tur === 'yarim_stavkada' ? '0,5 stavka' : "to'liq stavka"
-  const hafta = tur === 'yarim_stavkada' ? '20' : '40'
-  const ishVaqti = f.ish_vaqti || (tur === 'yarim_stavkada' ? 'Kuniga 4 soat, dushanba–juma' : 'Kuniga 8 soat, dushanba–juma, 09:00–18:00')
-  const muddatBand = tur === 'belgilangan_muddatli' && f.tugash_sana
-    ? `\n1.5. Shartnoma muddati: ${fmtD(f.boshlanish_sana)} dan ${fmtD(f.tugash_sana)} gacha.` : ''
-  const masofaviyBand = tur === 'masofaviy'
-    ? "\n1.6. Xodim ishni masofadan (remote) bajaradi; muloqot vositalari tomonlar kelishuviga ko'ra belgilanadi." : ''
+function blank(val?: string, fallback = '________________') {
+  return (val && val.trim()) ? val.trim() : fallback
+}
 
-  return `MEHNAT SHARTNOMASI
+// ═══════════════════════════════════════════════════════════════════════════════
+// 1. MEHNAT SHARTNOMASI
+// Huquqiy asos: MK 75–80-moddalar (tuzish), 91–96 (ish haqi),
+//               110–132 (ish vaqti), 133–145 (ta'til), 187–192 (javobgarlik)
+// ═══════════════════════════════════════════════════════════════════════════════
+export function tplMehnatShartnoma(f: F, org: Org, tur: string): string {
+
+  const TUR: Record<string, string> = {
+    belgilanmagan_muddatli : 'belgilanmagan muddatli (doimiy)',
+    belgilangan_muddatli   : 'belgilangan muddatli (muddatli)',
+    yarim_stavkada         : 'yarim stavkali (0,5 stavka)',
+    masofaviy              : 'masofaviy (distant)',
+    amaliyot               : 'amaliyot / stajyorlik',
+  }
+
+  const sana      = fmtD(f.boshlanish_sana)
+  const turText   = TUR[tur] || tur
+  const lavozim   = blank(f.lavozim)
+  const bolim     = f.bolim ? ` "${f.bolim}" bo'limi,` : ''
+  const ish_joyi  = blank(f.ish_joyi, org.name)
+  const hafta_s   = tur === 'yarim_stavkada' ? '20' : '40'
+  const stavka    = tur === 'yarim_stavkada' ? '0,5 (yarim) stavka' : "to'liq (1,0) stavka"
+  const ish_v     = blank(f.ish_vaqti, tur === 'yarim_stavkada'
+    ? 'kuniga 4 soat, dushanba–juma'
+    : 'kuniga 8 soat, dushanba–juma, 09:00–18:00, tushlik: 13:00–14:00')
+
+  const muddatQator = tur === 'belgilangan_muddatli' && f.tugash_sana
+    ? `\n1.5. Shartnoma muddati: ${fmtD(f.boshlanish_sana)} dan ${fmtD(f.tugash_sana)} gacha`
+      + `\n     (MK 78-moddasi: muddatli shartnoma 5 yildan oshmasligi shart).` : ''
+
+  const masofaBand = tur === 'masofaviy' ? `
+2.4. Xodim ishni masofadan (remote) bajaradi. Muloqot kanallari, hisobot shakli
+     va ish natijalarini topshirish tartibi ish beruvchi direktivi bilan belgilanadi.` : ''
+
+  const sinovBand = (f.sinov && f.sinov.trim()) ? `
+
+3. SINOV MUDDATI (MK 77-moddasi)
+
+3.1. Tomonlar kelishuviga binoan xodimga ${f.sinov} sinov muddati belgilanadi.
+3.2. Sinov muddatida har bir tomon 3 (uch) kun oldin yozma ogohlantirish bilan
+     shartnomani bekor qilish huquqiga ega.
+3.3. Sinov davrida xodim O'zbekiston Respublikasi mehnat qonunchiligining to'liq
+     himoyasidan foydalanadi va barcha kafolatlarga ega bo'ladi.
+3.4. Sinov ijobiy yakunlansa, alohida buyruqsiz mehnat munosabatlari davom etadi.` : ''
+
+  const asosiyRaqam = f.sinov ? '4' : '3'
+
+  return `MEHNAT SHARTNOMASI № ___
 (${turText})
 
-Toshkent shahri                                    "${sana}"
+${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 
 ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Ish beruvchi" deb yuritiladi,
-vakili — ${org.director_name},
-va fuqaro ${f.xodim_ism || '________________'}, pasport: ${f.passport || 'AA 0000000'},
+direktori ${org.director_name} tomonidan vakilligi qilinadi,
+
+va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+yashash manzili: ${blank(f.xodim_manzil)},
 keyingi o'rinlarda "Xodim" deb yuritiladi,
-O'zbekiston Respublikasi Mehnat kodeksi asosida quyidagi shartlarda mehnat shartnomasini tuzdik:
 
-─────────────────────────────────────────────────
+O'zbekiston Respublikasi Mehnat kodeksining 75 va 76-moddalari asosida
+quyidagi mehnat shartnomasini tuzdik:
+
+════════════════════════════════════════════════════════════════
 1. SHARTNOMA PREDMETI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
 
-1.1. Ish beruvchi Xodimni "${f.lavozim || '___'}" lavozimiga${f.bolim ? ` "${f.bolim}" bo'limiga` : ''} qabul qiladi.
-1.2. Ushbu shartnoma ${turText} mehnat shartnomasi hisoblanadi.
-1.3. Ish boshlash sanasi: ${sana}.
-1.4. Ish joyi: ${f.ish_joyi || org.name}.
-1.5. Xodim ${stavka}da mehnat qiladi.${muddatBand}${masofaviyBand}
+1.1. Ish beruvchi Xodimni "${lavozim}" lavozimiga,${bolim}
+     ${ish_joyi} ish joyiga qabul qiladi.
+1.2. Ushbu shartnoma ${turText} mehnat shartnomasi hisoblanadi
+     (O'zR Mehnat kodeksi 78-moddasi).
+1.3. Xodim ish boshlash sanasi: ${sana}.${muddatQator}
+1.4. Ish joyi: ${ish_joyi}.
+1.5. Xodim ${stavka}da mehnat qiladi.
 
-─────────────────────────────────────────────────
-2. ISH HAQI VA TO'LOV TARTIBI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+2. MEHNAT FUNKSIYASI VA ISH SHAROITI
+════════════════════════════════════════════════════════════════
 
-2.1. Xodimga oylik tarif ish haqi ${f.maosh || '________________'} so'm miqdorida belgilanadi.
-2.2. Ish haqi har oyning 10-sanasiga ko'p bo'lmagan muddatda naqd yoki bank kartasi orqali to'lanadi.
-2.3. Daromad solig'i va ijtimoiy sug'urta badallari O'zbekiston Respublikasi qonunchiligiga muvofiq
-     ushlab qolinadi va to'lanadi.
-2.4. Mehnat natijalari yaxshi bo'lganda qo'shimcha mukofot to'lash mumkin.
+2.1. Xodim "${lavozim}" lavozimi bo'yicha lavozim yo'riqnomasida belgilangan
+     barcha vazifalarni bajaradi.
+2.2. Xodimning ish vaqti: ${ish_v}.
+2.3. Haftalik ish vaqti: ${hafta_s} soat (MK 112-moddasi).${masofaBand}
+2.5. Xodim O'zbekiston Respublikasi qonunchiligida nazarda tutilgan sanitar-gigiyena,
+     mehnat xavfsizligi va yong'in xavfsizligi qoidalariga rioya qiladi.
+${sinovBand}
 
-─────────────────────────────────────────────────
-3. ISH VAQTI VA DAM OLISH
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+${asosiyRaqam}. ISH HAQI VA TO'LOV TARTIBI (MK 91–100-moddalar)
+════════════════════════════════════════════════════════════════
 
-3.1. Xodimning ish vaqti: ${ishVaqti}.
-3.2. Haftalik ish vaqti: ${hafta} soat.
-3.3. Xodimga har yili kamida 15 ish kuni asosiy mehnat ta'tili beriladi.
-3.4. Milliy bayram va dam olish kunlari O'zbekiston Respublikasi qonunchiligiga muvofiq belgilanadi.
-3.5. Qo'shimcha ish vaqti tomonlar kelishuviga binoan va qonun doirasida amalga oshiriladi.
+${asosiyRaqam}.1. Xodimga oylik tarif ish haqi ${blank(f.maosh)} so'm miqdorida belgilanadi.
+${asosiyRaqam}.2. Ish haqi to'lovi tartibi:
+     — avans to'lovi: har oyning 25-sanasiga qadar 40 % miqdorida;
+     — asosiy to'lov: keyingi oyning 10-sanasigacha qolgan qismi.
+${asosiyRaqam}.3. To'lov shakli: ${blank(f.tolov_shakli, "bank plastik kartasi yoki naqd")}.
+${asosiyRaqam}.4. O'zbekiston Respublikasi qonunchiligida belgilangan jismoniy shaxslar
+     daromad solig'i (12 %) va ijtimoiy sug'urta badallari (1 %) ushlab qolinib,
+     davlat byudjetiga va Pensiya jamg'armasiga o'tkaziladi.
+${asosiyRaqam}.5. Ish haqi belgilangan muddatda to'lanmagan taqdirda ish beruvchi
+     MK 153-moddasiga muvofiq moliyaviy javobgarlik ko'radi.
+${asosiyRaqam}.6. Yillik mehnat natijalari va tashkilot moliyaviy imkoniyatlariga qarab
+     qo'shimcha mukofot to'lash mumkin (mukofot ish haqining ajralmas qismi emas).
 
-─────────────────────────────────────────────────
-4. TOMONLARNING HUQUQ VA MAJBURIYATLARI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+${parseInt(asosiyRaqam)+1}. DAM OLISH VA TA'TIL HUQUQI (MK 133–145-moddalar)
+════════════════════════════════════════════════════════════════
 
-4.1. Ish beruvchi majburiyatlari:
-     a) zarur ish joyi, asbob-uskunalar va materiallarni ta'minlash;
-     b) ish haqini o'z vaqtida va to'liq to'lash;
-     c) xavfsiz va sog'lom mehnat sharoitlarini yaratish;
-     d) majburiy davlat ijtimoiy sug'urta badallari to'lash;
-     e) Xodimni kasbiy rivojlantirishga ko'maklashish.
+${parseInt(asosiyRaqam)+1}.1. Xodimga yiliga kamida 15 (o'n besh) ish kuni asosiy mehnat ta'tili
+     beriladi (MK 134-moddasi).
+${parseInt(asosiyRaqam)+1}.2. Ta'til muddati keyingi qo'shimcha ta'tillar bilan uzaytirilishi mumkin
+     (MK 136-138-moddalar).
+${parseInt(asosiyRaqam)+1}.3. Ta'til puli ta'til boshlanishidan kamida 3 (uch) kun oldin to'liq
+     to'lanadi (MK 141-moddasi).
+${parseInt(asosiyRaqam)+1}.4. O'zbekiston Respublikasi Mehnat kodeksida nazarda tutilgan bayram
+     va dam olish kunlari ish bajarilmaydi.
+${parseInt(asosiyRaqam)+1}.5. Ishlab chiqarish zaruriyati tug'ilganda qo'shimcha ish vaqti
+     tomonlar kelishuviga binoan va MK 120–127-moddalar doirasida amalga oshiriladi.
 
-4.2. Xodim majburiyatlari:
-     a) lavozim yo'riqnomasidagi vazifalarni sifatli va o'z vaqtida bajarish;
-     b) ichki mehnat tartib-qoidalariga rioya qilish;
-     c) tashkilot mulkini ehtiyotkorlik bilan ishlatish;
-     d) tijorat siri va maxfiy ma'lumotlarni muhofaza qilish;
-     e) mehnat xavfsizligi va sanitariya qoidalarini bajarish.
+════════════════════════════════════════════════════════════════
+${parseInt(asosiyRaqam)+2}. ISH BERUVCHINING HUQUQ VA MAJBURIYATLARI
+════════════════════════════════════════════════════════════════
 
-─────────────────────────────────────────────────
-5. IJTIMOIY KAFOLATLAR
-─────────────────────────────────────────────────
+${parseInt(asosiyRaqam)+2}.1. Ish beruvchi quyidagilarga majburdir:
+     a) xodimga ish bajarish uchun zarur ish joyi, jihozlar, materiallar va
+        axborot resurslarini ta'minlash;
+     b) ish haqini belgilangan muddatda to'liq va o'z vaqtida to'lash;
+     c) mehnat xavfsizligi va sog'lom mehnat sharoitlarini ta'minlash;
+     d) majburiy davlat ijtimoiy sug'urta badallarini to'lash;
+     e) xodimning kasbiy malakasini oshirishga ko'maklashish;
+     f) mehnat qonunchiligi va ushbu shartnoma shartlarini so'zsiz bajarish.
 
-5.1. Xodim O'zbekiston Respublikasi qonunchiligida belgilangan barcha ijtimoiy kafolatlarga ega.
-5.2. Vaqtinchalik mehnatga layoqatsizlik davridagi nafaqa qonunchilik asosida to'lanadi.
-5.3. Ish beruvchi Xodim uchun majburiy davlat ijtimoiy sug'urta badallari to'laydi.
-5.4. Homilador va bola parvarish qilayotgan xodimlar uchun qonuniy imtiyozlar qo'llaniladi.
+${parseInt(asosiyRaqam)+2}.2. Ish beruvchi quyidagi huquqlarga ega:
+     a) xodimdan lavozim yo'riqnomasida belgilangan vazifalarni sifatli bajarishini talab qilish;
+     b) xodimni amaldagi qonunchilikka muvofiq intizomiy javobgarlikka tortish;
+     c) moddiy zararni MK 187–192-moddalari doirasida qoplash talab qilish.
 
-─────────────────────────────────────────────────
-6. MAXFIYLIK
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+${parseInt(asosiyRaqam)+3}. XODIMNING HUQUQ VA MAJBURIYATLARI
+════════════════════════════════════════════════════════════════
 
-6.1. Xodim ish jarayonida bilib olgan tijorat sirlari, mijozlar ma'lumotlari va tashkilot ichki
-     axboroti uchinchi shaxslarga oshkor etilmasligi shart.
-6.2. Ushbu majburiyat shartnoma bekor qilinganidan keyin ham 2 (ikki) yil davomida kuchda qoladi.
+${parseInt(asosiyRaqam)+3}.1. Xodim quyidagilarga majburdir:
+     a) belgilangan lavozim vazifalarini vijdonan va yuqori sifatda bajarish;
+     b) tashkilotning ichki mehnat tartib-qoidalariga rioya qilish;
+     c) ish beruvchiga tegishli mol-mulk va ma'lumotlarni ehtiyotkorlik bilan muhofaza qilish;
+     d) tijorat siri va konfidensial ma'lumotlarni uchinchi shaxslarga oshkor etmaslik;
+     e) mehnat xavfsizligi, sanitariya va yong'in xavfsizligi qoidalarini bajarish;
+     f) bexatar muhit yaratish — hamkasblar va mijozlarga nisbatan xurmatli munosabatda bo'lish.
 
-─────────────────────────────────────────────────
-7. MODDIY JAVOBGARLIK
-─────────────────────────────────────────────────
+${parseInt(asosiyRaqam)+3}.2. Xodim quyidagi huquqlarga ega:
+     a) o'z mehnati uchun o'z vaqtida va to'liq ish haqi olish;
+     b) xavfsiz ish sharoitlariga va zarur jihozlarga ega bo'lish;
+     c) yillik mehnat ta'tilidan foydalanish;
+     d) kasbiy rivojlanish va malaka oshirish;
+     e) mehnat nizosi yuzaga kelganda komissiya yoki sudga murojaat qilish.
 
-7.1. Xodim o'z aybi bilan yetkazgan zararni MK 187-moddasi asosida o'rtacha oylik ish haqidan
-     oshmaydigan miqdorda qoplashga majburdir.
-7.2. To'liq moddiy javobgarlik faqat MK 189-moddasi nazarda tutgan holatlarda qo'llaniladi.
+════════════════════════════════════════════════════════════════
+${parseInt(asosiyRaqam)+4}. IJTIMOIY SUG'URTA VA KAFOLATLAR
+════════════════════════════════════════════════════════════════
 
-─────────────────────────────────────────────────
-8. SHARTNOMANI BEKOR QILISH
-─────────────────────────────────────────────────
+${parseInt(asosiyRaqam)+4}.1. Ish beruvchi xodim uchun majburiy davlat ijtimoiy sug'urtasiga
+     badallar to'laydi (belgilangan stavka bo'yicha).
+${parseInt(asosiyRaqam)+4}.2. Xodimning vaqtinchalik mehnatga layoqatsizligi davrida nafaqa
+     "Ijtimoiy sug'urta to'g'risida"gi qonunga muvofiq to'lanadi.
+${parseInt(asosiyRaqam)+4}.3. Homilador xodimlar va bola tug'ilishi munosabati bilan ta'til
+     olayotganlar MK 225–233-moddalari bo'yicha qo'shimcha kafolatlardan foydalanadi.
+${parseInt(asosiyRaqam)+4}.4. Xodim ishda baxtsiz hodisa yoki kasb kasalligiga duchor bo'lsa,
+     MK 206–217-moddalariga muvofiq zararni qoplash amalga oshiriladi.
 
-8.1. Shartnoma quyidagi asoslarda bekor qilinishi mumkin:
-     a) tomonlarning o'zaro roziligiga binoan (MK 97-moddasi);
-     b) Xodimning o'z xohishi bilan — kamida 2 hafta oldin yozma ogohlantirish yuborgan holda
-        (MK 99-moddasi);
-     c) Ish beruvchi tashabbusiga binoan — MK 100 va 104-moddalarida belgilangan asoslar
-        mavjud bo'lganda;
-     d) tomonlarga bog'liq bo'lmagan sharoitlar yuzaga kelganda (MK 105-moddasi).
+════════════════════════════════════════════════════════════════
+${parseInt(asosiyRaqam)+5}. MAXFIYLIK VA TIJORAT SIRI
+════════════════════════════════════════════════════════════════
 
-─────────────────────────────────────────────────
-9. NIZOLARNI HAL QILISH
-─────────────────────────────────────────────────
+${parseInt(asosiyRaqam)+5}.1. Quyidagi ma'lumotlar tijorat siri deb hisoblanadi va
+     "Tijorat siri to'g'risida"gi Qonun (2008-yil, № ЗРУ-190) himoyasi ostida turadi:
+     — mijozlar bazasi, shartnomalar, kelishuvlar va narxlar;
+     — moliyaviy ma'lumotlar, ish haqlar, daromad va xarajatlar;
+     — texnologik jarayonlar, dasturiy ta'minot va biznes-modellar;
+     — strategik rejalar va yangi mahsulot/xizmatlar haqidagi ma'lumotlar;
+     — xodimlar, hamkorlar va boshqa shaxslar haqidagi shaxsiy ma'lumotlar;
+     — ish beruvchi tomonidan maxfiy deb belgilangan boshqa ma'lumotlar.
+${parseInt(asosiyRaqam)+5}.2. Xodim ushbu ma'lumotlarni ish davomida va ishdan bo'shagandan
+     keyin 3 (uch) yil mobaynida oshkor etmaydi.
+${parseInt(asosiyRaqam)+5}.3. Maxfiylik buzilganda ish beruvchi FK 14-moddasi asosida zararni
+     qoplash va ma'naviy zarar undirish huquqiga ega.
 
-9.1. Nizolar avval tomonlarning muzokarasi yoki mehnat nizolari komissiyasi orqali hal etiladi.
-9.2. Kelishuv chiqmagan taqdirda nizo O'zbekiston Respublikasi qonunchiligiga muvofiq sudga
-     topshiriladi.
+════════════════════════════════════════════════════════════════
+${parseInt(asosiyRaqam)+6}. MODDIY JAVOBGARLIK (MK 187–192-moddalar)
+════════════════════════════════════════════════════════════════
 
-─────────────────────────────────────────────────
-10. TOMONLARNING REKVIZITLARI
-─────────────────────────────────────────────────
+${parseInt(asosiyRaqam)+6}.1. Xodim o'z aybli xatti-harakati natijasida ish beruvchiga
+     etkazgan zararni qoplashga majburdir.
+${parseInt(asosiyRaqam)+6}.2. Cheklangan javobgarlik (MK 187-moddasi): zararning o'rtacha
+     oylik ish haqidan oshmaydigan qismi qoplanadi.
+${parseInt(asosiyRaqam)+6}.3. To'liq moddiy javobgarlik faqat MK 189-moddasida nazarda tutilgan
+     holatlarda (masalan, maxsus ishonch bilan topshirilgan mol-mulk, intentional zarar) qo'llaniladi.
+${parseInt(asosiyRaqam)+6}.4. Zararni qoplash ish haqidan bosqichma-bosqich ushlab qolish
+     yo'li bilan amalga oshiriladi (har oyda ish haqining 20 % dan oshmasligi shart — MK 191).
+
+════════════════════════════════════════════════════════════════
+${parseInt(asosiyRaqam)+7}. SHARTNOMANI O'ZGARTIRISH VA BEKOR QILISH
+════════════════════════════════════════════════════════════════
+
+${parseInt(asosiyRaqam)+7}.1. Shartnoma shartlariga o'zgartirish kiritish faqat tomonlarning
+     yozma kelishuvi asosida amalga oshiriladi (MK 80-moddasi).
+${parseInt(asosiyRaqam)+7}.2. Ish beruvchi mehnat sharoitlarini o'zgartirishdan kamida 2 (ikki)
+     oy oldin xodimni yozma ravishda ogohlantirishga majburdir (MK 81-moddasi).
+${parseInt(asosiyRaqam)+7}.3. Shartnoma quyidagi asoslarda bekor qilinishi mumkin:
+     — tomonlarning o'zaro kelishuviga binoan (MK 97-moddasi);
+     — xodimning o'z ixtiyori bilan — kamida 2 hafta oldin yozma ariza bergan holda
+       (MK 99-moddasi; sinovda bo'lsa — 3 kun oldin);
+     — ish beruvchi tashabbusiga binoan faqat MK 100-moddasida ko'rsatilgan holatlarda
+       (ishlab chiqarishni qisqartirish, xodimning intizom qoidalarini buzishi va h.k.);
+     — xodim boshqa ish joyiga o'tishi munosabati bilan (MK 98-moddasi);
+     — tomonlarga bog'liq bo'lmagan holatlar (MK 105-moddasi).
+
+════════════════════════════════════════════════════════════════
+${parseInt(asosiyRaqam)+8}. NIZOLARNI HAL QILISH
+════════════════════════════════════════════════════════════════
+
+${parseInt(asosiyRaqam)+8}.1. Ushbu shartnomadan kelib chiqadigan nizolar avval tomonlarning
+     muzokaralari yoki tashkilot mehnat nizolari komissiyasi (MNK) orqali hal etiladi
+     (MK 271–280-moddalar).
+${parseInt(asosiyRaqam)+8}.2. MNK hal qila olmagan nizo xodim ixtiyoriga ko'ra ish beruvchi
+     joylashgan joy sudiga topshiriladi.
+${parseInt(asosiyRaqam)+8}.3. Xodim sudga murojaat qilish huquqidan qat'i nazar, MNK-ga
+     murojaat qilishi shart emas (MK 271-moddasi).
+
+════════════════════════════════════════════════════════════════
+${parseInt(asosiyRaqam)+9}. YAKKUNIY QOIDALAR
+════════════════════════════════════════════════════════════════
+
+${parseInt(asosiyRaqam)+9}.1. Ushbu shartnoma O'zbekiston Respublikasi qonunchiligiga muvofiq
+     tuzilgan bo'lib, ikki nusxada — har bir tomon uchun bittadan imzolangan.
+${parseInt(asosiyRaqam)+9}.2. Shartnomada belgilanmagan masalalar O'zbekiston Respublikasi
+     Mehnat kodeksi va boshqa qonunchilik hujjatlariga muvofiq hal etiladi.
+${parseInt(asosiyRaqam)+9}.3. Shartnomaga qo'shimcha kelishuvlar faqat yozma shaklda va
+     tomonlarning imzosi hamda tashkilot muhri bilan kuchga kiradi.
+
+════════════════════════════════════════════════════════════════
+TOMONLARNING REKVIZITLARI VA IMZOLARI
+════════════════════════════════════════════════════════════════
 
 ISH BERUVCHI:                              XODIM:
-${org.name}                                ${f.xodim_ism || '________________'}
-INN: ${org.inn}                            Pasport: ${f.passport || 'AA 0000000'}
-Manzil: ${f.org_manzil || '________________'}
-Tel: ${f.org_tel || '________________'}    Tel: ${f.xodim_tel || '________________'}
+${org.name}                                ${blank(f.xodim_ism)}
+INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
+Manzil: ${blank(f.org_manzil)}             Manzil: ${blank(f.xodim_manzil)}
+Tel: ${blank(f.org_tel)}                   Tel: ${blank(f.xodim_tel)}
+Hisob: ${blank(f.org_hisob)}
 
 Direktor: ___________________              Imzo: ___________________
 ${org.director_name}
@@ -155,93 +283,111 @@ M.O.                                       Sana: ${sana}
 `
 }
 
-// ─────────────────────────────────────────────────────────────
-// 2. TASHQI O'RINDOSHLIK SHARTNOMASI
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 2. TASHQI O'RINDOSHLIK BO'YICHA MEHNAT SHARTNOMASI
+// Huquqiy asos: MK 28–30-moddalar
+// ═══════════════════════════════════════════════════════════════════════════════
 export function tplOrindoshlik(f: F, org: Org): string {
-  const sana = fmtD(f.boshlanish_sana)
-  const kunlar = f.kunlar || 'dushanba, chorshanba, juma'
-  const soat = f.soat_soni || '4'
+  const sana   = fmtD(f.boshlanish_sana)
+  const kunlar = blank(f.kunlar, 'dushanba, chorshanba, juma')
+  const soat   = blank(f.soat_soni, '4')
 
-  return `TASHQI O'RINDOSHLIK BO'YICHA MEHNAT SHARTNOMASI
+  return `TASHQI O'RINDOSHLIK BO'YICHA MEHNAT SHARTNOMASI № ___
 
-Toshkent shahri                                    "${sana}"
+${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 
 ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Ish beruvchi" deb yuritiladi,
-vakili — ${org.director_name},
-va fuqaro ${f.xodim_ism || '________________'}, pasport: ${f.passport || 'AA 0000000'},
+direktori ${org.director_name} tomonidan vakilligi qilinadi,
+
+va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+yashash manzili: ${blank(f.xodim_manzil)},
 keyingi o'rinlarda "Xodim" deb yuritiladi,
-O'zbekiston Respublikasi Mehnat kodeksining 28-moddasi asosida quyidagi shartlarda
+
+O'zbekiston Respublikasi Mehnat kodeksining 28–30-moddalari asosida
 tashqi o'rindoshlik mehnat shartnomasini tuzdik:
 
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
 1. SHARTNOMA PREDMETI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
 
-1.1. Ish beruvchi Xodimni tashqi o'rindoshlik asosida "${f.lavozim || '___'}" lavozimiga qabul qiladi.
-1.2. Xodim asosiy ish joyini saqlab qolgan holda ushbu tashkilotda qo'shimcha mehnat qiladi.
-1.3. O'zbekiston Respublikasi Mehnat kodeksiga muvofiq tashqi o'rindoshlik uchun haftalik ish vaqti
-     20 soatdan oshmasligi shart.
-1.4. Ish boshlash sanasi: ${sana}.${f.tugash_sana ? `\n1.5. Shartnoma muddati: ${fmtD(f.boshlanish_sana)} dan ${fmtD(f.tugash_sana)} gacha.` : ''}
+1.1. Ish beruvchi Xodimni tashqi o'rindoshlik asosida "${blank(f.lavozim)}" lavozimiga
+     qabul qiladi.
+1.2. Tashqi o'rindoshlik — xodim asosiy ish joyini saqlab qolgan holda, o'z ish vaqtidan
+     tashqari, boshqa tashkilotda qo'shimcha ish bajarishi (MK 28-moddasi).
+1.3. Xodimning asosiy ish joyi: ${blank(f.asosiy_ish_joyi, "Xodim tomonidan ko'rsatiladi")}.
+1.4. Ish boshlash sanasi: ${sana}.${f.tugash_sana ? `
+1.5. Shartnoma muddati: ${fmtD(f.boshlanish_sana)} dan ${fmtD(f.tugash_sana)} gacha.` : ''}
 
-─────────────────────────────────────────────────
-2. ISH VAQTI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+2. ISH VAQTI VA MEHNAT REJIMI (MK 28, 112-moddalar)
+════════════════════════════════════════════════════════════════
 
-2.1. Xodim ${kunlar} kunlari ishlaydi.
-2.2. Kunlik ish vaqti: ${soat} soat.
-2.3. Aniq ish jadvali va vazifalar tarkibi tomonlar kelishuviga binoan belgilanadi.
+2.1. Tashqi o'rindoshning haftalik ish vaqti 20 soatdan oshmasligi shart (MK 28-moddasi).
+2.2. Xodim ${kunlar} kunlari, kuniga ${soat} soat ishlaydi.
+2.3. Aniq ish grafigi tomonlar kelishuviga binoan belgilanib, unga amal qilinadi.
+2.4. Xodim o'zining asosiy ish joyi majburiyatlarini bajarish uchun ushbu joyda
+     ruxsatsiz ish vaqtini o'zgartira olmaydi.
 
-─────────────────────────────────────────────────
-3. ISH HAQI VA TO'LOV TARTIBI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+3. ISH HAQI VA TO'LOV TARTIBI (MK 91–100-moddalar)
+════════════════════════════════════════════════════════════════
 
-3.1. Xodimga oylik ish haqi ${f.maosh || '________________'} so'm miqdorida belgilanadi.
-3.2. Ish haqi har oyning 10-sanasiga naqd yoki bank kartasiga o'tkazish orqali to'lanadi.
-3.3. Soliqlar va ijtimoiy sug'urta badallari qonunchilikka muvofiq ushlab qolinadi.
+3.1. Xodimga bajarilgan ish hajmiga qarab oylik ish haqi ${blank(f.maosh)} so'm belgilanadi.
+3.2. Ish haqi har oyning 10-sanasiga qadar bank plastik kartasiga yoki naqd to'lanadi.
+3.3. Daromad solig'i (12 %) va ijtimoiy sug'urta badallari qonunchilikka muvofiq
+     ushlab qolinadi.
+3.4. Ish bajarilmagan kunlar uchun ish haqi to'lanmaydi (proporsional hisob).
 
-─────────────────────────────────────────────────
-4. TOMONLARNING MAJBURIYATLARI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+4. MEHNAT TA'TILI (MK 136-moddasi)
+════════════════════════════════════════════════════════════════
 
-4.1. Ish beruvchi:
-     a) zarur ish sharoiti va resurslarni ta'minlash;
-     b) ish haqini o'z vaqtida to'lash;
-     c) mehnat xavfsizligini ta'minlash.
+4.1. Tashqi o'rindosh ham asosiy ta'tilga haqli, biroq ta'til asosiy ish joyi bilan
+     bir vaqtda beriladi (MK 136-moddasi).
+4.2. Asosiy ish joyida ta'til boshlanishidan oldin xodim ish beruvchiga yozma xabar qiladi.
+4.3. Ta'til puli bajarilgan ish hajmiga nisbatan proporsional hisoblanib to'lanadi.
 
-4.2. Xodim:
-     a) lavozim vazifalarini sifatli bajarish;
-     b) tashkilot ichki tartib-qoidalariga rioya qilish;
+════════════════════════════════════════════════════════════════
+5. TOMONLARNING HUQUQ VA MAJBURIYATLARI
+════════════════════════════════════════════════════════════════
+
+5.1. Ish beruvchi majburiyatlari:
+     a) zarur ish sharoiti, ish joyi va kerakli resurslarni ta'minlash;
+     b) ish haqini belgilangan muddatda to'lash;
+     c) mehnat xavfsizligini ta'minlash va mehnat daftarchasiga yozuv kiritish;
+     d) ijtimoiy sug'urta badallarini to'lash.
+
+5.2. Xodim majburiyatlari:
+     a) lavozim yo'riqnomasiga muvofiq vazifalarni belgilangan sifatda bajarish;
+     b) ish beruvchi ichki tartib qoidalariga rioya qilish;
      c) tijorat siri va maxfiy ma'lumotlarni muhofaza qilish;
-     d) asosiy ish joyidagi ish jadvaliga xalaqit bermasligi shart.
+     d) asosiy ish joyidagi ish jadvaliga zarar yetkazmaslik.
 
-─────────────────────────────────────────────────
-5. IJTIMOIY KAFOLATLAR
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+6. SHARTNOMANI BEKOR QILISH (MK 30-moddasi)
+════════════════════════════════════════════════════════════════
 
-5.1. Tashqi o'rindosh asosiy ish joyidagi kafolatlarga qo'shimcha ravishda ushbu shartnoma
-     bo'yicha ham O'zbekiston Respublikasi qonunchiligida belgilangan kafolatlarga ega.
-5.2. Ta'til puli bajarilgan ish haqi miqdoriga nisbatan hisoblab to'lanadi.
+6.1. Ushbu shartnoma quyidagi holatlarda muddatidan oldin bekor qilinishi mumkin:
+     a) tomonlarning o'zaro yozma kelishuviga binoan;
+     b) ish beruvchi ushbu lavozimga asosiy xodim qabul qilganda — kamida 1 (bir) hafta
+        oldin yozma ogohlantirish bilan (MK 30-moddasi — bu o'rindoshlikka xos maxsus asos);
+     c) MK 99-moddasi: xodimning o'z xohishi bilan — 2 hafta oldin yozma ariza;
+     d) MK 100-moddasi bo'yicha ish beruvchi tashabbusi bilan (asoslangan holda);
+     e) MK 105-moddasi: tomonlarga bog'liq bo'lmagan holatlar (force-majeure).
+6.2. Shartnoma muddati tugashi bilan avtomatik bekor bo'ladi.
 
-─────────────────────────────────────────────────
-6. SHARTNOMANI BEKOR QILISH
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+7. YAKKUNIY QOIDALAR VA REKVIZITLAR
+════════════════════════════════════════════════════════════════
 
-6.1. Shartnoma quyidagi asoslarda bekor qilinishi mumkin:
-     a) tomonlar kelishuviga binoan;
-     b) Ish beruvchi ushbu lavozim uchun asosiy xodim qabul qilganda
-        (1 hafta oldin yozma ogohlantirish bilan);
-     c) MK 100, 104-moddalarida nazarda tutilgan asoslar bo'yicha.
-
-─────────────────────────────────────────────────
-7. TOMONLARNING REKVIZITLARI
-─────────────────────────────────────────────────
+7.1. Shartnoma ikki nusxada tuzilgan, har bir tomon uchun bir nusxa.
+7.2. Belgilanmagan masalalar O'zR Mehnat kodeksiga muvofiq hal etiladi.
 
 ISH BERUVCHI:                              XODIM:
-${org.name}                                ${f.xodim_ism || '________________'}
-INN: ${org.inn}                            Pasport: ${f.passport || 'AA 0000000'}
-Manzil: ${f.org_manzil || '________________'}
-Tel: ${f.org_tel || '________________'}    Tel: ${f.xodim_tel || '________________'}
+${org.name}                                ${blank(f.xodim_ism)}
+INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
+Manzil: ${blank(f.org_manzil)}             Manzil: ${blank(f.xodim_manzil)}
+Tel: ${blank(f.org_tel)}                   Tel: ${blank(f.xodim_tel)}
 
 Direktor: ___________________              Imzo: ___________________
 ${org.director_name}
@@ -250,99 +396,160 @@ M.O.                                       Sana: ${sana}
 `
 }
 
-// ─────────────────────────────────────────────────────────────
-// 3. FUQAROVIY-HUQUQIY TUSIDAGI YOLLANMA SHARTNOMASI
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 3. FUQAROVIY-HUQUQIY TUSIDAGI XIZMAT KO'RSATISH (PODRYAD) SHARTNOMASI
+// Huquqiy asos: FK 734–756-moddalar (podryad); FK 779–791 (haq evaziga xizmat)
+// ═══════════════════════════════════════════════════════════════════════════════
 export function tplFuqaroviy(f: F, org: Org): string {
   const sana = fmtD(f.boshlanish_sana) || fmtD()
 
   return `FUQAROVIY-HUQUQIY TUSIDAGI XIZMAT KO'RSATISH SHARTNOMASI
-(Yollanma shartnomasi)
+(Podryad / Yollanma shartnomasi)
+№ ___
 
-Toshkent shahri                                    "${sana}"
+${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 
 ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Buyurtmachi" deb yuritiladi,
-vakili — ${org.director_name},
-va fuqaro ${f.ijrochi_ism || '________________'}, pasport: ${f.passport || 'AA 0000000'},
-STIR: ${f.ijrochi_stir || '___________'}, keyingi o'rinlarda "Ijrochi" deb yuritiladi,
-O'zbekiston Respublikasi Fuqarolik kodeksining 734–756-moddalari asosida quyidagi shartlarda
-shartnoma tuzdik:
+direktori ${org.director_name} tomonidan vakilligi qilinadi,
 
-MUHIM ESLATMA: Ushbu shartnoma mehnat shartnomasi emas. Ijrochi mustaqil faoliyat yurituvchi
-shaxs bo'lib, tashkilotning shtat xodimlari tarkibiga kirmaydi va Mehnat kodeksining
-kafolatlari ushbu shartnomaga tatbiq etilmaydi.
+va fuqaro ${blank(f.ijrochi_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+STIR: ${blank(f.ijrochi_stir, '___________')},
+yashash manzili: ${blank(f.ijrochi_manzil)},
+keyingi o'rinlarda "Ijrochi" deb yuritiladi,
 
-─────────────────────────────────────────────────
-1. SHARTNOMA PREDMETI
-─────────────────────────────────────────────────
+O'zbekiston Respublikasi Fuqarolik kodeksining 734–756-moddalari asosida
+quyidagi shartnomani tuzdik:
 
-1.1. Ijrochi Buyurtmachiga quyidagi xizmatlarni ko'rsatishga (ishlarni bajarishga) majburdir:
-     ${f.xizmat_nomi || '___________________________________________'}
+════════════════════════════════════════════════════════════════
+1. SHARTNOMA PREDMETI VA FARQ
+════════════════════════════════════════════════════════════════
+
+1.1. Ijrochi Buyurtmachiga quyidagi xizmatlarni ko'rsatishi yoki ishlarni bajarishi lozim:
+
+     ${blank(f.xizmat_nomi, '(xizmat tavsifi yoziladi)')}
 
 1.2. Xizmat ko'rsatish muddati:
-     Boshlanish: ${fmtD(f.boshlanish_sana)}
-     Tugash: ${fmtD(f.tugash_sana) || '________________'}
+     — boshlanishi: ${fmtD(f.boshlanish_sana)}
+     — tugashi: ${fmtD(f.tugash_sana) || '________________'}
 
-1.3. Xizmat ko'rsatish joyi: ${f.xizmat_joyi || org.name + ' ko\'rsatgan joy'}.
+1.3. Xizmat ko'rsatish joyi: ${blank(f.xizmat_joyi, org.name + ' ko\'rsatgan joy yoki masofadan')}.
 
-─────────────────────────────────────────────────
-2. NARX VA TO'LOV TARTIBI
-─────────────────────────────────────────────────
+1.4. MUHIM FARQ: Ushbu shartnoma mehnat shartnomasi emas.
+     — Ijrochi Buyurtmachi tashkilotining shtat xodimlari tarkibiga kirmaydi;
+     — Mehnat kodeksining kafolatlari (ta'til, ish haqi, intizomiy jazo va h.k.)
+       ushbu munosabatlarga tatbiq etilmaydi;
+     — Ijrochi mustaqil faoliyat yurituvchi shaxs sifatida natija uchun javobgardir;
+     — Soliqlar (daromad solig'i, ijtimoiy to'lovlar) Ijrochi tomonidan mustaqil to'lanadi
+       yoki Buyurtmachi tomonidan qonunga muvofiq ushlab qolinadi.
 
-2.1. Xizmatlarning umumiy shartnoma narxi: ${f.narx || '________________'} so'm.
-2.2. To'lov tartibi: ${f.tolov_tartibi || "ishlar qabul-topshirish dalolatnomasi imzolangandan so'ng 5 ish kuni ichida"}.
-2.3. To'lov uchun asos: Ijrochi imzolagan xizmat qabul-topshirish dalolatnomasi.
-2.4. Xizmat ko'rsatishga sarflangan xarajatlar alohida hujjatlar asosida qoplanishi mumkin.
+════════════════════════════════════════════════════════════════
+2. NARX, TO'LOV TARTIBI VA SOLIQ MASALALARI (FK 744-moddasi)
+════════════════════════════════════════════════════════════════
 
-─────────────────────────────────────────────────
-3. TOMONLARNING MAJBURIYATLARI
-─────────────────────────────────────────────────
+2.1. Xizmatlarning umumiy shartnoma narxi: ${blank(f.narx)} so'm
+     (barcha soliqlar va yig'imlar hisobga olingan holda).
+2.2. To'lov tartibi: ${blank(f.tolov_tartibi, "ishlar qabul-topshirish dalolatnomasi imzolangandan so'ng 5 ish kuni ichida")}.
+2.3. To'lov asosi: tomonlar imzolagan Xizmat qabul-topshirish dalolatnomasi.
+2.4. Ijrochi jismoniy shaxs bo'lsa, Buyurtmachi amaldagi qonunchilikka muvofiq
+     daromad solig'ini manba'dan ushlab qolish va budjetga o'tkazish majburiyatini
+     o'z zimmasiga oladi.
+2.5. Xizmat hajmi yoki muddati o'zgarsa, narx tomonlar yozma kelishuviga binoan
+     tuzatiladi.
+
+════════════════════════════════════════════════════════════════
+3. TOMONLARNING MAJBURIYATLARI (FK 735–736-moddalar)
+════════════════════════════════════════════════════════════════
 
 3.1. Ijrochi majburiyatlari:
-     a) xizmatlarni belgilangan muddatda va yuqori sifatda ko'rsatish;
-     b) Buyurtmachining maxfiy ma'lumotlarini muhofaza qilish;
-     c) bajarilgan ishlar bo'yicha hisobot va dalolatnoma taqdim etish;
-     d) Buyurtmachi taqdim etgan materiallarni maqsadli ishlatish.
+     a) xizmatlarni belgilangan muddatda, kelishilgan hajmda va talabdagi sifatda ko'rsatish;
+     b) Buyurtmachining maxfiy ma'lumotlari va tijorat sirlarini muhofaza qilish;
+     c) bajarilgan ish bosqichlari to'g'risida Buyurtmachini xabardor qilib borish;
+     d) Buyurtmachi taqdim etgan moddiy va axborot resurslarini faqat shartnoma maqsadida
+        ishlatish va ish tugagach qaytarish;
+     e) pastki pudratchilarga topshirish talab qilsa, Buyurtmachining yozma roziligini olish.
 
 3.2. Buyurtmachi majburiyatlari:
-     a) ishlarni bajarish uchun zarur ma'lumot va materiallarni o'z vaqtida taqdim etish;
-     b) bajarilgan ishlarni 3 ish kuni ichida qabul qilish yoki asosli rad etish;
-     c) kelishilgan to'lovni o'z vaqtida amalga oshirish.
+     a) Ijrochiga zarur ma'lumot, materiallar va kirish huquqlarini o'z vaqtida taqdim etish;
+     b) bajarilgan ishlarni belgilangan muddatda qabul qilish yoki asosli rad etish;
+     c) kelishilgan to'lovni o'z vaqtida to'lash;
+     d) Ijrochining xizmat ko'rsatishiga aralashmaslik.
 
-─────────────────────────────────────────────────
-4. ISHNI QABUL QILISH
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+4. INTELLEKTUAL MULK HUQUQLARI
+════════════════════════════════════════════════════════════════
 
-4.1. Ishlar tugatilgandan so'ng 3 ish kuni ichida xizmat qabul-topshirish dalolatnomasi tuziladi.
-4.2. Buyurtmachi dalolatnomani imzolashdan bosh tortsa, asosli yozma shikoyat taqdim etishi shart.
-4.3. Belgilangan muddatda shikoyat taqdim etilmasa, ish qabul qilingan hisoblanadi.
+4.1. Ijrochi ushbu shartnoma doirasida yaratgan barcha natijalar
+     (dastur, dizayn, hujjat, tahlil, matn va boshqalar) to'lov amalga oshirilgandan
+     so'ng Buyurtmachiga to'liq o'tadi.
+4.2. Ijrochi yaratilgan natijalarni Buyurtmachi rozilugisiz uchinchi shaxslarga
+     bermaydi, nashr etmaydi yoki namoyish qilmaydi.
+4.3. Ijrochi shartnomaga qadar yaratgan va ushbu shartnomaga almashinmaydigan
+     oldindan mavjud materiallarga nisbatan o'z huquqini saqlab qoladi.
 
-─────────────────────────────────────────────────
-5. JAVOBGARLIK
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+5. SIFAT TALABLARI VA QABUL QILISH TARTIBI (FK 740–741-moddalar)
+════════════════════════════════════════════════════════════════
 
-5.1. Shartnoma bajarilmagan taqdirda aybdor tomon etkazilgan zararni to'liq qoplashga majbur.
-5.2. Kechikish jarima: har kun uchun shartnoma summasining 0,1 foizi.
-5.3. Force-majeur holatlari (tabiiy ofat, epidemiya, davlat talabi) uchun tomonlar javobgar emas.
+5.1. Ijrochi xizmatlarni quyidagi mezon va standartlarga muvofiq ko'rsatadi:
+     ${blank(f.sifat_mezoni, 'kelishilgan texnik vazifa va odatdagi xizmat standartlari')}.
+5.2. Ishlar tugatilgandan so'ng 3 (uch) ish kuni ichida xizmat qabul-topshirish
+     dalolatnomasi tuziladi.
+5.3. Buyurtmachi dalolatnomani imzolashdan bosh tortsa, yozma va asoslangan shikoyat
+     taqdim etishi shart. Shikoyat belgilangan muddatda bo'lmasa, ish qabul qilingan hisoblanadi.
+5.4. Aniqlangan kamchiliklarni Ijrochi o'z hisobidan va kelishilgan muddatda bartaraf etadi
+     (FK 741-moddasi).
 
-─────────────────────────────────────────────────
-6. SHARTNOMANI BEKOR QILISH
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+6. JAVOBGARLIK VA JARIMA (FK 327–337-moddalar)
+════════════════════════════════════════════════════════════════
 
-6.1. Shartnoma muddati tugagach o'z-o'zidan bekor bo'ladi.
-6.2. Muddatdan oldin bekor qilish — kamida 3 ish kuni oldin yozma xabar bilan.
-6.3. Muddatdan oldin bekor qilinganda bajarilgan ish hajmiga yarasha to'lov amalga oshiriladi.
+6.1. Tomonlar ushbu shartnoma bo'yicha o'z majburiyatlarini bajarmaganligi uchun
+     FK 14, 327–337-moddalari asosida javobgar bo'ladi.
+6.2. Muddatni kechiktirganlik uchun jarima: kechiktirilgan har bir kun uchun
+     shartnoma summasining 0,1 % (lekin umumiy jarima shartnoma summasining
+     10 % dan oshmasligi kerak).
+6.3. Force-majeure holatlari (tabiiy ofat, epidemiya, davlat qarorlari) uchun tomonlar
+     javobgar emas, biroq bu haqda darhol va yozma xabar yuborilishi shart.
+6.4. Zarar hajmida kelishmovchilik bo'lsa, sud tartibida hal etiladi.
 
-─────────────────────────────────────────────────
-7. TOMONLARNING REKVIZITLARI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+7. MAXFIYLIK
+════════════════════════════════════════════════════════════════
+
+7.1. Ijrochi shartnoma davomida bilib olgan Buyurtmachiga oid har qanday tijorat,
+     texnik va moliyaviy ma'lumotlarni uchinchi shaxslarga oshkor etmaydi.
+7.2. Ushbu majburiyat shartnoma muddati tugagandan keyin ham 2 (ikki) yil kuchda qoladi.
+
+════════════════════════════════════════════════════════════════
+8. SHARTNOMANI BEKOR QILISH (FK 367–378-moddalar)
+════════════════════════════════════════════════════════════════
+
+8.1. Shartnoma muddati tugagach o'z-o'zidan bekor bo'ladi.
+8.2. Muddatidan oldin bekor qilish — kamida 5 (besh) ish kuni oldin yozma xabar.
+8.3. Buyurtmachi muddatidan oldin bekor qilsa, Ijrochining haqiqatda bajargan
+     ish ulushiga to'liq to'lov amalga oshiriladi.
+8.4. Ijrochi o'z tashabbusi bilan bekor qilsa va Buyurtmachi zarar ko'rsa, Ijrochi
+     etkazilgan zararni qoplashga majburdir.
+
+════════════════════════════════════════════════════════════════
+9. NIZOLARNI HAL QILISH
+════════════════════════════════════════════════════════════════
+
+9.1. Nizolar avval tomonlarning muzokara yo'li bilan hal etiladi (10 kun muddat).
+9.2. Kelishuv chiqmagan taqdirda nizo O'zR qonunchiligiga muvofiq sudga topshiriladi.
+9.3. Shartnomaga O'zbekiston Respublikasi qonunchiligi tatbiq etiladi.
+
+════════════════════════════════════════════════════════════════
+TOMONLARNING REKVIZITLARI
+════════════════════════════════════════════════════════════════
 
 BUYURTMACHI:                               IJROCHI:
-${org.name}                                ${f.ijrochi_ism || '________________'}
-INN: ${org.inn}                            Pasport: ${f.passport || 'AA 0000000'}
-Manzil: ${f.org_manzil || '________________'}    STIR: ${f.ijrochi_stir || '___________'}
-Tel: ${f.org_tel || '________________'}    Manzil: ${f.ijrochi_manzil || '________________'}
-                                           Tel: ${f.ijrochi_tel || '________________'}
+${org.name}                                ${blank(f.ijrochi_ism)}
+INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
+Manzil: ${blank(f.org_manzil)}             STIR: ${blank(f.ijrochi_stir)}
+Tel: ${blank(f.org_tel)}                   Manzil: ${blank(f.ijrochi_manzil)}
+Hisob: ${blank(f.org_hisob)}               Tel: ${blank(f.ijrochi_tel)}
+                                           Hisob/Karta: ${blank(f.ijrochi_hisob)}
 
 Direktor: ___________________              Imzo: ___________________
 ${org.director_name}
@@ -351,98 +558,129 @@ M.O.                                       Sana: ${sana}
 `
 }
 
-// ─────────────────────────────────────────────────────────────
-// 4. MAXFIYLIK (NDA) SHARTNOMASI
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4. MAXFIYLIK (KONFIDENSIALLIK / NDA) SHARTNOMASI
+// Huquqiy asos: "Tijorat siri to'g'risida"gi Qonun (2008, № ЗРУ-190);
+//               FK 14-moddasi; Shaxsiy ma'lumotlar to'g'risida"gi Qonun (2019)
+// ═══════════════════════════════════════════════════════════════════════════════
 export function tplMaxfiylik(f: F, org: Org): string {
-  const sana = fmtD()
-  const muddat = f.muddat || '3 yil'
+  const sana   = fmtD()
+  const muddat = blank(f.muddat, '3 yil')
 
   return `MAXFIYLIK (KONFIDENSIALLIK) SHARTNOMASI
 (Non-Disclosure Agreement — NDA)
+№ ___
 
-Toshkent shahri                                    "${sana}"
+${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 
 ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Tashkilot" deb yuritiladi,
-vakili — ${org.director_name},
-va fuqaro ${f.xodim_ism || '________________'}, pasport: ${f.passport || 'AA 0000000'},
-lavozim: "${f.lavozim || '___'}",
-keyingi o'rinlarda "Xodim" deb yuritiladi, ushbu maxfiylik shartnomasini tuzdik:
+direktori ${org.director_name} tomonidan vakilligi qilinadi,
 
-─────────────────────────────────────────────────
-1. SHARTNOMA MAQSADI
-─────────────────────────────────────────────────
+va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+lavozim: "${blank(f.lavozim)}",
+keyingi o'rinlarda "Xodim" deb yuritiladi,
 
-1.1. Ushbu shartnoma Xodimning mehnat faoliyati davomida bilib oladigan maxfiy ma'lumotlarni
-     himoya qilish va tashkilot tijorat manfaatlarini ta'minlash maqsadida tuziladi.
+"Tijorat siri to'g'risida"gi O'zbekiston Respublikasi Qonuni (2008-yil 11-dekabr,
+№ ЗРУ-190), "Shaxsiy ma'lumotlar to'g'risida"gi Qonun (2019-yil 2-iyul, № ЗРУ-547)
+hamda O'zbekiston Respublikasi Fuqarolik kodeksining 14-moddasi asosida ushbu
+maxfiylik shartnomasini tuzdik:
 
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+1. MAQSAD VA ASOSLAR
+════════════════════════════════════════════════════════════════
+
+1.1. Ushbu shartnoma Xodimning mehnat yoki xizmat faoliyati davomida bilib oladigan
+     Tashkilotga oid maxfiy ma'lumotlarni himoya qilish va Tashkilotning tijorat,
+     texnik va boshqa qonuniy manfaatlarini ta'minlash maqsadida tuziladi.
+1.2. Ushbu shartnoma mehnat shartnomasi yoki xizmat ko'rsatish shartnomasining
+     ajralmas qo'shimchasi (annexi) sifatida kuchga kiradi.
+
+════════════════════════════════════════════════════════════════
 2. MAXFIY MA'LUMOTLAR TARKIBI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
 
-2.1. Quyidagilar maxfiy ma'lumot hisoblanadi:
-     a) moliyaviy ma'lumotlar — daromad, xarajat, ish haqi, shartnoma summalari, bank ma'lumotlari;
-     b) mijozlar bazasi, shartnomalar, kelishuvlar va muzokaralar;
-     c) texnologik jarayonlar, dasturiy ta'minot va know-how;
-     d) xodimlar haqidagi shaxsiy ma'lumotlar;
-     e) strategik rejalar, tahlillar va biznes-modellar;
-     f) yetkazib beruvchilar, narxlar va ta'minot zanjiri;
-     g) Tashkilot tomonidan "MAXFIY" deb belgilangan boshqa har qanday ma'lumot.
+2.1. Quyidagilar maxfiy ma'lumot deb tan olinadi:
+     a) MOLIYAVIY: daromad va xarajat ko'rsatkichlari, ish haqi, shartnoma summalari,
+        investitsiyalar, kreditlar, bank hisobraqamlari va shaxsiy moliyaviy ma'lumotlar;
+     b) MIJOZLAR: mijozlar ro'yxati, aloqa ma'lumotlari, shartnomalar, muzokaralar
+        tarixi, talablar va shikoyatlar;
+     c) TEXNOLOGIK: dasturiy ta'minot, algoritmlar, dizayn, patentlanmagan ixtirolar,
+        ishlab chiqarish jarayonlari va know-how;
+     d) STRATEGIK: biznes-rejalar, bozor tadqiqotlari, yangi mahsulot rejalashtirish,
+        raqobatchilar haqida to'plangan ma'lumotlar;
+     e) KADRLAR: xodimlar ro'yxati, lavozimlari, ish haqilari, mehnat tarixi
+        va shaxsiy ma'lumotlar;
+     f) HAMKORLAR: yetkazib beruvchilar, narxlar, ta'minot shartlari, ekskluziv
+        kelishuvlar va hamkorlik shartlari;
+     g) BOSHQA: Tashkilot tomonidan "MAXFIY" belgisi bilan belgilangan har qanday hujjat,
+        fayl yoki ma'lumot.
 
-─────────────────────────────────────────────────
-3. XODIMNING MAJBURIYATLARI
-─────────────────────────────────────────────────
+2.2. Maxfiy ma'lumot deb HISOBLANMAYDI:
+     a) rasmiy ommaviy manbalarda mavjud bo'lgan ma'lumotlar;
+     b) Xodim Tashkilotga kirishidan avval allaqachon umum uchun ma'lum bo'lgan ma'lumotlar;
+     c) qonun yoki sud talabi bo'yicha ochilishi majburiy bo'lgan ma'lumotlar.
 
-3.1. Xodim quyidagilarga majburdir:
-     a) maxfiy ma'lumotlarni uchinchi shaxslarga, raqobatchi tashkilotlarga yoki ommaga
-        oshkor etmaslik;
-     b) maxfiy ma'lumotlarni faqat rasmiy ish vazifalarini bajarish uchun ishlatish;
-     c) maxfiy ma'lumotlarni tashkilot tasdiqlagan qurilmalarda saqlash;
-     d) ish tugagandan so'ng barcha maxfiy hujjat va materiallarni topshirish yoki yo'q qilish;
-     e) maxfiy ma'lumotlar bilan ishlash chog'ida ehtiyotkorlik choralarini qo'llash.
+════════════════════════════════════════════════════════════════
+3. XODIMNING MAXFIYLIK MAJBURIYATLARI
+════════════════════════════════════════════════════════════════
 
-─────────────────────────────────────────────────
-4. OSHKOR ETISH MUMKIN BO'LGAN HOLAT
-─────────────────────────────────────────────────
+3.1. Xodim quyidagilarga qat'iyan majburdir:
+     a) maxfiy ma'lumotlarni og'zaki, yozma, elektron yoki boshqa shaklda uchinchi
+        shaxslarga, raqobit tashkilotlarga yoki ommaga oshkor etmaslik;
+     b) maxfiy ma'lumotlarni faqat rasmiy ish vazifalarini bajarish maqsadida ishlatish;
+     c) maxfiy ma'lumotlarni Tashkilot tasdiqlagan qurilmalarda saqlash va ruxsatsiz
+        nusxa ko'chirmaslik yoki tashqi muhitga o'tkazmaslik;
+     d) maxfiy ma'lumotlarga nisbatan barcha zarur texnik va tashkiliy himoya choralarini
+        ko'rish;
+     e) ishdan bo'shaganda yoki shartnoma tugaganda barcha maxfiy hujjat va
+        ma'lumot tashuvchilarni Tashkilotga topshirish yoki yo'q qilish;
+     f) maxfiy ma'lumotlar xavf ostida qolganligi to'g'risida darhol Tashkilotni
+        xabardor qilish.
 
-4.1. Maxfiy ma'lumotlarni oshkor etish faqat quyidagi hollarda mumkin:
+3.2. Maxfiy ma'lumotlarni oshkor etish faqat quyidagi hollarda mumkin:
      a) Tashkilotning oldindan olingan yozma ruxsati bilan;
-     b) Qonun yoki sud talabiga binoan — faqat so'ralgan hajm va doirada.
+     b) O'zbekiston Respublikasi qonunchiligiga muvofiq davlat organlari talabiga binoan —
+        faqat so'ralgan hajm va doirada, va bu haqda Tashkilot darhol xabardor qilinadi.
 
-─────────────────────────────────────────────────
-5. SHARTNOMA MUDDATI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+4. SHARTNOMA MUDDATI
+════════════════════════════════════════════════════════════════
 
-5.1. Ushbu shartnoma imzolangan sanadan boshlab kuchga kiradi.
-5.2. Maxfiylik majburiyati ish munosabatlari tugagandan so'ng ham ${muddat} davomida kuchda qoladi.
+4.1. Ushbu shartnoma imzolangan kundan boshlab kuchga kiradi.
+4.2. Maxfiylik majburiyati mehnat munosabatlari yoki xizmat shartnomasi tugagandan
+     keyin ham ${muddat} davomida kuchda qoladi (maxfiylik muddati).
+4.3. Maxfiylik muddatini tomonlar yozma kelishuvi bilan uzaytirishi mumkin.
 
-─────────────────────────────────────────────────
-6. JAVOBGARLIK
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+5. JAVOBGARLIK VA SANKSIYALAR
+════════════════════════════════════════════════════════════════
 
-6.1. Maxfiy ma'lumotlar oshkor etilgan taqdirda Xodim Tashkilotga etkazilgan to'g'ridan-to'g'ri
-     va bilvosita zararlarni to'liq qoplashga majburdir.
-6.2. Bundan tashqari, O'zbekiston Respublikasi qonunchiligida nazarda tutilgan ma'muriy
-     va jinoiy javobgarlik qo'llanilishi mumkin.
+5.1. Maxfiy ma'lumotlar oshkor etilganda yoki noto'g'ri ishlatilganda Xodim:
+     a) Tashkilotga etkazilgan to'g'ridan-to'g'ri zararni (yo'qotilgan foyda bilan birga)
+        to'liq qoplashga majburdir — FK 14-moddasi;
+     b) "Tijorat siri to'g'risida"gi Qonunning 14-moddasi bo'yicha ma'muriy javobgarlikka
+        tortilishi mumkin;
+     c) O'zR Jinoyat kodeksining 192-moddasi bo'yicha jinoiy javobgarlikka ham tortilishi
+        mumkin (qasddan oshkor etilgan holda).
+5.2. Shartnomaning buzilishi aniqlangan zahoti Tashkilot sudga murojaat qilib,
+     buzilishni to'xtatishni va zararni qoplashni talab qilish huquqiga ega.
 
-─────────────────────────────────────────────────
-7. UMUMIY QOIDALAR
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
+6. NIZOLARNI HAL QILISH
+════════════════════════════════════════════════════════════════
 
-7.1. Ushbu shartnoma mehnat shartnomasi yoki xizmat ko'rsatish shartnomasining ajralmas
-     qo'shimchasi hisoblanadi.
-7.2. Shartnoma O'zbekiston Respublikasi qonunchiligiga muvofiq tartibga solinadi.
-7.3. Nizolar birinchi navbatda muzokara yo'li bilan, hal etilmagan taqdirda sud orqali
-     ko'rib chiqiladi.
+6.1. Nizolar muzokara yo'li bilan hal etiladi (muddati — 10 ish kuni).
+6.2. Muzokara samarasiz bo'lsa, nizo O'zbekiston Respublikasi sudiga topshiriladi.
+6.3. Ushbu shartnomaga O'zbekiston Respublikasi qonunchiligi tatbiq etiladi.
 
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
 TOMONLARNING REKVIZITLARI VA IMZOLARI
-─────────────────────────────────────────────────
+════════════════════════════════════════════════════════════════
 
 TASHKILOT:                                 XODIM:
-${org.name}                                ${f.xodim_ism || '________________'}
-INN: ${org.inn}                            Pasport: ${f.passport || 'AA 0000000'}
-                                           Lavozim: ${f.lavozim || '________________'}
+${org.name}                                ${blank(f.xodim_ism)}
+INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
+                                           Lavozim: ${blank(f.lavozim)}
 
 Direktor: ___________________              Imzo: ___________________
 ${org.director_name}
@@ -451,250 +689,360 @@ M.O.                                       Sana: ${sana}
 `
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 // 5. ISHGA QABUL QILISH BUYRUG'I
-// ─────────────────────────────────────────────────────────────
+// Huquqiy asos: MK 76-moddasi; O'z DSt 1212 (hujjatlashtirish standarti)
+// ═══════════════════════════════════════════════════════════════════════════════
 export function tplBuyruqQabul(f: F, org: Org): string {
-  const sana = fmtD(f.sana)
-  const raqam = f.buyruq_raqam || '___'
-  const sinovBand = f.sinov ? ` ${f.sinov} sinov muddati bilan` : ''
+  const sana   = fmtD(f.sana)
+  const raqam  = blank(f.buyruq_raqam, '___')
+  const sinov  = f.sinov ? `, ${f.sinov} sinov muddati bilan` : ''
+  const stavka = blank(f.stavka, "to'liq (1,0)")
 
   return `${org.name}
-─────────────────────────────────────────────────
+INN: ${org.inn}
+Manzil: ${blank(f.org_manzil)}
 
-BUYRUQ № ${raqam}
-"${sana}"
+════════════════════════════════════════════════════════════════
+                         BUYRUQ № ${raqam}
+                         "${sana}"
 
-ISHGA QABUL QILISH TO'G'RISIDA
+              ISHGA QABUL QILISH TO'G'RISIDA
+════════════════════════════════════════════════════════════════
 
-Fuqaro ${f.xodim_ism || '________________'} ${fmtD(f.sana)} sanasidan boshlab
-"${f.lavozim || '___'}" lavozimiga${f.bolim ? ` "${f.bolim}" bo'limiga` : ''} ish haqi
-${f.maosh || '___'} so'm miqdorida${sinovBand} qabul qilinsin.
+O'QITAMAN / BUYURAMAN:
 
-Xodim bilan mehnat shartnomasi tuzilsin va lavozim yo'riqnomasi bilan tanishtirilsin.
+Fuqaro ${blank(f.xodim_ism)}, pasport ${blank(f.passport, 'AA 0000000')},
+"${blank(f.lavozim)}" lavozimiga${f.bolim ? ` "${f.bolim}" bo'limiga` : ''},
+${fmtD(f.sana)} sanasidan boshlab,
+ish haqi oyiga ${blank(f.maosh)} so'm miqdorida,
+${stavka} stavkada${sinov} QABUL QILINSIN.
+
+Xodim bilan O'zbekiston Respublikasi Mehnat kodeksining 75–76-moddalari
+asosida mehnat shartnomasi tuzilsin.
+
+Kadrlar bo'limiga topshiriqlar:
+  1. Mehnat shartnomasi tuzilsin va tomonlar imzosi bilan rasmiylashtirilsin;
+  2. Mehnat daftarchasiga yozuv kiritilsin;
+  3. Xodim lavozim yo'riqnomasi, tashkilot ichki mehnat tartib-qoidalari va
+     mehnat xavfsizligi qoidalari bilan tanishtirilsin, tanishganlik imzosi olinsin;
+  4. Zarur bo'lsa, xodimdan maxfiylik shartnomasi imzolatilsin.
 
 Asoslar:
-  — fuqaro ${f.xodim_ism || '________________'} ning ariza-so'rovi, "${sana}";
+  — fuqaro ${blank(f.xodim_ism)} ning "${fmtD(f.sana)}" sanali ariza-so'rovi;
   — O'zbekiston Respublikasi Mehnat kodeksining 76-moddasi.
 
-Ijro uchun mas'ul: Kadrlar bo'limi boshlig'i.
-
-─────────────────────────────────────────────────
-Direktor: ___________________  ${org.director_name}
+════════════════════════════════════════════════════════════════
+Direktor:  _________________________  ${org.director_name}
 
 M.O.
 
+Ijro uchun mas'ul: Kadrlar bo'limi boshlig'i
+
 Buyruq bilan tanishtirildi:
-___________________  ${f.xodim_ism || '________________'}  "${sana}"
+  Kadrlar bo'limi boshlig'i: _________________________  "${sana}"
+  Xodim: _________________________  ${blank(f.xodim_ism)}  "${sana}"
 `
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 // 6. ISHDAN BO'SHATISH BUYRUG'I
-// ─────────────────────────────────────────────────────────────
+// Huquqiy asos: MK 97–105-moddalar (bekor qilish asoslari);
+//               MK 168–170 (hisob-kitob va to'lovlar)
+// ═══════════════════════════════════════════════════════════════════════════════
 export function tplBuyruqBoshtash(f: F, org: Org): string {
-  const sana = fmtD(f.sana)
-  const raqam = f.buyruq_raqam || '___'
-  const sabab = f.sabab || "xodimning o'z ixtiyori (MK 99-moddasi)"
-  const mkModda = f.mk_modda || '99'
+  const sana    = fmtD(f.sana)
+  const raqam   = blank(f.buyruq_raqam, '___')
+  const sabab   = blank(f.sabab, "o'z xohishi bilan")
+  const mkModda = blank(f.mk_modda, '99')
 
   return `${org.name}
-─────────────────────────────────────────────────
+INN: ${org.inn}
+Manzil: ${blank(f.org_manzil)}
 
-BUYRUQ № ${raqam}
-"${sana}"
+════════════════════════════════════════════════════════════════
+                         BUYRUQ № ${raqam}
+                         "${sana}"
 
-ISHDAN BO'SHATISH TO'G'RISIDA
+              ISHDAN BO'SHATISH TO'G'RISIDA
+════════════════════════════════════════════════════════════════
 
-Fuqaro ${f.xodim_ism || '________________'},
-"${f.lavozim || '___'}" lavozimida${f.bolim ? ` "${f.bolim}" bo'limida` : ''} ishlaydi,
-${fmtD(f.sana)} sanasidan boshlab ishdan bo'shatilsin.
+BUYURAMAN:
 
-Ishdan bo'shatish sababi: ${sabab}.
+Fuqaro ${blank(f.xodim_ism)},${f.bolim ? ` "${f.bolim}" bo'limi` : ''} "${blank(f.lavozim)}"
+lavozimida ishlaydi, ${fmtD(f.sana)} sanasidan boshlab
+ishdan BO'SHATILSIN.
 
-Kadrlar bo'limiga topshiriq:
-  — oxirgi ish haqi va belgilangan kompensatsiyalar qonunchilikka muvofiq to'lansin;
-  — mehnat daftarchasi va shaxsiy hujjatlar xodimga topshirilsin;
-  — xodim tomonidan foydalanilgan ish joyi, jihozlar va materiallar qabul qilib olinsin.
+Bo'shatish sababi: ${sabab}
+(O'zbekiston Respublikasi Mehnat kodeksining ${mkModda}-moddasi asosida).
+
+Kadrlar bo'limi va buxgalteriyaga topshiriqlar:
+  1. Ishdan bo'shatilgan kunda barcha hisob-kitoblar amalga oshirilsin:
+     — to'lanmagan ish haqi to'liq to'lansin;
+     — foydalanilmagan ta'til kunlari uchun kompensatsiya to'lansin (MK 168-moddasi);
+     — qonunda nazarda tutilgan boshqa to'lovlar amalga oshirilsin;
+  2. Mehnat daftarchasiga tegishli yozuv kiritilsin va xodimga topshirilsin;
+  3. Xodim tomonidan foydalanilgan ish joyi, jihozlar, yo'riqnomalar, maxfiy hujjatlar
+     va korporativ vositalar (kompyuter, telefon, kalitlar) qabul qilib olinsin;
+  4. Xodimga barcha hujjatlar bo'shatilgan kunda taqdim etilsin (MK 170-moddasi).
 
 Asoslar:
-  — fuqaro ${f.xodim_ism || '________________'} ning ariza-so'rovi;
+  — fuqaro ${blank(f.xodim_ism)} ning "${fmtD(f.sana)}" sanali ariza-so'rovi;
   — O'zbekiston Respublikasi Mehnat kodeksining ${mkModda}-moddasi.
 
-─────────────────────────────────────────────────
-Direktor: ___________________  ${org.director_name}
+════════════════════════════════════════════════════════════════
+Direktor:  _________________________  ${org.director_name}
 
 M.O.
 
+Ijro uchun mas'ul: Kadrlar bo'limi boshlig'i, Buxgalteriya
+
 Buyruq bilan tanishtirildi:
-___________________  ${f.xodim_ism || '________________'}  "${sana}"
+  Kadrlar bo'limi boshlig'i: _________________________  "${sana}"
+  Xodim: _________________________  ${blank(f.xodim_ism)}  "${sana}"
 `
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 // 7. TA'TIL BUYRUG'I
-// ─────────────────────────────────────────────────────────────
+// Huquqiy asos: MK 133–145-moddalar
+// ═══════════════════════════════════════════════════════════════════════════════
 export function tplTatilBuyruq(f: F, org: Org): string {
-  const sana = fmtD()
-  const raqam = f.buyruq_raqam || '___'
-  const tatilTuri = f.tatil_turi || "asosiy yillik mehnat ta'tili"
-  const hisobiYil = f.tatil_yil || String(new Date().getFullYear())
+  const sana      = fmtD()
+  const raqam     = blank(f.buyruq_raqam, '___')
+  const tatilTuri = blank(f.tatil_turi, "asosiy yillik mehnat ta'tili")
+  const hisobYil  = blank(f.tatil_yil, String(new Date().getFullYear()))
+  const keyingiYil = String(parseInt(hisobYil) + 1)
 
   return `${org.name}
-─────────────────────────────────────────────────
+INN: ${org.inn}
+Manzil: ${blank(f.org_manzil)}
 
-BUYRUQ № ${raqam}
-"${sana}"
+════════════════════════════════════════════════════════════════
+                         BUYRUQ № ${raqam}
+                         "${sana}"
 
-TA'TIL BERISH TO'G'RISIDA
+              TA'TIL BERISH TO'G'RISIDA
+════════════════════════════════════════════════════════════════
 
-Fuqaro ${f.xodim_ism || '________________'},
-"${f.lavozim || '___'}" lavozimida${f.bolim ? ` "${f.bolim}" bo'limida` : ''} ishlovchi xodimga,
-${tatilTuri} ${fmtD(f.tatil_boshlanish)} sanasidan ${fmtD(f.tatil_tugash)} sanasigacha,
-jami ${f.kunlar_soni || '___'} ish kuni miqdorida berilsin.
+BUYURAMAN:
 
-Ta'til turi: ${tatilTuri}.
-Hisobot yili: ${hisobiYil} – ${parseInt(hisobiYil) + 1} yillar.
+Fuqaro ${blank(f.xodim_ism)},${f.bolim ? ` "${f.bolim}" bo'limi` : ''}
+"${blank(f.lavozim)}" lavozimida ishlovchi xodimga,
 
-Ta'til puli: qonunchilikka muvofiq ta'til boshlanishidan kamida 3 kun oldin to'lansin.
+Ta'til turi: ${tatilTuri}
+(MK 134–136-moddalar asosida)
+
+${fmtD(f.tatil_boshlanish)} sanasidan ${fmtD(f.tatil_tugash)} sanasigacha,
+jami: ${blank(f.kunlar_soni, '___')} ish kuni
+
+TA'TIL BERILSIN.
+
+Hisobot yili: ${hisobYil} – ${keyingiYil} yillar.
+
+Buxgalteriyaga:
+  Ta'til puli O'zR Mehnat kodeksining 141-moddasi va amaldagi qonunchilikka
+  muvofiq ta'til boshlanishidan kamida 3 (uch) kun oldin to'liq to'lansin.
 
 Asoslar:
-  — fuqaro ${f.xodim_ism || '________________'} ning ariza-so'rovi;
-  — O'zbekiston Respublikasi Mehnat kodeksining 133–139-moddalari.
+  — fuqaro ${blank(f.xodim_ism)} ning ta'til so'rovi arizasi;
+  — O'zbekiston Respublikasi Mehnat kodeksining 133–141-moddalari;
+  — Mehnat ta'tili jadvaliga muvofiqlik.
 
-─────────────────────────────────────────────────
-Direktor: ___________________  ${org.director_name}
+════════════════════════════════════════════════════════════════
+Direktor:  _________________________  ${org.director_name}
 
 M.O.
 
 Buyruq bilan tanishtirildi:
-___________________  ${f.xodim_ism || '________________'}  "${sana}"
+  Buxgalteriya: _________________________  "${sana}"
+  Xodim: _________________________  ${blank(f.xodim_ism)}  "${sana}"
 `
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 // 8. LAVOZIM O'ZGARTIRISH BUYRUG'I
-// ─────────────────────────────────────────────────────────────
+// Huquqiy asos: MK 80–82-moddalar (o'tkazish va o'zgartirish)
+// ═══════════════════════════════════════════════════════════════════════════════
 export function tplBuyruqLavozim(f: F, org: Org): string {
-  const sana = fmtD(f.sana)
-  const raqam = f.buyruq_raqam || '___'
+  const sana  = fmtD(f.sana)
+  const raqam = blank(f.buyruq_raqam, '___')
 
   return `${org.name}
-─────────────────────────────────────────────────
+INN: ${org.inn}
+Manzil: ${blank(f.org_manzil)}
 
-BUYRUQ № ${raqam}
-"${sana}"
+════════════════════════════════════════════════════════════════
+                         BUYRUQ № ${raqam}
+                         "${sana}"
 
-LAVOZIM (ISH SHAROITI) O'ZGARTIRISH TO'G'RISIDA
+              LAVOZIMNI O'ZGARTIRISH (O'TKAZISH) TO'G'RISIDA
+════════════════════════════════════════════════════════════════
 
-Fuqaro ${f.xodim_ism || '________________'},
-hozirda "${f.eski_lavozim || '___'}" lavozimida ishlovchi xodim,
-${fmtD(f.sana)} sanasidan boshlab "${f.yangi_lavozim || '___'}" lavozimiga${f.yangi_bolim ? ` "${f.yangi_bolim}" bo'limiga` : ''} o'tkazilsin.
+BUYURAMAN:
 
-Yangi lavozim bo'yicha ish haqi: ${f.yangi_maosh || '___'} so'm.
-O'tkazish sababi: ${f.sabab || '___________________________________________'}.
+Fuqaro ${blank(f.xodim_ism)},
+hozirda "${blank(f.eski_lavozim)}" lavozimida ishlaydi,
 
-Kadrlar bo'limiga topshiriq:
-  — mehnat shartnomasiga qo'shimcha kelishuv tuzilsin;
-  — lavozim yo'riqnomasi bilan tanishtirilsin.
+${fmtD(f.sana)} sanasidan boshlab
 
-Xodimning yozma roziligi olindi. ___________________
+"${blank(f.yangi_lavozim)}" lavozimiga${f.yangi_bolim ? ` "${f.yangi_bolim}" bo'limiga` : ''}
+
+O'TKAZILSIN.
+
+Yangi lavozim bo'yicha oylik ish haqi: ${blank(f.yangi_maosh)} so'm.
+O'tkazish sababi: ${blank(f.sabab)}.
+
+Kadrlar bo'limiga topshiriqlar:
+  1. Mehnat shartnomasiga qo'shimcha kelishuv tuzilsin va tomonlar imzosi olinsin
+     (MK 80-moddasi — shartnoma shartlari o'zgarishi faqat yozma kelishuv bilan amalga oshadi);
+  2. Yangi lavozim yo'riqnomasi tayyorlansin va xodim imzosi bilan tanishtirilsin;
+  3. Mehnat daftarchasiga o'tkazish to'g'risida yozuv kiritilsin;
+  4. Buxgalteriyaga yangi ish haqi ma'lumotlari yuborilsin.
+
+ESLATMA: MK 81-moddasiga muvofiq, mehnat sharoitlarining muhim o'zgarishlari
+     kamida 2 oy oldin xodimga yozma bildirilishi shart. Xodimning yozma roziligi
+     olindi: _________________ "${sana}"
 
 Asoslar:
-  — xodimning ariza-so'rovi va yozma roziligi;
-  — O'zbekiston Respublikasi Mehnat kodeksining 82-moddasi.
+  — fuqaro ${blank(f.xodim_ism)} ning yozma roziligi;
+  — O'zbekiston Respublikasi Mehnat kodeksining 80 va 82-moddalari.
 
-─────────────────────────────────────────────────
-Direktor: ___________________  ${org.director_name}
+════════════════════════════════════════════════════════════════
+Direktor:  _________________________  ${org.director_name}
 
 M.O.
 
 Buyruq bilan tanishtirildi:
-___________________  ${f.xodim_ism || '________________'}  "${sana}"
+  Kadrlar bo'limi boshlig'i: _________________________  "${sana}"
+  Xodim: _________________________  ${blank(f.xodim_ism)}  "${sana}"
 `
 }
 
-// ─────────────────────────────────────────────────────────────
-// 9. MUKOFOT BERISH BUYRUG'I
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 9. MUKOFOT (RAG'BAT) BERISH BUYRUG'I
+// Huquqiy asos: MK 154–157-moddalar (rag'batlantirish)
+// ═══════════════════════════════════════════════════════════════════════════════
 export function tplBuyruqMukofot(f: F, org: Org): string {
-  const sana = fmtD(f.sana)
-  const raqam = f.buyruq_raqam || '___'
-  const sabab = f.sabab || "mehnatdagi yuqori natijalari va fidokorona xizmati munosabati bilan"
+  const sana   = fmtD(f.sana)
+  const raqam  = blank(f.buyruq_raqam, '___')
+  const sabab  = blank(f.sabab, "mehnatdagi yuqori natijalari uchun")
+  const mukTuri = blank(f.mukofot_turi, "bir martalik pul mukofoti")
 
   return `${org.name}
-─────────────────────────────────────────────────
+INN: ${org.inn}
+Manzil: ${blank(f.org_manzil)}
 
-BUYRUQ № ${raqam}
-"${sana}"
+════════════════════════════════════════════════════════════════
+                         BUYRUQ № ${raqam}
+                         "${sana}"
 
-MUKOFOT (RAG'BAT) BERISH TO'G'RISIDA
+              MUKOFOT (RAG'BAT) BERISH TO'G'RISIDA
+════════════════════════════════════════════════════════════════
 
-${sabab} fuqaro ${f.xodim_ism || '________________'},
-"${f.lavozim || '___'}" lavozimida ishlovchi xodimga,
-${f.mukofot_miqdori || '___'} so'm miqdorida bir martalik pul mukofoti berilsin.
+BUYURAMAN:
 
-Mukofot turi: ${f.mukofot_turi || "Bir martalik pul mukofoti"}.
-Mukofot sababi: ${sabab}.
-To'lov muddati: buyruq chiqarilgan kundan boshlab 3 ish kuni ichida.
+Fuqaro ${blank(f.xodim_ism)},
+"${blank(f.lavozim)}" lavozimida${f.bolim ? ` "${f.bolim}" bo'limida` : ''} ishlovchi xodimga,
+
+${sabab} munosabati bilan
+
+Mukofot turi: ${mukTuri}
+Mukofot miqdori: ${blank(f.mukofot_miqdori)} so'm
+
+BERILSIN.
+
+Mukofot to'lovi shu buyruq chiqarilgan kundan boshlab 3 (uch) ish kuni ichida
+buxgalteriya tomonidan xodimning plastik kartasiga yoki naqd to'lansin.
+
+Mukofot foydadan to'lanadi va qonunchilikda belgilangan tartibda soliqqa tortiladi.
 
 Asoslar:
-  — bo'lim boshlig'ining taqdimномаsi;
-  — O'zbekiston Respublikasi Mehnat kodeksining 154-moddasi.
+  — bo'lim boshlig'ining "${sana}" sanali taqdimномаsi;
+  — O'zbekiston Respublikasi Mehnat kodeksining 154-moddasi;
+  — tashkilotning mukofot to'g'risidagi ichki nizomi (mavjud bo'lsa).
 
-─────────────────────────────────────────────────
-Direktor: ___________________  ${org.director_name}
+════════════════════════════════════════════════════════════════
+Direktor:  _________________________  ${org.director_name}
 
 M.O.
 
 Buyruq bilan tanishtirildi:
-___________________  ${f.xodim_ism || '________________'}  "${sana}"
+  Buxgalteriya: _________________________  "${sana}"
+  Xodim: _________________________  ${blank(f.xodim_ism)}  "${sana}"
 `
 }
 
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 // 10. INTIZOMIY JAZO BUYRUG'I
-// ─────────────────────────────────────────────────────────────
+// Huquqiy asos: MK 181–186-moddalar (intizomiy javobgarlik va tartib)
+// ═══════════════════════════════════════════════════════════════════════════════
 export function tplBuyruqJazo(f: F, org: Org): string {
-  const sana = fmtD(f.sana)
-  const raqam = f.buyruq_raqam || '___'
-  const jazaTuri = f.jazo_turi || 'hayfsan'
+  const sana      = fmtD(f.sana)
+  const raqam     = blank(f.buyruq_raqam, '___')
+  const jazaTuri  = blank(f.jazo_turi, 'hayfsan (ogoh qilish)')
+  const holat     = blank(f.holat, 'ichki mehnat tartib-qoidalarini buzish')
+  const qbSana    = fmtD(f.qoidabuzarlik_sana)
+  const tushSana  = fmtD(f.tushuntirish_sana)
 
   return `${org.name}
-─────────────────────────────────────────────────
+INN: ${org.inn}
+Manzil: ${blank(f.org_manzil)}
 
-BUYRUQ № ${raqam}
-"${sana}"
+════════════════════════════════════════════════════════════════
+                         BUYRUQ № ${raqam}
+                         "${sana}"
 
-INTIZOMIY JAZO QOʻLLASH TO'G'RISIDA
+              INTIZOMIY JAZO QO'LLASH TO'G'RISIDA
+════════════════════════════════════════════════════════════════
 
-Fuqaro ${f.xodim_ism || '________________'},
-"${f.lavozim || '___'}" lavozimida${f.bolim ? ` "${f.bolim}" bo'limida` : ''} ishlovchi xodimga,
+BUYURAMAN:
 
-${f.holat || 'ichki mehnat tartib-qoidalarini buzganligi'}
-munosabati bilan "${jazaTuri}" shaklidagi intizomiy jazo qo'llanilsin.
+Fuqaro ${blank(f.xodim_ism)},${f.bolim ? ` "${f.bolim}" bo'limi` : ''}
+"${blank(f.lavozim)}" lavozimida ishlovchi xodimga,
 
-Jazo qo'llash uchun asos:
-  — xodimdan tushuntirish xati olindi (sana: ${fmtD(f.tushuntirish_sana) || '___'});
-  — bo'lim boshlig'ining xizmati yozuvi.
+Qoidabuzarlik sana: ${qbSana}
+Qoidabuzarlikning mazmuni: ${holat}
 
-Xodim haqidagi ma'lumot:
-  — Qo'llaniladigan jazo turi: ${jazaTuri}
-  — Qoidabuzarlik sanasi: ${fmtD(f.qoidabuzarlik_sana) || '___'}
-  — Qoidabuzarlikning mazmuni: ${f.holat || '___'}
+O'ZBEKISTON RESPUBLIKASI MEHNAT KODEKSINING 181-MODDASIGA MUVOFIQ:
 
-Muhim: Xodim ushbu buyruqni olganidan so'ng 10 kun ichida mehnat nizolari komissiyasiga
-yoki sudga murojaat qilish huquqiga ega.
+"${jazaTuri}" ko'rinishidagi INTIZOMIY JAZO QO'LLANILSIN.
+
+────────────────────────────────────────────────────────────────
+QONUNIY PROTSEDURA BAJARILGANLIGI TO'G'RISIDA:
+────────────────────────────────────────────────────────────────
+1. Xodimdan yozma tushuntirish so'raldi (MK 182-moddasi 2-qismi).
+2. Xodim tushuntirish xatini taqdim etdi / rad etdi:
+   "${tushSana}" — ___________________________
+3. Qoidabuzarlik aniqlangan kundan boshlab 1 (bir) oy ichida chiqarilmoqda
+   (MK 183-moddasi: 1 oydan kech va 6 oydan keyin jazo qo'llanilmaydi).
+4. Xodim bu voqeaga oldin jazo olmagan / avvalgi jazo № __ dan hisob qilinganda
+   ushbu jazo bir qoidabuzarlik uchun ikkinchi jazo emas.
+
+────────────────────────────────────────────────────────────────
+XODIMGA ESLATMA (MK 186-moddasi):
+────────────────────────────────────────────────────────────────
+Siz ushbu buyruqni qabul qilgan kundan boshlab:
+  — 3 oy ichida mehnat nizolari komissiyasiga (MNK);
+  — yoki bevosita sudga murojaat qilish huquqiga egasiz.
+Keyingi 1 yil mobaynida yangi intizom buzilmasa, jazo o'z-o'zidan
+yo'qolgan hisoblanadi (MK 185-moddasi).
 
 Asoslar:
-  — O'zbekiston Respublikasi Mehnat kodeksining 181–186-moddalari.
+  — bo'lim boshlig'ining xizmati yozuvi;
+  — xodimning tushuntirish xati (${tushSana});
+  — O'zbekiston Respublikasi Mehnat kodeksining 181–183-moddalari.
 
-─────────────────────────────────────────────────
-Direktor: ___________________  ${org.director_name}
+════════════════════════════════════════════════════════════════
+Direktor:  _________________________  ${org.director_name}
 
 M.O.
 
-Buyruq bilan tanishtirildi:
-___________________  ${f.xodim_ism || '________________'}  "${sana}"
+Buyruq bilan tanishtirildi (3 kun ichida topshirilishi shart — MK 182 4-qism):
+  Kadrlar bo'limi: _________________________  "${sana}"
+  Xodim: _________________________  ${blank(f.xodim_ism)}  "${sana}"
+
+Xodim imzo qo'yishdan bosh tortsa, dalolatnoma tuziladi va buyruq yopiq
+xatda pochta orqali yuboriladi (MK 182 5-qismi).
 `
 }
