@@ -706,7 +706,55 @@ export default function Home() {
             </Link>
           </div>
         </div>
-        <p className="text-center text-gray-600 text-sm mt-10">{l.payNote}</p>
+        {/* ── PAYMENT DETAILS ── */}
+        <div className="mt-14 max-w-2xl mx-auto">
+          <div className="bg-gradient-to-br from-emerald-900/20 to-emerald-950/10 border border-emerald-700/30 rounded-3xl p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-emerald-500/15 rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-emerald-400"/>
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base">
+                  {lang==='ru' ? 'Реквизиты для оплаты' : lang==='oz' ? 'Тўлов реквизитлари' : "To'lov rekvizitlari"}
+                </h3>
+                <p className="text-emerald-400 text-xs mt-0.5">
+                  {lang==='ru' ? 'Банковский перевод · Активация в течение 24 часов' : lang==='oz' ? 'Банк ўтказмаси · 24 соат ичида активация' : "Bank o'tkazma · 24 soat ichida aktivatsiya"}
+                </p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {[
+                { label: lang==='ru'?'Организация':lang==='oz'?'Ташкилот':"Tashkilot", value: '"JAMSHIDBEK NUR KURGAN" MCHJ' },
+                { label: 'STIR', value: '307367795' },
+                { label: lang==='ru'?'Расчётный счёт':lang==='oz'?'Ҳисоб рақами':"Hisob raqami", value: '20208000505219713001' },
+                { label: lang==='ru'?'Банк':lang==='oz'?'Банк':'Bank', value: '"Biznesni rivojlantirish banki" ATB Bosh ofisi' },
+                { label: 'MFO', value: '01037' },
+              ].map((row, i) => (
+                <div key={i} className="flex items-start justify-between gap-4 py-2.5 border-b border-white/5 last:border-0">
+                  <span className="text-gray-500 text-sm flex-shrink-0">{row.label}</span>
+                  <span className="text-white text-sm font-medium text-right">{row.value}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 pt-5 border-t border-white/5 flex items-center gap-3 bg-white/[0.03] rounded-xl p-4">
+              <div className="w-9 h-9 bg-blue-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="text-blue-400 text-base">✉</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-gray-300 text-sm">
+                  {lang==='ru'
+                    ? 'После оплаты отправьте чек на:'
+                    : lang==='oz'
+                    ? "To'lovdan so'ng chekni yuboring:"
+                    : "To'lovdan so'ng chekni yuboring:"}
+                </p>
+                <a href="tel:+998979291970" className="text-blue-400 font-bold text-base hover:text-blue-300 transition">
+                  +998 97 929 19 70
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ── TRUST STRIP ── */}
