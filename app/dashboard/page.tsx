@@ -84,6 +84,44 @@ export default function DashboardOverviewPage() {
     return daysOld >= 330
   })
 
+  // ── Onboarding: new user with no organization ────────────────────────────
+  if (orgs.length === 0) {
+    return (
+      <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-950 flex items-center justify-center min-h-screen">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center text-4xl mx-auto shadow-lg shadow-blue-900/40">
+            🏢
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-2">Xush kelibsiz!</h1>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              Shartnoma.uz dan foydalanish uchun avval tashkilotingizni qo&apos;shing.
+              Bu bir necha soniya vaqt oladi.
+            </p>
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 text-left space-y-3">
+            <div className="flex items-center gap-3 text-sm text-gray-300">
+              <span className="w-6 h-6 bg-blue-900 rounded-full flex items-center justify-center text-blue-300 text-xs font-bold shrink-0">1</span>
+              Tashkilot nomini va INN raqamini kiriting
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-300">
+              <span className="w-6 h-6 bg-blue-900 rounded-full flex items-center justify-center text-blue-300 text-xs font-bold shrink-0">2</span>
+              Direktor va bank rekvizitlarini to&apos;ldiring
+            </div>
+            <div className="flex items-center gap-3 text-sm text-gray-300">
+              <span className="w-6 h-6 bg-blue-900 rounded-full flex items-center justify-center text-blue-300 text-xs font-bold shrink-0">3</span>
+              Shartnoma, kadrlar va hujjatlaringizni boshqaring
+            </div>
+          </div>
+          <Link href="/dashboard/tashkilotlar"
+            className="block w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition text-sm">
+            + Tashkilot qo&apos;shish
+          </Link>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-950">
 

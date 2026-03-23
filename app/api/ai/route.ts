@@ -62,6 +62,28 @@ function truncate(text: string, max = 4000): string {
   return text.length <= max ? text : text.slice(0, max) + '\n...[qisqartirildi]'
 }
 
+// Prompt injection prevention: strip known injection patterns from user input
+function sanitize(val: unknown): string {
+  if (typeof val !== 'string') return String(val ?? '')
+  return val
+    .slice(0, 2000) // per-field limit
+    .replace(/\bignore\s+(previous|all|above|prior)\b/gi, '')
+    .replace(/\bsystem\s*:/gi, '')
+    .replace(/\bassistant\s*:/gi, '')
+    .replace(/\buser\s*:/gi, '')
+    .replace(/<\|.+?\|>/g, '') // token-like patterns
+    .trim()
+}
+
+function sanitizeDetails(details: unknown): Record<string, string> {
+  if (!details || typeof details !== 'object') return {}
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(details as Record<string, unknown>)) {
+    out[k] = sanitize(v)
+  }
+  return out
+}
+
 function jsonOnly(lang: string) {
   return lang === 'ru' ? 'Верните только JSON, без пояснений.' :
          lang === 'oz' ? 'Фақат JSON қайтаринг.' :
@@ -154,7 +176,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { type, content, lang = 'uz', question, instruction,
             target_lang, description, details: detailsRaw, data: dataRaw, analysis } = body
-    const details = detailsRaw || dataRaw
+    const details = sanitizeDetails(detailsRaw || dataRaw)
 
     const jOnly = jsonOnly(lang)
     let prompt = ''
