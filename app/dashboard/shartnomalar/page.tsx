@@ -9,13 +9,13 @@ import { useDashboard } from '../context'
 import type { Contract } from '@/lib/types'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
 import { getStructure, structureToText, numberToWords, formatDateUz } from '@/lib/contractStructures'
-import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
+import { type AppTemplate } from '@/lib/defaultTemplates'
 import ContractModal, { type ContractForm } from './_components/ContractModal'
 import ViewContractModal from './_components/ViewContractModal'
 import AiModal from './_components/AiModal'
 import { cyrillicToLatin } from '@/lib/downloadUtils'
 import { latinToCyrillic } from '@/lib/scriptNorm'
-import { fillPlaceholders, type PlaceholderData } from '@/lib/contractUtils'
+import { fillPlaceholders } from '@/lib/contractUtils'
 import { fetchAi } from '@/lib/fetchAi'
 import { logAudit } from '@/lib/audit'
 import { useToast } from '@/lib/toast'
@@ -1241,7 +1241,6 @@ export default function ShartnomalarPage() {
 
   // ── Quota info ─────────────────────────────────────────────────────────────
   const isNearLimit = isFree && orgContracts.length >= 4
-  const isPremium = !isFree
 
   // ─── JSX ──────────────────────────────────────────────────────────────────
 
