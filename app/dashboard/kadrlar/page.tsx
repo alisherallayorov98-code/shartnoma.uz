@@ -271,7 +271,7 @@ const CATS: { key: Category; label: string; icon: string }[] = [
 
 // ── Main component ───────────────────────────────────────────────────────────
 export default function KadrlarPage() {
-  const { activeOrg, isFree, openUpgradeModal } = useDashboard()
+  const { activeOrg, hasAiAccess, openUpgradeModal } = useDashboard()
   const [activeCat, setActiveCat] = useState<Category>('shartnoma')
   const [selected, setSelected] = useState<KadrFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
@@ -306,6 +306,7 @@ export default function KadrlarPage() {
     if (!currentFeature || !activeOrg) {
       setError(!activeOrg ? "Avval tashkilot tanlang!" : ""); return
     }
+    if (currentFeature.useAI && !hasAiAccess()) { openUpgradeModal(); return }
     setLoading(true); setError(''); setResult(null)
 
     try {
@@ -404,10 +405,16 @@ export default function KadrlarPage() {
           </p>
         </div>
 
-        {isFree && (
-          <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-4 flex items-center gap-3">
-            <span className="text-xl">⭐</span>
-            <div className="flex-1 text-sm text-yellow-300">Bu funksiyalar Premium tarifda to&apos;liq ishlaydi.</div>
+        {!hasAiAccess() && (
+          <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/30 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-white text-sm font-semibold mb-0.5">✦ Pro versiyada ishlaydi</div>
+              <div className="text-gray-400 text-xs">AI asosidagi hujjatlar faqat Standart yoki AI Pro tarifida ishlaydi</div>
+            </div>
+            <button onClick={openUpgradeModal}
+              className="shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition hover:opacity-90">
+              Pro versiyani olish →
+            </button>
           </div>
         )}
 

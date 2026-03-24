@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
-import { getAiUsedToday, incrementAiUsage } from '@/lib/aiUsage'
 import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
 import { fetchAi } from '@/lib/fetchAi'
 import { useToast } from '@/lib/toast'
@@ -40,7 +39,7 @@ export default function YuristPage() {
   const { lang } = useLang()
   const { toast } = useToast()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
-  const { contracts, activeOrg, isFree, subscription, openUpgradeModal } = useDashboard()
+  const { contracts, activeOrg, hasAiAccess, subscription, openUpgradeModal } = useDashboard()
 
   const [hubFeature, setHubFeature] = useState<HubFeature>('xulosa')
   const [hubContract, setHubContract] = useState('')
@@ -52,20 +51,14 @@ export default function YuristPage() {
   const [hubLoading, setHubLoading] = useState(false)
   const [hubResult, setHubResult] = useState<Record<string, unknown> | null>(null)
   const [hubError, setHubError] = useState('')
-  const [aiUsedToday, setAiUsedToday] = useState(() => getAiUsedToday())
   const [previewText, setPreviewText] = useState<string | null>(null)
 
   const contractList = contracts.filter(c => c.organization_id === activeOrg?.id)
   const sel = FEATURES.find(f => f.key === hubFeature)!
-  const canUse = !sel.premiumOnly || !isFree
-  const limitReached = isFree && aiUsedToday >= AI_FREE_DAILY
+  const canUse = hasAiAccess()
 
   async function runHubFeature() {
-    const usedToday = getAiUsedToday()
-    if (isFree && usedToday >= AI_FREE_DAILY) {
-      setHubError(`Kunlik bepul limit (${AI_FREE_DAILY} ta) tugadi. Standart yoki Premiumga o'ting.`)
-      return
-    }
+    if (!hasAiAccess()) { openUpgradeModal(); return }
     const selectedContract = contracts.find(c => c.id === hubContract)
     const content = selectedContract?.content || ''
     const needsContract = ['tahlil', 'grammatika', 'xulosa', 'tarjima', 'qa'].includes(hubFeature)
@@ -99,7 +92,6 @@ export default function YuristPage() {
         return
       }
       setHubResult(result)
-      if (isFree) { incrementAiUsage(); setAiUsedToday(getAiUsedToday()) }
     } catch {
       setHubError('Serverga ulanishda xatolik')
     } finally {
@@ -115,23 +107,11 @@ export default function YuristPage() {
           <h1 className="text-xl font-bold text-white flex items-center gap-2">⚖️ Yurist AI</h1>
           <p className="text-gray-500 text-sm mt-0.5">Claude AI yordamida shartnomalaringizni tahlil qiling, tarjima qiling va takomillashtiring</p>
         </div>
-        {isFree ? (
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-xs text-gray-500">Bugungi foydalanish</div>
-              <div className={`text-sm font-bold ${aiUsedToday >= AI_FREE_DAILY ? 'text-red-400' : 'text-white'}`}>
-                {aiUsedToday} / {AI_FREE_DAILY}
-              </div>
-              <div className="w-24 h-1.5 bg-gray-800 rounded-full mt-1">
-                <div className={`h-1.5 rounded-full transition-all ${aiUsedToday >= AI_FREE_DAILY ? 'bg-red-500' : 'bg-blue-500'}`}
-                  style={{ width: `${Math.min(aiUsedToday / AI_FREE_DAILY * 100, 100)}%` }}/>
-              </div>
-            </div>
-            <button onClick={openUpgradeModal}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white text-xs font-semibold px-4 py-2 rounded-xl transition">
-              ✦ Cheksiz olish →
-            </button>
-          </div>
+        {!hasAiAccess() ? (
+          <button onClick={openUpgradeModal}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white text-xs font-semibold px-4 py-2 rounded-xl transition">
+            ✦ Pro versiyani olish →
+          </button>
         ) : (
           <span className="text-xs bg-purple-900/50 border border-purple-700 text-purple-300 px-3 py-1.5 rounded-xl font-medium">
             ⭐ {subscription?.plan === 'ai_pro' ? 'AI Pro' : subscription?.plan === 'standard' ? 'Standart' : 'Premium'} — Cheksiz foydalanish
@@ -142,7 +122,7 @@ export default function YuristPage() {
       {/* Feature cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {FEATURES.map(f => {
-          const locked = f.premiumOnly && isFree
+          const locked = !hasAiAccess()
           return (
             <button key={f.key}
               onClick={() => { setHubFeature(f.key); setHubResult(null); setHubError(''); setHubLoading(false); if (!f.needsContract) setHubContract('') }}
@@ -169,8 +149,8 @@ export default function YuristPage() {
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xl">{sel.icon}</span>
           <h3 className="font-semibold text-white">{sel.name}</h3>
-          {sel.premiumOnly && isFree && (
-            <span className="ml-auto text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-0.5 rounded-full">Premium xizmat</span>
+          {!hasAiAccess() && (
+            <span className="ml-auto text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-0.5 rounded-full">Pro versiya</span>
           )}
         </div>
 
@@ -300,10 +280,10 @@ export default function YuristPage() {
             <span>⚠️</span>
             <div>
               {hubError}
-              {hubError.includes('limit') && (
+              {hubError.includes('premium') && (
                 <button onClick={openUpgradeModal}
                   className="block mt-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs px-3 py-1.5 rounded-lg">
-                  Premiumga o'tish →
+                  Pro versiyani olish →
                 </button>
               )}
             </div>
@@ -314,22 +294,20 @@ export default function YuristPage() {
         {!canUse && (
           <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/50 rounded-xl p-5 text-center">
             <div className="text-3xl mb-2">🔒</div>
-            <div className="text-white font-semibold mb-1">Premium xizmat</div>
-            <div className="text-gray-400 text-sm mb-4">Bu funksiyadan foydalanish uchun Standart yoki Premium tarifiga o'ting</div>
+            <div className="text-white font-semibold mb-1">Pro versiyada ishlaydi</div>
+            <div className="text-gray-400 text-sm mb-4">Yurist AI faqat Standart yoki AI Pro tarifida ishlaydi. Hoziroq ulaning va shartnomalaringizni AI bilan tahlil qiling.</div>
             <button onClick={openUpgradeModal}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition">
-              ✦ Tarifni yaxshilash →
+              ✦ Pro versiyani olish →
             </button>
           </div>
         )}
 
         {/* Action button */}
         {canUse && !hubLoading && !hubResult && (
-          <button onClick={runHubFeature} disabled={limitReached}
-            className={`w-full py-3 rounded-xl text-sm font-semibold transition ${
-              limitReached ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 text-white'
-            }`}>
-            {limitReached ? `Kunlik limit tugadi (${AI_FREE_DAILY} ta)` : `${sel.icon} ${sel.name} boshlash`}
+          <button onClick={runHubFeature}
+            className="w-full py-3 rounded-xl text-sm font-semibold transition bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 text-white">
+            {sel.icon} {sel.name} boshlash
           </button>
         )}
 
@@ -578,15 +556,15 @@ export default function YuristPage() {
       </div>
 
       {/* Upgrade banner for free users */}
-      {isFree && (
+      {!hasAiAccess() && (
         <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/30 rounded-2xl p-5 flex items-center justify-between gap-4">
           <div>
-            <div className="text-white font-semibold text-sm mb-1">✦ Standart yoki Premiumga o'ting</div>
-            <div className="text-gray-400 text-xs">Cheksiz AI, 4 ta premium funksiya, imzo/muhr avtomatik va ko'proq</div>
+            <div className="text-white font-semibold text-sm mb-1">✦ Pro versiyada ishlaydi</div>
+            <div className="text-gray-400 text-xs">Shartnoma tahlili, tarjima, grammatika, yuridik maslahat — barchasi AI bilan</div>
           </div>
           <button onClick={openUpgradeModal}
             className="shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
-            Upgrade →
+            Pro versiyani olish →
           </button>
         </div>
       )}

@@ -58,6 +58,7 @@ type DashboardContextType = {
   loadMoreContracts: () => Promise<void>
   reloadSubscription: () => Promise<void>
   canCreateContract: () => boolean
+  hasAiAccess: () => boolean
   getQuotaInfo: () => QuotaInfo | null
   openUpgradeModal: () => void
   closeUpgradeModal: () => void
@@ -80,7 +81,7 @@ export const DashboardContext = createContext<DashboardContextType>({
   isFree: true, isDemoActive: false, isSubValid: false, subDaysLeft: null,
   switchOrg: () => {}, reloadOrgs: async () => {}, reloadCps: async () => {},
   reloadContracts: async () => {}, loadMoreContracts: async () => {}, reloadSubscription: async () => {},
-  canCreateContract: () => false, getQuotaInfo: () => null,
+  canCreateContract: () => false, hasAiAccess: () => false, getQuotaInfo: () => null,
   openUpgradeModal: () => {}, closeUpgradeModal: () => {}, upgradeModalOpen: false,
   logout: async () => {},
 })
@@ -242,6 +243,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     return true
   }
 
+  function hasAiAccess(): boolean {
+    if (!subscription) return false
+    return subscription.plan !== 'free' && subscription.is_active
+  }
+
   function getQuotaInfo(): QuotaInfo | null {
     if (!activeOrg) return null
     const orgContracts = contracts.filter(c => c.organization_id === activeOrg.id)
@@ -290,7 +296,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       isFree, isDemoActive, isSubValid, subDaysLeft,
       switchOrg,
       reloadOrgs, reloadCps, reloadContracts, loadMoreContracts, reloadSubscription,
-      canCreateContract, getQuotaInfo,
+      canCreateContract, hasAiAccess, getQuotaInfo,
       openUpgradeModal: () => setUpgradeModalOpen(true),
       closeUpgradeModal: () => setUpgradeModalOpen(false),
       upgradeModalOpen,

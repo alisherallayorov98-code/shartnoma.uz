@@ -83,7 +83,7 @@ const FEATURES: FeatureConfig[] = [
 ]
 
 export default function BuxgalterPage() {
-  const { activeOrg, isFree, contracts, openUpgradeModal } = useDashboard()
+  const { activeOrg, hasAiAccess, contracts, openUpgradeModal } = useDashboard()
   const [selected, setSelected] = useState<BuxFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -107,6 +107,7 @@ export default function BuxgalterPage() {
   async function handleGenerate() {
     if (!currentFeature) return
     if (!activeOrg) { setError("Avval tashkilot tanlang!"); return }
+    if (!hasAiAccess()) { openUpgradeModal(); return }
 
     setLoading(true)
     setError('')
@@ -195,10 +196,16 @@ export default function BuxgalterPage() {
           </div>
         </div>
 
-        {isFree && (
-          <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-4 flex items-center gap-3">
-            <span className="text-xl">⭐</span>
-            <div className="flex-1 text-sm text-yellow-300">Bu funksiyalar Premium tarifda to&apos;liq ishlaydi.</div>
+        {!hasAiAccess() && (
+          <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/30 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-white text-sm font-semibold mb-0.5">✦ Pro versiyada ishlaydi</div>
+              <div className="text-gray-400 text-xs">Buxgalteriya hujjatlari faqat Standart yoki AI Pro tarifida ishlaydi</div>
+            </div>
+            <button onClick={openUpgradeModal}
+              className="shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition hover:opacity-90">
+              Pro versiyani olish →
+            </button>
           </div>
         )}
 

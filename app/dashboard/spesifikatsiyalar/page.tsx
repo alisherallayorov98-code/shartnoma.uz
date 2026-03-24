@@ -35,7 +35,7 @@ const emptySpecItem = (): SpecItem => calcItem({ nomi: '', birlik: 'dona', miqdo
 export default function SpesifikatsiyalarPage() {
   const { lang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
-  const { activeOrg, contracts, cps } = useDashboard()
+  const { activeOrg, contracts, cps, isFree, openUpgradeModal } = useDashboard()
   const { toast } = useToast()
 
   const [specs, setSpecs] = useState<Specification[]>([])
@@ -431,6 +431,7 @@ export default function SpesifikatsiyalarPage() {
           <p className="text-gray-500 text-sm mt-0.5">{specs.length} ta spesifikatsiya</p>
         </div>
         <button onClick={() => {
+          if (isFree && specs.length >= 5) { openUpgradeModal(); return }
           setEditingSpec(null)
           setSpecForm({ ...emptySpecForm, spec_number: nextSpecNumber() })
           setSpecItems([emptySpecItem()])
