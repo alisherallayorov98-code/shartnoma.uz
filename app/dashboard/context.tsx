@@ -192,12 +192,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       if (!session) { router.push('/login'); return }
       setUserEmail(session.user.email || '')
       setUserId(session.user.id)
-      const adminCheck = await fetch('/api/admin', {
-        method: 'HEAD',
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      })
+      const [adminCheck] = await Promise.all([
+        fetch('/api/admin', { method: 'HEAD', headers: { Authorization: `Bearer ${session.access_token}` } }),
+        loadOrgs(),
+        loadCps(),
+        loadProfile(session.user.id),
+      ])
       setIsAdmin(adminCheck.ok)
-      await Promise.all([loadOrgs(), loadCps(), loadProfile(session.user.id)])
       setInitialLoading(false)
     }
     init()
