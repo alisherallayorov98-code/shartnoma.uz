@@ -244,8 +244,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }
 
   function hasAiAccess(): boolean {
+    if (isAdmin) return true
     if (!subscription) return false
-    return subscription.plan !== 'free' && subscription.is_active
+    return subscription.plan === 'ai_pro' && subscription.is_active
   }
 
   function getQuotaInfo(): QuotaInfo | null {
