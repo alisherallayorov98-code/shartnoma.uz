@@ -101,6 +101,7 @@ export default function ShartnomalarPage() {
   const {
     contracts, contractsTotal, orgs, cps, activeOrg, subscription, isFree,
     reloadContracts, loadMoreContracts, reloadCps, canCreateContract, openUpgradeModal, userId,
+    hasAiAccess,
   } = useDashboard()
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -151,22 +152,27 @@ export default function ShartnomalarPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, activeOrg])
 
-  // ── Server-side search (debounced, falls back to client filter) ────────────
+  // ── Server-side search (debounced + AbortController) ─────────────────────
   useEffect(() => {
     if (searchDebounce.current) clearTimeout(searchDebounce.current)
     if (search.length < 3) { setServerResults(null); return }
+    const controller = new AbortController()
     searchDebounce.current = setTimeout(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(search)}`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
+          signal: controller.signal,
         })
         if (!res.ok) { setServerResults(null); return }
         const json = await res.json()
         setServerResults(json.results ?? null)
-      } catch { setServerResults(null) }
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') setServerResults(null)
+      }
     }, 400)
+    return () => { controller.abort(); if (searchDebounce.current) clearTimeout(searchDebounce.current) }
   }, [search])  
 
   async function loadCustomTemplates(orgId: string) {
@@ -195,7 +201,8 @@ export default function ShartnomalarPage() {
     const orgContracts = contracts.filter(c => c.organization_id === (activeOrg?.id || ''))
     const yearContracts = orgContracts.filter(c => c.contract_number?.startsWith(String(year)))
     const max = yearContracts.reduce((m, c) => {
-      const parts = c.contract_number?.split('/')
+      // Support any separator: 2026/001, 2026-001, 2026_001, etc.
+      const parts = c.contract_number?.split(/[\/\-_]/)
       const n = parts ? parseInt(parts[parts.length - 1]) || 0 : 0
       return Math.max(m, n)
     }, 0)
@@ -279,7 +286,7 @@ export default function ShartnomalarPage() {
         contract_type: contractForm.contract_type,
         spec_items: contractForm.spec_items.length > 0 ? contractForm.spec_items : undefined,
       })
-      if (lang === 'oz' || lang === 'ru') content = latinToCyrillic(content)
+      if (lang === 'oz') content = latinToCyrillic(content)
     } else {
       // Template-based content: fill all {{PLACEHOLDER}} variables now so DB stores clean text
       content = fillPlaceholders(content, {
@@ -386,7 +393,7 @@ export default function ShartnomalarPage() {
       counterparty_id: c.counterparty_id,
       status: c.status,
       content: c.content || '',
-      city: c.city || 'Toshkent',
+      city: c.city || '',
       product_name: c.product_name || '',
       spec_items: c.spec_items || [],
       qqs_enabled: c.qqs_enabled || false,
@@ -423,7 +430,7 @@ export default function ShartnomalarPage() {
       counterparty_id: c.counterparty_id,
       status: 'draft',
       content: c.content || '',
-      city: c.city || 'Toshkent',
+      city: c.city || '',
       product_name: c.product_name || '',
       spec_items: c.spec_items || [],
       qqs_enabled: c.qqs_enabled || false,
@@ -1342,7 +1349,7 @@ export default function ShartnomalarPage() {
                     </td>
                     {/* Actions */}
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-wrap">
                         {/* Edit */}
                         <button
                           title="Tahrirlash"
@@ -1384,8 +1391,8 @@ export default function ShartnomalarPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
                         </button>
-                        {/* AI (premium only) */}
-                        {isPremium && (
+                        {/* AI (ai_pro only) */}
+                        {hasAiAccess() && (
                           <div className="flex gap-1">
                             <button
                               title="AI Tahlil"
@@ -1412,7 +1419,7 @@ export default function ShartnomalarPage() {
                         <button
                           title="Email yuborish"
                           onClick={() => sendByEmail(c)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition"
+                          className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -1423,7 +1430,7 @@ export default function ShartnomalarPage() {
                           <button
                             title="Bajarildi"
                             onClick={() => updateStatus(c.id, 'completed')}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-400 hover:bg-[#1F2937] transition"
+                            className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-green-400 hover:bg-[#1F2937] transition"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1435,7 +1442,7 @@ export default function ShartnomalarPage() {
                           <button
                             title="Bekor qilish"
                             onClick={() => updateStatus(c.id, 'cancelled')}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition"
+                            className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
