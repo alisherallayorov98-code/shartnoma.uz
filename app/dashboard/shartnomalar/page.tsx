@@ -228,7 +228,7 @@ export default function ShartnomalarPage() {
   }
 
   // ── Save contract ──────────────────────────────────────────────────────────
-  async function saveContract(e: React.FormEvent) {
+  async function saveContract(e: React.FormEvent, contentOverride?: string) {
     e.preventDefault()
     if (!contractForm.organization_id) { toast(T(t.msg.selectOrg), 'error'); return }
     if (!contractForm.contract_number.trim()) { toast("Shartnoma raqami kiritilishi shart", 'error'); return }
@@ -239,7 +239,7 @@ export default function ShartnomalarPage() {
     const org = orgs.find(o => o.id === contractForm.organization_id)
     const cp = cps.find(c => c.id === contractForm.counterparty_id)
     const amount = parseFloat(contractForm.amount) || 0
-    let content = contractForm.content
+    let content = contentOverride ?? contractForm.content
     if (!content) {
       const structure = getStructure(contractForm.contract_type, {
         contract_number: contractForm.contract_number,

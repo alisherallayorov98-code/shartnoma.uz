@@ -76,7 +76,7 @@ interface ContractModalProps {
   cps: Counterparty[]
   form: ContractForm
   setForm: React.Dispatch<React.SetStateAction<ContractForm>>
-  onSave: (e: React.FormEvent) => Promise<void>
+  onSave: (e: React.FormEvent, contentOverride?: string) => Promise<void>
   onClose: () => void
   saving: boolean
   customTemplates: AppTemplate[]
@@ -257,111 +257,6 @@ export default function ContractModal({
   const specBase = form.spec_items.reduce((s, i) => s + i.miqdori * i.narxi, 0)
   const specQqs = form.spec_items.reduce((s, i) => s + i.qqs_summa, 0)
 
-  // ─── Sections helpers ──────────────────────────────────────────────────────
-
-  function ensureSections() {
-    if (!form.content) {
-      // Auto-generate from structure
-      const org = orgs.find(o => o.id === form.organization_id)
-      const cp = cps.find(c => c.id === form.counterparty_id)
-      const extra: Record<string, string> = {
-        IJARA_MANZIL: form.ijara_manzil || '',
-        IJARA_MAYDON: form.ijara_maydon || '',
-        IJARA_MUDDAT: form.ijara_muddat || '',
-        IJARA_BOSHLANISH: form.ijara_boshlanish || '',
-        IJARA_TUGASH: form.ijara_tugash || '',
-        OYLIK_TOLOV: form.oylik_tolov || '',
-        XIZMAT_TAVSIF: form.xizmat_tavsif || '',
-        XIZMAT_BOSHLANISH: form.xizmat_boshlanish || '',
-        XIZMAT_TUGASH: form.xizmat_tugash || '',
-        XIZMAT_TOLOV: form.xizmat_tolov || '',
-        PUDRAT_OBEKT: form.pudrat_obekt || '',
-        PUDRAT_TAVSIF: form.pudrat_tavsif || '',
-        PUDRAT_BOSHLANISH: form.pudrat_boshlanish || '',
-        PUDRAT_TUGASH: form.pudrat_tugash || '',
-        QARZ_MAQSAD: form.qarz_maqsad || '',
-        QARZ_FOIZ: form.qarz_foiz || '',
-        QARZ_MUDDAT: form.qarz_muddat || '',
-        DAVAL_MATERIAL: form.daval_material || '',
-        DAVAL_MAHSULOT: form.daval_mahsulot || '',
-        INCOTERMS: form.incoterms || '',
-        YETKAZISH_JOY: form.yetkazish_joy || '',
-        TOLOV_USULI: form.tolov_usuli || '',
-        VALYUTA: form.valyuta || '',
-        ASOSIY_RAQAM: form.asosiy_raqam || '',
-        ASOSIY_SANA: form.asosiy_sana || '',
-        OZGARTIRISH: form.ozgartirish || '',
-        YETKAZISH_MUDDAT: form.yetkazish_muddat || '',
-      }
-      const amount = parseFloat(form.amount) || 0
-      const structure = getStructure(form.contract_type, {
-        contract_number: form.contract_number,
-        contract_date: form.contract_date,
-        city: form.city,
-        org_name: org?.name || '',
-        org_inn: org?.inn || '',
-        org_director: org?.director_name || '',
-        cp_name: cp?.name || '',
-        cp_inn: cp?.inn || '',
-        cp_director: cp?.director_name || '',
-        amount,
-        amount_text: numberToWords(amount, 'uz') + " so'm",
-        extra,
-      })
-      const text = structureToText(structure, {
-        type_name: (CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type] || form.contract_type,
-        number: form.contract_number,
-        date: form.contract_date,
-        city: form.city,
-        org,
-        cp,
-        contract_type: form.contract_type,
-        spec_items: form.spec_items.length > 0 ? form.spec_items : undefined,
-      })
-      setForm(f => ({ ...f, content: text }))
-    }
-  }
-
-  // Parse content into sections for editing
-  function parseStructure(): ContractStructure {
-    if (!form.content) {
-      const org = orgs.find(o => o.id === form.organization_id)
-      const cp = cps.find(c => c.id === form.counterparty_id)
-      const amount = parseFloat(form.amount) || 0
-      return getStructure(form.contract_type, {
-        contract_number: form.contract_number,
-        contract_date: form.contract_date,
-        city: form.city,
-        org_name: org?.name || '',
-        org_inn: org?.inn || '',
-        org_director: org?.director_name || '',
-        cp_name: cp?.name || '',
-        cp_inn: cp?.inn || '',
-        cp_director: cp?.director_name || '',
-        amount,
-        amount_text: numberToWords(amount, 'uz') + " so'm",
-      })
-    }
-    // Simple parse: try to split by numbered sections
-    const lines = form.content.split('\n')
-    const bolimlar: ContractStructure['bolimlar'] = []
-    let current: { sarlavha: string; bandlar: { matn: string }[] } | null = null
-    for (const line of lines) {
-      const secMatch = line.match(/^(\d+)\.\s+([A-Z\s'УЁQWERTYZXCVBNMASDFGHJKLPOIÙÀÈÌÒÙÄÖÜ\-\/]+)$/)
-      if (secMatch && line === line.toUpperCase() && line.trim().length > 2) {
-        if (current) bolimlar.push(current)
-        current = { sarlavha: line.trim(), bandlar: [] }
-      } else if (current && line.match(/^\d+\.\d+\.\s+/) && line.trim()) {
-        current.bandlar.push({ matn: line.replace(/^\d+\.\d+\.\s+/, '').trim() })
-      }
-    }
-    if (current) bolimlar.push(current)
-    if (bolimlar.length === 0) {
-      return { bolimlar: [{ sarlavha: 'SHARTNOMA MATNI', bandlar: [{ matn: form.content }] }] }
-    }
-    return { bolimlar }
-  }
-
   const [editStructure, setEditStructure] = useState<ContractStructure | null>(null)
 
   function getStructureForEdit(): ContractStructure {
@@ -369,6 +264,36 @@ export default function ContractModal({
     const org = orgs.find(o => o.id === form.organization_id)
     const cp = cps.find(c => c.id === form.counterparty_id)
     const amount = parseFloat(form.amount) || 0
+    const extra: Record<string, string> = {
+      TOVAR_NOMI: form.product_name || '',
+      IJARA_MANZIL: form.ijara_manzil || '',
+      IJARA_MAYDON: form.ijara_maydon || '',
+      IJARA_MUDDAT: form.ijara_muddat || '',
+      IJARA_BOSHLANISH: form.ijara_boshlanish || '',
+      IJARA_TUGASH: form.ijara_tugash || '',
+      OYLIK_TOLOV: form.oylik_tolov || '',
+      XIZMAT_TAVSIF: form.xizmat_tavsif || '',
+      XIZMAT_BOSHLANISH: form.xizmat_boshlanish || '',
+      XIZMAT_TUGASH: form.xizmat_tugash || '',
+      XIZMAT_TOLOV: form.xizmat_tolov || '',
+      PUDRAT_OBEKT: form.pudrat_obekt || '',
+      PUDRAT_TAVSIF: form.pudrat_tavsif || '',
+      PUDRAT_BOSHLANISH: form.pudrat_boshlanish || '',
+      PUDRAT_TUGASH: form.pudrat_tugash || '',
+      QARZ_MAQSAD: form.qarz_maqsad || '',
+      QARZ_FOIZ: form.qarz_foiz || '',
+      QARZ_MUDDAT: form.qarz_muddat || '',
+      DAVAL_MATERIAL: form.daval_material || '',
+      DAVAL_MAHSULOT: form.daval_mahsulot || '',
+      INCOTERMS: form.incoterms || '',
+      YETKAZISH_JOY: form.yetkazish_joy || '',
+      TOLOV_USULI: form.tolov_usuli || '',
+      VALYUTA: form.valyuta || '',
+      ASOSIY_RAQAM: form.asosiy_raqam || '',
+      ASOSIY_SANA: form.asosiy_sana || '',
+      OZGARTIRISH: form.ozgartirish || '',
+      YETKAZISH_MUDDAT: form.yetkazish_muddat || '20 (yigirma) ish kuni',
+    }
     return getStructure(form.contract_type, {
       contract_number: form.contract_number,
       contract_date: form.contract_date,
@@ -381,6 +306,7 @@ export default function ContractModal({
       cp_director: cp?.director_name || '',
       amount,
       amount_text: numberToWords(amount, 'uz') + " so'm",
+      extra,
     })
   }
 
@@ -477,7 +403,6 @@ export default function ContractModal({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // If using template mode and we have an editStructure, convert to text
     if (editStructure) {
       const org = orgs.find(o => o.id === form.organization_id)
       const cp = cps.find(c => c.id === form.counterparty_id)
@@ -488,10 +413,12 @@ export default function ContractModal({
         city: form.city,
         org,
         cp,
+        spec_items: form.spec_items.length > 0 ? form.spec_items : undefined,
       })
-      setForm(f => ({ ...f, content: text }))
+      onSave(e, text)
+    } else {
+      onSave(e)
     }
-    onSave(e)
   }
 
   // ─── Selected org/cp ──────────────────────────────────────────────────────
