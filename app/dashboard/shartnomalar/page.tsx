@@ -116,6 +116,14 @@ export default function ShartnomalarPage() {
   const [customTemplates, setCustomTemplates] = useState<AppTemplate[]>([])
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null)
+
+  // Sort state
+  const [sortCol, setSortCol] = useState<'number' | 'date' | 'amount' | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   // AI state
   const [aiContract, setAiContract] = useState<Contract | null>(null)
@@ -223,6 +231,7 @@ export default function ShartnomalarPage() {
   async function saveContract(e: React.FormEvent) {
     e.preventDefault()
     if (!contractForm.organization_id) { toast(T(t.msg.selectOrg), 'error'); return }
+    if (!contractForm.contract_number.trim()) { toast("Shartnoma raqami kiritilishi shart", 'error'); return }
 
     setSaving(true)
 
@@ -410,6 +419,7 @@ export default function ShartnomalarPage() {
 
   async function doDeleteContract(id: string) {
     const contract = contracts.find(c => c.id === id)
+    await supabase.from('contract_versions').delete().eq('contract_id', id)
     const { error } = await supabase.from('contracts').delete().eq('id', id)
     if (error) { toast(`Xato: ${error.message}`, 'error'); return }
     if (contract) logAudit('delete', 'contracts', id, { contract_number: contract.contract_number, contract_type: contract.contract_type })
@@ -1190,6 +1200,45 @@ export default function ShartnomalarPage() {
     return matchSearch && matchStatus
   })
 
+  // ── Sort ───────────────────────────────────────────────────────────────────
+  function toggleSort(col: 'number' | 'date' | 'amount') {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('desc') }
+  }
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (!sortCol) return 0
+    let va: string | number = '', vb: string | number = ''
+    if (sortCol === 'number') { va = a.contract_number || ''; vb = b.contract_number || '' }
+    else if (sortCol === 'date') { va = a.contract_date || ''; vb = b.contract_date || '' }
+    else { va = Number(a.amount || 0); vb = Number(b.amount || 0) }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1
+    if (va > vb) return sortDir === 'asc' ? 1 : -1
+    return 0
+  })
+
+  // ── Bulk selection ─────────────────────────────────────────────────────────
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === sorted.length) setSelectedIds(new Set())
+    else setSelectedIds(new Set(sorted.map(c => c.id)))
+  }
+
+  async function bulkUpdateStatus(status: string) {
+    await Promise.all([...selectedIds].map(id =>
+      supabase.from('contracts').update({ status }).eq('id', id)
+    ))
+    setSelectedIds(new Set())
+    reloadContracts()
+  }
+
   // ── Quota info ─────────────────────────────────────────────────────────────
   const isNearLimit = isFree && orgContracts.length >= 4
   const isPremium = !isFree
@@ -1257,11 +1306,15 @@ export default function ShartnomalarPage() {
             placeholder={T(t.contracts.search)}
             className={`w-full bg-[#0F172A] border text-gray-200 pl-9 pr-4 py-2.5 rounded-xl text-sm focus:outline-none placeholder-gray-500 ${serverResults !== null ? 'border-blue-600 focus:border-blue-400' : 'border-[#1E293B] focus:border-blue-600'}`}
           />
-          {serverResults !== null && (
+          {serverResults !== null ? (
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-blue-400">
               {serverResults.length} natija
             </span>
-          )}
+          ) : search.length > 0 && search.length < 3 ? (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+              3 ta belgi kiriting
+            </span>
+          ) : null}
         </div>
         <select
           value={statusFilter}
@@ -1273,6 +1326,31 @@ export default function ShartnomalarPage() {
           ))}
         </select>
       </div>
+
+      {/* ── Bulk actions bar ── */}
+      {selectedIds.size > 0 && (
+        <div className="mb-3 bg-blue-900/30 border border-blue-700/40 rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-blue-300 font-medium">{selectedIds.size} ta tanlandi</span>
+          <div className="flex gap-2 ml-auto flex-wrap">
+            <button onClick={() => bulkUpdateStatus('completed')}
+              className="text-xs bg-green-900/40 hover:bg-green-800/50 border border-green-700/40 text-green-300 px-3 py-1.5 rounded-lg transition">
+              Bajarildi
+            </button>
+            <button onClick={() => bulkUpdateStatus('cancelled')}
+              className="text-xs bg-red-900/40 hover:bg-red-800/50 border border-red-700/40 text-red-300 px-3 py-1.5 rounded-lg transition">
+              Bekor qilish
+            </button>
+            <button onClick={() => bulkUpdateStatus('draft')}
+              className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-3 py-1.5 rounded-lg transition">
+              Qoralama
+            </button>
+            <button onClick={() => setSelectedIds(new Set())}
+              className="text-xs text-gray-500 hover:text-gray-300 transition ml-1">
+              Bekor
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Table ── */}
       <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
@@ -1291,26 +1369,45 @@ export default function ShartnomalarPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#1E293B] text-xs text-gray-500 bg-[#0F172A]">
-                  <th className="text-left px-4 py-3 font-medium">{T(t.contracts.number)}</th>
-                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">{T(t.contracts.date)}</th>
+                  <th className="px-3 py-3 w-8">
+                    <input type="checkbox" checked={sorted.length > 0 && selectedIds.size === sorted.length}
+                      onChange={toggleSelectAll}
+                      className="rounded border-[#1E293B] bg-[#0F172A] accent-blue-600 cursor-pointer" />
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium cursor-pointer select-none hover:text-white transition"
+                    onClick={() => toggleSort('number')}>
+                    {T(t.contracts.number)}{sortCol === 'number' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell cursor-pointer select-none hover:text-white transition"
+                    onClick={() => toggleSort('date')}>
+                    {T(t.contracts.date)}{sortCol === 'date' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                  </th>
                   <th className="text-left px-4 py-3 font-medium hidden md:table-cell">{T(t.contracts.type)}</th>
                   <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">{T(t.contracts.org)}</th>
                   <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">{T(t.contracts.counterparty)}</th>
-                  <th className="text-right px-4 py-3 font-medium hidden md:table-cell">{T(t.contracts.amount)}</th>
+                  <th className="text-right px-4 py-3 font-medium hidden md:table-cell cursor-pointer select-none hover:text-white transition"
+                    onClick={() => toggleSort('amount')}>
+                    {T(t.contracts.amount)}{sortCol === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+                  </th>
                   <th className="text-left px-4 py-3 font-medium">{T(t.contracts.status)}</th>
                   <th className="text-left px-4 py-3 font-medium">{T(t.contracts.actions)}</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((c, idx) => (
-                  <tr key={c.id} className="border-b border-[#1E293B] hover:bg-[#1F2937] transition">
+                {sorted.map((c) => (
+                  <tr key={c.id} className={`border-b border-[#1E293B] hover:bg-[#1F2937] transition ${selectedIds.has(c.id) ? 'bg-blue-900/10' : ''}`}>
+                    {/* Checkbox */}
+                    <td className="px-3 py-3 w-8">
+                      <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
+                        className="rounded border-[#1E293B] bg-[#0F172A] accent-blue-600 cursor-pointer" />
+                    </td>
                     {/* Number */}
                     <td className="px-4 py-3">
                       <span className="text-sm font-medium text-white">{c.contract_number}</span>
                     </td>
                     {/* Date */}
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm text-gray-400">{c.contract_date}</span>
+                      <span className="text-sm text-gray-400">{formatDateUz(c.contract_date)}</span>
                     </td>
                     {/* Type */}
                     <td className="px-4 py-3 hidden md:table-cell">
@@ -1333,7 +1430,7 @@ export default function ShartnomalarPage() {
                     {/* Amount */}
                     <td className="px-4 py-3 text-right hidden md:table-cell">
                       <span className="text-sm text-white font-medium">
-                        {c.amount ? Number(c.amount).toLocaleString() : '—'}
+                        {c.amount ? `${Number(c.amount).toLocaleString()} so'm` : '—'}
                       </span>
                     </td>
                     {/* Status */}
@@ -1441,7 +1538,7 @@ export default function ShartnomalarPage() {
                         {c.status !== 'cancelled' && c.status !== 'completed' && (
                           <button
                             title="Bekor qilish"
-                            onClick={() => updateStatus(c.id, 'cancelled')}
+                            onClick={() => setConfirmCancelId(c.id)}
                             className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1543,6 +1640,14 @@ export default function ShartnomalarPage() {
           message={T(t.contracts.deleteConfirm)}
           onConfirm={() => { const id = confirmDeleteId; setConfirmDeleteId(null); doDeleteContract(id) }}
           onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
+
+      {confirmCancelId && (
+        <ConfirmModal
+          message="Shartnomani bekor qilmoqchimisiz?"
+          onConfirm={() => { const id = confirmCancelId; setConfirmCancelId(null); updateStatus(id, 'cancelled') }}
+          onCancel={() => setConfirmCancelId(null)}
         />
       )}
     </div>
