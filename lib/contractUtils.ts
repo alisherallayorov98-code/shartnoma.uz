@@ -35,6 +35,7 @@ export type PlaceholderData = {
   asosiy_raqam?: string
   asosiy_sana?: string
   ozgartirish?: string
+  product_name?: string
 }
 
 export function fillPlaceholders(content: string, c: PlaceholderData): string {
@@ -92,6 +93,8 @@ export function fillPlaceholders(content: string, c: PlaceholderData): string {
     '{{YETKAZISH_MUDDAT}}':   c.yetkazish_muddat || '___',
     '{{TOLOV_USULI}}':        c.tolov_usuli || '___',
     '{{VALYUTA}}':            c.valyuta || 'USD',
+    // Oldi-sotdi
+    '{{TOVAR_NOMI}}':         c.product_name || '___',
     // Qo'shimcha
     '{{ASOSIY_RAQAM}}':       c.asosiy_raqam || '___',
     '{{ASOSIY_SANA}}':        c.asosiy_sana || '___',
