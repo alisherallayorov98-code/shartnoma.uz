@@ -55,7 +55,7 @@ const LP: Record<Lang, {
       { name: "Kadrlar", desc: "Ishga qabul qilishdan to bo'shatishgacha barcha hujjatlar", docs: ["Mehnat shartnomasi", "Ishga qabul buyrug'i", "Ta'til buyrug'i", "NDA shartnomasi", "Lavozim yo'riqnomasi", "Ishonchnoma"] },
       { name: "Buxgalter", desc: "Moliyaviy hujjatlar va shartnomalar", docs: ["Dalolatnoma", "Talabnoma", "To'lov grafigi", "Debitor undirish xati", "Xizmat shartnomasi", "Ijara shartnomasi"] },
       { name: "Kotiba", desc: "Tashkiliy hujjatlar va yozishmalar", docs: ["Tashkiliy buyruq", "Bayonnoma", "Rasmiy xat", "Taklifnoma", "Murojaatnoma", "Kafolat xati"] },
-      { name: "Yurist AI", desc: "Shartnoma tahlili va yuridik yordam", docs: ["Shartnoma tekshirish", "Risk tahlili", "Grammatika tuzatish", "Qonuniy muvofiqlик", "Yuridik maslahat", "Nizolarni oldini olish"] },
+      { name: "Yurist AI", desc: "Shartnoma tahlili va yuridik yordam", docs: ["Shartnoma tekshirish", "Risk tahlili", "Grammatika tuzatish", "Qonuniy muvofiqlik", "Yuridik maslahat", "Nizolarni oldini olish"] },
     ],
     howTag: "QANDAY ISHLAYDI", howTitle: "3 qadam — hujjat tayyor",
     steps: [
