@@ -148,7 +148,7 @@ const FEATURES: FeatureConfig[] = [
       { key: 'dalolatnoma_turi', label: "Dalolatnoma turi", placeholder: "Qabul-topshirish / Yo'qotish / Inventarizatsiya / Tekshiruv" },
       { key: 'sana', label: "Sana", placeholder: "2026-03-23", type: 'date' },
       { key: 'joy', label: "O'tkazilgan joy", placeholder: "Tashkilot omborxonasi, Toshkent" },
-      { key: 'ishtirokchilar', label: "Ishtirokchilar (lavozim, ism)", placeholder: "Ombor mudiri Karimov A., Buxgalter Rahimova N.", textarea: false },
+      { key: 'ishtirokchilar', label: "Ishtirokchilar (lavozim, ism)", placeholder: "Ombor mudiri Karimov A., Buxgalter Rahimova N." },
       { key: 'predmet', label: "Dalolatnoma predmeti", placeholder: "Nima topshirildi / tekshirildi / yo'qoldi", textarea: true },
       { key: 'xulosa', label: "Xulosa va qaror", placeholder: "Hujjatlar to'liq topshirildi / Yo'qotish summasi aniqlandi...", textarea: true },
     ],
@@ -219,6 +219,8 @@ export default function KotibaPage() {
 
   const currentFeature = FEATURES.find(f => f.key === selected)
 
+  const inp = 'w-full bg-white border border-slate-300 text-gray-900 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 placeholder-gray-400'
+
   function selectFeature(key: KotibaFeature) {
     setSelected(key)
     setFormData({})
@@ -249,8 +251,6 @@ export default function KotibaPage() {
         || data.result?.hisobot || data.result?.eslatma || data.result?.murojaatnoma
         || data.result?.tushuntirish || JSON.stringify(data.result, null, 2)
       setResult(text)
-
-      // Auto-save to Supabase
       if (text && activeOrg) {
         saveAiDocument({
           organization_id: activeOrg.id,
@@ -276,29 +276,36 @@ export default function KotibaPage() {
     })
   }
 
-  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 placeholder-gray-500'
-
   return (
-    <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-950">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <main className="flex-1 overflow-auto p-4 sm:p-6 bg-slate-50 min-h-screen">
+      <div className="max-w-5xl mx-auto space-y-5">
 
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <span className="w-10 h-10 bg-violet-900/50 rounded-xl flex items-center justify-center text-xl">🤖</span>
-            Kotiba AI
-          </h1>
-          <p className="text-gray-400 text-sm mt-1">Rasmiy hujjatlarni AI yordamida bir zumda tayyorlang</p>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center text-xl">🤖</div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Kotiba AI</h1>
+              <p className="text-gray-500 text-sm">Rasmiy hujjatlarni AI yordamida bir zumda tayyorlang</p>
+            </div>
+          </div>
+          {!hasAiAccess() && (
+            <button onClick={openUpgradeModal}
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white text-sm font-semibold px-4 py-2 rounded-xl transition shadow-sm">
+              ✦ Pro versiyani olish →
+            </button>
+          )}
         </div>
 
+        {/* Pro banner */}
         {!hasAiAccess() && (
-          <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/30 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-200 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-white text-sm font-semibold mb-0.5">✦ Pro versiyada ishlaydi</div>
-              <div className="text-gray-400 text-xs">Kotiba AI hujjatlari faqat Standart yoki AI Pro tarifida ishlaydi</div>
+              <div className="text-gray-900 text-sm font-semibold mb-0.5">✦ AI Pro tarifida ishlaydi</div>
+              <div className="text-gray-500 text-xs">Barcha kotiba hujjatlari AI yordamida bir zumda tayyorlanadi</div>
             </div>
             <button onClick={openUpgradeModal}
-              className="shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition hover:opacity-90">
+              className="shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition hover:opacity-90 shadow-sm">
               Pro versiyani olish →
             </button>
           </div>
@@ -306,12 +313,12 @@ export default function KotibaPage() {
 
         {/* Feature cards */}
         {!selected && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {FEATURES.map(feature => (
               <button key={feature.key} onClick={() => selectFeature(feature.key)}
-                className="bg-gray-900 border border-gray-800 hover:border-violet-700/60 hover:bg-gray-800/80 rounded-xl p-5 text-left transition group">
-                <div className="text-3xl mb-3">{feature.icon}</div>
-                <div className="font-semibold text-white text-sm mb-1 group-hover:text-violet-300 transition">{feature.title}</div>
+                className="bg-white border border-slate-200 hover:border-violet-400 hover:shadow-md rounded-xl p-5 text-left transition group shadow-sm">
+                <div className="text-2xl mb-3">{feature.icon}</div>
+                <div className="font-semibold text-gray-900 text-sm mb-1 group-hover:text-violet-700 transition">{feature.title}</div>
                 <div className="text-xs text-gray-500">{feature.description}</div>
               </button>
             ))}
@@ -320,150 +327,158 @@ export default function KotibaPage() {
 
         {/* Form */}
         {selected && currentFeature && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
-            <div className="flex items-center gap-3">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            {/* Form header */}
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50">
               <button onClick={() => { setSelected(null); setResult(null); setError('') }}
-                className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition">
+                className="text-gray-400 hover:text-gray-700 text-sm flex items-center gap-1 transition font-medium">
                 ← Orqaga
               </button>
-              <div className="w-px h-4 bg-gray-700"/>
+              <div className="w-px h-4 bg-slate-300"/>
               <div className="flex items-center gap-2">
                 <span className="text-xl">{currentFeature.icon}</span>
-                <h2 className="font-semibold text-white">{currentFeature.title}</h2>
+                <h2 className="font-semibold text-gray-900 text-sm">{currentFeature.title}</h2>
               </div>
             </div>
 
-            {selected === 'bayonnoma' ? (
-              <BayonnomaMaker
-                orgName={activeOrg?.name || ''}
-                orgInn={activeOrg?.inn || ''}
-                direktorName={activeOrg?.director_name || ''}
-                onSave={text => {
-                  if (activeOrg) {
-                    saveAiDocument({
-                      organization_id: activeOrg.id,
-                      section: 'kotiba',
-                      feature_key: 'bayonnoma',
-                      title: "Yig'ilish bayonnomasi",
-                      content: text,
-                      meta: {},
-                    }).then(() => setSavedKey(k => k + 1)).catch(console.error)
-                  }
-                }}
-              />
-            ) : selected === 'buyruq' ? (
-              <BuyruqMaker
-                orgName={activeOrg?.name || ''}
-                orgDirector={activeOrg?.director_name || ''}
-                onSave={(text, title) => {
-                  if (activeOrg) {
-                    saveAiDocument({
-                      organization_id: activeOrg.id,
-                      section: 'kotiba',
-                      feature_key: 'buyruq',
-                      title,
-                      content: text,
-                      meta: {},
-                    }).then(() => setSavedKey(k => k + 1)).catch(console.error)
-                  }
-                }}
-              />
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {currentFeature.fields.map(field => (
-                    <div key={field.key} className={field.textarea ? 'sm:col-span-2' : ''}>
-                      <label className="block text-xs font-medium text-gray-400 mb-1.5">{field.label}</label>
-                      {field.textarea ? (
-                        <textarea
-                          value={formData[field.key] || ''}
-                          onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
-                          placeholder={field.placeholder}
-                          rows={3}
-                          className={`${inp} resize-y`}
-                        />
-                      ) : (
-                        <input
-                          type={field.type || 'text'}
-                          value={formData[field.key] || ''}
-                          onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
-                          placeholder={field.placeholder}
-                          className={inp}
-                        />
-                      )}
+            <div className="p-5 space-y-5">
+              {selected === 'bayonnoma' ? (
+                <BayonnomaMaker
+                  orgName={activeOrg?.name || ''}
+                  orgInn={activeOrg?.inn || ''}
+                  direktorName={activeOrg?.director_name || ''}
+                  onSave={text => {
+                    if (activeOrg) {
+                      saveAiDocument({
+                        organization_id: activeOrg.id,
+                        section: 'kotiba',
+                        feature_key: 'bayonnoma',
+                        title: "Yig'ilish bayonnomasi",
+                        content: text,
+                        meta: {},
+                      }).then(() => setSavedKey(k => k + 1)).catch(console.error)
+                    }
+                  }}
+                />
+              ) : selected === 'buyruq' ? (
+                <BuyruqMaker
+                  orgName={activeOrg?.name || ''}
+                  orgDirector={activeOrg?.director_name || ''}
+                  onSave={(text, title) => {
+                    if (activeOrg) {
+                      saveAiDocument({
+                        organization_id: activeOrg.id,
+                        section: 'kotiba',
+                        feature_key: 'buyruq',
+                        title,
+                        content: text,
+                        meta: {},
+                      }).then(() => setSavedKey(k => k + 1)).catch(console.error)
+                    }
+                  }}
+                />
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {currentFeature.fields.map(field => (
+                      <div key={field.key} className={field.textarea ? 'sm:col-span-2' : ''}>
+                        <label className="block text-xs font-medium text-gray-600 mb-1.5">{field.label}</label>
+                        {field.textarea ? (
+                          <textarea
+                            value={formData[field.key] || ''}
+                            onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                            placeholder={field.placeholder}
+                            rows={3}
+                            className={`${inp} resize-y`}
+                          />
+                        ) : (
+                          <input
+                            type={field.type || 'text'}
+                            value={formData[field.key] || ''}
+                            onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                            placeholder={field.placeholder}
+                            className={inp}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {activeOrg && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-gray-500 flex items-center gap-2">
+                      <span>🏢</span>
+                      <span>Tashkilot: <span className="text-gray-900 font-medium">{activeOrg.name}</span></span>
+                      <span className="text-slate-300">·</span>
+                      <span>Direktor: <span className="text-gray-700">{activeOrg.director_name}</span></span>
                     </div>
-                  ))}
+                  )}
+
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-sm text-red-600 flex items-center gap-2">
+                      <span>⚠</span> {error}
+                    </div>
+                  )}
+
+                  <button onClick={handleGenerate} disabled={loading}
+                    className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:bg-slate-200 disabled:text-slate-400 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm">
+                    {loading ? (
+                      <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>AI ishlamoqda…</>
+                    ) : <>🤖 AI bilan tayyorlash</>}
+                  </button>
+                </>
+              )}
+
+              {/* Result */}
+              {result && (
+                <div className="space-y-3 border-t border-slate-100 pt-5">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-gray-900">Natija</h3>
+                      <span className="text-xs text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">✓ Saqlandi</span>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <button onClick={() => setShowPreview(true)}
+                        className="flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-gray-700 px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
+                      <button onClick={() => downloadTextAsWord(result, currentFeature?.title || 'hujjat')}
+                        className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
+                      <button onClick={() => downloadTextAsPDF(result, currentFeature?.title || 'hujjat')}
+                        className="flex items-center gap-1.5 text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
+                      <button onClick={handleCopy}
+                        className="flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-gray-600 px-3 py-1.5 rounded-lg transition">
+                        {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-gray-800 whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
+                    {result}
+                  </div>
                 </div>
+              )}
+            </div>
+          </div>
+        )}
 
-                {activeOrg && (
-                  <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-2 text-xs text-gray-400">
-                    Tashkilot: <span className="text-white font-medium">{activeOrg.name}</span> · Direktor: {activeOrg.director_name}
-                  </div>
-                )}
-
-                {error && (
-                  <div className="bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2 text-sm text-red-300">⚠ {error}</div>
-                )}
-
-                <button onClick={handleGenerate} disabled={loading}
-                  className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
-                  {loading ? (
-                    <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>AI ishlamoqda…</>
-                  ) : <>🤖 AI bilan tayyorlash</>}
-                </button>
-              </>
-            )}
-
-            {/* Preview modal */}
-            {showPreview && result && (
-              <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
-                <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-                    <h3 className="font-semibold text-white">👁 Ko&apos;rish: {currentFeature?.title}</h3>
-                    <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-6">
-                    <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap shadow-inner">{result}</div>
-                  </div>
-                  <div className="px-5 py-4 border-t border-gray-800 flex gap-3">
-                    <button onClick={() => { downloadTextAsWord(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">📝 Word</button>
-                    <button onClick={() => { downloadTextAsPDF(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
-                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm transition">📄 PDF</button>
-                  </div>
-                </div>
+        {/* Preview modal */}
+        {showPreview && result && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
+            <div className="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                <h3 className="font-semibold text-gray-900">👁 Ko&apos;rish: {currentFeature?.title}</h3>
+                <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-gray-700 text-xl leading-none transition">✕</button>
               </div>
-            )}
-
-            {/* Result */}
-            {result && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-white">Natija:</h3>
-                    <span className="text-xs text-green-400">✓ Saqlandi</span>
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => setShowPreview(true)}
-                      className="flex items-center gap-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
-                    <button onClick={() => downloadTextAsWord(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
-                    <button onClick={() => downloadTextAsPDF(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
-                    <button onClick={handleCopy}
-                      className="flex items-center gap-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">
-                      {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
-                    </button>
-                  </div>
-                </div>
-                <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 text-sm text-gray-200 whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto font-mono">
-                  {result}
-                </div>
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="bg-gray-50 text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap">{result}</div>
               </div>
-            )}
+              <div className="px-5 py-4 border-t border-slate-100 flex gap-3">
+                <button onClick={() => { downloadTextAsWord(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">📝 Word</button>
+                <button onClick={() => { downloadTextAsPDF(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-gray-700 py-2.5 rounded-xl text-sm transition">📄 PDF</button>
+              </div>
+            </div>
           </div>
         )}
 

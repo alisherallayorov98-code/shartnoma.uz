@@ -505,7 +505,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
     onSave?.(text)
   }
 
-  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500 placeholder-gray-500'
+  const inp = 'w-full bg-white border border-slate-300 text-gray-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 placeholder-gray-400'
   const lbl = 'block text-xs text-gray-400 mb-1'
   const sel = `${inp} cursor-pointer`
 
@@ -516,9 +516,9 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {BAYONNOMA_TYPES.map(t => (
           <button key={t.key} onClick={() => { setSelType(t.key); setStep('form'); setResult(null) }}
-            className="bg-gray-800/60 border border-gray-700 hover:border-violet-600 rounded-xl p-4 text-left transition group">
+            className="bg-slate-50 border border-slate-200 hover:border-violet-400 hover:bg-violet-50 rounded-xl p-4 text-left transition group">
             <div className="text-2xl mb-2">{t.icon}</div>
-            <div className="text-sm font-semibold text-white group-hover:text-violet-300">{t.title}</div>
+            <div className="text-sm font-semibold text-gray-900 group-hover:text-violet-700">{t.title}</div>
             <div className="text-xs text-gray-500 mt-0.5">{t.desc}</div>
           </button>
         ))}
@@ -534,16 +534,16 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       {/* Back + title */}
       <div className="flex items-center gap-3">
         <button onClick={() => { setStep('type'); setResult(null) }}
-          className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition">
+          className="text-gray-400 hover:text-gray-700 text-sm flex items-center gap-1 transition font-medium">
           ← Orqaga
         </button>
-        <div className="w-px h-4 bg-gray-700"/>
+        <div className="w-px h-4 bg-slate-300"/>
         <span className="text-xl">{typeInfo?.icon}</span>
-        <span className="font-semibold text-white text-sm">{typeInfo?.title}</span>
+        <span className="font-semibold text-gray-900 text-sm">{typeInfo?.title}</span>
       </div>
 
       {/* ── Common fields ── */}
-      <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 space-y-4">
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Umumiy ma&apos;lumotlar</div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
@@ -583,7 +583,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       </div>
 
       {/* ── Founders ── */}
-      <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 space-y-3">
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
             Ta&apos;sischilar (ishtirokchilar)
@@ -615,7 +615,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
 
       {/* ── Type-specific fields ── */}
       {selType === 'kredit' && (
-        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 space-y-4">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kredit ma&apos;lumotlari</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -655,10 +655,10 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
             <input type="checkbox" checked={kredit.garov_begona}
               onChange={e => setKredit(k => ({ ...k, garov_begona: e.target.checked }))}
               className="w-4 h-4 rounded accent-violet-500"/>
-            <span className="text-sm text-gray-300">Garov boshqa shaxsning mulki</span>
+            <span className="text-sm text-gray-700">Garov boshqa shaxsning mulki</span>
           </label>
           {kredit.garov_begona && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gray-700/30 rounded-lg p-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-100 rounded-lg p-3">
               <div>
                 <label className={lbl}>Garov egasi F.I.Sh.</label>
                 <input className={inp} value={kredit.garov_fio} onChange={e => setKredit(k => ({ ...k, garov_fio: e.target.value }))} placeholder="Familiya Ism Sharif"/>
@@ -677,7 +677,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       )}
 
       {selType === 'dividend' && (
-        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 space-y-3">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Dividend ma&apos;lumotlari</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
@@ -697,7 +697,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       )}
 
       {selType === 'xarid' && (
-        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 space-y-3">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Xarid ma&apos;lumotlari</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -721,7 +721,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       )}
 
       {selType === 'sotish' && (
-        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 space-y-3">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Sotish ma&apos;lumotlari</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -753,7 +753,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       )}
 
       {selType === 'tasischichiqish' && (
-        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 space-y-3">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Ta&apos;sischi chiqish ma&apos;lumotlari</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -781,7 +781,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       )}
 
       {selType === 'direktor' && (
-        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 space-y-3">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Direktor tayinlash ma&apos;lumotlari</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -805,7 +805,7 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       )}
 
       {selType === 'boshqa' && (
-        <div className="bg-gray-800/40 border border-gray-700/50 rounded-xl p-4 space-y-3">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Masala va qaror</div>
           <div>
             <label className={lbl}>Kun tartibi (masala)</label>
@@ -828,19 +828,19 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       {result && (
         <div className="space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-sm font-semibold text-white flex items-center gap-2">Natija: <span className="text-green-400 text-xs">✓ Tayyor</span></span>
+            <span className="text-sm font-semibold text-gray-900 flex items-center gap-2">Natija <span className="text-green-600 text-xs bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">✓ Tayyor</span></span>
             <div className="flex gap-2 flex-wrap">
               <button onClick={() => setPreview(true)}
-                className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
+                className="text-xs bg-slate-100 hover:bg-slate-200 text-gray-700 px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
               <button onClick={() => downloadAsWord(result, orgName, common.bay_raqam)}
                 className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
               <button onClick={() => downloadTextAsPDF(result, `Bayonnoma №${common.bay_raqam}`)}
-                className="text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
+                className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
               <button onClick={() => navigator.clipboard.writeText(result)}
-                className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">📋 Nusxa</button>
+                className="text-xs bg-slate-100 hover:bg-slate-200 text-gray-600 px-3 py-1.5 rounded-lg transition">📋 Nusxa</button>
             </div>
           </div>
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 text-xs text-gray-200 whitespace-pre font-mono leading-relaxed max-h-[500px] overflow-y-auto">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-gray-800 whitespace-pre font-mono leading-relaxed max-h-[500px] overflow-y-auto">
             {result}
           </div>
         </div>
@@ -849,13 +849,13 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
       {/* Preview modal */}
       {preview && result && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setPreview(false)}>
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-              <h3 className="font-semibold text-white">Bayonnoma № {common.bay_raqam}</h3>
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h3 className="font-semibold text-gray-900">Bayonnoma № {common.bay_raqam}</h3>
               <div className="flex gap-2">
                 <button onClick={() => downloadAsWord(result, orgName, common.bay_raqam)}
                   className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg transition">📝 Word</button>
-                <button onClick={() => setPreview(false)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+                <button onClick={() => setPreview(false)} className="text-gray-400 hover:text-gray-700 text-xl leading-none transition">✕</button>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-6">
