@@ -1258,7 +1258,7 @@ export default function ShartnomalarPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => exportToCSV(orgContracts)}
+            onClick={() => exportToCSV(sorted)}
             title="Excel (CSV) yuklab olish"
             className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
           >
@@ -1610,7 +1610,7 @@ export default function ShartnomalarPage() {
           onSendByEmail={sendByEmail}
           onRunAiAnalysis={runAiAnalysis}
           onToggleSigned={toggleSigned}
-          isPremium={isPremium}
+          isPremium={hasAiAccess()}
           lang={lang}
         />
       )}
