@@ -137,7 +137,7 @@ export default function BuyruqMaker({ orgName, orgDirector, onSave }: Props) {
   const [showPreview, setShowPreview] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 placeholder-gray-500'
+  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
   function selectType(key: BuyruqType) {
     setSelectedType(key)
@@ -170,9 +170,9 @@ export default function BuyruqMaker({ orgName, orgDirector, onSave }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {BUYRUQ_TYPES.map(bt => (
           <button key={bt.key} onClick={() => selectType(bt.key)}
-            className="bg-gray-800/60 border border-gray-700 hover:border-violet-500 hover:bg-gray-800 rounded-xl p-4 text-left transition group">
+            className="bg-[#111827] border border-[#1E293B] hover:border-blue-600/50 hover:bg-[#1F2937] rounded-xl p-4 text-left transition group">
             <div className="text-2xl mb-2">{bt.icon}</div>
-            <div className="font-semibold text-white text-sm mb-0.5 group-hover:text-violet-400 transition">{bt.title}</div>
+            <div className="font-semibold text-white text-sm mb-0.5 group-hover:text-blue-400 transition">{bt.title}</div>
             <div className="text-xs text-gray-500">{bt.desc}</div>
           </button>
         ))}
@@ -185,13 +185,13 @@ export default function BuyruqMaker({ orgName, orgDirector, onSave }: Props) {
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <button onClick={reset} className="text-gray-400 hover:text-white text-xs transition font-medium">← Tur tanlash</button>
-          <div className="text-sm font-semibold text-violet-400">{typeInfo?.icon} {typeInfo?.title}</div>
+          <div className="text-sm font-semibold text-blue-400">{typeInfo?.icon} {typeInfo?.title}</div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {fields.map(f => (
             <div key={f.key} className={f.textarea ? 'sm:col-span-2' : ''}>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5">{f.label}</label>
+              <label className="block text-xs text-gray-400 mb-1">{f.label}</label>
               {f.textarea ? (
                 <textarea
                   value={formData[f.key] || ''}
@@ -214,7 +214,7 @@ export default function BuyruqMaker({ orgName, orgDirector, onSave }: Props) {
         </div>
 
         {(orgName || orgDirector) && (
-          <div className="bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-500 flex items-center gap-2">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-lg px-3 py-2 text-xs text-gray-500 flex items-center gap-2">
             <span>🏢</span>
             <span>Tashkilot: <span className="text-white font-medium">{orgName}</span></span>
             {orgDirector && <><span className="text-gray-600">·</span><span>Direktor: <span className="text-gray-300">{orgDirector}</span></span></>}
@@ -222,7 +222,7 @@ export default function BuyruqMaker({ orgName, orgDirector, onSave }: Props) {
         )}
 
         <button onClick={generate}
-          className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm">
+          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm">
           ⚡ Buyruq yaratish
         </button>
       </div>
@@ -234,43 +234,43 @@ export default function BuyruqMaker({ orgName, orgDirector, onSave }: Props) {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <button onClick={() => setStep('form')} className="text-gray-400 hover:text-white text-xs transition font-medium">← Formaga qaytish</button>
-          <span className="text-xs text-green-400 bg-green-500/20 border border-green-500/40 px-2 py-0.5 rounded-full">✓ Saqlandi</span>
+          <span className="text-xs text-green-400 bg-green-500/20 border border-green-500/30 px-2 py-0.5 rounded-full">✓ Saqlandi</span>
         </div>
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => setShowPreview(true)}
-            className="flex items-center gap-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
+            className="flex items-center gap-1.5 text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
           <button onClick={() => downloadTextAsWord(result, typeInfo?.title || 'Buyruq')}
-            className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
+            className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
           <button onClick={() => downloadTextAsPDF(result, typeInfo?.title || 'Buyruq')}
-            className="flex items-center gap-1.5 text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
+            className="flex items-center gap-1.5 text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
           <button onClick={() => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-            className="flex items-center gap-1.5 text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 px-3 py-1.5 rounded-lg transition">
+            className="flex items-center gap-1.5 text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-400 px-3 py-1.5 rounded-lg transition">
             {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
           </button>
           <button onClick={reset}
-            className="flex items-center gap-1.5 text-xs bg-violet-900/40 hover:bg-violet-800/40 text-violet-400 border border-violet-700/50 px-3 py-1.5 rounded-lg transition">+ Yangi buyruq</button>
+            className="flex items-center gap-1.5 text-xs bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-600/30 px-3 py-1.5 rounded-lg transition">+ Yangi buyruq</button>
         </div>
       </div>
 
-      <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 text-sm text-gray-300 whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
+      <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 text-sm text-gray-200 whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
         {result}
       </div>
 
       {showPreview && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E293B]">
               <h3 className="font-semibold text-white">👁 {typeInfo?.title}</h3>
               <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-white text-xl leading-none transition">✕</button>
             </div>
             <div className="flex-1 overflow-y-auto p-6">
               <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap">{result}</div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-800 flex gap-3">
+            <div className="px-5 py-4 border-t border-[#1E293B] flex gap-3">
               <button onClick={() => { downloadTextAsWord(result, typeInfo?.title || 'Buyruq'); setShowPreview(false) }}
-                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">📝 Word</button>
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">📝 Word</button>
               <button onClick={() => { downloadTextAsPDF(result, typeInfo?.title || 'Buyruq'); setShowPreview(false) }}
-                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-xl text-sm transition">📄 PDF</button>
+                className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2.5 rounded-xl text-sm transition">📄 PDF</button>
             </div>
           </div>
         </div>

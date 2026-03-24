@@ -47,25 +47,25 @@ const STATUSES: Record<string, Record<Lang, string>> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  active:    'bg-green-900/50 text-green-300',
-  draft:     'bg-gray-700 text-gray-300',
-  completed: 'bg-blue-900/50 text-blue-300',
-  cancelled: 'bg-red-900/50 text-red-300',
+  active:    'bg-green-500/20 text-green-400 border border-green-500/30',
+  draft:     'bg-[#1F2937] text-gray-400 border border-[#1E293B]',
+  completed: 'bg-blue-900/50 text-blue-300 border border-blue-700/30',
+  cancelled: 'bg-red-900/50 text-red-300 border border-red-700/30',
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  oldi_sotdi: 'bg-blue-900/50 text-blue-300',
-  xizmat:     'bg-emerald-900/50 text-emerald-300',
-  ijara:      'bg-purple-900/50 text-purple-300',
-  pudrat:     'bg-orange-900/50 text-orange-300',
-  qoshimcha:  'bg-gray-700 text-gray-300',
-  moliyaviy:  'bg-yellow-900/50 text-yellow-300',
-  daval:      'bg-cyan-900/50 text-cyan-300',
-  agentlik:   'bg-rose-900/50 text-rose-300',
-  transport:  'bg-slate-600/50 text-slate-300',
-  lizing:     'bg-amber-900/50 text-amber-300',
-  xalqaro:    'bg-indigo-900/50 text-indigo-300',
-  boshqa:     'bg-pink-900/50 text-pink-300',
+  oldi_sotdi: 'bg-[#1F2937] text-blue-300 border border-[#1E293B]',
+  xizmat:     'bg-[#1F2937] text-emerald-300 border border-[#1E293B]',
+  ijara:      'bg-[#1F2937] text-cyan-300 border border-[#1E293B]',
+  pudrat:     'bg-[#1F2937] text-orange-300 border border-[#1E293B]',
+  qoshimcha:  'bg-[#1F2937] text-gray-400 border border-[#1E293B]',
+  moliyaviy:  'bg-[#1F2937] text-yellow-300 border border-[#1E293B]',
+  daval:      'bg-[#1F2937] text-teal-300 border border-[#1E293B]',
+  agentlik:   'bg-[#1F2937] text-rose-300 border border-[#1E293B]',
+  transport:  'bg-[#1F2937] text-slate-300 border border-[#1E293B]',
+  lizing:     'bg-[#1F2937] text-amber-300 border border-[#1E293B]',
+  xalqaro:    'bg-[#1F2937] text-blue-300 border border-[#1E293B]',
+  boshqa:     'bg-[#1F2937] text-gray-400 border border-[#1E293B]',
 }
 
 // ─── Empty form factory ───────────────────────────────────────────────────────
@@ -1204,7 +1204,7 @@ export default function ShartnomalarPage() {
           <button
             onClick={() => exportToCSV(orgContracts)}
             title="Excel (CSV) yuklab olish"
-            className="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
+            className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
@@ -1213,7 +1213,7 @@ export default function ShartnomalarPage() {
           </button>
           <button
             onClick={openNewContract}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
           >
             {T(t.contracts.new)}
           </button>
@@ -1248,7 +1248,7 @@ export default function ShartnomalarPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={T(t.contracts.search)}
-            className={`w-full bg-gray-900 border text-white pl-9 pr-4 py-2.5 rounded-xl text-sm focus:outline-none placeholder-gray-600 ${serverResults !== null ? 'border-blue-600 focus:border-blue-400' : 'border-gray-800 focus:border-blue-500'}`}
+            className={`w-full bg-[#0F172A] border text-gray-200 pl-9 pr-4 py-2.5 rounded-xl text-sm focus:outline-none placeholder-gray-500 ${serverResults !== null ? 'border-blue-600 focus:border-blue-400' : 'border-[#1E293B] focus:border-blue-600'}`}
           />
           {serverResults !== null && (
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-blue-400">
@@ -1259,7 +1259,7 @@ export default function ShartnomalarPage() {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="bg-gray-900 border border-gray-800 text-white px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-blue-500"
+          className="bg-[#0F172A] border border-[#1E293B] text-gray-200 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-blue-600 cursor-pointer"
         >
           {Object.entries(STATUSES).map(([key, labels]) => (
             <option key={key} value={key}>{T(labels)}</option>
@@ -1268,7 +1268,7 @@ export default function ShartnomalarPage() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+      <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
         {filtered.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
             <svg className="w-12 h-12 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1283,7 +1283,7 @@ export default function ShartnomalarPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-800 text-xs text-gray-500">
+                <tr className="border-b border-[#1E293B] text-xs text-gray-500 bg-[#0F172A]">
                   <th className="text-left px-4 py-3 font-medium">{T(t.contracts.number)}</th>
                   <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">{T(t.contracts.date)}</th>
                   <th className="text-left px-4 py-3 font-medium hidden md:table-cell">{T(t.contracts.type)}</th>
@@ -1296,7 +1296,7 @@ export default function ShartnomalarPage() {
               </thead>
               <tbody>
                 {filtered.map((c, idx) => (
-                  <tr key={c.id} className={`border-b border-gray-800/50 hover:bg-gray-800/30 transition ${idx % 2 === 0 ? '' : 'bg-gray-900/30'}`}>
+                  <tr key={c.id} className="border-b border-[#1E293B] hover:bg-[#1F2937] transition">
                     {/* Number */}
                     <td className="px-4 py-3">
                       <span className="text-sm font-medium text-white">{c.contract_number}</span>
@@ -1347,7 +1347,7 @@ export default function ShartnomalarPage() {
                         <button
                           title="Tahrirlash"
                           onClick={() => openEditContract(c)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-gray-700 transition"
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -1357,7 +1357,7 @@ export default function ShartnomalarPage() {
                         <button
                           title="Ko'rish"
                           onClick={() => { setViewContract(c); setModal('viewContract') }}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition"
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1378,7 +1378,7 @@ export default function ShartnomalarPage() {
                         <button
                           title="PDF"
                           onClick={() => generatePDF(c)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-700 transition"
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-400 hover:bg-[#1F2937] transition"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -1390,7 +1390,7 @@ export default function ShartnomalarPage() {
                             <button
                               title="AI Tahlil"
                               onClick={() => runAiAnalysis(c, 'tahlil')}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-purple-400 hover:bg-gray-700 transition"
+                              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-400 hover:bg-[#1F2937] transition"
                             >
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -1402,7 +1402,7 @@ export default function ShartnomalarPage() {
                         <button
                           title="Nusxa"
                           onClick={() => copyContract(c)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-400 hover:bg-gray-700 transition"
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-400 hover:bg-[#1F2937] transition"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -1412,7 +1412,7 @@ export default function ShartnomalarPage() {
                         <button
                           title="Email yuborish"
                           onClick={() => sendByEmail(c)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-gray-700 transition"
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -1423,7 +1423,7 @@ export default function ShartnomalarPage() {
                           <button
                             title="Bajarildi"
                             onClick={() => updateStatus(c.id, 'completed')}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-400 hover:bg-gray-700 transition"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-400 hover:bg-[#1F2937] transition"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1435,7 +1435,7 @@ export default function ShartnomalarPage() {
                           <button
                             title="Bekor qilish"
                             onClick={() => updateStatus(c.id, 'cancelled')}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-gray-700 transition"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -1446,7 +1446,7 @@ export default function ShartnomalarPage() {
                         <button
                           title="O'chirish"
                           onClick={() => deleteContract(c.id)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-700 transition"
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-400 hover:bg-[#1F2937] transition"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1466,7 +1466,7 @@ export default function ShartnomalarPage() {
       {contracts.length < contractsTotal && (
         <div className="mt-3 text-center">
           <button onClick={loadMoreContracts}
-            className="text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 px-4 py-2 rounded-lg transition">
+            className="text-xs text-gray-400 hover:text-white bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] px-4 py-2 rounded-lg transition">
             Ko&apos;proq yuklash ({contracts.length} / {contractsTotal})
           </button>
         </div>

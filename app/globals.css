@@ -5,17 +5,39 @@
   --foreground: #171717;
 }
 
+/* ── Design System Tokens ──────────────────────────────────── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Backgrounds */
+  --color-ds-bg:        #0B1220;
+  --color-ds-sidebar:   #0F172A;
+  --color-ds-card:      #111827;
+  --color-ds-card-hover:#1F2937;
+  --color-ds-border:    #1E293B;
+
+  /* Text */
+  --color-ds-text:      #E5E7EB;
+  --color-ds-text-2:    #9CA3AF;
+  --color-ds-muted:     #6B7280;
+
+  /* Accent */
+  --color-ds-blue:      #2563EB;
+  --color-ds-blue-h:    #1D4ED8;
+  --color-ds-orange:    #F97316;
+  --color-ds-orange-h:  #EA580C;
+  --color-ds-green:     #22C55E;
+  --color-ds-red:       #EF4444;
+  --color-ds-yellow:    #EAB308;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0B1220;
+    --foreground: #E5E7EB;
   }
 }
 
@@ -24,6 +46,27 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Dashboard scrollbar ─────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2563EB; }
+
+/* ── Focus ring ──────────────────────────────────────────────── */
+.ds-input {
+  background: #0F172A;
+  border: 1px solid #1E293B;
+  color: #E5E7EB;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.ds-input::placeholder { color: #6B7280; }
+.ds-input:focus { border-color: #2563EB; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
 
 @media print {
   body > *:not(.print-area) { display: none !important; }

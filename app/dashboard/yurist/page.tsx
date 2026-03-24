@@ -105,15 +105,15 @@ export default function YuristPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-white flex items-center gap-2">⚖️ Yurist AI</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Claude AI yordamida shartnomalaringizni tahlil qiling, tarjima qiling va takomillashtiring</p>
+          <p className="text-gray-400 text-sm mt-0.5">Claude AI yordamida shartnomalaringizni tahlil qiling, tarjima qiling va takomillashtiring</p>
         </div>
         {!hasAiAccess() ? (
           <button onClick={openUpgradeModal}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white text-xs font-semibold px-4 py-2 rounded-xl transition">
+            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
             ✦ Pro versiyani olish →
           </button>
         ) : (
-          <span className="text-xs bg-purple-900/50 border border-purple-700 text-purple-300 px-3 py-1.5 rounded-xl font-medium">
+          <span className="text-xs bg-blue-600/10 border border-blue-600/30 text-blue-400 px-3 py-1.5 rounded-xl font-medium">
             ⭐ {subscription?.plan === 'ai_pro' ? 'AI Pro' : subscription?.plan === 'standard' ? 'Standart' : 'Premium'} — Cheksiz foydalanish
           </span>
         )}
@@ -128,16 +128,16 @@ export default function YuristPage() {
               onClick={() => { setHubFeature(f.key); setHubResult(null); setHubError(''); setHubLoading(false); if (!f.needsContract) setHubContract('') }}
               className={`relative text-left p-4 rounded-xl border transition ${
                 hubFeature === f.key
-                  ? 'bg-purple-900/50 border-purple-600 shadow-lg shadow-purple-900/20'
+                  ? 'bg-blue-600/10 border-blue-600/50 shadow-lg shadow-blue-900/20'
                   : locked
-                  ? 'bg-gray-900/50 border-gray-800 opacity-60 cursor-default'
-                  : 'bg-gray-900 border-gray-800 hover:border-gray-600'
+                  ? 'bg-[#111827] border-[#1E293B] opacity-60 cursor-default'
+                  : 'bg-[#111827] border-[#1E293B] hover:border-blue-600/40'
               }`}>
               {locked && (
-                <span className="absolute top-2 right-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white px-1.5 py-0.5 rounded-full">PRO</span>
+                <span className="absolute top-2 right-2 text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded-full">PRO</span>
               )}
               <div className="text-2xl mb-2">{f.icon}</div>
-              <div className={`text-sm font-semibold mb-1 ${hubFeature === f.key ? 'text-purple-300' : 'text-white'}`}>{f.name}</div>
+              <div className={`text-sm font-semibold mb-1 ${hubFeature === f.key ? 'text-white' : 'text-gray-200'}`}>{f.name}</div>
               <div className="text-xs text-gray-500 leading-relaxed">{f.desc}</div>
             </button>
           )
@@ -145,12 +145,12 @@ export default function YuristPage() {
       </div>
 
       {/* Feature panel */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+      <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6 space-y-4">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xl">{sel.icon}</span>
           <h3 className="font-semibold text-white">{sel.name}</h3>
           {!hasAiAccess() && (
-            <span className="ml-auto text-xs bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-0.5 rounded-full">Pro versiya</span>
+            <span className="ml-auto text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Pro versiya</span>
           )}
         </div>
 
@@ -160,14 +160,14 @@ export default function YuristPage() {
           const selectedHasContent = contractList.find(c => c.id === hubContract)?.content?.trim()
           return (
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">
+              <label className="block text-xs text-gray-400 mb-1">
                 Shartnoma tanlang
                 {contractsWithContent.length === 0 && contractList.length > 0 && (
                   <span className="ml-2 text-amber-400">⚠ Hech bir shartnomada matn yo'q</span>
                 )}
               </label>
               <select value={hubContract} onChange={e => { setHubContract(e.target.value); setHubResult(null); setHubError('') }}
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500">
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
                 <option value="">— Shartnomani tanlang —</option>
                 {contractList.map(c => {
                   const hasContent = Boolean(c.content?.trim())
@@ -188,11 +188,11 @@ export default function YuristPage() {
         {/* Tarjima - til tanlash */}
         {hubFeature === 'tarjima' && (
           <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Tarjima tili</label>
+            <label className="block text-xs text-gray-400 mb-1">Tarjima tili</label>
             <div className="flex gap-2">
               {[['ru', 'Ruscha'], ['oz', "O'zbek (Kirill)"], ['en', 'English']].map(([v, l]) => (
                 <button key={v} onClick={() => setHubTargetLang(v)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${hubTargetLang === v ? 'bg-purple-700 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${hubTargetLang === v ? 'bg-blue-600 text-white' : 'bg-[#1F2937] border border-[#1E293B] text-gray-400 hover:text-white'}`}>
                   {l}
                 </button>
               ))}
@@ -203,15 +203,15 @@ export default function YuristPage() {
         {/* Savol-javob */}
         {hubFeature === 'qa' && (
           <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Savolingiz</label>
+            <label className="block text-xs text-gray-400 mb-1">Savolingiz</label>
             <div className="flex gap-2">
               <input value={hubQuestion} onChange={e => setHubQuestion(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !hubLoading) { e.preventDefault(); setHubResult(null); runHubFeature() } }}
                 placeholder="Masalan: Bu shartnomada jarima bandi bormi? (Enter → yuborish)"
-                className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                className="flex-1 bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
               {hubResult && !hubLoading && (
                 <button onClick={() => { setHubResult(null); setHubError(''); runHubFeature() }}
-                  className="shrink-0 bg-purple-700 hover:bg-purple-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition">
+                  className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                   ↩ Yuborish
                 </button>
               )}
@@ -222,21 +222,21 @@ export default function YuristPage() {
         {/* Band qo'shish */}
         {hubFeature === 'clause' && (
           <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Ko'rsatma</label>
+            <label className="block text-xs text-gray-400 mb-1">Ko'rsatma</label>
             <input value={hubInstruction} onChange={e => setHubInstruction(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !hubLoading) { e.preventDefault(); setHubResult(null); runHubFeature() } }}
               placeholder="Masalan: Kechikish uchun 0.1% kunlik jarima bandi qo'sh (Enter → yuborish)"
-              className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+              className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
           </div>
         )}
 
         {/* Tur tavsiyasi */}
         {hubFeature === 'recommend' && (
           <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Vaziyatni ta'riflang</label>
+            <label className="block text-xs text-gray-400 mb-1">Vaziyatni ta'riflang</label>
             <textarea value={hubDescription} onChange={e => setHubDescription(e.target.value)} rows={3}
               placeholder="Masalan: Kompaniyam boshqa firmaga 3 oy davomida ofis ijaraga bermoqchi..."
-              className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600 resize-none"/>
+              className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500 resize-none"/>
           </div>
         )}
 
@@ -244,32 +244,32 @@ export default function YuristPage() {
         {hubFeature === 'write' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Shartnoma turi</label>
+              <label className="block text-xs text-gray-400 mb-1">Shartnoma turi</label>
               <select value={hubWriteDetails.tur} onChange={e => setHubWriteDetails({ ...hubWriteDetails, tur: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500">
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
                 {Object.entries(CONTRACT_TYPES_I18N).map(([k, v]) => <option key={k} value={k}>{v[lang]}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Summa</label>
+              <label className="block text-xs text-gray-400 mb-1">Summa</label>
               <input value={hubWriteDetails.summa} onChange={e => setHubWriteDetails({ ...hubWriteDetails, summa: e.target.value })}
-                placeholder="10 000 000 so'm" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                placeholder="10 000 000 so'm" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Birinchi tomon</label>
+              <label className="block text-xs text-gray-400 mb-1">Birinchi tomon</label>
               <input value={hubWriteDetails.org} onChange={e => setHubWriteDetails({ ...hubWriteDetails, org: e.target.value })}
-                placeholder="Tashkilot nomi" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                placeholder="Tashkilot nomi" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Ikkinchi tomon</label>
+              <label className="block text-xs text-gray-400 mb-1">Ikkinchi tomon</label>
               <input value={hubWriteDetails.cp} onChange={e => setHubWriteDetails({ ...hubWriteDetails, cp: e.target.value })}
-                placeholder="Kontragent nomi" className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600"/>
+                placeholder="Kontragent nomi" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs text-gray-400 mb-1.5">Qo'shimcha shartlar (ixtiyoriy)</label>
+              <label className="block text-xs text-gray-400 mb-1">Qo'shimcha shartlar (ixtiyoriy)</label>
               <textarea value={hubWriteDetails.extra} onChange={e => setHubWriteDetails({ ...hubWriteDetails, extra: e.target.value })} rows={2}
                 placeholder="Masalan: To'lov muddati 30 kun, yetkazib berish Toshkentda..."
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500 placeholder-gray-600 resize-none"/>
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500 resize-none"/>
             </div>
           </div>
         )}
@@ -282,7 +282,7 @@ export default function YuristPage() {
               {hubError}
               {hubError.includes('premium') && (
                 <button onClick={openUpgradeModal}
-                  className="block mt-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs px-3 py-1.5 rounded-lg">
+                  className="block mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg">
                   Pro versiyani olish →
                 </button>
               )}
@@ -292,12 +292,12 @@ export default function YuristPage() {
 
         {/* Premium lock */}
         {!canUse && (
-          <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/50 rounded-xl p-5 text-center">
+          <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-5 text-center">
             <div className="text-3xl mb-2">🔒</div>
             <div className="text-white font-semibold mb-1">Pro versiyada ishlaydi</div>
             <div className="text-gray-400 text-sm mb-4">Yurist AI faqat Standart yoki AI Pro tarifida ishlaydi. Hoziroq ulaning va shartnomalaringizni AI bilan tahlil qiling.</div>
             <button onClick={openUpgradeModal}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition">
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition">
               ✦ Pro versiyani olish →
             </button>
           </div>
@@ -306,7 +306,7 @@ export default function YuristPage() {
         {/* Action button */}
         {canUse && !hubLoading && !hubResult && (
           <button onClick={runHubFeature}
-            className="w-full py-3 rounded-xl text-sm font-semibold transition bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 text-white">
+            className="w-full py-3 rounded-xl text-sm font-semibold transition bg-orange-500 hover:bg-orange-600 text-white">
             {sel.icon} {sel.name} boshlash
           </button>
         )}
@@ -314,17 +314,17 @@ export default function YuristPage() {
         {/* Loading */}
         {hubLoading && (
           <div className="text-center py-8">
-            <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"/>
+            <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"/>
             <div className="text-gray-400 text-sm">Claude AI ishlamoqda...</div>
-            <div className="text-gray-600 text-xs mt-1">~10-20 soniya</div>
+            <div className="text-gray-500 text-xs mt-1">~10-20 soniya</div>
           </div>
         )}
 
         {/* Preview modal */}
         {previewText !== null && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setPreviewText(null)}>
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+            <div className="bg-[#111827] border border-[#1E293B] rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E293B]">
                 <h3 className="font-semibold text-white">👁 Ko&apos;rish: {sel.name}</h3>
                 <button onClick={() => setPreviewText(null)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
               </div>
@@ -333,13 +333,13 @@ export default function YuristPage() {
                   {previewText}
                 </div>
               </div>
-              <div className="px-5 py-4 border-t border-gray-800 flex gap-3">
+              <div className="px-5 py-4 border-t border-[#1E293B] flex gap-3">
                 <button onClick={() => { downloadTextAsWord(previewText, sel.name); setPreviewText(null) }}
-                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">
                   📝 Word yuklash
                 </button>
                 <button onClick={() => { downloadTextAsPDF(previewText, sel.name); setPreviewText(null) }}
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm font-semibold transition">
+                  className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2.5 rounded-xl text-sm font-semibold transition">
                   📄 PDF yuklash
                 </button>
               </div>
@@ -350,18 +350,18 @@ export default function YuristPage() {
         {/* Result */}
         {hubResult && !hubLoading && (
           <div className="space-y-3">
-            <div className="h-px bg-gray-800"/>
+            <div className="h-px bg-[#1E293B]"/>
 
             {hubFeature === 'xulosa' && (
               <div className="space-y-3">
-                <div className="bg-gray-800/60 rounded-xl p-4">
+                <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
                   <div className="text-xs text-gray-500 mb-1">Xulosa</div>
                   <div className="text-white text-sm leading-relaxed">{String(hubResult.xulosa || '')}</div>
                 </div>
                 {(hubResult.asosiy_shartlar as string[])?.length > 0 && (
-                  <div className="bg-gray-800/60 rounded-xl p-4">
+                  <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
                     <div className="text-xs text-gray-500 mb-2">Asosiy shartlar</div>
-                    {(hubResult.asosiy_shartlar as string[]).map((s, i) => <div key={i} className="text-sm text-gray-300">• {s}</div>)}
+                    {(hubResult.asosiy_shartlar as string[]).map((s, i) => <div key={i} className="text-sm text-gray-200">• {s}</div>)}
                   </div>
                 )}
                 <div className="flex gap-3">
@@ -369,18 +369,18 @@ export default function YuristPage() {
                   {Boolean(hubResult.summa)  && <div className="bg-emerald-900/40 border border-emerald-800/40 rounded-xl px-4 py-3 flex-1"><div className="text-xs text-gray-500">Summa</div><div className="text-white text-sm">{String(hubResult.summa)}</div></div>}
                 </div>
                 {(hubResult.muhim_bandlar as string[])?.length > 0 && (
-                  <div className="bg-gray-800/60 rounded-xl p-4">
+                  <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
                     <div className="text-xs text-gray-500 mb-2">📌 Muhim bandlar</div>
-                    {(hubResult.muhim_bandlar as string[]).map((s, i) => <div key={i} className="text-sm text-gray-300">• {s}</div>)}
+                    {(hubResult.muhim_bandlar as string[]).map((s, i) => <div key={i} className="text-sm text-gray-200">• {s}</div>)}
                   </div>
                 )}
                 <div className="flex gap-2 flex-wrap">
                   <button onClick={() => setPreviewText(String(hubResult.xulosa || ''))}
-                    className="text-xs bg-purple-700 hover:bg-purple-600 text-white px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
+                    className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
                   <button onClick={() => downloadTextAsWord(String(hubResult.xulosa || ''), 'xulosa')}
-                    className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
+                    className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
                   <button onClick={() => downloadTextAsPDF(String(hubResult.xulosa || ''), 'xulosa')}
-                    className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
+                    className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                   <button onClick={() => navigator.clipboard.writeText(String(hubResult.xulosa || ''))}
                     className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
                   <button onClick={() => { saveAiResult('Yurist xulosa', String(hubResult.xulosa || '')); toast('Saqlandi!', 'success') }}
@@ -390,16 +390,16 @@ export default function YuristPage() {
             )}
 
             {hubFeature === 'tarjima' && (
-              <div className="bg-gray-800/60 rounded-xl p-4">
+              <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                   <div className="text-xs text-gray-500">Tarjima</div>
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setPreviewText(String(hubResult.tarjima || ''))}
-                      className="text-xs bg-purple-700 hover:bg-purple-600 text-white px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
+                      className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
                     <button onClick={() => downloadTextAsWord(String(hubResult.tarjima || ''), 'tarjima')}
-                      className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
+                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
                     <button onClick={() => downloadTextAsPDF(String(hubResult.tarjima || ''), 'tarjima')}
-                      className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
+                      className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                     <button onClick={() => navigator.clipboard.writeText(String(hubResult.tarjima || ''))}
                       className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
                     <button onClick={() => { saveAiResult('Tarjima', String(hubResult.tarjima || '')); toast('Saqlandi!', 'success') }}
@@ -412,7 +412,7 @@ export default function YuristPage() {
 
             {hubFeature === 'grammatika' && (
               <div className="space-y-3">
-                <div className="bg-gray-800/60 rounded-xl p-4 flex items-center gap-3">
+                <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 flex items-center gap-3">
                   <span className="text-2xl">✏️</span>
                   <div>
                     <div className="text-white font-semibold">{Number(hubResult.xatolar_soni ?? (hubResult.xatolar as unknown[])?.length ?? 0)} ta xato</div>
@@ -420,10 +420,10 @@ export default function YuristPage() {
                   </div>
                 </div>
                 {(hubResult.xatolar as { xato: string; togri: string; izoh: string }[])?.map((x, i) => (
-                  <div key={i} className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
+                  <div key={i} className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-red-400 text-sm line-through">{x.xato}</span>
-                      <span className="text-gray-600">→</span>
+                      <span className="text-gray-500">→</span>
                       <span className="text-emerald-400 text-sm font-medium">{x.togri}</span>
                     </div>
                     <div className="text-gray-500 text-xs">{x.izoh}</div>
@@ -444,38 +444,38 @@ export default function YuristPage() {
                     String(hubResult.baho) === 'B' ? 'text-blue-400' :
                     String(hubResult.baho) === 'C' ? 'text-yellow-400' : 'text-red-400'
                   }`}>{String(hubResult.baho)}</span>
-                  <div className="text-gray-300 text-sm">{String(hubResult.umumiy || '')}</div>
+                  <div className="text-gray-200 text-sm">{String(hubResult.umumiy || '')}</div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {(hubResult.kuchli_tomonlar as string[])?.length > 0 && (
                     <div className="bg-emerald-900/20 border border-emerald-800/40 rounded-xl p-3">
                       <div className="text-xs text-emerald-400 mb-1.5">✅ Kuchli tomonlar</div>
-                      {(hubResult.kuchli_tomonlar as string[]).map((s, i) => <div key={i} className="text-xs text-gray-300">• {s}</div>)}
+                      {(hubResult.kuchli_tomonlar as string[]).map((s, i) => <div key={i} className="text-xs text-gray-200">• {s}</div>)}
                     </div>
                   )}
                   {(hubResult.zaif_tomonlar as string[])?.length > 0 && (
                     <div className="bg-yellow-900/20 border border-yellow-800/40 rounded-xl p-3">
                       <div className="text-xs text-yellow-400 mb-1.5">⚠️ Zaif tomonlar</div>
-                      {(hubResult.zaif_tomonlar as string[]).map((s, i) => <div key={i} className="text-xs text-gray-300">• {s}</div>)}
+                      {(hubResult.zaif_tomonlar as string[]).map((s, i) => <div key={i} className="text-xs text-gray-200">• {s}</div>)}
                     </div>
                   )}
                 </div>
                 {(hubResult.yuridik_xatarlar as { daraja: string; tavsif: string }[])?.map((x, i) => (
-                  <div key={i} className="flex items-start gap-2 bg-gray-800/60 rounded-xl p-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 mt-0.5 ${x.daraja.match(/yuqori|высок|юқори/i) ? 'bg-red-900 text-red-300' : x.daraja.match(/rta|редний|ўрта/i) ? 'bg-yellow-900 text-yellow-300' : 'bg-gray-700 text-gray-300'}`}>{x.daraja}</span>
-                    <span className="text-gray-300 text-sm">{x.tavsif}</span>
+                  <div key={i} className="flex items-start gap-2 bg-[#0F172A] border border-[#1E293B] rounded-xl p-3">
+                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 mt-0.5 ${x.daraja.match(/yuqori|высок|юқори/i) ? 'bg-red-900 text-red-300' : x.daraja.match(/rta|редний|ўрта/i) ? 'bg-yellow-900 text-yellow-300' : 'bg-[#1F2937] text-gray-200'}`}>{x.daraja}</span>
+                    <span className="text-gray-200 text-sm">{x.tavsif}</span>
                   </div>
                 ))}
-                {(hubResult.tavsiyalar as string[])?.map((s, i) => <div key={i} className="text-gray-300 text-sm">• {s}</div>)}
+                {(hubResult.tavsiyalar as string[])?.map((s, i) => <div key={i} className="text-gray-200 text-sm">• {s}</div>)}
               </div>
             )}
 
             {hubFeature === 'qa' && (
               <div className="space-y-2">
-                <div className="bg-purple-900/30 border border-purple-800/40 rounded-xl p-4">
-                  <div className="text-xs text-purple-400 mb-2 flex items-center justify-between">
+                <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
+                  <div className="text-xs text-blue-400 mb-2 flex items-center justify-between">
                     <span>💬 Javob</span>
-                    <span className="text-gray-600 text-xs">{hubQuestion}</span>
+                    <span className="text-gray-500 text-xs">{hubQuestion}</span>
                   </div>
                   {hubResult.javob
                     ? <div className="text-white text-sm leading-relaxed">{String(hubResult.javob)}</div>
@@ -489,16 +489,16 @@ export default function YuristPage() {
             )}
 
             {hubFeature === 'clause' && (
-              <div className="bg-gray-800/60 rounded-xl p-4">
-                {Boolean(hubResult.band_nomi) && <div className="text-purple-400 text-xs font-semibold mb-2">{String(hubResult.band_nomi)}</div>}
+              <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
+                {Boolean(hubResult.band_nomi) && <div className="text-blue-400 text-xs font-semibold mb-2">{String(hubResult.band_nomi)}</div>}
                 <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.band || '')}</pre>
                 <div className="flex gap-2 mt-3 flex-wrap">
                   <button onClick={() => setPreviewText(String(hubResult.band || ''))}
-                    className="text-xs bg-purple-700 hover:bg-purple-600 text-white px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
+                    className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
                   <button onClick={() => downloadTextAsWord(String(hubResult.band || ''), 'band')}
-                    className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
+                    className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
                   <button onClick={() => downloadTextAsPDF(String(hubResult.band || ''), 'band')}
-                    className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
+                    className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                   <button onClick={() => navigator.clipboard.writeText(String(hubResult.band || ''))}
                     className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
                   <button onClick={() => { saveAiResult('Yuridik band', String(hubResult.band || '')); toast('Saqlandi!', 'success') }}
@@ -509,18 +509,18 @@ export default function YuristPage() {
 
             {hubFeature === 'recommend' && (
               <div className="space-y-3">
-                <div className="bg-purple-900/40 border border-purple-700 rounded-xl p-4 flex items-center gap-3">
+                <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 flex items-center gap-3">
                   <span className="text-3xl">🎯</span>
                   <div>
                     <div className="text-xs text-gray-500">Tavsiya etilgan tur</div>
                     <div className="text-white font-bold">{String(hubResult.tur_nomi || hubResult.tur || '')}</div>
                   </div>
                 </div>
-                <div className="bg-gray-800/60 rounded-xl p-4 text-sm text-gray-300 leading-relaxed">{String(hubResult.tavsiya || '')}</div>
+                <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 text-sm text-gray-200 leading-relaxed">{String(hubResult.tavsiya || '')}</div>
                 {Boolean(hubResult.sabab) && <div className="text-gray-500 text-xs">💡 {String(hubResult.sabab)}</div>}
                 {Boolean(hubResult.qoshimcha_maslahat) && <div className="text-gray-500 text-xs">📌 {String(hubResult.qoshimcha_maslahat)}</div>}
                 <button onClick={() => { setHubFeature('write'); setHubWriteDetails({ ...hubWriteDetails, tur: String(hubResult.tur || 'oldi_sotdi') }); setHubResult(null) }}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm px-4 py-2 rounded-xl hover:opacity-90 transition">
+                  className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-xl transition">
                   ✍️ Shu tur bo'yicha shartnoma yoz →
                 </button>
               </div>
@@ -532,38 +532,38 @@ export default function YuristPage() {
                   <div className="text-xs text-gray-500">{Number(hubResult.bandlar_soni || 0)} ta band</div>
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setPreviewText(String(hubResult.shartnoma || ''))}
-                      className="text-xs bg-purple-700 hover:bg-purple-600 text-white px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
+                      className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
                     <button onClick={() => downloadTextAsWord(String(hubResult.shartnoma || ''), 'shartnoma')}
-                      className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
+                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
                     <button onClick={() => downloadTextAsPDF(String(hubResult.shartnoma || ''), 'shartnoma')}
-                      className="text-xs bg-red-700 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg transition">📄 PDF</button>
+                      className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">📄 PDF</button>
                     <button onClick={() => navigator.clipboard.writeText(String(hubResult.shartnoma || ''))}
-                      className="text-xs text-purple-400 hover:text-purple-300">📋 Nusxa</button>
+                      className="text-xs text-gray-400 hover:text-gray-200">📋 Nusxa</button>
                     <button onClick={() => { saveAiResult('AI shartnoma', String(hubResult.shartnoma || '')); toast('Saqlandi!', 'success') }}
                       className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
                   </div>
                 </div>
-                <div className="bg-gray-800/60 rounded-xl p-4 max-h-96 overflow-y-auto">
+                <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 max-h-96 overflow-y-auto">
                   <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.shartnoma || '')}</pre>
                 </div>
               </div>
             )}
 
             <button onClick={() => { setHubResult(null); setHubError('') }}
-              className="text-xs text-gray-600 hover:text-gray-400 transition">🔄 Qayta bajarish</button>
+              className="text-xs text-gray-500 hover:text-gray-400 transition">🔄 Qayta bajarish</button>
           </div>
         )}
       </div>
 
       {/* Upgrade banner for free users */}
       {!hasAiAccess() && (
-        <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/30 rounded-2xl p-5 flex items-center justify-between gap-4">
+        <div className="bg-blue-600/10 border border-blue-600/30 rounded-2xl p-5 flex items-center justify-between gap-4">
           <div>
             <div className="text-white font-semibold text-sm mb-1">✦ Pro versiyada ishlaydi</div>
             <div className="text-gray-400 text-xs">Shartnoma tahlili, tarjima, grammatika, yuridik maslahat — barchasi AI bilan</div>
           </div>
           <button onClick={openUpgradeModal}
-            className="shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
+            className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
             Pro versiyani olish →
           </button>
         </div>

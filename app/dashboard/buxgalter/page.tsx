@@ -163,16 +163,16 @@ export default function BuxgalterPage() {
     })
   }
 
-  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder-gray-500'
+  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
   return (
-    <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-950">
+    <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#0B1220]">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <span className="w-10 h-10 bg-indigo-900/50 rounded-xl flex items-center justify-center text-xl">💼</span>
+            <span className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center text-xl">💼</span>
             Buxgalter hujjatlari
           </h1>
           <p className="text-gray-400 text-sm mt-1">AI yordamida moliyaviy hujjatlarni avtomatik tayyorlang</p>
@@ -180,15 +180,15 @@ export default function BuxgalterPage() {
 
         {/* Stats bar */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-white">{contracts.length}</div>
             <div className="text-xs text-gray-500 mt-1">Jami shartnomalar</div>
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-emerald-400">{contracts.filter(c => c.status === 'active').length}</div>
             <div className="text-xs text-gray-500 mt-1">Faol shartnomalar</div>
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-blue-400">
               {(contracts.filter(c => c.status === 'active').reduce((s, c) => s + (c.amount || 0), 0) / 1_000_000).toFixed(1)}M
             </div>
@@ -197,13 +197,13 @@ export default function BuxgalterPage() {
         </div>
 
         {!hasAiAccess() && (
-          <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-purple-800/30 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
               <div className="text-white text-sm font-semibold mb-0.5">✦ Pro versiyada ishlaydi</div>
               <div className="text-gray-400 text-xs">Buxgalteriya hujjatlari faqat Standart yoki AI Pro tarifida ishlaydi</div>
             </div>
             <button onClick={openUpgradeModal}
-              className="shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition hover:opacity-90">
+              className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
               Pro versiyani olish →
             </button>
           </div>
@@ -214,9 +214,9 @@ export default function BuxgalterPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map(feature => (
               <button key={feature.key} onClick={() => selectFeature(feature.key)}
-                className="bg-gray-900 border border-gray-800 hover:border-indigo-700/60 hover:bg-gray-800/80 rounded-xl p-5 text-left transition group">
+                className="bg-[#111827] border border-[#1E293B] hover:border-blue-600/50 hover:bg-[#1F2937] rounded-xl p-5 text-left transition group">
                 <div className="text-3xl mb-3">{feature.icon}</div>
-                <div className="font-semibold text-white text-sm mb-1 group-hover:text-indigo-300 transition">{feature.title}</div>
+                <div className="font-semibold text-white text-sm mb-1 group-hover:text-blue-400 transition">{feature.title}</div>
                 <div className="text-xs text-gray-500">{feature.description}</div>
               </button>
             ))}
@@ -225,13 +225,13 @@ export default function BuxgalterPage() {
 
         {/* Form */}
         {selected && currentFeature && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-6 space-y-5">
             <div className="flex items-center gap-3">
               <button onClick={() => { setSelected(null); setResult(null); setError('') }}
                 className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition">
                 ← Orqaga
               </button>
-              <div className="w-px h-4 bg-gray-700"/>
+              <div className="w-px h-4 bg-[#1E293B]"/>
               <div className="flex items-center gap-2">
                 <span className="text-xl">{currentFeature.icon}</span>
                 <h2 className="font-semibold text-white">{currentFeature.title}</h2>
@@ -241,7 +241,7 @@ export default function BuxgalterPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {currentFeature.fields.map(field => (
                 <div key={field.key}>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">{field.label}</label>
+                  <label className="block text-xs text-gray-400 mb-1">{field.label}</label>
                   <input
                     type={field.type || 'text'}
                     value={formData[field.key] || ''}
@@ -254,7 +254,7 @@ export default function BuxgalterPage() {
             </div>
 
             {activeOrg && (
-              <div className="bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-2 text-xs text-gray-400">
+              <div className="bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-2 text-xs text-gray-400">
                 Tashkilot: <span className="text-white font-medium">{activeOrg.name}</span>
                 {activeOrg.bank_name && <> · Bank: {activeOrg.bank_name}</>}
                 {activeOrg.bank_account && <> · H/R: {activeOrg.bank_account}</>}
@@ -266,7 +266,7 @@ export default function BuxgalterPage() {
             )}
 
             <button onClick={handleGenerate} disabled={loading}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
+              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:bg-[#1F2937] disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
               {loading ? (
                 <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
@@ -278,19 +278,19 @@ export default function BuxgalterPage() {
             {/* Preview modal */}
             {showPreview && result && (
               <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
-                <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+                <div className="bg-[#111827] border border-[#1E293B] rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E293B]">
                     <h3 className="font-semibold text-white">👁 Ko&apos;rish: {currentFeature?.title}</h3>
                     <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6">
                     <div className="bg-white text-gray-900 rounded-xl p-8 font-serif text-sm leading-relaxed whitespace-pre-wrap shadow-inner">{result}</div>
                   </div>
-                  <div className="px-5 py-4 border-t border-gray-800 flex gap-3">
+                  <div className="px-5 py-4 border-t border-[#1E293B] flex gap-3">
                     <button onClick={() => { downloadTextAsWord(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">📝 Word</button>
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">📝 Word</button>
                     <button onClick={() => { downloadTextAsPDF(result, currentFeature?.title || 'hujjat'); setShowPreview(false) }}
-                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm transition">📄 PDF</button>
+                      className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2.5 rounded-xl text-sm transition">📄 PDF</button>
                   </div>
                 </div>
               </div>
@@ -302,22 +302,22 @@ export default function BuxgalterPage() {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-white">Natija:</h3>
-                    <span className="text-xs text-green-400">✓ Saqlandi</span>
+                    <span className="text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full">✓ Saqlandi</span>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setShowPreview(true)}
-                      className="flex items-center gap-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
+                      className="flex items-center gap-1.5 text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-3 py-1.5 rounded-lg transition">👁 Ko&apos;rish</button>
                     <button onClick={() => downloadTextAsWord(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
+                      className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg font-semibold transition">📝 Word</button>
                     <button onClick={() => downloadTextAsPDF(result, currentFeature?.title || 'hujjat')}
-                      className="flex items-center gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition">📄 PDF</button>
+                      className="flex items-center gap-1.5 text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-3 py-1.5 rounded-lg transition">📄 PDF</button>
                     <button onClick={handleCopy}
-                      className="flex items-center gap-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">
+                      className="flex items-center gap-1.5 text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-3 py-1.5 rounded-lg transition">
                       {copied ? '✓ Nusxalandi' : '📋 Nusxalash'}
                     </button>
                   </div>
                 </div>
-                <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 text-sm text-gray-200 whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto font-mono">
+                <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 text-sm text-gray-200 whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto font-mono">
                   {result}
                 </div>
               </div>
@@ -327,7 +327,7 @@ export default function BuxgalterPage() {
 
         {/* Saved Documents */}
         {activeOrg && (
-          <SavedDocumentsPanel orgId={activeOrg.id} section="buxgalter" accentColor="indigo" refreshKey={savedKey} />
+          <SavedDocumentsPanel orgId={activeOrg.id} section="buxgalter" accentColor="blue" refreshKey={savedKey} />
         )}
       </div>
     </main>

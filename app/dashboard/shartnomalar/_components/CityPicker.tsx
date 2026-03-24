@@ -104,7 +104,7 @@ export default function CityPicker({ value, onChange, className = '' }: Props) {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-gray-500 hover:border-gray-600 transition"
+        className="w-full flex items-center justify-between bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-600 hover:border-blue-600/50 transition cursor-pointer"
       >
         <span className={value ? 'text-white' : 'text-gray-500'}>
           {value || 'Shahar tanlang...'}
@@ -113,11 +113,11 @@ export default function CityPicker({ value, onChange, className = '' }: Props) {
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full min-w-[340px] bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full min-w-[340px] bg-[#111827] border border-[#1E293B] rounded-xl shadow-2xl overflow-hidden">
           <div className="flex max-h-72">
             {/* Left: Viloyatlar */}
-            <div className="w-1/2 border-r border-gray-700 overflow-y-auto">
-              <div className="px-3 py-2 text-xs text-gray-500 font-medium uppercase tracking-wide border-b border-gray-800">
+            <div className="w-1/2 border-r border-[#1E293B] overflow-y-auto">
+              <div className="px-3 py-2 text-xs text-gray-500 font-medium uppercase tracking-wide border-b border-[#1E293B] bg-[#0F172A]">
                 Viloyat
               </div>
               {REGIONS.map(r => (
@@ -128,7 +128,7 @@ export default function CityPicker({ value, onChange, className = '' }: Props) {
                   className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left transition ${
                     selectedRegion === r.name
                       ? 'bg-blue-600/20 text-blue-300'
-                      : 'text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-300 hover:bg-[#1F2937]'
                   }`}
                 >
                   <span>{r.name}</span>
@@ -141,7 +141,7 @@ export default function CityPicker({ value, onChange, className = '' }: Props) {
             <div className="w-1/2 overflow-y-auto">
               {activeRegion ? (
                 <>
-                  <div className="px-3 py-2 text-xs text-gray-500 font-medium uppercase tracking-wide border-b border-gray-800">
+                  <div className="px-3 py-2 text-xs text-gray-500 font-medium uppercase tracking-wide border-b border-[#1E293B] bg-[#0F172A]">
                     Shahar / Tuman
                   </div>
                   {activeRegion.cities.map(city => (
@@ -152,7 +152,7 @@ export default function CityPicker({ value, onChange, className = '' }: Props) {
                       className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left transition ${
                         value === city
                           ? 'bg-blue-600/20 text-blue-300'
-                          : 'text-gray-300 hover:bg-gray-800'
+                          : 'text-gray-300 hover:bg-[#1F2937]'
                       }`}
                     >
                       <span>{city}</span>
@@ -161,7 +161,7 @@ export default function CityPicker({ value, onChange, className = '' }: Props) {
                   ))}
                 </>
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-600 text-xs p-4 text-center">
+                <div className="flex items-center justify-center h-full text-gray-500 text-xs p-4 text-center">
                   Chap tarafdan viloyat tanlang
                 </div>
               )}

@@ -5,7 +5,7 @@ import { loadAiDocuments, updateAiDocument, deleteAiDocument } from '@/lib/aiDoc
 import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
 import type { AiDocument } from '@/lib/types'
 
-type AccentColor = 'cyan' | 'indigo' | 'violet'
+type AccentColor = 'cyan' | 'indigo' | 'blue'
 
 interface Props {
   orgId: string
@@ -17,7 +17,7 @@ interface Props {
 const ACCENT: Record<AccentColor, { border: string; text: string; btn: string; badge: string }> = {
   cyan:   { border: 'border-cyan-700/40',   text: 'text-cyan-400',   btn: 'bg-cyan-700 hover:bg-cyan-600',   badge: 'bg-cyan-900/50 text-cyan-300' },
   indigo: { border: 'border-indigo-700/40', text: 'text-indigo-400', btn: 'bg-indigo-700 hover:bg-indigo-600', badge: 'bg-indigo-900/50 text-indigo-300' },
-  violet: { border: 'border-violet-700/40', text: 'text-violet-400', btn: 'bg-violet-700 hover:bg-violet-600', badge: 'bg-violet-900/50 text-violet-300' },
+  blue:   { border: 'border-blue-700/40',   text: 'text-blue-400',   btn: 'bg-blue-600 hover:bg-blue-700',   badge: 'bg-blue-900/50 text-blue-300' },
 }
 
 const FEATURE_LABELS: Record<string, string> = {
@@ -118,14 +118,14 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
     setEditMode(true)
   }
 
-  const inp = 'bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-gray-500 placeholder-gray-500'
+  const inp = 'bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
   return (
-    <div className={`bg-gray-900 border ${ac.border} rounded-xl p-5`}>
+    <div className={`bg-[#111827] border border-[#1E293B] rounded-xl p-5`}>
       <div className="flex items-center justify-between mb-4">
         <h2 className={`text-sm font-semibold ${ac.text} flex items-center gap-2`}>
           💾 Saqlangan hujjatlar
-          <span className="bg-gray-800 text-gray-400 text-xs rounded-full px-2 py-0.5">
+          <span className="bg-[#1F2937] text-gray-400 text-xs rounded-full px-2 py-0.5">
             {docs.length}
           </span>
         </h2>
@@ -140,12 +140,12 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
         return (
           <div className="flex flex-wrap gap-1.5 mb-3">
             <button onClick={() => setActiveFilter('all')}
-              className={`px-2.5 py-1 rounded-lg text-xs transition ${activeFilter === 'all' ? `${ac.btn} text-white` : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+              className={`px-2.5 py-1 rounded-lg text-xs transition ${activeFilter === 'all' ? `${ac.btn} text-white` : 'bg-[#1F2937] text-gray-400 hover:text-white'}`}>
               Barchasi <span className="text-gray-500 ml-0.5">{docs.length}</span>
             </button>
             {keys.map(k => (
               <button key={k} onClick={() => setActiveFilter(k)}
-                className={`px-2.5 py-1 rounded-lg text-xs transition ${activeFilter === k ? `${ac.btn} text-white` : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
+                className={`px-2.5 py-1 rounded-lg text-xs transition ${activeFilter === k ? `${ac.btn} text-white` : 'bg-[#1F2937] text-gray-400 hover:text-white'}`}>
                 {FEATURE_LABELS[k] || k} <span className="text-gray-500 ml-0.5">{docs.filter(d => d.feature_key === k).length}</span>
               </button>
             ))}
@@ -154,25 +154,25 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
       })()}
 
       {loading ? (
-        <div className="text-center py-8 text-gray-600 text-sm">Yuklanmoqda…</div>
+        <div className="text-center py-8 text-gray-500 text-sm">Yuklanmoqda…</div>
       ) : docs.length === 0 ? (
-        <div className="text-center py-8 text-gray-600 text-sm">
+        <div className="text-center py-8 text-gray-500 text-sm">
           Hali hujjat saqlanmagan. Hujjat yaratsangiz, u shu yerda ko&apos;rinadi.
         </div>
       ) : (
         <div className="space-y-2">
           {docs.filter(d => activeFilter === 'all' || d.feature_key === activeFilter).map(doc => (
             <div key={doc.id}
-              className="bg-gray-800/60 border border-gray-700/50 rounded-lg px-4 py-3 flex items-center gap-3 group hover:border-gray-600 transition">
+              className="bg-[#0F172A] border border-[#1E293B] rounded-lg px-4 py-3 flex items-center gap-3 group hover:border-blue-600/30 transition">
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-white text-sm font-medium truncate">{doc.title}</span>
+                  <span className="text-gray-200 text-sm font-medium truncate">{doc.title}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${ac.badge}`}>
                     {FEATURE_LABELS[doc.feature_key] || doc.feature_key}
                   </span>
                   {doc.meta?.contract_type && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#1F2937] text-gray-400">
                       {CONTRACT_TYPE_LABELS[doc.meta.contract_type] || doc.meta.contract_type}
                     </span>
                   )}
@@ -182,11 +182,11 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
               {/* Actions */}
               <div className="flex items-center gap-1 shrink-0">
                 <button onClick={() => openView(doc)} title="Ko'rish"
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition text-sm">
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition text-sm">
                   👁
                 </button>
                 <button onClick={() => openEdit(doc)} title="Tahrirlash"
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition text-sm">
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition text-sm">
                   ✏️
                 </button>
                 <button onClick={() => downloadTextAsWord(doc.content, doc.title)} title="Word"
@@ -202,7 +202,7 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
                   disabled={deletingId === doc.id}
                   className={`h-8 flex items-center justify-center rounded-lg transition text-xs px-2 ${
                     confirmDelete === doc.id
-                      ? 'bg-red-700 hover:bg-red-600 text-white'
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
                       : 'text-gray-500 hover:text-red-400 hover:bg-red-900/20'
                   }`}
                 >
@@ -224,10 +224,10 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
       {viewDoc && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
           onClick={() => { setViewDoc(null); setEditMode(false) }}>
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E293B]">
               <div>
                 <h3 className="font-semibold text-white text-sm">{viewDoc.title}</h3>
                 <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
@@ -242,7 +242,7 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
               <div className="flex items-center gap-2">
                 {!editMode && (
                   <button onClick={() => setEditMode(true)}
-                    className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg transition">
+                    className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-3 py-1.5 rounded-lg transition">
                     ✏️ Tahrirlash
                   </button>
                 )}
@@ -267,26 +267,26 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-4 border-t border-gray-800 flex gap-2 flex-wrap">
+            <div className="px-5 py-4 border-t border-[#1E293B] flex gap-2 flex-wrap">
               {editMode ? (
                 <>
                   <button onClick={handleSaveEdit} disabled={saving}
-                    className={`flex-1 ${ac.btn} disabled:bg-gray-700 text-white py-2.5 rounded-xl text-sm font-semibold transition`}>
+                    className={`flex-1 ${ac.btn} disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition`}>
                     {saving ? 'Saqlanmoqda…' : '✓ Saqlash'}
                   </button>
                   <button onClick={() => { setEditMode(false); setEditContent(viewDoc.content) }}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm transition">
+                    className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2.5 rounded-xl text-sm transition">
                     Bekor
                   </button>
                 </>
               ) : (
                 <>
                   <button onClick={() => downloadTextAsWord(viewDoc.content, viewDoc.title)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl text-sm font-semibold transition">
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">
                     📝 Word
                   </button>
                   <button onClick={() => downloadTextAsPDF(viewDoc.content, viewDoc.title)}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm transition">
+                    className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2.5 rounded-xl text-sm transition">
                     📄 PDF
                   </button>
                 </>

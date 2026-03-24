@@ -28,7 +28,7 @@ export default function TashkilotlarPage() {
   const stampRef = useRef<HTMLInputElement>(null)
 
   const lbl = 'block text-xs text-gray-400 mb-1'
-  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500'
+  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
   async function saveOrg(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
@@ -92,14 +92,14 @@ export default function TashkilotlarPage() {
           <p className="text-gray-500 text-sm mt-0.5">{orgs.length} ta tashkilot</p>
         </div>
         <button onClick={() => { setOrgForm(emptyOrg); setOrgModal(true) }}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
+          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
           + {T(t.orgs.new)}
         </button>
       </div>
 
       {/* Org list */}
       {orgs.length === 0 ? (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-16 text-center">
+        <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-16 text-center">
           <div className="text-5xl mb-4">🏢</div>
           <p className="text-gray-400 font-medium">{T(t.orgs.empty)}</p>
         </div>
@@ -107,17 +107,17 @@ export default function TashkilotlarPage() {
         <div className="space-y-4">
           {orgs.map(org => (
             <div key={org.id}
-              className={`bg-gray-900 border rounded-xl p-5 transition cursor-pointer ${activeOrg?.id === org.id ? 'border-blue-600' : 'border-gray-800 hover:border-gray-700'}`}
+              className={`bg-[#111827] border rounded-xl p-5 transition cursor-pointer ${activeOrg?.id === org.id ? 'border-blue-600' : 'border-[#1E293B] hover:border-blue-600/50'}`}
               onClick={() => switchOrg(org)}>
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-12 h-12 bg-purple-900 rounded-xl flex items-center justify-center text-purple-300 font-bold text-xl flex-shrink-0">
+                <div className="w-12 h-12 bg-blue-600/10 border border-blue-600/30 rounded-xl flex items-center justify-center text-blue-400 font-bold text-xl flex-shrink-0">
                   {org.name[0]?.toUpperCase()}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-white">{org.name}</h3>
                     {activeOrg?.id === org.id && (
-                      <span className="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded-full">{T(t.orgTab.active)}</span>
+                      <span className="text-xs bg-blue-600/10 text-blue-400 border border-blue-600/30 px-2 py-0.5 rounded-full">{T(t.orgTab.active)}</span>
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">INN: {org.inn || '—'}</p>
@@ -138,24 +138,24 @@ export default function TashkilotlarPage() {
 
               {/* Bank accounts + stamp/signature for active org */}
               {activeOrg?.id === org.id && (
-                <div className="border-t border-gray-800 pt-4 mt-2" onClick={e => e.stopPropagation()}>
+                <div className="border-t border-[#1E293B] pt-4 mt-2" onClick={e => e.stopPropagation()}>
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{T(t.orgTab.bankAccounts)}</span>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{T(t.orgTab.bankAccounts)}</span>
                     <button onClick={() => setBankModal(true)}
                       className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
                       {T(t.orgTab.addAccount)}
                     </button>
                   </div>
                   {bankAccounts.length === 0 ? (
-                    <p className="text-xs text-gray-600">{T(t.orgTab.noAccount)}</p>
+                    <p className="text-xs text-gray-500">{T(t.orgTab.noAccount)}</p>
                   ) : (
                     <div className="space-y-2">
                       {bankAccounts.map(ba => (
-                        <div key={ba.id} className="flex items-center gap-3 bg-gray-800 rounded-lg px-3 py-2.5">
+                        <div key={ba.id} className="flex items-center gap-3 bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-2.5">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-white font-mono">{ba.account_number}</span>
-                              {ba.is_default && <span className="text-xs bg-emerald-900 text-emerald-300 px-1.5 py-0.5 rounded">{T(t.orgTab.primary)}</span>}
+                              {ba.is_default && <span className="text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-1.5 py-0.5 rounded">{T(t.orgTab.primary)}</span>}
                             </div>
                             <div className="text-xs text-gray-400 mt-0.5">{ba.bank_name} | MFO: {ba.mfo || '—'}</div>
                           </div>
@@ -166,8 +166,8 @@ export default function TashkilotlarPage() {
                   )}
 
                   {/* Stamp & Signature */}
-                  <div className="border-t border-gray-800 pt-4 mt-4">
-                    <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{T(t.orgTab.stampSign)}</span>
+                  <div className="border-t border-[#1E293B] pt-4 mt-4">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{T(t.orgTab.stampSign)}</span>
                     <div className="grid grid-cols-2 gap-3 mt-3">
                       <div>
                         <div className="text-xs text-gray-500 mb-2">{T(t.orgTab.signImg)}</div>
@@ -181,7 +181,7 @@ export default function TashkilotlarPage() {
                           </div>
                         ) : (
                           <button onClick={() => signatureRef.current?.click()}
-                            className="w-full h-16 border-2 border-dashed border-gray-700 rounded-lg text-xs text-gray-500 hover:border-blue-600 hover:text-blue-400 transition flex items-center justify-center gap-2">
+                            className="w-full h-16 border-2 border-dashed border-[#1E293B] rounded-lg text-xs text-gray-500 hover:border-blue-600 hover:text-blue-400 transition flex items-center justify-center gap-2">
                             {T(t.orgTab.upload)}
                           </button>
                         )}
@@ -200,7 +200,7 @@ export default function TashkilotlarPage() {
                           </div>
                         ) : (
                           <button onClick={() => stampRef.current?.click()}
-                            className="w-full h-16 border-2 border-dashed border-gray-700 rounded-lg text-xs text-gray-500 hover:border-blue-600 hover:text-blue-400 transition flex items-center justify-center gap-2">
+                            className="w-full h-16 border-2 border-dashed border-[#1E293B] rounded-lg text-xs text-gray-500 hover:border-blue-600 hover:text-blue-400 transition flex items-center justify-center gap-2">
                             {T(t.orgTab.upload)}
                           </button>
                         )}
@@ -272,7 +272,7 @@ export default function TashkilotlarPage() {
               <input className={inp} placeholder="00873" maxLength={5} value={bankForm.mfo} onChange={e => setBankForm({ ...bankForm, mfo: e.target.value })}/>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={bankForm.is_default} onChange={e => setBankForm({ ...bankForm, is_default: e.target.checked })} className="w-4 h-4 accent-blue-500"/>
+              <input type="checkbox" checked={bankForm.is_default} onChange={e => setBankForm({ ...bankForm, is_default: e.target.checked })} className="w-4 h-4 accent-blue-600"/>
               <span className="text-sm text-gray-300">Asosiy hisob sifatida belgilash</span>
             </label>
             <ModalActions onClose={() => { setBankModal(false); setBankForm(emptyBank) }} saving={saving}/>

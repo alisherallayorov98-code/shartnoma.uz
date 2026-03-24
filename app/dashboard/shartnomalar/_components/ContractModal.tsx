@@ -112,7 +112,7 @@ function BirlikPicker({ value, onChange }: { value: string; onChange: (v: string
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full bg-gray-800 border border-gray-700 text-white rounded px-2 py-1.5 text-xs text-left flex items-center justify-between focus:outline-none focus:border-blue-500"
+        className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded px-2 py-1.5 text-xs text-left flex items-center justify-between focus:outline-none focus:border-blue-600 cursor-pointer"
       >
         <span>{value || 'dona'}</span>
         <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,14 +120,14 @@ function BirlikPicker({ value, onChange }: { value: string; onChange: (v: string
         </svg>
       </button>
       {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-40 max-h-48 flex flex-col">
-          <div className="p-1.5 border-b border-gray-700">
+        <div className="absolute z-50 top-full left-0 mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl w-40 max-h-48 flex flex-col">
+          <div className="p-1.5 border-b border-[#1E293B]">
             <input
               autoFocus
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Qidirish..."
-              className="w-full bg-gray-800 text-white text-xs px-2 py-1 rounded focus:outline-none"
+              className="w-full bg-[#0F172A] text-gray-200 text-xs px-2 py-1 rounded focus:outline-none border border-[#1E293B] placeholder-gray-500"
             />
           </div>
           <div className="overflow-y-auto flex-1">
@@ -136,7 +136,7 @@ function BirlikPicker({ value, onChange }: { value: string; onChange: (v: string
                 key={b}
                 type="button"
                 onClick={() => { onChange(b); setOpen(false); setSearch('') }}
-                className={`w-full text-left px-2 py-1 text-xs hover:bg-gray-700 transition ${value === b ? 'text-blue-400' : 'text-gray-200'}`}
+                className={`w-full text-left px-2 py-1 text-xs hover:bg-[#1F2937] transition ${value === b ? 'text-blue-400' : 'text-gray-200'}`}
               >
                 {b}
               </button>
@@ -146,7 +146,7 @@ function BirlikPicker({ value, onChange }: { value: string; onChange: (v: string
             )}
           </div>
           {search && !BIRLIKLAR.includes(search) && (
-            <div className="p-1.5 border-t border-gray-700">
+            <div className="p-1.5 border-t border-[#1E293B]">
               <button
                 type="button"
                 onClick={() => { onChange(search); setOpen(false); setSearch('') }}
@@ -203,8 +203,8 @@ export default function ContractModal({
   const isEdit = !!form.id
 
   const lbl = 'block text-xs text-gray-400 mb-1'
-  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500'
-  const inp2 = 'w-full bg-gray-800 border border-gray-700 text-white rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500'
+  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
+  const inp2 = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-600 placeholder-gray-500'
 
   // Close CP dropdown when clicking outside
   useEffect(() => {
@@ -523,10 +523,10 @@ export default function ContractModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className={`bg-gray-900 border border-gray-800 rounded-2xl w-full max-h-[95vh] flex flex-col shadow-2xl ${step === 4 ? 'max-w-6xl' : 'max-w-3xl'}`}>
+      <div className={`bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-h-[95vh] flex flex-col shadow-2xl ${step === 4 ? 'max-w-6xl' : 'max-w-3xl'}`}>
 
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-800 flex-shrink-0">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-[#1E293B] flex-shrink-0">
           <div>
             <h2 className="text-base font-semibold text-white">
               {isEdit ? T(t.modal.editContract) : T(t.modal.newContract)}
@@ -535,11 +535,11 @@ export default function ContractModal({
               {(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type] || form.contract_type}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition text-xl">×</button>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition text-xl">×</button>
         </div>
 
         {/* Step tabs */}
-        <div className="flex border-b border-gray-800 flex-shrink-0">
+        <div className="flex border-b border-[#1E293B] flex-shrink-0">
           {steps.map((s, i) => (
             <button
               key={i}
@@ -608,7 +608,7 @@ export default function ContractModal({
                         className={`flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium border transition ${
                           form.contract_type === ct.key
                             ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                            : 'border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200'
+                            : 'border-[#1E293B] text-gray-400 hover:border-blue-600/50 hover:text-gray-200'
                         }`}
                       >
                         <span>{ct.icon}</span>
@@ -671,14 +671,14 @@ export default function ContractModal({
                       </svg>
                     </div>
                     {cpDropOpen && (
-                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-xl max-h-60 flex flex-col">
-                        <div className="p-2 border-b border-gray-700">
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl max-h-60 flex flex-col">
+                        <div className="p-2 border-b border-[#1E293B]">
                           <input
                             autoFocus
                             value={cpSearch}
                             onChange={e => setCpSearch(e.target.value)}
                             placeholder="Qidirish..."
-                            className="w-full bg-gray-800 text-white text-sm px-3 py-1.5 rounded focus:outline-none"
+                            className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 text-sm px-3 py-1.5 rounded focus:outline-none placeholder-gray-500"
                           />
                         </div>
                         <div className="overflow-y-auto flex-1">
@@ -687,7 +687,7 @@ export default function ContractModal({
                               key={cp.id}
                               type="button"
                               onClick={() => { setForm(f => ({ ...f, counterparty_id: cp.id })); setCpDropOpen(false); setCpSearch('') }}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-700 transition ${form.counterparty_id === cp.id ? 'text-blue-400 bg-gray-800' : 'text-gray-200'}`}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-[#1F2937] transition ${form.counterparty_id === cp.id ? 'text-blue-400 bg-[#0F172A]' : 'text-gray-200'}`}
                             >
                               <div className="font-medium">{cp.name}</div>
                               {cp.inn && <div className="text-xs text-gray-500">INN: {cp.inn}</div>}
@@ -697,17 +697,17 @@ export default function ContractModal({
                             <div className="px-3 py-2 text-sm text-gray-500">Topilmadi</div>
                           )}
                         </div>
-                        <div className="p-2 border-t border-gray-700">
+                        <div className="p-2 border-t border-[#1E293B]">
                           {quickAddCp ? (
                             <div className="space-y-2">
-                              <input value={newCpName} onChange={e => setNewCpName(e.target.value)} placeholder="Tashkilot nomi *" className="w-full bg-gray-800 text-white text-sm px-2 py-1.5 rounded focus:outline-none border border-gray-700" />
-                              <input value={newCpInn} onChange={e => setNewCpInn(e.target.value)} placeholder="INN" className="w-full bg-gray-800 text-white text-sm px-2 py-1.5 rounded focus:outline-none border border-gray-700" />
-                              <input value={newCpDir} onChange={e => setNewCpDir(e.target.value)} placeholder="Rahbar" className="w-full bg-gray-800 text-white text-sm px-2 py-1.5 rounded focus:outline-none border border-gray-700" />
+                              <input value={newCpName} onChange={e => setNewCpName(e.target.value)} placeholder="Tashkilot nomi *" className="w-full bg-[#0F172A] text-gray-200 text-sm px-2 py-1.5 rounded focus:outline-none border border-[#1E293B] placeholder-gray-500" />
+                              <input value={newCpInn} onChange={e => setNewCpInn(e.target.value)} placeholder="INN" className="w-full bg-[#0F172A] text-gray-200 text-sm px-2 py-1.5 rounded focus:outline-none border border-[#1E293B] placeholder-gray-500" />
+                              <input value={newCpDir} onChange={e => setNewCpDir(e.target.value)} placeholder="Rahbar" className="w-full bg-[#0F172A] text-gray-200 text-sm px-2 py-1.5 rounded focus:outline-none border border-[#1E293B] placeholder-gray-500" />
                               <div className="flex gap-2">
-                                <button type="button" onClick={handleQuickAddCp} disabled={savingCp} className="flex-1 bg-blue-600 text-white text-xs py-1.5 rounded hover:bg-blue-500 disabled:opacity-50">
+                                <button type="button" onClick={handleQuickAddCp} disabled={savingCp} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-xs py-1.5 rounded disabled:opacity-50">
                                   {savingCp ? 'Saqlanmoqda...' : 'Saqlash'}
                                 </button>
-                                <button type="button" onClick={() => setQuickAddCp(false)} className="flex-1 border border-gray-600 text-gray-300 text-xs py-1.5 rounded hover:bg-gray-700">
+                                <button type="button" onClick={() => setQuickAddCp(false)} className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 text-xs py-1.5 rounded">
                                   Bekor
                                 </button>
                               </div>
@@ -741,7 +741,7 @@ export default function ContractModal({
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <label className={lbl + ' mb-0'}>{T(t.modal.template)}</label>
-                    <div className="flex rounded-lg overflow-hidden border border-gray-700">
+                    <div className="flex rounded-lg overflow-hidden border border-[#1E293B]">
                       <button
                         type="button"
                         onClick={() => setUseTemplate(true)}
@@ -765,8 +765,8 @@ export default function ContractModal({
                         onClick={() => setSelectedTemplate('auto')}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition ${
                           selectedTemplate === 'auto'
-                            ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                            : 'border-gray-700 text-gray-300 hover:border-gray-500'
+                            ? 'border-blue-500 bg-blue-600/10 text-blue-400'
+                            : 'border-[#1E293B] text-gray-300 hover:border-blue-600/50'
                         }`}
                       >
                         Avtomatik shablon ({(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]})
@@ -781,8 +781,8 @@ export default function ContractModal({
                           }}
                           className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition ${
                             selectedTemplate === tpl.id
-                              ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                              : 'border-gray-700 text-gray-300 hover:border-gray-500'
+                              ? 'border-blue-500 bg-blue-600/10 text-blue-400'
+                              : 'border-[#1E293B] text-gray-300 hover:border-blue-600/50'
                           }`}
                         >
                           <div className="font-medium">{tpl.icon} {tpl.name}</div>
@@ -1055,12 +1055,12 @@ export default function ContractModal({
                 )}
 
                 {/* QQS toggle */}
-                <div className="pt-2 border-t border-gray-800">
+                <div className="pt-2 border-t border-[#1E293B]">
                   <div className="flex items-center gap-3">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <div
                         onClick={() => setForm(f => ({ ...f, qqs_enabled: !f.qqs_enabled }))}
-                        className={`relative w-10 h-5 rounded-full transition ${form.qqs_enabled ? 'bg-blue-600' : 'bg-gray-700'}`}
+                        className={`relative w-10 h-5 rounded-full transition ${form.qqs_enabled ? 'bg-blue-600' : 'bg-[#1F2937]'}`}
                       >
                         <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${form.qqs_enabled ? 'translate-x-5' : ''}`} />
                       </div>
@@ -1072,7 +1072,7 @@ export default function ContractModal({
                         <select
                           value={form.qqs_rate}
                           onChange={e => setForm(f => ({ ...f, qqs_rate: parseInt(e.target.value) }))}
-                          className="bg-gray-800 border border-gray-700 text-white rounded px-2 py-1 text-xs focus:outline-none"
+                          className="bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded px-2 py-1 text-xs focus:outline-none cursor-pointer"
                         >
                           <option value={12}>12%</option>
                           <option value={15}>15%</option>
@@ -1096,12 +1096,12 @@ export default function ContractModal({
                 </div>
 
                 {getStructureForEdit().bolimlar.map((bolim, bi) => (
-                  <div key={bi} className="bg-gray-800/50 rounded-xl p-4 space-y-3 border border-gray-700">
+                  <div key={bi} className="bg-[#0F172A] rounded-xl p-4 space-y-3 border border-[#1E293B]">
                     <div className="flex items-center gap-2">
                       <input
                         value={bolim.sarlavha}
                         onChange={e => updateBolim(bi, e.target.value)}
-                        className="flex-1 bg-gray-800 border border-gray-600 text-white font-semibold text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                        className="flex-1 bg-[#0B1220] border border-[#1E293B] text-white font-semibold text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600"
                         placeholder={`${bi + 1}. Bo'lim nomi`}
                       />
                       <button type="button" onClick={() => removeBolim(bi)} className="w-7 h-7 flex items-center justify-center rounded text-red-400 hover:bg-red-400/10">
@@ -1116,7 +1116,7 @@ export default function ContractModal({
                         <textarea
                           value={band.matn}
                           onChange={e => updateBand(bi, bdi, e.target.value)}
-                          className="flex-1 bg-gray-800 border border-gray-700 text-gray-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 resize-none"
+                          className="flex-1 bg-[#0B1220] border border-[#1E293B] text-gray-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 resize-none"
                           rows={2}
                           placeholder="Band matni..."
                         />
@@ -1156,9 +1156,9 @@ export default function ContractModal({
 
                 {form.spec_items.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs border border-gray-700 rounded-lg overflow-hidden">
+                    <table className="w-full text-xs border border-[#1E293B] rounded-lg overflow-hidden">
                       <thead>
-                        <tr className="bg-blue-900/40 text-blue-300 border-b border-gray-700 text-xs">
+                        <tr className="bg-[#0F172A] text-gray-400 border-b border-[#1E293B] text-xs">
                           <th className="text-center py-2 px-2 w-8">№</th>
                           <th className="text-left py-2 px-2 min-w-[160px]">Tovarlar (ish, xizmatlar) nomi</th>
                           <th className="text-center py-2 px-2 w-20">O'lchov birligi</th>
@@ -1175,7 +1175,7 @@ export default function ContractModal({
                         {form.spec_items.map((item, i) => {
                           const base = (item.miqdori || 0) * (item.narxi || 0)
                           return (
-                            <tr key={i} className="border-b border-gray-800 hover:bg-gray-800/30 text-xs">
+                            <tr key={i} className="border-b border-[#1E293B] hover:bg-[#1F2937] text-xs">
                               <td className="py-1 px-2 text-center text-gray-500">{i + 1}</td>
                               <td className="py-1 px-2">
                                 <input value={item.nomi} onChange={e => updateSpecItem(i, 'nomi', e.target.value)} className={inp2} placeholder="Tovar nomi..." />
@@ -1218,7 +1218,7 @@ export default function ContractModal({
                           )
                         })}
                         {/* Jami qatori */}
-                        <tr className="bg-gray-800/60 font-semibold text-gray-200 text-xs border-t border-gray-600">
+                        <tr className="bg-[#0F172A] font-semibold text-gray-200 text-xs border-t border-[#1E293B]">
                           <td colSpan={5} className="py-2 px-2 text-right">Jami:</td>
                           <td className="py-2 px-2 text-right text-white">{specBase.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                           <td></td>
@@ -1240,7 +1240,7 @@ export default function ContractModal({
 
                 {/* Totals */}
                 {form.spec_items.length > 0 && (
-                  <div className="bg-gray-800/50 rounded-xl p-4 space-y-2 border border-gray-700">
+                  <div className="bg-[#0F172A] rounded-xl p-4 space-y-2 border border-[#1E293B]">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-400">Soliqsiz jami:</span>
                       <span className="text-white">{specBase.toLocaleString()} so'm</span>
@@ -1251,7 +1251,7 @@ export default function ContractModal({
                         <span className="text-yellow-400">{specQqs.toLocaleString()} so'm</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-sm font-semibold border-t border-gray-700 pt-2">
+                    <div className="flex justify-between text-sm font-semibold border-t border-[#1E293B] pt-2">
                       <span className="text-gray-300">Jami:</span>
                       <span className="text-white text-base">{specTotal.toLocaleString()} so'm</span>
                     </div>
@@ -1265,14 +1265,14 @@ export default function ContractModal({
           </div>
 
           {/* Footer actions */}
-          <div className="px-6 py-4 border-t border-gray-800 flex-shrink-0">
+          <div className="px-6 py-4 border-t border-[#1E293B] flex-shrink-0">
             <div className="flex items-center justify-between gap-3">
               <div className="flex gap-2">
                 {step > 1 && (
                   <button
                     type="button"
                     onClick={() => setStep(s => s - 1)}
-                    className="px-4 py-2 text-sm border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition"
+                    className="px-4 py-2 text-sm bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 rounded-lg transition"
                   >
                     ← {T(t.btn.prev)}
                   </button>
@@ -1282,7 +1282,7 @@ export default function ContractModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-sm border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition"
+                  className="px-4 py-2 text-sm bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 rounded-lg transition"
                 >
                   {T(t.btn.cancel)}
                 </button>
@@ -1290,7 +1290,7 @@ export default function ContractModal({
                   <button
                     type="button"
                     onClick={() => { if (step === 2) goToStep3(); else setStep(s => s + 1) }}
-                    className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition"
+                    className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
                   >
                     {T(t.btn.next)} →
                   </button>
@@ -1298,7 +1298,7 @@ export default function ContractModal({
                   <button
                     type="submit"
                     disabled={saving}
-                    className="px-5 py-2 text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg font-semibold transition"
+                    className="px-5 py-2 text-sm bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-lg font-semibold transition"
                   >
                     {saving ? T(t.btn.saving) : T(t.btn.save)}
                   </button>

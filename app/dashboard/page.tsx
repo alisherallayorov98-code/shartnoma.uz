@@ -6,7 +6,7 @@ import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 
 const STATUSES = {
-  draft:     { bg: 'bg-gray-700',    text: 'text-gray-300' },
+  draft:     { bg: 'bg-[#1F2937]',    text: 'text-gray-300' },
   active:    { bg: 'bg-emerald-900', text: 'text-emerald-300' },
   completed: { bg: 'bg-blue-900',    text: 'text-blue-300' },
   cancelled: { bg: 'bg-red-900',     text: 'text-red-300' },
@@ -87,7 +87,7 @@ export default function DashboardOverviewPage() {
   // ── Onboarding: new user with no organization ────────────────────────────
   if (orgs.length === 0) {
     return (
-      <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-950 flex items-center justify-center min-h-screen">
+      <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#0B1220] flex items-center justify-center min-h-screen">
         <div className="max-w-md w-full text-center space-y-6">
           <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center text-4xl mx-auto shadow-lg shadow-blue-900/40">
             🏢
@@ -99,22 +99,22 @@ export default function DashboardOverviewPage() {
               Bu bir necha soniya vaqt oladi.
             </p>
           </div>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 text-left space-y-3">
-            <div className="flex items-center gap-3 text-sm text-gray-300">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5 text-left space-y-3">
+            <div className="flex items-center gap-3 text-sm text-gray-200">
               <span className="w-6 h-6 bg-blue-900 rounded-full flex items-center justify-center text-blue-300 text-xs font-bold shrink-0">1</span>
               Tashkilot nomini va INN raqamini kiriting
             </div>
-            <div className="flex items-center gap-3 text-sm text-gray-300">
+            <div className="flex items-center gap-3 text-sm text-gray-200">
               <span className="w-6 h-6 bg-blue-900 rounded-full flex items-center justify-center text-blue-300 text-xs font-bold shrink-0">2</span>
               Direktor va bank rekvizitlarini to&apos;ldiring
             </div>
-            <div className="flex items-center gap-3 text-sm text-gray-300">
+            <div className="flex items-center gap-3 text-sm text-gray-200">
               <span className="w-6 h-6 bg-blue-900 rounded-full flex items-center justify-center text-blue-300 text-xs font-bold shrink-0">3</span>
               Shartnoma, kadrlar va hujjatlaringizni boshqaring
             </div>
           </div>
           <Link href="/dashboard/tashkilotlar"
-            className="block w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition text-sm">
+            className="block w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-xl transition text-sm">
             + Tashkilot qo&apos;shish
           </Link>
         </div>
@@ -123,7 +123,7 @@ export default function DashboardOverviewPage() {
   }
 
   return (
-    <main className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-950">
+    <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#0B1220]">
 
       {/* ── Subscription warning ── */}
       {showSubWarning && subDaysLeft !== null && (
@@ -183,7 +183,7 @@ export default function DashboardOverviewPage() {
       <div className="space-y-5">
 
         {/* ── Welcome banner ── */}
-        <div className="relative bg-gradient-to-r from-blue-900/60 via-blue-800/40 to-purple-900/40 border border-blue-800/50 rounded-2xl p-6 overflow-hidden">
+        <div className="relative bg-gradient-to-r from-blue-900/60 via-blue-800/40 to-blue-900/40 border border-blue-800/50 rounded-2xl p-6 overflow-hidden">
           <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, #3b82f6 0%, transparent 60%)' }}/>
           <div className="relative flex items-center justify-between flex-wrap gap-4">
             <div>
@@ -194,7 +194,7 @@ export default function DashboardOverviewPage() {
             <div className="text-right">
               <div className="text-xs text-gray-500">{today}</div>
               {quota && (
-                <div className={`mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${isFree ? 'bg-gray-700 text-gray-300' : 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50'}`}>
+                <div className={`mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${isFree ? 'bg-[#1F2937] text-gray-200' : 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50'}`}>
                   {isFree ? '🔒 Bepul tarif' : `⭐ ${quota.plan} tarif`}
                 </div>
               )}
@@ -205,18 +205,18 @@ export default function DashboardOverviewPage() {
         {/* ── 4 stat cards ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Link href="/dashboard/shartnomalar"
-            className="bg-gray-900 border border-gray-800 hover:border-blue-700/60 rounded-xl p-5 transition cursor-pointer group block">
+            className="bg-[#111827] border border-[#1E293B] hover:border-blue-700/60 rounded-xl p-5 transition cursor-pointer group block">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 bg-blue-900/50 rounded-xl flex items-center justify-center text-lg">📄</div>
               <span className="text-xs text-gray-600 group-hover:text-blue-400 transition">→</span>
             </div>
             <div className="text-3xl font-bold text-white">{cntTotal}</div>
             <div className="text-xs text-gray-400 mt-1">{T(t.overviewTab.totalContracts)}</div>
-            {cntTotal > 0 && <div className="text-xs text-gray-600 mt-1">{cntDraft} qoralama · {cntDone} bajarildi</div>}
+            {cntTotal > 0 && <div className="text-xs text-gray-500 mt-1">{cntDraft} qoralama · {cntDone} bajarildi</div>}
           </Link>
 
           <Link href="/dashboard/shartnomalar"
-            className="bg-gray-900 border border-gray-800 hover:border-emerald-700/60 rounded-xl p-5 transition cursor-pointer group block">
+            className="bg-[#111827] border border-[#1E293B] hover:border-emerald-700/60 rounded-xl p-5 transition cursor-pointer group block">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 bg-emerald-900/50 rounded-xl flex items-center justify-center text-lg">✅</div>
               <span className="text-xs text-gray-600 group-hover:text-emerald-400 transition">→</span>
@@ -227,18 +227,18 @@ export default function DashboardOverviewPage() {
           </Link>
 
           <Link href="/dashboard/tashkilotlar"
-            className="bg-gray-900 border border-gray-800 hover:border-purple-700/60 rounded-xl p-5 transition cursor-pointer group block">
+            className="bg-[#111827] border border-[#1E293B] hover:border-blue-700/60 rounded-xl p-5 transition cursor-pointer group block">
             <div className="flex items-start justify-between mb-3">
-              <div className="w-10 h-10 bg-purple-900/50 rounded-xl flex items-center justify-center text-lg">🏢</div>
-              <span className="text-xs text-gray-600 group-hover:text-purple-400 transition">→</span>
+              <div className="w-10 h-10 bg-blue-900/50 rounded-xl flex items-center justify-center text-lg">🏢</div>
+              <span className="text-xs text-gray-600 group-hover:text-blue-400 transition">→</span>
             </div>
             <div className="text-3xl font-bold text-white">{orgs.length}</div>
             <div className="text-xs text-gray-400 mt-1">{T(t.orgs.title)}</div>
-            {activeOrg && <div className="text-xs text-gray-600 mt-1 truncate">Faol: {activeOrg.name}</div>}
+            {activeOrg && <div className="text-xs text-gray-500 mt-1 truncate">Faol: {activeOrg.name}</div>}
           </Link>
 
           <Link href="/dashboard/kontragentlar"
-            className="bg-gray-900 border border-gray-800 hover:border-orange-700/60 rounded-xl p-5 transition cursor-pointer group block">
+            className="bg-[#111827] border border-[#1E293B] hover:border-orange-700/60 rounded-xl p-5 transition cursor-pointer group block">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 bg-orange-900/50 rounded-xl flex items-center justify-center text-lg">🤝</div>
               <span className="text-xs text-gray-600 group-hover:text-orange-400 transition">→</span>
@@ -251,8 +251,8 @@ export default function DashboardOverviewPage() {
         {/* ── Moliyaviy, holat, kvota ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Moliyaviy ko'rsatkichlar */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <div className="text-xs text-gray-500 uppercase tracking-wide mb-4 font-medium">Moliyaviy ko&apos;rsatkichlar</div>
+          <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
+            <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">Moliyaviy ko&apos;rsatkichlar</div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>Faol shartnomalar</span>
@@ -266,7 +266,7 @@ export default function DashboardOverviewPage() {
                 <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-500 inline-block"/>Qoralama</span>
                 <span className="text-sm font-semibold text-gray-400">{totalDraft.toLocaleString()} so&apos;m</span>
               </div>
-              <div className="border-t border-gray-800 pt-3 flex justify-between items-center">
+              <div className="border-t border-[#1E293B] pt-3 flex justify-between items-center">
                 <span className="text-xs text-gray-500">Jami</span>
                 <span className="text-sm font-bold text-white">{totalAll.toLocaleString()} so&apos;m</span>
               </div>
@@ -274,10 +274,10 @@ export default function DashboardOverviewPage() {
           </div>
 
           {/* Shartnomalar holati */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <div className="text-xs text-gray-500 uppercase tracking-wide mb-4 font-medium">Shartnomalar holati</div>
+          <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
+            <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">Shartnomalar holati</div>
             {cntTotal === 0 ? (
-              <div className="text-center text-gray-600 text-sm py-4">Shartnomalar yo&apos;q</div>
+              <div className="text-center text-gray-500 text-sm py-4">Shartnomalar yo&apos;q</div>
             ) : (
               <div className="space-y-3">
                 {[
@@ -291,7 +291,7 @@ export default function DashboardOverviewPage() {
                       <span className="text-gray-400">{label}</span>
                       <span className="text-gray-500">{cnt} ta · {cntTotal > 0 ? Math.round(cnt / cntTotal * 100) : 0}%</span>
                     </div>
-                    <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-[#1E293B] rounded-full overflow-hidden">
                       <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${cntTotal > 0 ? cnt / cntTotal * 100 : 0}%` }}/>
                     </div>
                   </div>
@@ -301,22 +301,22 @@ export default function DashboardOverviewPage() {
           </div>
 
           {/* Oylik kvota */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <div className="text-xs text-gray-500 uppercase tracking-wide mb-4 font-medium">Oylik kvota</div>
+          <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
+            <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">Oylik kvota</div>
             {quota ? (
               <div>
                 <div className="flex items-end gap-2 mb-3">
                   <span className="text-4xl font-bold text-white">{quota.used ?? '∞'}</span>
-                  <span className="text-xl text-gray-600 mb-1">/ {quota.limit ?? '∞'}</span>
+                  <span className="text-xl text-gray-500 mb-1">/ {quota.limit ?? '∞'}</span>
                 </div>
                 <div className="text-xs text-gray-500 mb-3">Yaratilgan shartnomalar · {quota.plan} tarif</div>
                 {quota.limit && (
                   <>
-                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden mb-2">
+                    <div className="h-2 bg-[#1E293B] rounded-full overflow-hidden mb-2">
                       <div className={`h-full rounded-full transition-all ${quota.percent! >= 100 ? 'bg-red-500' : quota.percent! >= 80 ? 'bg-yellow-500' : 'bg-blue-500'}`}
                         style={{ width: `${Math.min(quota.percent!, 100)}%` }}/>
                     </div>
-                    <div className="flex justify-between text-xs text-gray-600">
+                    <div className="flex justify-between text-xs text-gray-500">
                       <span>{quota.limit - (quota.used ?? 0)} ta qoldi</span>
                       <span>{quota.percent}%</span>
                     </div>
@@ -330,14 +330,14 @@ export default function DashboardOverviewPage() {
                 )}
               </div>
             ) : (
-              <div className="text-gray-600 text-sm">Ma&apos;lumot yo&apos;q</div>
+              <div className="text-gray-500 text-sm">Ma&apos;lumot yo&apos;q</div>
             )}
           </div>
         </div>
 
         {/* ── Oylik statistika grafigi ── */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div className="text-xs text-gray-500 uppercase tracking-wide mb-4 font-medium">Oylik statistika (so'nggi 6 oy)</div>
+        <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
+          <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">Oylik statistika (so'nggi 6 oy)</div>
           <div className="flex items-end gap-3 h-28">
             {monthlyData.map((m, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
@@ -356,9 +356,9 @@ export default function DashboardOverviewPage() {
         </div>
 
         {/* ── So'nggi shartnomalar ── */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="flex justify-between items-center px-5 py-4 border-b border-gray-800">
-            <h2 className="font-semibold text-sm">{T(t.overviewTab.recent)}</h2>
+        <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
+          <div className="flex justify-between items-center px-5 py-4 border-b border-[#1E293B]">
+            <h2 className="font-semibold text-sm text-gray-200">{T(t.overviewTab.recent)}</h2>
             <Link href="/dashboard/shartnomalar" className="text-xs text-blue-400 hover:text-blue-300 transition flex items-center gap-1">
               {T(t.overviewTab.viewAll)} →
             </Link>
@@ -368,31 +368,31 @@ export default function DashboardOverviewPage() {
               <div className="text-4xl mb-3">📋</div>
               <div className="text-gray-500 text-sm mb-4">{T(t.overviewTab.noContracts)}</div>
               <Link href="/dashboard/shartnomalar"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm text-white transition inline-block">
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm text-white transition inline-block">
                 + Yangi shartnoma yaratish
               </Link>
             </div>
           ) : (
-            <div className="divide-y divide-gray-800/60">
+            <div className="divide-y divide-[#1E293B]/60">
               {recentContracts.map(c => {
                 const st = STATUSES[c.status as keyof typeof STATUSES]
                 const typeName = CONTRACT_TYPES_I18N[c.contract_type]?.[lang] || c.contract_type
                 return (
                   <Link key={c.id} href={`/dashboard/shartnomalar`}
-                    className="flex items-center gap-4 px-5 py-4 hover:bg-gray-800/50 transition cursor-pointer group">
+                    className="flex items-center gap-4 px-5 py-4 hover:bg-[#1F2937] transition cursor-pointer group">
                     <div className="w-10 h-10 bg-blue-900/40 border border-blue-800/40 rounded-xl flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0 group-hover:bg-blue-900/70 transition">
                       {(c.contract_number || '?').slice(0, 3)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-white">#{c.contract_number}</span>
-                        <span className="text-xs text-gray-600">·</span>
+                        <span className="text-xs text-gray-500">·</span>
                         <span className="text-xs text-gray-500">{typeName}</span>
                       </div>
                       <div className="text-xs text-gray-500 truncate mt-0.5">{c.counterparties?.name || '—'} · {c.contract_date}</div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <div className="text-sm font-semibold text-white">{(c.amount || 0).toLocaleString()} <span className="text-gray-600 text-xs">so&apos;m</span></div>
+                      <div className="text-sm font-semibold text-gray-200">{(c.amount || 0).toLocaleString()} <span className="text-gray-500 text-xs">so&apos;m</span></div>
                       <span className={`text-xs px-2 py-0.5 rounded-full mt-1 inline-block ${st?.bg} ${st?.text}`}>
                         {T(t.status[c.status as keyof typeof t.status] || t.status.draft)}
                       </span>
@@ -406,18 +406,18 @@ export default function DashboardOverviewPage() {
 
         {/* ── Tezkor harakatlar ── */}
         <div>
-          <div className="text-xs text-gray-600 uppercase tracking-wide mb-3 font-medium">Tezkor harakatlar</div>
+          <div className="text-xs text-gray-400 uppercase tracking-wide mb-3 font-medium">Tezkor harakatlar</div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { label: 'Yangi shartnoma',       icon: '📄', hoverBorder: 'hover:border-blue-700/60',   href: '/dashboard/shartnomalar' },
               { label: "Kontragent qo'shish",    icon: '🤝', hoverBorder: 'hover:border-orange-700/60', href: '/dashboard/kontragentlar' },
-              { label: "Tashkilot qo'shish",     icon: '🏢', hoverBorder: 'hover:border-purple-700/60', href: '/dashboard/tashkilotlar' },
+              { label: "Tashkilot qo'shish",     icon: '🏢', hoverBorder: 'hover:border-blue-700/60',   href: '/dashboard/tashkilotlar' },
               { label: 'Yurist AI',              icon: '⚖️', hoverBorder: 'hover:border-emerald-700/60',href: '/dashboard/yurist' },
               { label: 'Kadrlar hujjatlari',    icon: '👥', hoverBorder: 'hover:border-cyan-700/60',   href: '/dashboard/kadrlar' },
-              { label: 'Buxgalter hujjatlari',  icon: '💼', hoverBorder: 'hover:border-indigo-700/60', href: '/dashboard/buxgalter' },
+              { label: 'Buxgalter hujjatlari',  icon: '💼', hoverBorder: 'hover:border-blue-700/60',   href: '/dashboard/buxgalter' },
             ].map((a, i) => (
               <Link key={i} href={a.href}
-                className={`bg-gray-900 border border-gray-800 ${a.hoverBorder} hover:bg-gray-800/80 rounded-xl p-4 text-left transition group block`}>
+                className={`bg-[#111827] border border-[#1E293B] ${a.hoverBorder} hover:bg-[#1F2937] rounded-xl p-4 text-left transition group block`}>
                 <div className="text-2xl mb-2">{a.icon}</div>
                 <div className="text-xs font-medium text-gray-400 group-hover:text-white transition leading-tight">{a.label}</div>
               </Link>

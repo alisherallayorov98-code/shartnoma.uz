@@ -7,10 +7,10 @@ import { numberToWords } from '@/lib/contractStructures'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
 
 const STATUS_COLORS: Record<string, string> = {
-  active:    'bg-green-900/50 text-green-300',
-  draft:     'bg-gray-700 text-gray-300',
-  completed: 'bg-blue-900/50 text-blue-300',
-  cancelled: 'bg-red-900/50 text-red-300',
+  active:    'bg-green-500/20 text-green-400 border border-green-500/30',
+  draft:     'bg-[#1F2937] text-gray-400 border border-[#1E293B]',
+  completed: 'bg-blue-900/50 text-blue-300 border border-blue-700/30',
+  cancelled: 'bg-red-900/50 text-red-300 border border-red-700/30',
 }
 
 const STATUSES: Record<string, Record<Lang, string>> = {
@@ -42,9 +42,9 @@ export default function ViewContractModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-3xl max-h-[95vh] flex flex-col shadow-2xl">
+      <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-3xl max-h-[95vh] flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B] flex-shrink-0">
           <div>
             <h2 className="text-base font-semibold text-white">
               {(CONTRACT_TYPE_NAMES as Record<string, string>)[viewContract.contract_type] || viewContract.contract_type}
@@ -61,18 +61,18 @@ export default function ViewContractModal({
             <button onClick={() => onSendByEmail(viewContract)} className="px-3 py-1.5 text-xs bg-yellow-700/30 text-yellow-400 rounded-lg hover:bg-yellow-700/50 transition">
               ✉️ Email
             </button>
-            <button onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition">
+            <button onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 rounded-lg transition">
               🖨️ Print
             </button>
             {isPremium && (
               <button
                 onClick={() => { onClose(); onRunAiAnalysis(viewContract, 'tahlil') }}
-                className="px-3 py-1.5 text-xs bg-purple-600/20 text-purple-400 rounded-lg hover:bg-purple-600/30 transition"
+                className="px-3 py-1.5 text-xs bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition"
               >
                 AI Tahlil
               </button>
             )}
-            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition text-xl">
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition text-xl">
               ×
             </button>
           </div>
@@ -82,36 +82,36 @@ export default function ViewContractModal({
         <div className="overflow-y-auto flex-1 p-6">
           {/* Info cards */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-800/50 rounded-xl p-3">
+            <div className="bg-[#0F172A] rounded-xl p-3 border border-[#1E293B]">
               <p className="text-xs text-gray-500 mb-1">Tashkilot</p>
               <p className="text-sm text-white font-medium">{viewContract.organizations?.name || '—'}</p>
               <p className="text-xs text-gray-500">INN: {viewContract.organizations?.inn || '—'}</p>
             </div>
-            <div className="bg-gray-800/50 rounded-xl p-3">
+            <div className="bg-[#0F172A] rounded-xl p-3 border border-[#1E293B]">
               <p className="text-xs text-gray-500 mb-1">Kontragent</p>
               <p className="text-sm text-white font-medium">{viewContract.counterparties?.name || '—'}</p>
               <p className="text-xs text-gray-500">INN: {viewContract.counterparties?.inn || '—'}</p>
             </div>
-            <div className="bg-gray-800/50 rounded-xl p-3">
+            <div className="bg-[#0F172A] rounded-xl p-3 border border-[#1E293B]">
               <p className="text-xs text-gray-500 mb-1">Summa</p>
               <p className="text-sm text-white font-semibold">{Number(viewContract.amount || 0).toLocaleString()} so'm</p>
               <p className="text-xs text-gray-500">{numberToWords(Number(viewContract.amount || 0), 'uz')} so'm</p>
             </div>
-            <div className="bg-gray-800/50 rounded-xl p-3">
+            <div className="bg-[#0F172A] rounded-xl p-3 border border-[#1E293B]">
               <p className="text-xs text-gray-500 mb-1">Holat</p>
               <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[viewContract.status] || 'bg-gray-700 text-gray-300'}`}>
                 {STATUSES[viewContract.status] ? T(STATUSES[viewContract.status]) : viewContract.status}
               </span>
             </div>
-            <div className="bg-gray-800/50 rounded-xl p-3 col-span-2">
+            <div className="bg-[#0F172A] rounded-xl p-3 border border-[#1E293B] col-span-2">
               <p className="text-xs text-gray-500 mb-2">Imzolash holati</p>
               <div className="flex gap-3">
                 <button onClick={() => onToggleSigned(viewContract, 'signed_us')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${viewContract.signed_us ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${viewContract.signed_us ? 'bg-emerald-700 text-white' : 'bg-[#1F2937] text-gray-400 hover:bg-[#111827] border border-[#1E293B]'}`}>
                   {viewContract.signed_us ? '✅' : '⬜'} Biz imzoladik
                 </button>
                 <button onClick={() => onToggleSigned(viewContract, 'signed_cp')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${viewContract.signed_cp ? 'bg-emerald-700 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${viewContract.signed_cp ? 'bg-emerald-700 text-white' : 'bg-[#1F2937] text-gray-400 hover:bg-[#111827] border border-[#1E293B]'}`}>
                   {viewContract.signed_cp ? '✅' : '⬜'} Kontragent imzoladi
                 </button>
               </div>
@@ -120,7 +120,7 @@ export default function ViewContractModal({
 
           {/* Contract text */}
           {viewContract.content && (
-            <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-4">
+            <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
               <pre className="text-sm text-gray-200 whitespace-pre-wrap font-sans leading-relaxed">
                 {fillPlaceholders(viewContract.content, viewContract)}
               </pre>
@@ -134,7 +134,7 @@ export default function ViewContractModal({
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-gray-500 border-b border-gray-700">
+                    <tr className="text-gray-500 border-b border-[#1E293B]">
                       <th className="text-left pb-2 pr-2">Nomi</th>
                       <th className="text-left pb-2 pr-2">Birlik</th>
                       <th className="text-right pb-2 pr-2">Miqdor</th>
@@ -145,7 +145,7 @@ export default function ViewContractModal({
                   </thead>
                   <tbody>
                     {viewContract.spec_items.map((item, i) => (
-                      <tr key={i} className="border-b border-gray-800/50">
+                      <tr key={i} className="border-b border-[#1E293B]/50 hover:bg-[#1F2937]">
                         <td className="py-1.5 pr-2 text-gray-200">{item.nomi}</td>
                         <td className="py-1.5 pr-2 text-gray-400">{item.birlik}</td>
                         <td className="py-1.5 pr-2 text-right text-gray-300">{item.miqdori}</td>

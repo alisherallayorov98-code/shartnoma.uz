@@ -40,9 +40,9 @@ const TYPE_TABS = [
 const typeColors: Record<string, string> = {
   oldi_sotdi: 'bg-blue-900/60 text-blue-300',
   xizmat:     'bg-emerald-900/60 text-emerald-300',
-  ijara:      'bg-purple-900/60 text-purple-300',
+  ijara:      'bg-blue-600/10 text-blue-400',
   pudrat:     'bg-orange-900/60 text-orange-300',
-  qoshimcha:  'bg-gray-700 text-gray-300',
+  qoshimcha:  'bg-[#1F2937] text-gray-300',
   moliyaviy:  'bg-yellow-900/60 text-yellow-300',
   daval:      'bg-cyan-900/60 text-cyan-300',
   xalqaro:    'bg-indigo-900/60 text-indigo-300',
@@ -70,7 +70,7 @@ export default function ShablonlarPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const lbl = 'block text-xs text-gray-400 mb-1'
-  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500'
+  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
   useEffect(() => {
     if (activeOrg) loadCustomTemplates(activeOrg.id)
@@ -170,18 +170,18 @@ export default function ShablonlarPage() {
             <input ref={wordImportRef} type="file" accept=".docx" className="hidden" onChange={handleWordImport}/>
             <button onClick={() => wordImportRef.current?.click()} disabled={wordImporting}
               title="Word (.docx) fayldan shablon yaratish — Premium"
-              className="ml-auto flex items-center gap-2 bg-purple-700 hover:bg-purple-600 disabled:opacity-60 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+              className="ml-auto flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
               {wordImporting ? (
                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"/><span>O'qilmoqda...</span></>
               ) : (
-                <><span>📄</span><span>Word import</span><span className="text-xs bg-purple-900/60 px-1.5 py-0.5 rounded-full">Premium</span></>
+                <><span>📄</span><span>Word import</span><span className="text-xs bg-blue-600/30 px-1.5 py-0.5 rounded-full">Premium</span></>
               )}
             </button>
           </>
         )}
 
         <button onClick={() => { setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl); setCustomTemplateModal(true) }}
-          className={`flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition ${isFree ? 'ml-auto' : ''}`}>
+          className={`flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition ${isFree ? 'ml-auto' : ''}`}>
           {T(t.tplTab.addBtn)}
         </button>
       </div>
@@ -191,7 +191,7 @@ export default function ShablonlarPage() {
         {TYPE_TABS.map(tab => (
           <button key={tab.key} onClick={() => setTemplateFilter(tab.key)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-              templateFilter === tab.key ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+              templateFilter === tab.key ? 'bg-blue-600 text-white' : 'bg-[#111827] border border-[#1E293B] text-gray-400 hover:text-white hover:bg-[#1F2937]'
             }`}>
             {tab.label}
             <span className="ml-1.5 text-xs opacity-70">
@@ -204,16 +204,16 @@ export default function ShablonlarPage() {
       {/* Template grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map(tpl => (
-          <div key={tpl.id} className={`bg-gray-900 border rounded-xl p-5 flex flex-col gap-3 hover:border-gray-600 transition ${tpl.isDefault ? 'border-gray-800' : 'border-blue-800/50'}`}>
+          <div key={tpl.id} className={`bg-[#111827] border rounded-xl p-5 flex flex-col gap-3 hover:border-blue-600/50 transition ${tpl.isDefault ? 'border-[#1E293B]' : 'border-blue-600/30'}`}>
             <div className="flex items-start gap-3">
               <span className="text-3xl flex-shrink-0">{tpl.icon}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${typeColors[tpl.type] || 'bg-gray-700 text-gray-300'}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${typeColors[tpl.type] || 'bg-[#1F2937] text-gray-300'}`}>
                     {CONTRACT_TYPES_I18N[tpl.type]?.[lang] || tpl.type}
                   </span>
                   {!tpl.isDefault && (
-                    <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-900/70 text-blue-300">{T(t.tplTab.myTpls)}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-600/10 text-blue-400">{T(t.tplTab.myTpls)}</span>
                   )}
                 </div>
                 <h3 className="font-semibold text-white text-sm leading-tight">{getTplField(tpl, 'name', lang)}</h3>
@@ -223,20 +223,20 @@ export default function ShablonlarPage() {
             {tpl.tags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {tpl.tags.slice(0, 3).map(tag => (
-                  <span key={tag} className="text-xs bg-gray-800 text-gray-500 px-2 py-0.5 rounded">#{tag}</span>
+                  <span key={tag} className="text-xs bg-[#1F2937] text-gray-500 px-2 py-0.5 rounded">#{tag}</span>
                 ))}
               </div>
             )}
-            <div className="flex gap-2 pt-1 border-t border-gray-800 flex-wrap">
+            <div className="flex gap-2 pt-1 border-t border-[#1E293B] flex-wrap">
               <button onClick={() => setTemplatePreview(tpl)}
-                className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
+                className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
                 {T(t.tplTab.view)}
               </button>
               <button onClick={() => {
                 setEditingCustomTemplate(tpl.isDefault ? null : tpl)
                 setCustomTplForm({ type: tpl.type, name: tpl.name, description: tpl.description, content: tpl.content })
                 setCustomTemplateModal(true)
-              }} className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
+              }} className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
                 {T(t.btn.edit)}
               </button>
               {!tpl.isDefault && (
@@ -251,9 +251,9 @@ export default function ShablonlarPage() {
       </div>
 
       {/* Info box */}
-      <div className="bg-blue-950/40 border border-blue-900/50 rounded-xl p-4 flex gap-3">
+      <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 flex gap-3">
         <span className="text-xl flex-shrink-0">💡</span>
-        <div className="text-sm text-blue-300">
+        <div className="text-sm text-blue-400">
           <p className="font-medium mb-1">Shablonlar qanday ishlaydi?</p>
           <p className="text-blue-400 text-xs leading-relaxed">
             Standart shablonlar O'zbekiston Respublikasi qonunchiligiga muvofiq tayyorlangan. "Tahrirlash" orqali ularni nusxalab o'zingizga moslashtirishingiz mumkin. "+ Shablon qo'shish" bilan yangi shablon yarating.
@@ -264,33 +264,33 @@ export default function ShablonlarPage() {
       {/* Template preview modal */}
       {templatePreview && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setTemplatePreview(null)}>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-800 flex-shrink-0">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center px-6 py-4 border-b border-[#1E293B] flex-shrink-0">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{templatePreview.icon}</span>
                 <div>
                   <h2 className="text-base font-semibold text-white">{getTplField(templatePreview, 'name', lang)}</h2>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${typeColors[templatePreview.type] || 'bg-gray-700 text-gray-300'}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${typeColors[templatePreview.type] || 'bg-[#1F2937] text-gray-300'}`}>
                     {CONTRACT_TYPES_I18N[templatePreview.type]?.[lang] || templatePreview.type}
                   </span>
                 </div>
               </div>
-              <button onClick={() => setTemplatePreview(null)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 text-xl">×</button>
+              <button onClick={() => setTemplatePreview(null)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded-lg hover:bg-[#1F2937] text-xl">×</button>
             </div>
             <div className="overflow-y-auto p-6">
-              <pre className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-sans">{getTplField(templatePreview, 'content', lang)}</pre>
+              <pre className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap font-sans">{getTplField(templatePreview, 'content', lang)}</pre>
             </div>
-            <div className="px-6 py-4 border-t border-gray-800 flex gap-2 flex-wrap">
+            <div className="px-6 py-4 border-t border-[#1E293B] flex gap-2 flex-wrap">
               <button onClick={() => navigator.clipboard.writeText(getTplField(templatePreview, 'content', lang))}
-                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded-lg text-sm transition">
+                className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2 rounded-lg text-sm transition">
                 📋 Nusxa olish
               </button>
               <button onClick={() => downloadTextAsPDF(getTplField(templatePreview, 'content', lang), getTplField(templatePreview, 'name', lang))}
-                className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition">
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition">
                 📄 PDF
               </button>
               <button onClick={() => downloadTextAsWord(getTplField(templatePreview, 'content', lang), getTplField(templatePreview, 'name', lang))}
-                className="bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition">
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
                 📝 Word
               </button>
               <button onClick={() => {
@@ -298,7 +298,7 @@ export default function ShablonlarPage() {
                 setCustomTplForm({ type: templatePreview.type, name: getTplField(templatePreview, 'name', lang), description: getTplField(templatePreview, 'description', lang), content: getTplField(templatePreview, 'content', lang) })
                 setTemplatePreview(null)
                 setCustomTemplateModal(true)
-              }} className="bg-gray-700 hover:bg-gray-600 text-gray-300 py-2 px-4 rounded-lg text-sm font-medium transition">
+              }} className="bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2 px-4 rounded-lg text-sm font-medium transition">
                 Tahrirlash
               </button>
               <button onClick={() => {
@@ -330,7 +330,7 @@ export default function ShablonlarPage() {
               </div>
               <div>
                 <label className={lbl}>Tur</label>
-                <select className={inp} value={customTplForm.type} onChange={e => setCustomTplForm({ ...customTplForm, type: e.target.value })}>
+                <select className={`${inp} cursor-pointer`} value={customTplForm.type} onChange={e => setCustomTplForm({ ...customTplForm, type: e.target.value })}>
                   {Object.entries(CONTRACT_TYPES_I18N).map(([k, v]) => <option key={k} value={k}>{v[lang]}</option>)}
                 </select>
               </div>
@@ -343,11 +343,11 @@ export default function ShablonlarPage() {
             <div>
               <label className={lbl}>Shablon matni *</label>
               <textarea
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-mono resize-none"
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500 font-mono resize-none"
                 rows={14} required
                 placeholder="Shartnoma matni..."
                 value={customTplForm.content} onChange={e => setCustomTplForm({ ...customTplForm, content: e.target.value })}/>
-              <p className="text-xs text-gray-600 mt-1">Tip: O'zgaruvchilar uchun &#123;&#123;TASHKILOT_NOMI&#125;&#125; ko'rinishini ishlating</p>
+              <p className="text-xs text-gray-500 mt-1">Tip: O'zgaruvchilar uchun &#123;&#123;TASHKILOT_NOMI&#125;&#125; ko'rinishini ishlating</p>
             </div>
             <ModalActions onClose={() => { setCustomTemplateModal(false); setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl) }} saving={saving}/>
           </form>

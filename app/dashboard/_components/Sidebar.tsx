@@ -53,22 +53,22 @@ export function DashboardSidebar() {
     <aside className={`
       ${sidebarOpen ? 'w-64 translate-x-0' : 'w-16 -translate-x-full sm:translate-x-0'}
       fixed sm:relative inset-y-0 left-0 z-50 sm:z-auto
-      bg-gray-900 border-r border-gray-800 flex flex-col flex-shrink-0 transition-all duration-300
+      bg-[#0F172A] border-r border-[#1E293B] flex flex-col flex-shrink-0 transition-all duration-300
       h-full sm:h-auto min-h-screen
     `}>
 
       {/* Logo + hamburger */}
-      <div className="h-16 flex items-center px-4 border-b border-gray-800 gap-3">
+      <div className="h-16 flex items-center px-4 border-b border-[#1E293B] gap-3">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-800 transition flex-shrink-0"
+          className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-[#1F2937] transition flex-shrink-0"
           aria-label="Toggle sidebar"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         </button>
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm shadow-lg shadow-blue-900/50">S</div>
+        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm shadow-lg">S</div>
         {sidebarOpen && <span className="text-lg font-bold">Shartnoma.uz</span>}
       </div>
 
@@ -77,7 +77,7 @@ export function DashboardSidebar() {
         <div className="px-3 pt-3 relative">
           <button
             onClick={() => setOrgDropdown(!orgDropdown)}
-            className="w-full flex items-center gap-2 bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg px-3 py-2.5 transition text-left"
+            className="w-full flex items-center gap-2 bg-[#1F2937] hover:bg-[#1F2937] border border-[#1E293B] rounded-lg px-3 py-2.5 transition text-left"
           >
             <div className="w-7 h-7 bg-blue-900 rounded-md flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0">
               {activeOrg?.name[0]?.toUpperCase()}
@@ -91,11 +91,11 @@ export function DashboardSidebar() {
             </svg>
           </button>
           {orgDropdown && (
-            <div className="absolute left-3 right-3 top-full mt-1 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+            <div className="absolute left-3 right-3 top-full mt-1 bg-[#111827] border border-[#1E293B] rounded-xl shadow-xl z-50 overflow-hidden">
               {orgs.map(org => (
                 <button key={org.id} onClick={() => switchOrg(org)}
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-gray-700 transition text-sm ${activeOrg?.id === org.id ? 'bg-blue-900/30 text-blue-300' : 'text-gray-300'}`}>
-                  <div className="w-6 h-6 bg-gray-700 rounded flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-[#1F2937] transition text-sm ${activeOrg?.id === org.id ? 'bg-blue-900/30 text-blue-300' : 'text-gray-300'}`}>
+                  <div className="w-6 h-6 bg-[#1F2937] rounded flex items-center justify-center text-xs font-bold flex-shrink-0">
                     {org.name[0]?.toUpperCase()}
                   </div>
                   <div className="min-w-0">
@@ -105,10 +105,10 @@ export function DashboardSidebar() {
                   {activeOrg?.id === org.id && <span className="ml-auto text-blue-400 text-xs">●</span>}
                 </button>
               ))}
-              <div className="border-t border-gray-700">
+              <div className="border-t border-[#1E293B]">
                 <Link href="/dashboard/tashkilotlar"
                   onClick={() => setOrgDropdown(false)}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-gray-700 transition text-sm text-gray-300">
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-[#1F2937] transition text-sm text-gray-300">
                   <span>🏢</span> Tashkilotlarni boshqarish
                 </Link>
               </div>
@@ -120,14 +120,14 @@ export function DashboardSidebar() {
       {/* Quota bar */}
       {sidebarOpen && quota && (
         <div className="px-3 pt-3">
-          <div className="bg-gray-800 rounded-lg px-3 py-2.5">
+          <div className="bg-[#1F2937] rounded-lg px-3 py-2.5">
             <div className="flex justify-between text-xs mb-1.5">
               <span className="text-gray-400">Tarif: <span className="text-white font-medium">{quota.plan}</span></span>
               {quota.limit && <span className="text-gray-400">{quota.used}/{quota.limit}</span>}
             </div>
             {quota.limit && (
               <>
-                <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[#1E293B] rounded-full overflow-hidden">
                   <div className={`h-full rounded-full transition-all ${quota.percent! >= 100 ? 'bg-red-500' : quota.percent! >= 80 ? 'bg-yellow-500' : 'bg-blue-500'}`}
                     style={{ width: `${quota.percent}%` }}/>
                 </div>
@@ -148,13 +148,13 @@ export function DashboardSidebar() {
           <Link key={item.key} href={item.href}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
               isActive(item.href)
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-lg'
+                : 'text-gray-400 hover:bg-[#1F2937] hover:text-white'
             }`}>
             <span className="text-base flex-shrink-0">{item.icon}</span>
             {sidebarOpen && <span className="flex-1 text-left font-medium">{T(item.label)}</span>}
             {sidebarOpen && item.key === 'contracts' && (
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive(item.href) ? 'bg-blue-500' : 'bg-gray-700 text-gray-400'}`}>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive(item.href) ? 'bg-blue-500' : 'bg-[#1E293B] text-gray-400'}`}>
                 {contracts.length}
               </span>
             )}
@@ -167,7 +167,7 @@ export function DashboardSidebar() {
         <div className="px-3 pb-1 flex gap-1">
           {(['uz', 'oz', 'ru'] as Lang[]).map(l => (
             <button key={l} onClick={() => setLang(l)}
-              className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition ${lang === l ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+              className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition ${lang === l ? 'bg-blue-600 text-white' : 'bg-[#1F2937] text-gray-400 hover:bg-[#111827]'}`}>
               {LANG_LABELS[l]}
             </button>
           ))}
@@ -175,9 +175,9 @@ export function DashboardSidebar() {
       )}
 
       {/* User / Admin / Logout */}
-      <div className="p-3 border-t border-gray-800 space-y-2">
+      <div className="p-3 border-t border-[#1E293B] space-y-2">
         {sidebarOpen && (
-          <div className="px-3 py-2 rounded-lg bg-gray-800">
+          <div className="px-3 py-2 rounded-lg bg-[#1F2937]">
             <div className="text-xs text-gray-500">{T(t.profile.account)}</div>
             <div className="text-sm text-white truncate font-medium mt-0.5">{userEmail}</div>
           </div>

@@ -60,12 +60,12 @@ function AnalysisView({ result, onFix, fixLoading, hasIssues }: {
   return (
     <div className="space-y-4">
       {baho && (
-        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-bold ${BAHO_COLOR[baho] || 'text-gray-300 bg-gray-800 border-gray-700'}`}>
+        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-bold ${BAHO_COLOR[baho] || 'text-gray-300 bg-[#1F2937] border-[#1E293B]'}`}>
           Baho: {baho}
         </div>
       )}
       {result.umumiy && (
-        <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+        <div className="bg-[#0F172A] rounded-xl p-4 border border-[#1E293B]">
           <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Umumiy baho</p>
           <p className="text-gray-200 text-sm leading-relaxed">{result.umumiy}</p>
         </div>
@@ -95,7 +95,7 @@ function AnalysisView({ result, onFix, fixLoading, hasIssues }: {
           <p className="text-xs text-red-400 mb-2 font-medium">⚡ Yuridik xatarlar</p>
           <div className="space-y-2">
             {result.yuridik_xatarlar.map((x, i) => (
-              <div key={i} className="bg-gray-800/40 rounded-lg p-3 border border-gray-700/30">
+              <div key={i} className="bg-[#0F172A] rounded-lg p-3 border border-[#1E293B]">
                 <span className={`text-xs font-medium capitalize ${DARAJA_COLOR[x.daraja] || 'text-gray-400'}`}>[{x.daraja}] </span>
                 <span className="text-sm text-gray-300">{x.tavsif}</span>
               </div>
@@ -115,7 +115,7 @@ function AnalysisView({ result, onFix, fixLoading, hasIssues }: {
       )}
       {!!result.grammatika_xatolari?.length && (
         <div>
-          <p className="text-xs text-purple-400 mb-2 font-medium">✏ Grammatika xatolari</p>
+          <p className="text-xs text-blue-400 mb-2 font-medium">✏ Grammatika xatolari</p>
           <ul className="space-y-1">
             {result.grammatika_xatolari.map((item, i) => (
               <li key={i} className="text-sm text-gray-400 flex gap-2"><span className="flex-shrink-0">•</span>{item}</li>
@@ -126,11 +126,11 @@ function AnalysisView({ result, onFix, fixLoading, hasIssues }: {
 
       {/* Fix button */}
       {hasIssues && (
-        <div className="pt-2 border-t border-gray-800">
+        <div className="pt-2 border-t border-[#1E293B]">
           <button
             onClick={onFix}
             disabled={fixLoading}
-            className="w-full flex items-center justify-center gap-2 bg-purple-700 hover:bg-purple-600 disabled:bg-gray-700 disabled:text-gray-500 text-white py-2.5 rounded-xl text-sm font-semibold transition"
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-[#1F2937] disabled:text-gray-500 text-white py-2.5 rounded-xl text-sm font-semibold transition"
           >
             {fixLoading ? (
               <>
@@ -151,14 +151,14 @@ function GrammarView({ result }: { result: GrammarResult }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <div className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm">
+        <div className="bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-1.5 text-sm">
           <span className="text-gray-500">Xatolar soni: </span>
           <span className={`font-bold ${(result.xatolar_soni || 0) === 0 ? 'text-emerald-400' : 'text-yellow-400'}`}>
             {result.xatolar_soni ?? 0}
           </span>
         </div>
         {result.umumiy_baho && (
-          <div className="text-sm text-gray-300 bg-gray-800/50 border border-gray-700/50 rounded-lg px-3 py-1.5">
+          <div className="text-sm text-gray-300 bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-1.5">
             {result.umumiy_baho}
           </div>
         )}
@@ -166,7 +166,7 @@ function GrammarView({ result }: { result: GrammarResult }) {
       {result.xatolar && result.xatolar.length > 0 ? (
         <div className="space-y-2">
           {result.xatolar.map((x, i) => (
-            <div key={i} className="bg-gray-800/40 rounded-xl p-3 border border-gray-700/30">
+            <div key={i} className="bg-[#0F172A] rounded-xl p-3 border border-[#1E293B]">
               <div className="flex items-start gap-2 flex-wrap mb-1">
                 <span className="text-red-400 text-sm line-through">{x.xato}</span>
                 <span className="text-gray-500">→</span>
@@ -261,23 +261,23 @@ export default function AiModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+      <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B] flex-shrink-0">
           <h2 className="text-base font-semibold text-white flex items-center gap-2">
-            <span className="text-purple-400">✦</span>
+            <span className="text-blue-400">✦</span>
             {fixResult ? 'To\'g\'irlangan shartnoma' : 'AI Tahlil'}
           </h2>
           <div className="flex items-center gap-2">
             {fixResult && (
               <button
                 onClick={() => { /* go back */ onRunAiAnalysis(aiContract!, aiTab) }}
-                className="text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition"
+                className="text-xs text-gray-400 hover:text-white bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] px-3 py-1.5 rounded-lg transition"
               >
                 ← Tahlilga qaytish
               </button>
             )}
-            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition text-xl">
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition text-xl">
               ×
             </button>
           </div>
@@ -285,7 +285,7 @@ export default function AiModal({
 
         {/* Tabs — hide when showing fix result */}
         {!fixResult && (
-          <div className="flex border-b border-gray-800 flex-shrink-0">
+          <div className="flex border-b border-[#1E293B] flex-shrink-0">
             <button
               onClick={() => { onTabChange('tahlil'); if (aiContract) onRunAiAnalysis(aiContract, 'tahlil') }}
               className={`flex-1 py-2.5 text-sm font-medium transition ${aiTab === 'tahlil' ? 'text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
@@ -305,7 +305,7 @@ export default function AiModal({
         <div className="overflow-y-auto flex-1 p-6">
           {aiLoading ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+              <div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
               <p className="text-gray-400 text-sm">AI tahlil qilmoqda...</p>
             </div>
           ) : aiError ? (
@@ -321,10 +321,10 @@ export default function AiModal({
 
         {/* Footer */}
         {!fixResult && (
-          <div className="px-6 py-4 border-t border-gray-800 flex-shrink-0">
+          <div className="px-6 py-4 border-t border-[#1E293B] flex-shrink-0">
             <button
               onClick={onClose}
-              className="w-full border border-gray-700 text-gray-300 py-2 rounded-lg text-sm hover:bg-gray-800 transition"
+              className="w-full bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2 rounded-lg text-sm transition"
             >
               {T(t.btn.close)}
             </button>

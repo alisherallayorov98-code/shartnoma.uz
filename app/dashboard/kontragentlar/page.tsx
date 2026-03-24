@@ -33,7 +33,7 @@ export default function KontragentlarPage() {
   )
 
   const lbl = 'block text-xs text-gray-400 mb-1'
-  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500'
+  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
   async function saveCp(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
@@ -74,7 +74,7 @@ export default function KontragentlarPage() {
           <p className="text-gray-500 text-sm mt-0.5">{cps.length} ta kontragent</p>
         </div>
         <button onClick={() => { setEditingCp(null); setCpForm(emptyCp); setModal(true) }}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
+          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
           + {T(t.cpTab.addBtn)}
         </button>
       </div>
@@ -86,12 +86,12 @@ export default function KontragentlarPage() {
         </svg>
         <input value={cpSearch} onChange={e => setCpSearch(e.target.value)}
           placeholder={T(t.cpTab.searchPlaceholder)}
-          className="w-full bg-gray-900 border border-gray-800 text-white rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"/>
+          className="w-full bg-[#111827] border border-[#1E293B] text-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
       </div>
 
       {/* Table or empty */}
       {filteredCps.length === 0 ? (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-16 text-center">
+        <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-16 text-center">
           <div className="text-5xl mb-4">🤝</div>
           <p className="text-gray-400 font-medium">{cpSearch ? T(t.cpTab.noFound) : T(t.cpTab.noAdded)}</p>
           {!cpSearch && (
@@ -102,10 +102,10 @@ export default function KontragentlarPage() {
           )}
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+              <tr className="border-b border-[#1E293B] text-gray-500 text-xs uppercase tracking-wider">
                 <th className="px-4 py-3 text-left w-8">№</th>
                 <th className="px-4 py-3 text-left">{T(t.cpTab.colName)}</th>
                 <th className="px-4 py-3 text-left">{T(t.cpTab.colInn)}</th>
@@ -121,9 +121,9 @@ export default function KontragentlarPage() {
                 const cpContracts = contracts.filter(c => c.counterparty_id === cp.id).length
                 return (
                   <tr key={cp.id}
-                    className="border-t border-gray-800 hover:bg-gray-800/40 cursor-pointer transition group"
+                    className="border-t border-[#1E293B] hover:bg-[#1F2937] cursor-pointer transition group"
                     onClick={() => setCpDetail(cp)}>
-                    <td className="px-4 py-3 text-gray-600 text-xs">{idx + 1}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{idx + 1}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-orange-900/60 rounded-lg flex items-center justify-center text-orange-300 font-bold text-sm flex-shrink-0">
@@ -139,7 +139,7 @@ export default function KontragentlarPage() {
                     <td className="px-4 py-3 text-center">
                       {cpContracts > 0
                         ? <span className="bg-blue-900/40 text-blue-400 text-xs px-2 py-0.5 rounded-full">{cpContracts}</span>
-                        : <span className="text-gray-700 text-xs">—</span>}
+                        : <span className="text-gray-600 text-xs">—</span>}
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
@@ -147,9 +147,9 @@ export default function KontragentlarPage() {
                           setEditingCp(cp)
                           setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: cp.bank_name, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '' })
                           setModal(true)
-                        }} className="p-1.5 bg-gray-700 hover:bg-blue-700 rounded text-xs" title="Tahrirlash">✎</button>
+                        }} className="p-1.5 bg-[#1F2937] hover:bg-blue-700 rounded text-xs text-gray-300" title="Tahrirlash">✎</button>
                         <button onClick={() => deleteCp(cp.id)}
-                          className="p-1.5 bg-gray-700 hover:bg-red-800 rounded text-xs" title="O'chirish">🗑</button>
+                          className="p-1.5 bg-[#1F2937] hover:bg-red-800 rounded text-xs text-gray-300" title="O'chirish">🗑</button>
                       </div>
                     </td>
                   </tr>
@@ -157,7 +157,7 @@ export default function KontragentlarPage() {
               })}
             </tbody>
           </table>
-          <div className="px-4 py-3 border-t border-gray-800 text-xs text-gray-600">
+          <div className="px-4 py-3 border-t border-[#1E293B] text-xs text-gray-500">
             {T(t.cpTab.total)}: {filteredCps.length} {T(t.cpTab.contacts)}
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function KontragentlarPage() {
       {/* Detail panel */}
       {cpDetail && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setCpDetail(null)}>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-4 mb-5">
               <div className="w-14 h-14 bg-orange-900/60 rounded-2xl flex items-center justify-center text-orange-300 font-bold text-2xl">
                 {cpDetail.name[0]?.toUpperCase()}
@@ -175,7 +175,7 @@ export default function KontragentlarPage() {
                 <h2 className="text-lg font-bold text-white">{cpDetail.name}</h2>
                 {cpDetail.inn && <p className="text-xs text-gray-500 mt-0.5">INN: {cpDetail.inn}</p>}
               </div>
-              <button onClick={() => setCpDetail(null)} className="ml-auto w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 text-xl">×</button>
+              <button onClick={() => setCpDetail(null)} className="ml-auto w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded-lg hover:bg-[#1F2937] text-xl">×</button>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               {[
@@ -193,16 +193,16 @@ export default function KontragentlarPage() {
                 </div>
               ) : null)}
             </div>
-            <div className="flex gap-3 mt-5 pt-4 border-t border-gray-800">
+            <div className="flex gap-3 mt-5 pt-4 border-t border-[#1E293B]">
               <button onClick={() => {
                 setEditingCp(cpDetail)
                 setCpForm({ name: cpDetail.name, inn: cpDetail.inn, director_name: cpDetail.director_name, bank_name: cpDetail.bank_name, bank_account: cpDetail.bank_account, mfo: cpDetail.mfo, address: cpDetail.address, phone: cpDetail.phone || '', qqsreg: cpDetail.qqsreg || '' })
                 setCpDetail(null); setModal(true)
-              }} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-sm font-medium transition">
+              }} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition">
                 Tahrirlash
               </button>
               <button onClick={() => deleteCp(cpDetail.id)}
-                className="px-4 bg-red-900/40 hover:bg-red-900/60 border border-red-800/50 text-red-400 py-2 rounded-lg text-sm transition">
+                className="px-4 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm transition">
                 O'chirish
               </button>
             </div>

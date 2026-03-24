@@ -48,7 +48,7 @@ export default function SpesifikatsiyalarPage() {
   const [specCpId, setSpecCpId] = useState('')
 
   const lbl = 'block text-xs text-gray-400 mb-1'
-  const inp = 'w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500'
+  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
   useEffect(() => {
     if (activeOrg) loadSpecs(activeOrg.id)
@@ -437,23 +437,23 @@ export default function SpesifikatsiyalarPage() {
           setSpecItems([emptySpecItem()])
           setSpecCpId('')
           setSpecModal(true)
-        }} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
+        }} className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
           {T(t.specTab.newBtn)}
         </button>
       </div>
 
       {/* Empty state */}
       {specs.length === 0 ? (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-16 text-center">
+        <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-16 text-center">
           <div className="text-5xl mb-4">📋</div>
           <p className="text-gray-400 font-medium">{T(t.specTab.empty)}</p>
           <p className="text-gray-600 text-sm mt-1">{T(t.specTab.createNew)}</p>
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-800 bg-gray-800/40">
+              <tr className="border-b border-[#1E293B] bg-[#0F172A]">
                 <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">{T(t.specTab.colNum)}</th>
                 <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">{T(t.specTab.colContract)}</th>
                 <th className="text-left px-4 py-2.5 text-xs text-gray-400 font-medium">{T(t.specTab.colCp)}</th>
@@ -468,21 +468,21 @@ export default function SpesifikatsiyalarPage() {
                 const total = spec.items.reduce((s, it) => s + (it.summa || 0), 0)
                 const contract = spec.contracts
                 return (
-                  <tr key={spec.id} className="border-t border-gray-800/50 hover:bg-gray-800/20 transition">
+                  <tr key={spec.id} className="border-t border-[#1E293B] hover:bg-[#1F2937] transition">
                     <td className="px-4 py-2.5">
                       <span className="text-sm font-semibold text-white">#{spec.spec_number}</span>
                       {spec.notes && <div className="text-xs text-gray-500 mt-0.5 truncate max-w-[120px]">{spec.notes}</div>}
                     </td>
                     <td className="px-4 py-2.5">
                       {contract
-                        ? <span className="text-xs bg-blue-900/40 text-blue-300 px-2 py-0.5 rounded-full">№{contract.contract_number}</span>
+                        ? <span className="text-xs bg-[#1F2937] text-blue-300 border border-[#1E293B] px-2 py-0.5 rounded-full">№{contract.contract_number}</span>
                         : <span className="text-xs text-gray-600">—</span>}
                     </td>
                     <td className="px-4 py-2.5 text-sm text-gray-300 max-w-[150px] truncate">
                       {contract?.counterparties?.name || <span className="text-gray-600">—</span>}
                     </td>
                     <td className="px-4 py-2.5 text-center">
-                      <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full">{spec.items.length} {T(t.specTab.items)}</span>
+                      <span className="text-xs bg-[#1F2937] text-gray-400 border border-[#1E293B] px-2 py-0.5 rounded-full">{spec.items.length} {T(t.specTab.items)}</span>
                     </td>
                     <td className="px-4 py-2.5 text-right text-white font-semibold text-sm">
                       {total.toLocaleString()} <span className="text-xs text-gray-500">{T(t.overviewTab.som)}</span>
@@ -493,7 +493,7 @@ export default function SpesifikatsiyalarPage() {
                     <td className="px-4 py-2.5">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => generateSpecWord(spec)}
-                          className="flex items-center gap-1 text-xs bg-blue-600 text-white hover:bg-blue-500 px-2 py-1 rounded transition font-semibold">
+                          className="flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition font-semibold">
                           📝 Word
                         </button>
                         <button onClick={() => generateSpecPDF(spec)}
@@ -574,11 +574,11 @@ export default function SpesifikatsiyalarPage() {
                 <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Mahsulotlar ro'yxati *</label>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500">Barchasi uchun QQS:</span>
-                  <div className="flex gap-0.5 bg-gray-800 rounded-lg p-0.5">
+                  <div className="flex gap-0.5 bg-[#0F172A] border border-[#1E293B] rounded-lg p-0.5">
                     {QQS_OPTIONS.map(opt => (
                       <button key={opt.val} type="button"
                         onClick={() => setSpecItems(specItems.map(item => calcItem({ ...item, qqs_foiz: opt.val })))}
-                        className="px-2.5 py-1 rounded-md text-xs font-medium transition text-gray-400 hover:text-white hover:bg-gray-700">
+                        className="px-2.5 py-1 rounded-md text-xs font-medium transition text-gray-400 hover:text-white hover:bg-[#1F2937]">
                         {opt.label}
                       </button>
                     ))}
@@ -587,11 +587,11 @@ export default function SpesifikatsiyalarPage() {
               </div>
 
               {specItems.length > 0 && (
-                <div className="rounded-xl border border-gray-700 overflow-hidden mb-3">
+                <div className="rounded-xl border border-[#1E293B] overflow-hidden mb-3">
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs min-w-[580px]">
                       <thead>
-                        <tr className="bg-gray-800 text-gray-400 text-left border-b border-gray-700">
+                        <tr className="bg-[#0F172A] text-gray-400 text-left border-b border-[#1E293B]">
                           <th className="px-3 py-2 w-7 text-center">№</th>
                           <th className="px-2 py-2">Nomi</th>
                           <th className="px-2 py-2 w-20">O'lchov</th>
@@ -604,30 +604,30 @@ export default function SpesifikatsiyalarPage() {
                       </thead>
                       <tbody>
                         {specItems.map((item, i) => (
-                          <tr key={i} className="border-t border-gray-700/50">
+                          <tr key={i} className="border-t border-[#1E293B] hover:bg-[#1F2937]">
                             <td className="px-3 py-1.5 text-gray-500 text-center">{i + 1}</td>
                             <td className="px-2 py-1.5">
-                              <input className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs"
+                              <input className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1 text-gray-200 focus:outline-none focus:border-blue-600 text-xs placeholder-gray-500"
                                 value={item.nomi} placeholder="Mahsulot nomi"
                                 onChange={e => updateSpecItem(i, 'nomi', e.target.value)}/>
                             </td>
                             <td className="px-2 py-1.5">
-                              <input className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs text-center"
+                              <input className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1 text-gray-200 focus:outline-none focus:border-blue-600 text-xs text-center"
                                 value={item.birlik} placeholder="dona"
                                 onChange={e => updateSpecItem(i, 'birlik', e.target.value)}/>
                             </td>
                             <td className="px-2 py-1.5">
-                              <input type="number" className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white focus:outline-none text-xs text-right"
+                              <input type="number" className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1 text-gray-200 focus:outline-none focus:border-blue-600 text-xs text-right"
                                 value={item.miqdori} min={0}
                                 onChange={e => updateSpecItem(i, 'miqdori', parseFloat(e.target.value) || 0)}/>
                             </td>
                             <td className="px-2 py-1.5">
-                              <input type="number" className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white focus:outline-none text-xs text-right"
+                              <input type="number" className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1 text-gray-200 focus:outline-none focus:border-blue-600 text-xs text-right"
                                 value={item.narxi} min={0}
                                 onChange={e => updateSpecItem(i, 'narxi', parseFloat(e.target.value) || 0)}/>
                             </td>
                             <td className="px-2 py-1.5">
-                              <select className="w-full bg-gray-800 border border-gray-700 rounded px-1 py-1 text-white focus:outline-none text-xs text-center"
+                              <select className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-1 py-1 text-gray-200 focus:outline-none focus:border-blue-600 text-xs text-center cursor-pointer"
                                 value={item.qqs_foiz}
                                 onChange={e => updateSpecItem(i, 'qqs_foiz', e.target.value)}>
                                 {QQS_OPTIONS.map(opt => <option key={opt.val} value={opt.val}>{opt.label}</option>)}
@@ -641,7 +641,7 @@ export default function SpesifikatsiyalarPage() {
                           </tr>
                         ))}
                         <tfoot>
-                          <tr className="border-t-2 border-gray-600 bg-gray-800/60">
+                          <tr className="border-t-2 border-[#1E293B] bg-[#0F172A]">
                             <td colSpan={4} className="px-3 py-2 text-right text-gray-400 text-xs font-semibold">Jami:</td>
                             <td className="px-2 py-2 text-right text-white text-xs font-semibold">{specAsosiy.toLocaleString()}</td>
                             <td className="px-2 py-2 text-center text-orange-400 text-xs">{specQqsJami > 0 ? specQqsJami.toLocaleString() : '—'}</td>
@@ -656,7 +656,7 @@ export default function SpesifikatsiyalarPage() {
               )}
 
               <button type="button" onClick={() => setSpecItems([...specItems, emptySpecItem()])}
-                className="w-full border-2 border-dashed border-gray-700 hover:border-emerald-600 text-gray-500 hover:text-emerald-400 py-2.5 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2">
+                className="w-full border-2 border-dashed border-[#1E293B] hover:border-orange-500 text-gray-500 hover:text-orange-400 py-2.5 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2">
                 + Mahsulot qo'shish
               </button>
             </div>
