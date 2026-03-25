@@ -654,41 +654,7 @@ export default function ShartnomalarPage() {
     doc.text(cpNameShort[0], rightX, y)
     y += 6
 
-    // ─ Imzo va muhr rasmlari ─
-    async function loadImg(url: string): Promise<string | null> {
-      try {
-        const res = await fetch(url)
-        const blob = await res.blob()
-        return await new Promise(resolve => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(reader.result as string)
-          reader.onerror = () => resolve(null)
-          reader.readAsDataURL(blob)
-        })
-      } catch { return null }
-    }
-
-    // Rasm formatini data URL dan aniqlash (PNG yoki JPEG)
-    function detectImgFormat(dataUrl: string): 'PNG' | 'JPEG' {
-      return dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg')
-        ? 'JPEG' : 'PNG'
-    }
-
-    const signUrl = c.organizations?.signature_url
-    const stampUrl = c.organizations?.stamp_url
-    const [signData, stampData] = await Promise.all([
-      signUrl ? loadImg(signUrl) : Promise.resolve(null),
-      stampUrl ? loadImg(stampUrl) : Promise.resolve(null),
-    ])
-
     if (y > pageHeight - MB - 25) { doc.addPage(); y = MT }
-    const sigY = y
-    if (signData) {
-      try { doc.addImage(signData, detectImgFormat(signData), leftX, sigY, 40, 18) } catch { /* skip */ }
-    }
-    if (stampData) {
-      try { doc.addImage(stampData, detectImgFormat(stampData), leftX + 8, sigY, 24, 24) } catch { /* skip */ }
-    }
     y += 22
     doc.setDrawColor(80, 80, 80)
     doc.line(leftX, y, leftX + 70, y)

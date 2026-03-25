@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -23,9 +23,6 @@ export default function TashkilotlarPage() {
   const [saving, setSaving] = useState(false)
   const [orgModal, setOrgModal] = useState(false)
   const [bankModal, setBankModal] = useState(false)
-
-  const signatureRef = useRef<HTMLInputElement>(null)
-  const stampRef = useRef<HTMLInputElement>(null)
 
   const lbl = 'block text-xs text-gray-400 mb-1'
   const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
@@ -65,21 +62,6 @@ export default function TashkilotlarPage() {
   async function deleteBankAccount(id: string) {
     const { error } = await supabase.from('bank_accounts').delete().eq('id', id)
     if (error) { toast(`${T(t.msg.errorPrefix)}: ${error.message}`, 'error'); return }
-    reloadOrgs()
-  }
-
-  async function uploadImage(file: File, field: 'stamp_url' | 'signature_url') {
-    if (!activeOrg) return
-    if (!file.type.startsWith('image/')) { toast('Faqat rasm fayllari qabul qilinadi', 'error'); return }
-    if (file.size > 2 * 1024 * 1024) { toast('Fayl hajmi 2MB dan oshmasligi kerak', 'error'); return }
-    const ext = file.name.split('.').pop()
-    const path = `${userId}/${activeOrg.id}/${field}.${ext}`
-    const { error: upErr } = await supabase.storage.from('org-assets').upload(path, file, { upsert: true })
-    if (upErr) { toast(`${T(t.msg.uploadError)}: ${upErr.message}`, 'error'); return }
-    const { data } = supabase.storage.from('org-assets').getPublicUrl(path)
-    const { error: dbErr } = await supabase.from('organizations').update({ [field]: data.publicUrl }).eq('id', activeOrg.id)
-    if (dbErr) { toast(`Saqlashda xato: ${dbErr.message}`, 'error'); return }
-    toast(field === 'stamp_url' ? 'Muhr saqlandi' : 'Imzo saqlandi')
     reloadOrgs()
   }
 
@@ -165,50 +147,6 @@ export default function TashkilotlarPage() {
                     </div>
                   )}
 
-                  {/* Stamp & Signature */}
-                  <div className="border-t border-[#1E293B] pt-4 mt-4">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{T(t.orgTab.stampSign)}</span>
-                    <div className="grid grid-cols-2 gap-3 mt-3">
-                      <div>
-                        <div className="text-xs text-gray-500 mb-2">{T(t.orgTab.signImg)}</div>
-                        {org.signature_url ? (
-                          <div className="relative group">
-                            <img src={org.signature_url} alt="Imzo" className="h-16 object-contain bg-white rounded-lg p-1"/>
-                            <button onClick={() => signatureRef.current?.click()}
-                              className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-lg text-xs text-white transition flex items-center justify-center">
-                              {T(t.orgTab.change)}
-                            </button>
-                          </div>
-                        ) : (
-                          <button onClick={() => signatureRef.current?.click()}
-                            className="w-full h-16 border-2 border-dashed border-[#1E293B] rounded-lg text-xs text-gray-500 hover:border-blue-600 hover:text-blue-400 transition flex items-center justify-center gap-2">
-                            {T(t.orgTab.upload)}
-                          </button>
-                        )}
-                        <input ref={signatureRef} type="file" accept="image/*" className="hidden"
-                          onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'signature_url') }}/>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500 mb-2">{T(t.orgTab.stampImg)}</div>
-                        {org.stamp_url ? (
-                          <div className="relative group">
-                            <img src={org.stamp_url} alt="Muhr" className="h-16 object-contain bg-white rounded-lg p-1"/>
-                            <button onClick={() => stampRef.current?.click()}
-                              className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-lg text-xs text-white transition flex items-center justify-center">
-                              {T(t.orgTab.change)}
-                            </button>
-                          </div>
-                        ) : (
-                          <button onClick={() => stampRef.current?.click()}
-                            className="w-full h-16 border-2 border-dashed border-[#1E293B] rounded-lg text-xs text-gray-500 hover:border-blue-600 hover:text-blue-400 transition flex items-center justify-center gap-2">
-                            {T(t.orgTab.upload)}
-                          </button>
-                        )}
-                        <input ref={stampRef} type="file" accept="image/*" className="hidden"
-                          onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'stamp_url') }}/>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
