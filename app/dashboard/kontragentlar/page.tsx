@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -11,6 +11,32 @@ import { useToast } from '@/lib/toast'
 import type { Counterparty } from '@/lib/types'
 
 const emptyCp = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', phone: '', qqsreg: '' }
+
+const CSV_HEADERS = ['name', 'inn', 'director_name', 'bank_name', 'bank_account', 'mfo', 'address', 'phone', 'qqsreg']
+const CSV_LABELS  = ['Tashkilot nomi *', 'INN (9 raqam)', 'Rahbar F.I.O', 'Bank nomi', 'Hisob raqami (20 raqam)', 'MFO (5 raqam)', 'Manzil', 'Telefon', 'QQS raqami']
+
+function downloadTemplate() {
+  const header = CSV_LABELS.join(';')
+  const sample = ['"ALFA SAVDO" MCHJ', '123456789', 'Rahimov Jasur Aliyevich', 'Xalq banki', '20208000000000000000', '00873', 'Toshkent sh., Chilonzor tumani', '+998901234567', ''].join(';')
+  const bom = '\uFEFF'
+  const csv = bom + header + '\n' + sample
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = 'kontragentlar_shablon.csv'; a.click()
+  URL.revokeObjectURL(url)
+}
+
+function parseCsv(text: string): Record<string, string>[] {
+  const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim())
+  if (lines.length < 2) return []
+  // skip header row
+  return lines.slice(1).map(line => {
+    const cells = line.split(';').map(c => c.trim().replace(/^"|"$/g, ''))
+    const obj: Record<string, string> = {}
+    CSV_HEADERS.forEach((h, i) => { obj[h] = cells[i] || '' })
+    return obj
+  }).filter(r => r.name?.trim())
+}
 
 export default function KontragentlarPage() {
   const { lang } = useLang()
@@ -25,6 +51,9 @@ export default function KontragentlarPage() {
   const [modal, setModal] = useState(false)
   const [cpDetail, setCpDetail] = useState<Counterparty | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [importRows, setImportRows] = useState<Record<string, string>[] | null>(null)
+  const [importing, setImporting] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const filteredCps = cps.filter(cp =>
     cp.name.toLowerCase().includes(cpSearch.toLowerCase()) ||
@@ -65,6 +94,33 @@ export default function KontragentlarPage() {
     setCpDetail(null); reloadCps(); setEditingCp(null)
   }
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const text = ev.target?.result as string
+      const rows = parseCsv(text)
+      if (rows.length === 0) { toast("Fayl bo'sh yoki noto'g'ri format", 'error'); return }
+      setImportRows(rows)
+    }
+    reader.readAsText(file, 'UTF-8')
+    e.target.value = ''
+  }
+
+  async function doImport() {
+    if (!importRows || importRows.length === 0) return
+    setImporting(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const rows = importRows.map(r => ({ ...r, user_id: session!.user.id }))
+    const { error } = await supabase.from('counterparties').insert(rows)
+    setImporting(false)
+    if (error) { toast('Xato: ' + error.message, 'error'); return }
+    toast(`${importRows.length} ta kontragent muvaffaqiyatli yuklandi`, 'success')
+    setImportRows(null)
+    reloadCps()
+  }
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
@@ -73,10 +129,29 @@ export default function KontragentlarPage() {
           <h1 className="text-xl font-bold text-white">🤝 {T(t.cp.title)}</h1>
           <p className="text-gray-500 text-sm mt-0.5">{cps.length} ta kontragent</p>
         </div>
-        <button onClick={() => { setEditingCp(null); setCpForm(emptyCp); setModal(true) }}
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
-          + {T(t.cpTab.addBtn)}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={downloadTemplate}
+            className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
+            title="Excel shablon yuklab olish">
+            <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+            </svg>
+            Shablon
+          </button>
+          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
+          <button onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
+            title="CSV fayl yuklash">
+            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            Ommaviy yuklash
+          </button>
+          <button onClick={() => { setEditingCp(null); setCpForm(emptyCp); setModal(true) }}
+            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
+            + {T(t.cpTab.addBtn)}
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -255,6 +330,55 @@ export default function KontragentlarPage() {
             <ModalActions onClose={() => { setModal(false); setEditingCp(null); setCpForm(emptyCp) }} saving={saving}/>
           </form>
         </Modal>
+      )}
+
+      {/* Import preview modal */}
+      {importRows && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B] flex-shrink-0">
+              <div>
+                <h3 className="text-base font-semibold text-white">Yuklashni tasdiqlang</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{importRows.length} ta kontragent topildi</p>
+              </div>
+              <button onClick={() => setImportRows(null)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] text-xl">×</button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-gray-500 border-b border-[#1E293B]">
+                    <th className="text-left pb-2 pr-3">№</th>
+                    <th className="text-left pb-2 pr-3">Tashkilot nomi</th>
+                    <th className="text-left pb-2 pr-3">INN</th>
+                    <th className="text-left pb-2 pr-3">Rahbar</th>
+                    <th className="text-left pb-2">Bank</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importRows.map((row, i) => (
+                    <tr key={i} className={`border-b border-[#1E293B]/50 ${!row.name ? 'opacity-40' : ''}`}>
+                      <td className="py-1.5 pr-3 text-gray-500">{i + 1}</td>
+                      <td className="py-1.5 pr-3 text-white font-medium">{row.name || <span className="text-red-400">Bo'sh!</span>}</td>
+                      <td className="py-1.5 pr-3 text-gray-400 font-mono">{row.inn || '—'}</td>
+                      <td className="py-1.5 pr-3 text-gray-400">{row.director_name || '—'}</td>
+                      <td className="py-1.5 text-gray-500">{row.bank_name || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex gap-3 px-6 py-4 border-t border-[#1E293B] flex-shrink-0">
+              <button onClick={doImport} disabled={importing}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-sm py-2.5 rounded-lg font-semibold transition">
+                {importing ? 'Yuklanmoqda...' : `${importRows.length} ta kontragentni yuklash`}
+              </button>
+              <button onClick={() => setImportRows(null)}
+                className="px-5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 text-sm py-2.5 rounded-lg transition">
+                Bekor
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {confirmDeleteId && (
