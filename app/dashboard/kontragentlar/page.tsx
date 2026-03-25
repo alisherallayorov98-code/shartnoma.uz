@@ -70,6 +70,14 @@ export default function KontragentlarPage() {
     if (cpForm.inn && !/^\d{9}$/.test(cpForm.inn)) { toast(T(t.msg.innInvalid), 'error'); setSaving(false); return }
     if (cpForm.mfo && !/^\d{5}$/.test(cpForm.mfo)) { toast(T(t.msg.mfoInvalid), 'error'); setSaving(false); return }
     if (cpForm.bank_account && !/^\d{20}$/.test(cpForm.bank_account)) { toast(T(t.msg.accountInvalid), 'error'); setSaving(false); return }
+    // Duplicate STIR check (only on new counterparty)
+    if (!editingCp && cpForm.inn) {
+      const duplicate = cps.find(cp => cp.inn && cp.inn === cpForm.inn)
+      if (duplicate) {
+        toast(`Bu STIR (${cpForm.inn}) allaqachon mavjud: "${duplicate.name}"`, 'error')
+        setSaving(false); return
+      }
+    }
     const { data: { session } } = await supabase.auth.getSession()
     let cpErr = null
     if (editingCp) {
@@ -112,11 +120,31 @@ export default function KontragentlarPage() {
     if (!importRows || importRows.length === 0) return
     setImporting(true)
     const { data: { session } } = await supabase.auth.getSession()
-    const rows = importRows.map(r => ({ ...r, user_id: session!.user.id }))
+    // Filter out duplicates by INN (against existing cps + within import rows)
+    const existingInns = new Set(cps.map(cp => cp.inn).filter(Boolean))
+    const seenInns = new Set<string>()
+    const newRows: Record<string, string>[] = []
+    let skipped = 0
+    for (const r of importRows) {
+      if (r.inn && (existingInns.has(r.inn) || seenInns.has(r.inn))) {
+        skipped++; continue
+      }
+      if (r.inn) seenInns.add(r.inn)
+      newRows.push(r)
+    }
+    if (newRows.length === 0) {
+      setImporting(false)
+      toast(`Barcha ${skipped} ta kontragent allaqachon mavjud (STIR bo'yicha)`, 'error')
+      return
+    }
+    const rows = newRows.map(r => ({ ...r, user_id: session!.user.id }))
     const { error } = await supabase.from('counterparties').insert(rows)
     setImporting(false)
     if (error) { toast('Xato: ' + error.message, 'error'); return }
-    toast(`${importRows.length} ta kontragent muvaffaqiyatli yuklandi`, 'success')
+    const msg = skipped > 0
+      ? `${newRows.length} ta yuklandi, ${skipped} ta dublikat o'tkazib yuborildi`
+      : `${newRows.length} ta kontragent muvaffaqiyatli yuklandi`
+    toast(msg, 'success')
     setImportRows(null)
     reloadCps()
   }
@@ -344,6 +372,20 @@ export default function KontragentlarPage() {
               <button onClick={() => setImportRows(null)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] text-xl">×</button>
             </div>
             <div className="overflow-y-auto flex-1 p-4">
+              {(() => {
+                const existingInns = new Set(cps.map(cp => cp.inn).filter(Boolean))
+                const seenInns = new Set<string>()
+                const dupCount = importRows.filter(r => {
+                  if (!r.inn) return false
+                  if (existingInns.has(r.inn) || seenInns.has(r.inn)) return true
+                  seenInns.add(r.inn); return false
+                }).length
+                return dupCount > 0 ? (
+                  <div className="mb-3 bg-yellow-900/30 border border-yellow-700/40 text-yellow-300 text-xs rounded-lg px-3 py-2">
+                    ⚠ {dupCount} ta kontragent dublikat (STIR bo'yicha) — yuklanishda o'tkazib yuboriladi
+                  </div>
+                ) : null
+              })()}
               <table className="w-full text-xs">
                 <thead>
                   <tr className="text-gray-500 border-b border-[#1E293B]">
@@ -355,15 +397,26 @@ export default function KontragentlarPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {importRows.map((row, i) => (
-                    <tr key={i} className={`border-b border-[#1E293B]/50 ${!row.name ? 'opacity-40' : ''}`}>
-                      <td className="py-1.5 pr-3 text-gray-500">{i + 1}</td>
-                      <td className="py-1.5 pr-3 text-white font-medium">{row.name || <span className="text-red-400">Bo'sh!</span>}</td>
-                      <td className="py-1.5 pr-3 text-gray-400 font-mono">{row.inn || '—'}</td>
-                      <td className="py-1.5 pr-3 text-gray-400">{row.director_name || '—'}</td>
-                      <td className="py-1.5 text-gray-500">{row.bank_name || '—'}</td>
-                    </tr>
-                  ))}
+                  {(() => {
+                    const existingInns = new Set(cps.map(cp => cp.inn).filter(Boolean))
+                    const seenInns = new Set<string>()
+                    return importRows.map((row, i) => {
+                      const isDup = Boolean(row.inn && (existingInns.has(row.inn) || seenInns.has(row.inn)))
+                      if (row.inn && !isDup) seenInns.add(row.inn)
+                      return (
+                        <tr key={i} className={`border-b border-[#1E293B]/50 ${isDup ? 'opacity-40' : ''}`}>
+                          <td className="py-1.5 pr-3 text-gray-500">{i + 1}</td>
+                          <td className="py-1.5 pr-3 font-medium">
+                            <span className={isDup ? 'text-gray-500 line-through' : 'text-white'}>{row.name || <span className="text-red-400">Bo'sh!</span>}</span>
+                            {isDup && <span className="ml-2 text-yellow-500 text-xs">dublikat</span>}
+                          </td>
+                          <td className="py-1.5 pr-3 text-gray-400 font-mono">{row.inn || '—'}</td>
+                          <td className="py-1.5 pr-3 text-gray-400">{row.director_name || '—'}</td>
+                          <td className="py-1.5 text-gray-500">{row.bank_name || '—'}</td>
+                        </tr>
+                      )
+                    })
+                  })()}
                 </tbody>
               </table>
             </div>
