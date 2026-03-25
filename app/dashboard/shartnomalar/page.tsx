@@ -123,6 +123,7 @@ export default function ShartnomalarPage() {
   // Sort state
   const [sortCol, setSortCol] = useState<'number' | 'date' | 'amount' | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [yearFilter, setYearFilter] = useState<string>('all')
 
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -1245,6 +1246,10 @@ export default function ShartnomalarPage() {
     !activeOrg || c.organization_id === activeOrg.id
   )
 
+  const years = Array.from(new Set(
+    orgContracts.map(c => c.contract_date?.slice(0, 4)).filter(Boolean)
+  )).sort((a, b) => Number(b) - Number(a)) as string[]
+
   const searchBase = serverResults !== null ? serverResults : orgContracts
   const filtered = searchBase.filter(c => {
     const matchSearch = serverResults !== null || !search ||
@@ -1253,7 +1258,8 @@ export default function ShartnomalarPage() {
       c.counterparties?.name?.toLowerCase().includes(search.toLowerCase()) ||
       (c.product_name || '').toLowerCase().includes(search.toLowerCase())
     const matchStatus = statusFilter === 'all' || c.status === statusFilter
-    return matchSearch && matchStatus
+    const matchYear = yearFilter === 'all' || c.contract_date?.startsWith(yearFilter)
+    return matchSearch && matchStatus && matchYear
   })
 
   // ── Sort ───────────────────────────────────────────────────────────────────
@@ -1371,6 +1377,16 @@ export default function ShartnomalarPage() {
             </span>
           ) : null}
         </div>
+        <select
+          value={yearFilter}
+          onChange={e => setYearFilter(e.target.value)}
+          className="bg-[#0F172A] border border-[#1E293B] text-gray-200 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-blue-600 cursor-pointer"
+        >
+          <option value="all">Barcha yillar</option>
+          {years.map(y => (
+            <option key={y} value={y}>{y}-yil</option>
+          ))}
+        </select>
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
