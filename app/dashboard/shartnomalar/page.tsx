@@ -743,7 +743,7 @@ export default function ShartnomalarPage() {
   }
 
   // ── DOCX generation ────────────────────────────────────────────────────────
-  async function generateDOCX(c: Contract) {
+  async function generateDOCX(c: Contract, returnBlob = false): Promise<Blob | void> {
     const {
       Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
       WidthType, AlignmentType, BorderStyle, Footer, PageNumber, UnderlineType,
@@ -1105,12 +1105,66 @@ export default function ShartnomalarPage() {
     })
 
     const blob = await Packer.toBlob(doc)
+    if (returnBlob) return blob
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = `shartnoma-${c.contract_number || 'yangi'}.docx`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  // ── Telegram orqali yuborish ────────────────────────────────────────────────
+  async function sendByTelegram(c: Contract) {
+    toast('Word fayl tayyorlanmoqda...', 'info')
+    try {
+      const blob = await generateDOCX(c, true) as Blob
+      if (!blob) return
+
+      const fileName = `contract-shares/${c.id}-${Date.now()}.docx`
+      const { error: uploadError } = await supabase.storage
+        .from('contract-shares')
+        .upload(fileName, blob, {
+          contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          upsert: true,
+        })
+
+      if (uploadError) {
+        // Fallback: faylni yuklab ol, foydalanuvchi qo'lda yuborsin
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a'); a.href = url
+        a.download = `shartnoma-${c.contract_number || 'yangi'}.docx`; a.click()
+        URL.revokeObjectURL(url)
+        toast("Word fayl yuklab olindi. Telegramda hamkorga yuboring.", 'info')
+        window.open('https://web.telegram.org', '_blank')
+        return
+      }
+
+      const { data: signedData } = await supabase.storage
+        .from('contract-shares')
+        .createSignedUrl(fileName, 7 * 24 * 3600)
+
+      if (!signedData?.signedUrl) {
+        toast('URL olishda xato', 'error'); return
+      }
+
+      const typeName = (CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type
+      const text = [
+        `📄 Shartnoma: ${typeName}`,
+        `№ ${c.contract_number}`,
+        `Tashkilot: ${c.organizations?.name || ''}`,
+        `Kontragent: ${c.counterparties?.name || ''}`,
+        `Summa: ${Number(c.amount || 0).toLocaleString()} so'm`,
+        `\nWord faylni yuklab oling:`,
+      ].join('\n')
+
+      window.open(
+        `https://t.me/share/url?url=${encodeURIComponent(signedData.signedUrl)}&text=${encodeURIComponent(text)}`,
+        '_blank'
+      )
+    } catch {
+      toast('Xato yuz berdi', 'error')
+    }
   }
 
   // ── AI analysis ────────────────────────────────────────────────────────────
@@ -1511,14 +1565,14 @@ export default function ShartnomalarPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </button>
-                        {/* Email */}
+                        {/* Telegram */}
                         <button
-                          title="Email yuborish"
-                          onClick={() => sendByEmail(c)}
-                          className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition"
+                          title="Telegram orqali yuborish"
+                          onClick={() => sendByTelegram(c)}
+                          className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-blue-400 hover:bg-[#1F2937] transition"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.504-1.356 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
                           </svg>
                         </button>
                         {/* Done */}
@@ -1606,7 +1660,7 @@ export default function ShartnomalarPage() {
           onClose={() => setModal(null)}
           onGenerateDOCX={generateDOCX}
           onGeneratePDF={generatePDF}
-          onSendByEmail={sendByEmail}
+          onSendByTelegram={sendByTelegram}
           onRunAiAnalysis={runAiAnalysis}
           onToggleSigned={toggleSigned}
           isPremium={hasAiAccess()}
