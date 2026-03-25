@@ -81,7 +81,7 @@ function makeEmptyForm(orgId: string): ContractForm {
     counterparty_id: '',
     status: 'active',
     content: '',
-    city: '',
+    city: 'Toshkent',
     product_name: '',
     spec_items: [],
     qqs_enabled: false,

@@ -394,6 +394,15 @@ export default function ContractModal({
     setCpDropOpen(false)
   }
 
+  // ─── Step 1 validation ────────────────────────────────────────────────────
+
+  function validateStep1(): boolean {
+    if (!form.contract_number.trim()) { toast("Shartnoma raqami kiritilishi shart", 'error'); return false }
+    if (!form.organization_id) { toast("Tashkilotni tanlang", 'error'); return false }
+    if (!form.counterparty_id) { toast("Kontragentni tanlang", 'error'); return false }
+    return true
+  }
+
   // ─── Step navigation ──────────────────────────────────────────────────────
 
   function goToStep3() {
@@ -493,7 +502,7 @@ export default function ContractModal({
                 {/* Contract number + date */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={lbl}>{T(t.modal.contractNum)}</label>
+                    <label className={lbl}>{T(t.modal.contractNum)} <span className="text-red-400">*</span></label>
                     <input
                       value={form.contract_number}
                       onChange={e => setForm(f => ({ ...f, contract_number: e.target.value }))}
@@ -556,16 +565,18 @@ export default function ContractModal({
                     placeholder="0"
                     min="0"
                   />
-                  {form.amount && parseFloat(form.amount) > 0 && (
+                  {form.amount && parseFloat(form.amount) > 0 ? (
                     <p className="text-xs text-gray-500 mt-1">
                       {numberToWords(parseFloat(form.amount), 'uz')} so'm
                     </p>
+                  ) : (
+                    <p className="text-xs text-yellow-600 mt-1">⚠ Summa kiritilmagan</p>
                   )}
                 </div>
 
                 {/* Organization */}
                 <div>
-                  <label className={lbl}>{T(t.modal.selectOrg)}</label>
+                  <label className={lbl}>{T(t.modal.selectOrg)} <span className="text-red-400">*</span></label>
                   <select
                     value={form.organization_id}
                     onChange={e => setForm(f => ({ ...f, organization_id: e.target.value }))}
@@ -584,7 +595,7 @@ export default function ContractModal({
 
                 {/* Counterparty with search dropdown */}
                 <div>
-                  <label className={lbl}>{T(t.modal.selectCp)}</label>
+                  <label className={lbl}>{T(t.modal.selectCp)} <span className="text-red-400">*</span></label>
                   <div className="relative" ref={cpDropRef}>
                     <div
                       className={`${inp} cursor-pointer flex items-center justify-between`}
@@ -653,16 +664,18 @@ export default function ContractModal({
                   )}
                 </div>
 
-                {/* Product name */}
-                <div>
-                  <label className={lbl}>{T(t.modal.productName)}</label>
-                  <input
-                    value={form.product_name}
-                    onChange={e => setForm(f => ({ ...f, product_name: e.target.value }))}
-                    className={inp}
-                    placeholder="Tovar yoki xizmat nomi"
-                  />
-                </div>
+                {/* Product name — only for oldi_sotdi and daval */}
+                {(form.contract_type === 'oldi_sotdi' || form.contract_type === 'daval') && (
+                  <div>
+                    <label className={lbl}>{T(t.modal.productName)}</label>
+                    <input
+                      value={form.product_name}
+                      onChange={e => setForm(f => ({ ...f, product_name: e.target.value }))}
+                      className={inp}
+                      placeholder="Tovar yoki xizmat nomi"
+                    />
+                  </div>
+                )}
 
                 {/* Template selection */}
                 <div>
@@ -1216,7 +1229,7 @@ export default function ContractModal({
                 {step < 4 ? (
                   <button
                     type="button"
-                    onClick={() => { if (step === 2) goToStep3(); else setStep(s => s + 1) }}
+                    onClick={() => { if (step === 1 && !validateStep1()) return; if (step === 2) goToStep3(); else setStep(s => s + 1) }}
                     className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
                   >
                     {T(t.btn.next)} →
