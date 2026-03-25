@@ -80,6 +80,7 @@ interface ContractModalProps {
   onClose: () => void
   saving: boolean
   customTemplates: AppTemplate[]
+  onCpAdded?: (cp: Counterparty) => void
 }
 
 // ─── Units of measure ────────────────────────────────────────────────────────
@@ -182,7 +183,7 @@ const CONTRACT_TYPES = [
 // ─── Main Modal Component ─────────────────────────────────────────────────────
 
 export default function ContractModal({
-  orgs, cps, form, setForm, onSave, onClose, saving, customTemplates
+  orgs, cps, form, setForm, onSave, onClose, saving, customTemplates, onCpAdded
 }: ContractModalProps) {
   const { lang } = useLang()
   const { toast } = useToast()
@@ -194,9 +195,7 @@ export default function ContractModal({
   const [useTemplate, setUseTemplate] = useState(true)
   const [selectedTemplate, setSelectedTemplate] = useState<string>('auto')
   const [quickAddCp, setQuickAddCp] = useState(false)
-  const [newCpName, setNewCpName] = useState('')
-  const [newCpInn, setNewCpInn] = useState('')
-  const [newCpDir, setNewCpDir] = useState('')
+  const [newCp, setNewCp] = useState({ name: '', inn: '', director_name: '', address: '', phone: '', bank_name: '', bank_account: '', mfo: '', qqsreg: '' })
   const [savingCp, setSavingCp] = useState(false)
   const cpDropRef = useRef<HTMLDivElement>(null)
 
@@ -374,23 +373,29 @@ export default function ContractModal({
   // ─── Quick add CP ─────────────────────────────────────────────────────────
 
   async function handleQuickAddCp() {
-    if (!newCpName.trim()) return
+    if (!newCp.name.trim()) { toast('Tashkilot nomi kiritilishi shart', 'error'); return }
     setSavingCp(true)
     const { data: { session } } = await supabase.auth.getSession()
     const { data, error } = await supabase.from('counterparties').insert({
-      name: newCpName.trim(),
-      inn: newCpInn.trim(),
-      director_name: newCpDir.trim(),
-      bank_name: '', bank_account: '', mfo: '', address: '',
+      name: newCp.name.trim(),
+      inn: newCp.inn.trim(),
+      director_name: newCp.director_name.trim(),
+      address: newCp.address.trim(),
+      phone: newCp.phone.trim(),
+      bank_name: newCp.bank_name.trim(),
+      bank_account: newCp.bank_account.trim(),
+      mfo: newCp.mfo.trim(),
+      qqsreg: newCp.qqsreg.trim(),
       user_id: session!.user.id,
     }).select().single()
     setSavingCp(false)
     if (error) { toast('Xato: ' + error.message, 'error'); return }
     if (data) {
+      onCpAdded?.(data)
       setForm(f => ({ ...f, counterparty_id: data.id }))
     }
     setQuickAddCp(false)
-    setNewCpName(''); setNewCpInn(''); setNewCpDir('')
+    setNewCp({ name: '', inn: '', director_name: '', address: '', phone: '', bank_name: '', bank_account: '', mfo: '', qqsreg: '' })
     setCpDropOpen(false)
   }
 
@@ -636,25 +641,9 @@ export default function ContractModal({
                           )}
                         </div>
                         <div className="p-2 border-t border-[#1E293B]">
-                          {quickAddCp ? (
-                            <div className="space-y-2">
-                              <input value={newCpName} onChange={e => setNewCpName(e.target.value)} placeholder="Tashkilot nomi *" className="w-full bg-[#0F172A] text-gray-200 text-sm px-2 py-1.5 rounded focus:outline-none border border-[#1E293B] placeholder-gray-500" />
-                              <input value={newCpInn} onChange={e => setNewCpInn(e.target.value)} placeholder="INN" className="w-full bg-[#0F172A] text-gray-200 text-sm px-2 py-1.5 rounded focus:outline-none border border-[#1E293B] placeholder-gray-500" />
-                              <input value={newCpDir} onChange={e => setNewCpDir(e.target.value)} placeholder="Rahbar" className="w-full bg-[#0F172A] text-gray-200 text-sm px-2 py-1.5 rounded focus:outline-none border border-[#1E293B] placeholder-gray-500" />
-                              <div className="flex gap-2">
-                                <button type="button" onClick={handleQuickAddCp} disabled={savingCp} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-xs py-1.5 rounded disabled:opacity-50">
-                                  {savingCp ? 'Saqlanmoqda...' : 'Saqlash'}
-                                </button>
-                                <button type="button" onClick={() => setQuickAddCp(false)} className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 text-xs py-1.5 rounded">
-                                  Bekor
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <button type="button" onClick={() => setQuickAddCp(true)} className="w-full text-xs text-blue-400 hover:text-blue-300 text-left px-1">
-                              + Yangi kontragent qo'shish
-                            </button>
-                          )}
+                          <button type="button" onClick={() => { setCpDropOpen(false); setQuickAddCp(true) }} className="w-full text-xs text-blue-400 hover:text-blue-300 text-left px-1">
+                            + Yangi kontragent qo'shish
+                          </button>
                         </div>
                       </div>
                     )}
@@ -1249,5 +1238,85 @@ export default function ContractModal({
         </form>
       </div>
     </div>
+
+    {/* ── New Counterparty Modal ── */}
+    {quickAddCp && (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+        <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-lg shadow-2xl">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B]">
+            <h3 className="text-base font-semibold text-white">Yangi kontragent</h3>
+            <button type="button" onClick={() => setQuickAddCp(false)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition text-xl">×</button>
+          </div>
+          <div className="p-6 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="block text-xs text-gray-400 mb-1">Tashkilot nomi <span className="text-red-400">*</span></label>
+                <input value={newCp.name} onChange={e => setNewCp(p => ({ ...p, name: e.target.value }))}
+                  placeholder="Masalan: ALFA MCHJ"
+                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">INN</label>
+                <input value={newCp.inn} onChange={e => setNewCp(p => ({ ...p, inn: e.target.value }))}
+                  placeholder="123456789"
+                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Rahbar F.I.O</label>
+                <input value={newCp.director_name} onChange={e => setNewCp(p => ({ ...p, director_name: e.target.value }))}
+                  placeholder="Rahbar ismi"
+                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs text-gray-400 mb-1">Manzil</label>
+                <input value={newCp.address} onChange={e => setNewCp(p => ({ ...p, address: e.target.value }))}
+                  placeholder="Toshkent sh., ..."
+                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Telefon</label>
+                <input value={newCp.phone} onChange={e => setNewCp(p => ({ ...p, phone: e.target.value }))}
+                  placeholder="+998 90 123 45 67"
+                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">QQS ro'yxat raqami</label>
+                <input value={newCp.qqsreg} onChange={e => setNewCp(p => ({ ...p, qqsreg: e.target.value }))}
+                  placeholder="QQS raqami"
+                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Bank nomi</label>
+                <input value={newCp.bank_name} onChange={e => setNewCp(p => ({ ...p, bank_name: e.target.value }))}
+                  placeholder="Ipak yo'li bank"
+                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">MFO</label>
+                <input value={newCp.mfo} onChange={e => setNewCp(p => ({ ...p, mfo: e.target.value }))}
+                  placeholder="01234"
+                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs text-gray-400 mb-1">Hisob raqami</label>
+                <input value={newCp.bank_account} onChange={e => setNewCp(p => ({ ...p, bank_account: e.target.value }))}
+                  placeholder="20208000000000000000"
+                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-3 px-6 py-4 border-t border-[#1E293B]">
+            <button type="button" onClick={handleQuickAddCp} disabled={savingCp}
+              className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-sm py-2.5 rounded-lg font-semibold transition">
+              {savingCp ? 'Saqlanmoqda...' : 'Saqlash'}
+            </button>
+            <button type="button" onClick={() => setQuickAddCp(false)}
+              className="px-5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 text-sm py-2.5 rounded-lg transition">
+              Bekor
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   )
 }

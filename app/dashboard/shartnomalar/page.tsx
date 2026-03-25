@@ -1653,6 +1653,7 @@ export default function ShartnomalarPage() {
           onClose={() => setModal(null)}
           saving={saving}
           customTemplates={customTemplates}
+          onCpAdded={() => reloadCps()}
         />
       )}
 
