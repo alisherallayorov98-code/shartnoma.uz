@@ -463,6 +463,7 @@ export default function ContractModal({
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
+    <>
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className={`bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-h-[95vh] flex flex-col shadow-2xl ${step === 4 ? 'max-w-6xl' : 'max-w-3xl'}`}>
 
@@ -1318,5 +1319,6 @@ export default function ContractModal({
         </div>
       </div>
     )}
+    </>
   )
 }

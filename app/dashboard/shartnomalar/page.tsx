@@ -19,7 +19,6 @@ import { fillPlaceholders } from '@/lib/contractUtils'
 import { fetchAi } from '@/lib/fetchAi'
 import { logAudit } from '@/lib/audit'
 import { FaTelegram, FaFilePdf } from 'react-icons/fa'
-import { SiMicrosoftword } from 'react-icons/si'
 import { useToast } from '@/lib/toast'
 import ConfirmModal from '../_components/ConfirmModal'
 
@@ -1538,7 +1537,10 @@ export default function ShartnomalarPage() {
                           onClick={() => generateDOCX(c)}
                           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-blue-500/10 transition"
                         >
-                          <SiMicrosoftword className="w-5 h-5 text-[#2B7CD3]" />
+                          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
+                            <rect width="24" height="24" rx="3" fill="#2B7CD3"/>
+                            <text x="3.5" y="17" fontFamily="Arial" fontWeight="bold" fontSize="14" fill="white">W</text>
+                          </svg>
                         </button>
                         {/* PDF */}
                         <button
