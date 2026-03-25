@@ -1436,7 +1436,6 @@ export default function ShartnomalarPage() {
                     {T(t.contracts.date)}{sortCol === 'date' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
                   </th>
                   <th className="text-left px-4 py-3 font-medium hidden md:table-cell">{T(t.contracts.type)}</th>
-                  <th className="text-left px-4 py-3 font-medium hidden lg:table-cell">{T(t.contracts.org)}</th>
                   <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">{T(t.contracts.counterparty)}</th>
                   <th className="text-right px-4 py-3 font-medium hidden md:table-cell cursor-pointer select-none hover:text-white transition"
                     onClick={() => toggleSort('amount')}>
@@ -1468,12 +1467,6 @@ export default function ShartnomalarPage() {
                         {CONTRACT_TYPES_I18N[c.contract_type] ? T(CONTRACT_TYPES_I18N[c.contract_type]) : c.contract_type}
                       </span>
                     </td>
-                    {/* Org */}
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      <span className="text-sm text-gray-300 truncate max-w-[120px] block">
-                        {c.organizations?.name || '—'}
-                      </span>
-                    </td>
                     {/* Counterparty */}
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <span className="text-sm text-gray-300 truncate max-w-[120px] block">
@@ -1499,79 +1492,77 @@ export default function ShartnomalarPage() {
                     </td>
                     {/* Actions */}
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1 flex-wrap">
+                      <div className="flex items-center gap-0.5">
                         {/* Edit */}
                         <button
                           title="Tahrirlash"
                           onClick={() => openEditContract(c)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-yellow-400 hover:bg-yellow-400/10 transition"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                           </svg>
                         </button>
                         {/* View */}
                         <button
                           title="Ko'rish"
                           onClick={() => { setViewContract(c); setModal('viewContract') }}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         </button>
                         {/* DOCX — primary */}
                         <button
-                          title="Word"
+                          title="Word yuklab olish"
                           onClick={() => generateDOCX(c)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-900/30 transition"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-blue-500 hover:text-blue-300 hover:bg-blue-500/10 transition"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </button>
                         {/* PDF */}
                         <button
-                          title="PDF"
+                          title="PDF yuklab olish"
                           onClick={() => generatePDF(c)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-400 hover:bg-[#1F2937] transition"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
                         </button>
                         {/* AI (ai_pro only) */}
                         {hasAiAccess() && (
-                          <div className="flex gap-1">
-                            <button
-                              title="AI Tahlil"
-                              onClick={() => runAiAnalysis(c, 'tahlil')}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-400 hover:bg-[#1F2937] transition"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                              </svg>
-                            </button>
-                          </div>
+                          <button
+                            title="AI Tahlil"
+                            onClick={() => runAiAnalysis(c, 'tahlil')}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-purple-400 hover:bg-purple-400/10 transition"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                          </button>
                         )}
                         {/* Copy */}
                         <button
-                          title="Nusxa"
+                          title="Nusxa olish"
                           onClick={() => copyContract(c)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-400 hover:bg-[#1F2937] transition"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-green-400 hover:bg-green-400/10 transition"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </button>
                         {/* Telegram */}
                         <button
                           title="Telegram orqali yuborish"
                           onClick={() => sendByTelegram(c)}
-                          className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg text-gray-400 hover:text-blue-400 hover:bg-[#1F2937] transition"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-sky-400 hover:bg-sky-400/10 transition"
                         >
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.504-1.356 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
                           </svg>
                         </button>
