@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useLang } from '@/lib/LanguageContext'
-import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
 import { fetchAi } from '@/lib/fetchAi'
@@ -20,8 +19,6 @@ const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = 
   boshqa: { uz: 'Boshqa', oz: 'Бошқа', ru: 'Другой' },
 }
 
-const AI_FREE_DAILY = 3
-
 type HubFeature = 'xulosa' | 'tarjima' | 'grammatika' | 'tahlil' | 'qa' | 'clause' | 'recommend' | 'write'
 
 const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; needsContract: boolean; premiumOnly: boolean }[] = [
@@ -38,7 +35,6 @@ const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; nee
 export default function YuristPage() {
   const { lang } = useLang()
   const { toast } = useToast()
-  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { contracts, activeOrg, hasAiAccess, subscription, openUpgradeModal } = useDashboard()
 
   const [hubFeature, setHubFeature] = useState<HubFeature>('xulosa')
@@ -48,12 +44,21 @@ export default function YuristPage() {
   const [hubInstruction, setHubInstruction] = useState('')
   const [hubDescription, setHubDescription] = useState('')
   const [hubWriteDetails, setHubWriteDetails] = useState({ tur: 'oldi_sotdi', summa: '', org: '', cp: '', extra: '' })
+  const [hubCp, setHubCp] = useState('')
   const [hubLoading, setHubLoading] = useState(false)
   const [hubResult, setHubResult] = useState<Record<string, unknown> | null>(null)
   const [hubError, setHubError] = useState('')
   const [previewText, setPreviewText] = useState<string | null>(null)
 
   const contractList = contracts.filter(c => c.organization_id === activeOrg?.id)
+
+  // Unique counterparties from contractList
+  const cpOptions = Array.from(
+    new Map(contractList.map(c => [c.counterparty_id, c.counterparties?.name || '—'])).entries()
+  ).filter(([id]) => id)
+
+  const filteredBycp = hubCp ? contractList.filter(c => c.counterparty_id === hubCp) : contractList
+
   const sel = FEATURES.find(f => f.key === hubFeature)!
   const canUse = hasAiAccess()
 
@@ -125,7 +130,7 @@ export default function YuristPage() {
           const locked = !hasAiAccess()
           return (
             <button key={f.key}
-              onClick={() => { setHubFeature(f.key); setHubResult(null); setHubError(''); setHubLoading(false); if (!f.needsContract) setHubContract('') }}
+              onClick={() => { setHubFeature(f.key); setHubResult(null); setHubError(''); setHubLoading(false); if (!f.needsContract) { setHubContract(''); setHubCp('') } }}
               className={`relative text-left p-4 rounded-xl border transition ${
                 hubFeature === f.key
                   ? 'bg-blue-600/10 border-blue-600/50 shadow-lg shadow-blue-900/20'
@@ -156,31 +161,47 @@ export default function YuristPage() {
 
         {/* Contract selector */}
         {sel.needsContract && (() => {
-          const contractsWithContent = contractList.filter(c => c.content?.trim())
-          const selectedHasContent = contractList.find(c => c.id === hubContract)?.content?.trim()
+          const contractsWithContent = filteredBycp.filter(c => c.content?.trim())
+          const selectedHasContent = filteredBycp.find(c => c.id === hubContract)?.content?.trim()
           return (
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">
-                Shartnoma tanlang
-                {contractsWithContent.length === 0 && contractList.length > 0 && (
-                  <span className="ml-2 text-amber-400">⚠ Hech bir shartnomada matn yo'q</span>
-                )}
-              </label>
-              <select value={hubContract} onChange={e => { setHubContract(e.target.value); setHubResult(null); setHubError('') }}
-                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
-                <option value="">— Shartnomani tanlang —</option>
-                {contractList.map(c => {
-                  const hasContent = Boolean(c.content?.trim())
-                  return (
-                    <option key={c.id} value={c.id} disabled={!hasContent}>
-                      {hasContent ? '✓' : '✗'} #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]} · {c.counterparties?.name || '—'}{!hasContent ? " (matn yo'q)" : ''}
-                    </option>
-                  )
-                })}
-              </select>
-              {hubContract && !selectedHasContent && (
-                <p className="text-amber-400 text-xs mt-1">⚠ Bu shartnomada matn yo'q. Shartnomani oching va bandlar qo'shing.</p>
+            <div className="space-y-3">
+              {/* Counterparty filter */}
+              {cpOptions.length > 1 && (
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Kontragent</label>
+                  <select value={hubCp} onChange={e => { setHubCp(e.target.value); setHubContract(''); setHubResult(null); setHubError('') }}
+                    className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
+                    <option value="">— Barcha kontragentlar —</option>
+                    {cpOptions.map(([id, name]) => (
+                      <option key={id} value={id}>{name}</option>
+                    ))}
+                  </select>
+                </div>
               )}
+              {/* Contract filter */}
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  Shartnoma tanlang
+                  {contractsWithContent.length === 0 && filteredBycp.length > 0 && (
+                    <span className="ml-2 text-amber-400">⚠ Hech bir shartnomada matn yo'q</span>
+                  )}
+                </label>
+                <select value={hubContract} onChange={e => { setHubContract(e.target.value); setHubResult(null); setHubError('') }}
+                  className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
+                  <option value="">— Shartnomani tanlang —</option>
+                  {filteredBycp.map(c => {
+                    const hasContent = Boolean(c.content?.trim())
+                    return (
+                      <option key={c.id} value={c.id} disabled={!hasContent}>
+                        {hasContent ? '✓' : '✗'} #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]}{!hubCp ? ` · ${c.counterparties?.name || '—'}` : ''}{!hasContent ? " (matn yo'q)" : ''}
+                      </option>
+                    )
+                  })}
+                </select>
+                {hubContract && !selectedHasContent && (
+                  <p className="text-amber-400 text-xs mt-1">⚠ Bu shartnomada matn yo'q. Shartnomani oching va bandlar qo'shing.</p>
+                )}
+              </div>
             </div>
           )
         })()}
