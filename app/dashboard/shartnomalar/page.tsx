@@ -515,6 +515,39 @@ export default function ShartnomalarPage() {
       if (y + need > pageHeight - MB) { doc.addPage(); y = MT }
     }
 
+    // Inline highlight tokens
+    const hlTokens: Array<{ val: string; r: number; g: number; b: number }> = []
+    const _pname = cyrillicToLatin(c.product_name || '').trim()
+    const _amount = cyrillicToLatin(Number(c.amount || 0).toLocaleString('uz-UZ')).trim()
+    if (_pname) hlTokens.push({ val: _pname, r: 0, g: 90, b: 200 })
+    if (_amount && _amount !== '0') hlTokens.push({ val: _amount, r: 180, g: 30, b: 30 })
+
+    function drawLine(line: string, startX: number, lineY: number) {
+      if (!hlTokens.length) { doc.text(line, startX, lineY); return }
+      let rem = line
+      let cx = startX
+      while (rem.length > 0) {
+        let best: { idx: number; len: number; r: number; g: number; b: number } | null = null
+        for (const h of hlTokens) {
+          const idx = rem.indexOf(h.val)
+          if (idx !== -1 && (!best || idx < best.idx)) best = { idx, len: h.val.length, r: h.r, g: h.g, b: h.b }
+        }
+        if (!best) { doc.setTextColor(30, 30, 30); doc.text(rem, cx, lineY); break }
+        if (best.idx > 0) {
+          const before = rem.slice(0, best.idx)
+          doc.setTextColor(30, 30, 30); doc.text(before, cx, lineY)
+          cx += doc.getTextWidth(before)
+        }
+        const hl = rem.slice(best.idx, best.idx + best.len)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(best.r, best.g, best.b); doc.text(hl, cx, lineY)
+        doc.setFont('helvetica', 'normal')
+        cx += doc.getTextWidth(hl)
+        rem = rem.slice(best.idx + best.len)
+      }
+      doc.setTextColor(30, 30, 30)
+    }
+
     const rawLines = fillPlaceholders(c.content || '', c).split('\n')
     for (let li = 0; li < rawLines.length; li++) {
       const raw = rawLines[li]
@@ -544,10 +577,10 @@ export default function ShartnomalarPage() {
         const indent = !prevRaw.trim() ? 8 : 0
         const firstPart = doc.splitTextToSize(trimmed, contentWidth - indent)
         guardY(5.5)
-        doc.text(firstPart[0], ML + indent, y); y += 5.5
+        drawLine(firstPart[0], ML + indent, y); y += 5.5
         if (firstPart.length > 1) {
           const rest = doc.splitTextToSize(firstPart.slice(1).join(' '), contentWidth)
-          for (const wl of rest) { guardY(5.5); doc.text(wl, ML, y); y += 5.5 }
+          for (const wl of rest) { guardY(5.5); drawLine(wl, ML, y); y += 5.5 }
         }
       }
     }
