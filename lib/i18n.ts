@@ -19,6 +19,9 @@ export const t = {
     counterparties: { uz: 'Kontragentlar',      oz: 'Контрагентлар',     ru: 'Контрагенты' },
     profile:        { uz: 'Profil',             oz: 'Профил',            ru: 'Профиль' },
     yurist_ai:      { uz: 'Yurist AI',          oz: 'Юрист AI',          ru: 'Юрист AI' },
+    kadrlar:        { uz: 'Kadrlar',            oz: 'Кадрлар',           ru: 'Кадры' },
+    buxgalter:      { uz: 'Buxgalter',          oz: 'Бухгалтер',         ru: 'Бухгалтер' },
+    kotiba:         { uz: 'Kotiba AI',           oz: 'Котиба AI',         ru: 'Секретарь AI' },
     logout:         { uz: 'Chiqish',            oz: 'Чиқиш',             ru: 'Выйти' },
   },
 

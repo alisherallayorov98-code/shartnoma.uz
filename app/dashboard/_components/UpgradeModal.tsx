@@ -16,22 +16,12 @@ export default function UpgradeModal() {
     window.open(url, '_blank')
   }
 
-  const payWithPayme = (planKey: string) => {
-    if (!activeOrg) return
-    const accountBase64 = btoa(JSON.stringify({ account: `${activeOrg.id}:${planKey}` }))
-    const PAYME_MERCHANT_ID = process.env.NEXT_PUBLIC_PAYME_MERCHANT_ID || ''
-    const url = `https://checkout.paycom.uz/${PAYME_MERCHANT_ID}?ac.account=${encodeURIComponent(`${activeOrg.id}:${planKey}`)}&a=5000000`
-    window.open(url, '_blank')
-  }
-
   const contactTelegram = (plan: string) => {
     const msg = encodeURIComponent(
       `Salom! "${activeOrg?.name || 'Tashkilot'}" uchun ${plan} tarifiga o'tmoqchiman.`
     )
     window.open(`https://t.me/shartnoma_uz?text=${msg}`, '_blank')
   }
-
-  void payWithPayme // used conditionally below
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
