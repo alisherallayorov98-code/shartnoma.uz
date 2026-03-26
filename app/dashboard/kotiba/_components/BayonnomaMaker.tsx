@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { downloadTextAsPDF } from '@/lib/downloadUtils'
 import { saveAiDocument } from '@/lib/aiDocuments'
 import { useDashboard } from '../../context'
+import { supabase } from '@/lib/supabase'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -457,37 +458,32 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSaved 
   const [direktor, setDirektor] = useState<DirektorForm>({ yangi_direktor:'', eski_direktor: direktorName, tayinlanish_sana:'', sabab:'' })
   const [boshqa, setBoshqa] = useState<BoshqaForm>({ kun_tartibi:'', qaror:'' })
 
-  // Load (or reset) saved founders from localStorage when org changes
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`tasischilar_${orgInn}`)
-      const list: Taasischi[] = saved ? JSON.parse(saved) : [{ ism: '', ulush: '100%' }]
-      setCommon(c => ({ ...c, tasischilar: list.length > 0 ? list : [{ ism: '', ulush: '100%' }] }))
-    } catch {
-      setCommon(c => ({ ...c, tasischilar: [{ ism: '', ulush: '100%' }] }))
-    }
-  }, [orgInn])
+  const [foundersFromDb, setFoundersFromDb] = useState(false)
 
-  function saveTasischilar(list: Taasischi[]) {
-    try { localStorage.setItem(`tasischilar_${orgInn}`, JSON.stringify(list)) } catch {}
-  }
+  // Load founders from Supabase tasischilar table
+  useEffect(() => {
+    if (!activeOrg) return
+    supabase.from('tasischilar').select('full_name, ulush').eq('org_id', activeOrg.id).order('created_at')
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setCommon(c => ({ ...c, tasischilar: data.map(f => ({ ism: f.full_name, ulush: `${f.ulush}%` })) }))
+          setFoundersFromDb(true)
+        } else {
+          setFoundersFromDb(false)
+        }
+      })
+  }, [activeOrg])
 
   function updateTaasischi(i: number, field: keyof Taasischi, val: string) {
-    const list = common.tasischilar.map((t, idx) => idx === i ? { ...t, [field]: val } : t)
-    setCommon(c => ({ ...c, tasischilar: list }))
-    saveTasischilar(list)
+    setCommon(c => ({ ...c, tasischilar: c.tasischilar.map((t, idx) => idx === i ? { ...t, [field]: val } : t) }))
   }
 
   function addTaasischi() {
-    const list = [...common.tasischilar, { ism: '', ulush: '' }]
-    setCommon(c => ({ ...c, tasischilar: list }))
-    saveTasischilar(list)
+    setCommon(c => ({ ...c, tasischilar: [...c.tasischilar, { ism: '', ulush: '' }] }))
   }
 
   function removeTaasischi(i: number) {
-    const list = common.tasischilar.filter((_, idx) => idx !== i)
-    setCommon(c => ({ ...c, tasischilar: list }))
-    saveTasischilar(list)
+    setCommon(c => ({ ...c, tasischilar: c.tasischilar.filter((_, idx) => idx !== i) }))
   }
 
   function getSpecific(): Record<string, string | boolean> {
@@ -592,7 +588,10 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSaved 
         <div className="flex items-center justify-between">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Ta&apos;sischilar (ishtirokchilar)
-            <span className="ml-2 text-gray-500 font-normal normal-case">— LocalStorage&apos;da saqlanadi</span>
+            {foundersFromDb
+              ? <span className="ml-2 text-emerald-500 font-normal normal-case">✓ Profildan yuklandi</span>
+              : <span className="ml-2 text-yellow-600 font-normal normal-case">— Profil → Ta&apos;sischilar bo&apos;limida saqlang</span>
+            }
           </div>
           <button type="button" onClick={addTaasischi}
             className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition">

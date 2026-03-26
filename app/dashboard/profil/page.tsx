@@ -12,7 +12,7 @@ export default function ProfilPage() {
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { userEmail, orgs, activeOrg, cps, contracts, subscription, profile: ctxProfile, reloadOrgs, logout, userId } = useDashboard()
 
-  const [profileTab, setProfileTab] = useState<'account' | 'company'>('account')
+  const [profileTab, setProfileTab] = useState<'account' | 'company' | 'founders'>('account')
 
   // Profile state
   const [profile, setProfile] = useState(() => ({ ...ctxProfile }))
@@ -25,6 +25,45 @@ export default function ProfilPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [pwdMsg, setPwdMsg] = useState('')
+
+  // Founders state
+  type Founder = { id: string; full_name: string; ulush: number }
+  const [founders, setFounders] = useState<Founder[]>([])
+  const [foundersLoading, setFoundersLoading] = useState(false)
+  const [addFounder, setAddFounder] = useState({ full_name: '', ulush: '' })
+  const [addFounderMsg, setAddFounderMsg] = useState('')
+
+  async function loadFounders() {
+    if (!activeOrg) return
+    setFoundersLoading(true)
+    const { data } = await supabase.from('tasischilar').select('*').eq('org_id', activeOrg.id).order('created_at')
+    setFounders((data as Founder[]) || [])
+    setFoundersLoading(false)
+  }
+
+  useEffect(() => {
+    if (profileTab === 'founders') loadFounders()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileTab, activeOrg])
+
+  async function handleAddFounder(e: React.FormEvent) {
+    e.preventDefault()
+    setAddFounderMsg('')
+    const ulush = parseFloat(addFounder.ulush)
+    if (!addFounder.full_name.trim()) { setAddFounderMsg('Ism kiritilmagan'); return }
+    if (isNaN(ulush) || ulush <= 0 || ulush > 100) { setAddFounderMsg('Ulush 1-100 oralig\'ida bo\'lishi kerak'); return }
+    const totalAfter = founders.reduce((s, f) => s + f.ulush, 0) + ulush
+    if (totalAfter > 100) { setAddFounderMsg(`Jami ulush ${totalAfter.toFixed(1)}% dan oshib ketmoqda (100% dan ko'p)`); return }
+    const { error } = await supabase.from('tasischilar').insert({ org_id: activeOrg!.id, full_name: addFounder.full_name.trim(), ulush })
+    if (error) { setAddFounderMsg(`Xato: ${error.message}`); return }
+    setAddFounder({ full_name: '', ulush: '' })
+    loadFounders()
+  }
+
+  async function deleteFounder(id: string) {
+    await supabase.from('tasischilar').delete().eq('id', id)
+    setFounders(f => f.filter(x => x.id !== id))
+  }
 
   // Org ext form state
   const [orgExtForm, setOrgExtForm] = useState<Record<string, string>>(() => ({
@@ -140,9 +179,10 @@ export default function ProfilPage() {
         {[
           { key: 'account', label: T(t.profileTab.accountTab) },
           { key: 'company', label: T(t.profileTab.companyTab) },
+          { key: 'founders', label: "Ta'sischilar" },
         ].map(pt => (
           <button key={pt.key} type="button"
-            onClick={() => setProfileTab(pt.key as 'account' | 'company')}
+            onClick={() => setProfileTab(pt.key as 'account' | 'company' | 'founders')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${profileTab === pt.key ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
             {pt.label}
           </button>
@@ -338,6 +378,95 @@ export default function ProfilPage() {
             )
           })()}
         </>
+      )}
+
+      {/* ── FOUNDERS tab ── */}
+      {profileTab === 'founders' && (
+        activeOrg ? (
+          <div className="space-y-4">
+            {/* Summary bar */}
+            {founders.length > 0 && (() => {
+              const total = founders.reduce((s, f) => s + f.ulush, 0)
+              const isOk = Math.abs(total - 100) < 0.01
+              return (
+                <div className={`flex items-center justify-between px-5 py-3 rounded-xl border text-sm font-medium ${isOk ? 'bg-emerald-900/30 border-emerald-700/50 text-emerald-300' : 'bg-yellow-900/30 border-yellow-700/50 text-yellow-300'}`}>
+                  <span>Jami ulush: <strong>{total.toFixed(1)}%</strong></span>
+                  {isOk ? <span>✓ Taqsimot to'g'ri</span> : <span>⚠ 100% bo'lishi kerak</span>}
+                </div>
+              )
+            })()}
+
+            {/* Founders list */}
+            <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-[#1E293B] flex items-center justify-between">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ta'sischilar ro'yxati</h2>
+                <span className="text-xs text-gray-500">{activeOrg.name}</span>
+              </div>
+              {foundersLoading ? (
+                <div className="p-8 text-center text-gray-500 text-sm">Yuklanmoqda...</div>
+              ) : founders.length === 0 ? (
+                <div className="p-8 text-center text-gray-500 text-sm">Ta'sischilar kiritilmagan</div>
+              ) : (
+                <div className="divide-y divide-[#1E293B]">
+                  {founders.map((f, i) => (
+                    <div key={f.id} className="flex items-center px-5 py-3 gap-4">
+                      <div className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-gray-200 font-medium truncate">{f.full_name}</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-white">{f.ulush}%</div>
+                          <div className="w-20 h-1.5 bg-[#0F172A] rounded-full mt-1 overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${f.ulush}%` }}/>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => deleteFounder(f.id)}
+                          className="text-gray-600 hover:text-red-400 transition p-1 rounded">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Add founder form */}
+            <form onSubmit={handleAddFounder} className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5 space-y-3">
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ta'sischini qo'shish</h2>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className={lbl}>F.I.Sh.</label>
+                  <input className={inp} placeholder="Karimov Alisher Baxtiyorovich"
+                    value={addFounder.full_name} onChange={e => setAddFounder(p => ({ ...p, full_name: e.target.value }))}/>
+                </div>
+                <div>
+                  <label className={lbl}>Ulush (%)</label>
+                  <input className={inp} type="number" min="0.01" max="100" step="0.01" placeholder="50"
+                    value={addFounder.ulush} onChange={e => setAddFounder(p => ({ ...p, ulush: e.target.value }))}/>
+                </div>
+              </div>
+              {addFounderMsg && (
+                <div className="bg-red-900/30 border border-red-700/50 text-red-300 text-xs px-3 py-2 rounded-lg">{addFounderMsg}</div>
+              )}
+              <button type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition">
+                + Qo'shish
+              </button>
+            </form>
+
+            <div className="bg-[#111827] border border-[#1E293B] rounded-xl px-5 py-3 text-xs text-gray-500">
+              💡 Bu ma'lumotlar Kotiba AI → Yig'ilish bayonnomasi yaratishda ta'sischilarni va ularning ulushlarini avtomatik taqsimlash uchun ishlatiladi.
+            </div>
+          </div>
+        ) : (
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-8 text-center text-gray-500">
+            <p className="text-sm">Tashkilot tanlanmagan</p>
+          </div>
+        )
       )}
 
       {/* ── COMPANY tab ── */}
