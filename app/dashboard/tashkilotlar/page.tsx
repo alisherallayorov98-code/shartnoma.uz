@@ -271,10 +271,10 @@ function RekvizitModal({ org, onClose, cardRef }: { org: Org; onClose: () => voi
     setExporting('jpeg')
     try {
       const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(cardRef.current, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+      const canvas = await html2canvas(cardRef.current, { scale: 3, backgroundColor: '#ffffff', useCORS: true, logging: false })
       const link = document.createElement('a')
-      link.download = `rekvizit-${org.name}.jpg`
-      link.href = canvas.toDataURL('image/jpeg', 0.95)
+      link.download = `rekvizit-${org.name}.png`
+      link.href = canvas.toDataURL('image/png')
       link.click()
     } finally { setExporting(null) }
   }
@@ -377,24 +377,24 @@ function RekvizitModal({ org, onClose, cardRef }: { org: Org; onClose: () => voi
 
         {/* Card preview */}
         <div className="overflow-y-auto flex-1 p-6">
-          <div ref={cardRef} style={{ background: '#ffffff', borderRadius: 12, padding: 32, fontFamily: 'Arial, sans-serif' }}>
+          <div ref={cardRef} style={{ background: '#ffffff', borderRadius: 12, padding: 36, fontFamily: '"Segoe UI", Arial, sans-serif', minWidth: 420 }}>
             {/* Card header */}
-            <div style={{ background: 'linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%)', borderRadius: 8, padding: '20px 24px', marginBottom: 24 }}>
-              <div style={{ color: '#93c5fd', fontSize: 11, fontWeight: 600, letterSpacing: 2, marginBottom: 4 }}>REKVIZITLAR</div>
-              <div style={{ color: '#ffffff', fontSize: 18, fontWeight: 700 }}>{org.name}</div>
+            <div style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)', borderRadius: 10, padding: '22px 28px', marginBottom: 28 }}>
+              <div style={{ color: '#bfdbfe', fontSize: 11, fontWeight: 700, letterSpacing: 3, marginBottom: 8, textTransform: 'uppercase' }}>Rekvizitlar</div>
+              <div style={{ color: '#ffffff', fontSize: 20, fontWeight: 800, lineHeight: 1.3 }}>{org.name}</div>
             </div>
             {/* Rows */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {rows.map(({ label, value }, i) => (
-                <div key={i} style={{ display: 'flex', borderBottom: '1px solid #f3f4f6', paddingTop: 10, paddingBottom: 10 }}>
-                  <div style={{ width: '40%', color: '#6b7280', fontSize: 12, paddingRight: 12 }}>{label}</div>
-                  <div style={{ flex: 1, color: '#111827', fontSize: 13, fontWeight: 600 }}>{value}</div>
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', borderBottom: i < rows.length - 1 ? '1px solid #e5e7eb' : 'none', paddingTop: 12, paddingBottom: 12, gap: 16 }}>
+                  <div style={{ minWidth: 160, color: '#6b7280', fontSize: 13, fontWeight: 500, paddingTop: 1 }}>{label}</div>
+                  <div style={{ flex: 1, color: '#111827', fontSize: 14, fontWeight: 700, lineHeight: 1.4 }}>{value}</div>
                 </div>
               ))}
             </div>
             {/* Footer */}
-            <div style={{ marginTop: 24, textAlign: 'center', color: '#9ca3af', fontSize: 10 }}>
-              shartnoma.uz orqali yaratildi
+            <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid #f3f4f6', textAlign: 'center', color: '#9ca3af', fontSize: 11 }}>
+              shartnoma.uz
             </div>
           </div>
         </div>
@@ -405,7 +405,7 @@ function RekvizitModal({ org, onClose, cardRef }: { org: Org; onClose: () => voi
             <button onClick={downloadJpeg} disabled={!!exporting}
               className={btnCls(exporting === 'jpeg') + ' bg-purple-600/10 border-purple-600/30 text-purple-400 hover:bg-purple-600/20'}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              {exporting === 'jpeg' ? 'Yuklanmoqda...' : 'JPEG yuklab olish'}
+              {exporting === 'jpeg' ? 'Yuklanmoqda...' : 'PNG yuklab olish'}
             </button>
             <button onClick={downloadPdf} disabled={!!exporting}
               className={btnCls(exporting === 'pdf') + ' bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20'}>
