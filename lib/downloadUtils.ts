@@ -672,7 +672,7 @@ export async function downloadFirmenniyBlank(opts: {
   children.push(new Paragraph({
     spacing: { before: 60, after: 200 },
     children: [
-      new TextRun({ text: `Xat № _______ dan  «_____» ________________ ${year} y.`, size: 20, font: F, color: '222222' }),
+      new TextRun({ text: `Xat \u2116 _______ dan  "____" ________________ ${year} y.`, size: 20, font: F, color: '000000' }),
     ],
   }))
 
