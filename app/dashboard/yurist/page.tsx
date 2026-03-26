@@ -7,6 +7,7 @@ import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downl
 import { fetchAi } from '@/lib/fetchAi'
 import { useToast } from '@/lib/toast'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
+import { supabase } from '@/lib/supabase'
 
 type HubFeature = 'xulosa' | 'tarjima' | 'grammatika' | 'tahlil' | 'qa' | 'clause' | 'recommend' | 'write'
 
@@ -79,7 +80,7 @@ function ResultActions({
 export default function YuristPage() {
   const { lang } = useLang()
   const { toast } = useToast()
-  const { contracts, activeOrg, hasAiAccess, subscription, openUpgradeModal } = useDashboard()
+  const { contracts, activeOrg, hasAiAccess, subscription, openUpgradeModal, reloadContracts } = useDashboard()
 
   const [hubFeature, setHubFeature] = useState<HubFeature>('xulosa')
   const [hubContract, setHubContract] = useState('')
@@ -93,8 +94,25 @@ export default function YuristPage() {
   const [hubResult, setHubResult] = useState<HubResult | null>(null)
   const [hubError, setHubError] = useState('')
   const [previewText, setPreviewText] = useState<string | null>(null)
+  const [addingClause, setAddingClause] = useState(false)
 
   const contractList = contracts.filter(c => c.organization_id === activeOrg?.id)
+
+  async function addClauseToContract(clauseText: string) {
+    if (!hubContract) return
+    const contract = contracts.find(c => c.id === hubContract)
+    if (!contract) return
+    setAddingClause(true)
+    try {
+      const newContent = (contract.content || '') + '\n\n' + clauseText
+      const { error } = await supabase.from('contracts').update({ content: newContent }).eq('id', hubContract)
+      if (error) { toast(error.message, 'error'); return }
+      toast("Band shartnomaga qo'shildi!", 'success')
+      reloadContracts()
+    } finally {
+      setAddingClause(false)
+    }
+  }
 
   // Unique counterparties from contractList
   const cpOptions = Array.from(
@@ -286,12 +304,26 @@ export default function YuristPage() {
 
         {/* Band qo'shish */}
         {hubFeature === 'clause' && (
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Ko'rsatma</label>
-            <input value={hubInstruction} onChange={e => setHubInstruction(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !hubLoading) { e.preventDefault(); setHubResult(null); runHubFeature() } }}
-              placeholder="Masalan: Kechikish uchun 0.1% kunlik jarima bandi qo'sh (Enter → yuborish)"
-              className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Shartnoma (ixtiyoriy — band shu shartnomaga qo'shiladi)</label>
+              <select value={hubContract} onChange={e => { setHubContract(e.target.value); setHubResult(null) }}
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
+                <option value="">— Shartnoma tanlanmagan —</option>
+                {contractList.map(c => (
+                  <option key={c.id} value={c.id}>
+                    #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]} · {c.counterparties?.name || '—'}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Ko'rsatma</label>
+              <input value={hubInstruction} onChange={e => setHubInstruction(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !hubLoading) { e.preventDefault(); setHubResult(null); runHubFeature() } }}
+                placeholder="Masalan: Kechikish uchun 0.1% kunlik jarima bandi qo'sh (Enter → yuborish)"
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
+            </div>
           </div>
         )}
 
@@ -532,10 +564,21 @@ export default function YuristPage() {
             )}
 
             {hubResult?._type === 'clause' && (
-              <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
-                {Boolean(hubResult.band_nomi) && <div className="text-blue-400 text-xs font-semibold mb-2">{String(hubResult.band_nomi)}</div>}
+              <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 space-y-3">
+                {Boolean(hubResult.band_nomi) && <div className="text-blue-400 text-xs font-semibold">{String(hubResult.band_nomi)}</div>}
                 <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.band || '')}</pre>
-                <div className="mt-3"><ResultActions text={hubResult.band} label="band" saveName="Yuridik band" onPreview={setPreviewText} toast={toast} /></div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <ResultActions text={hubResult.band} label="band" saveName="Yuridik band" onPreview={setPreviewText} toast={toast} />
+                  {hubContract && (
+                    <button onClick={() => addClauseToContract(String(hubResult.band || ''))} disabled={addingClause}
+                      className="text-xs bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg font-semibold transition">
+                      {addingClause ? "⏳ Qo'shilmoqda…" : "➕ Shartnomaga qo'shish"}
+                    </button>
+                  )}
+                </div>
+                {!hubContract && (
+                  <div className="text-xs text-gray-500">💡 Bandni shartnomaga qo'shish uchun yuqorida shartnoma tanlang</div>
+                )}
               </div>
             )}
 
