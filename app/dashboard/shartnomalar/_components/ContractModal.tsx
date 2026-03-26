@@ -420,6 +420,7 @@ export default function ContractModal({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (step < 4) return  // Enter tugmasi step 1-3 da formni submit qilmasin
     if (editStructure) {
       const org = orgs.find(o => o.id === form.organization_id)
       const cp = cps.find(c => c.id === form.counterparty_id)
