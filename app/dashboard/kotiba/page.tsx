@@ -4,11 +4,12 @@ import { useState, useRef, useEffect } from 'react'
 import { useDashboard } from '../context'
 import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
-import { downloadRasmiyXatWord, downloadFirmenniyBlank, downloadRekvizitlarWord } from '@/lib/downloadUtils'
+import { downloadRasmiyXatWord, downloadFirmenniyBlank } from '@/lib/downloadUtils'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 import HujjatResult from '../_components/HujjatResult'
 import BayonnomaMaker from './_components/BayonnomaMaker'
 import BuyruqMaker from './_components/BuyruqMaker'
+import RekvizitlarViewer from './_components/RekvizitlarViewer'
 
 type KotibaFeature =
   | 'bayonnoma' | 'rasmiy_xat' | 'taklifnoma'
@@ -219,16 +220,7 @@ export default function KotibaPage() {
       return
     }
     if (key === 'tashkilot_rekvizitlari') {
-      if (!activeOrg) return
-      downloadRekvizitlarWord({
-        orgName: activeOrg.name,
-        orgInn: activeOrg.inn,
-        orgDirector: activeOrg.director_name,
-        orgBankName: activeOrg.bank_name,
-        orgBankAccount: activeOrg.bank_account,
-        orgMfo: activeOrg.mfo,
-        orgAddress: activeOrg.address,
-      })
+      setSelected(key); setResult(null); setError('')
       return
     }
     const defaults: Record<string, string> = {}
@@ -341,6 +333,10 @@ export default function KotibaPage() {
                   orgName={activeOrg?.name || ''} orgInn={activeOrg?.inn || ''} direktorName={activeOrg?.director_name || ''}
                   onSaved={() => setSavedKey(k => k + 1)}
                 />
+              ) : selected === 'tashkilot_rekvizitlari' ? (
+                activeOrg
+                  ? <RekvizitlarViewer org={activeOrg} />
+                  : <p className="text-gray-400 text-sm">Avval tashkilot tanlang.</p>
               ) : selected === 'buyruq' ? (
                 <BuyruqMaker
                   orgName={activeOrg?.name || ''} orgDirector={activeOrg?.director_name || ''}
