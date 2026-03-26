@@ -251,7 +251,7 @@ export default function YuristPage() {
         })()}
 
         {/* Tarjima - til tanlash */}
-        {hubResult?._type === 'tarjima' && (
+        {hubFeature === 'tarjima' && (
           <div>
             <label className="block text-xs text-gray-400 mb-1">Tarjima tili</label>
             <div className="flex gap-2">
@@ -266,7 +266,7 @@ export default function YuristPage() {
         )}
 
         {/* Savol-javob */}
-        {hubResult?._type === 'qa' && (
+        {hubFeature === 'qa' && (
           <div>
             <label className="block text-xs text-gray-400 mb-1">Savolingiz</label>
             <div className="flex gap-2">
@@ -285,7 +285,7 @@ export default function YuristPage() {
         )}
 
         {/* Band qo'shish */}
-        {hubResult?._type === 'clause' && (
+        {hubFeature === 'clause' && (
           <div>
             <label className="block text-xs text-gray-400 mb-1">Ko'rsatma</label>
             <input value={hubInstruction} onChange={e => setHubInstruction(e.target.value)}
@@ -296,7 +296,7 @@ export default function YuristPage() {
         )}
 
         {/* Tur tavsiyasi */}
-        {hubResult?._type === 'recommend' && (
+        {hubFeature === 'recommend' && (
           <div>
             <label className="block text-xs text-gray-400 mb-1">Vaziyatni ta'riflang</label>
             <textarea value={hubDescription} onChange={e => setHubDescription(e.target.value)} rows={3}
@@ -306,7 +306,7 @@ export default function YuristPage() {
         )}
 
         {/* Shartnoma yozish */}
-        {hubResult?._type === 'write' && (
+        {hubFeature === 'write' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-400 mb-1">Shartnoma turi</label>
