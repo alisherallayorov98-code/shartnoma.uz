@@ -22,6 +22,7 @@ export const t = {
     kadrlar:        { uz: 'Kadrlar',            oz: 'Кадрлар',           ru: 'Кадры' },
     buxgalter:      { uz: 'Buxgalter',          oz: 'Бухгалтер',         ru: 'Бухгалтер' },
     kotiba:         { uz: 'Kotiba AI',           oz: 'Котиба AI',         ru: 'Секретарь AI' },
+    seif:           { uz: 'Seif',               oz: 'Сейф',              ru: 'Сейф' },
     logout:         { uz: 'Chiqish',            oz: 'Чиқиш',             ru: 'Выйти' },
   },
 

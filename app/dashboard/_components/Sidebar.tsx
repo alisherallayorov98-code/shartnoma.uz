@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { key: 'kadrlar',         href: '/dashboard/kadrlar',       icon: '👥', label: t.nav.kadrlar },
   { key: 'buxgalter',       href: '/dashboard/buxgalter',     icon: '💼', label: t.nav.buxgalter },
   { key: 'kotiba',          href: '/dashboard/kotiba',        icon: '🗂️', label: t.nav.kotiba },
+  { key: 'seif',            href: '/dashboard/seif',          icon: '🔒', label: t.nav.seif },
   { key: 'profile',         href: '/dashboard/profil',        icon: '👤', label: t.nav.profile },
 ]
 
