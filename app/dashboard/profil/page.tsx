@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -35,18 +35,45 @@ export default function ProfilPage() {
     bank_account: activeOrg?.bank_account || '',
     mfo: activeOrg?.mfo || '',
     address: activeOrg?.address || '',
-    phone: (activeOrg as Record<string, unknown>)?.phone as string || '',
-    oked: (activeOrg as Record<string, unknown>)?.oked as string || '',
-    viloyat: (activeOrg as Record<string, unknown>)?.viloyat as string || '',
-    tuman: (activeOrg as Record<string, unknown>)?.tuman as string || '',
-    qqsreg: (activeOrg as Record<string, unknown>)?.qqsreg as string || '',
-    qqs_stavka: (activeOrg as Record<string, unknown>)?.qqs_stavka as string || 'yoq',
-    director_pinfl: (activeOrg as Record<string, unknown>)?.director_pinfl as string || '',
-    chief_accountant: (activeOrg as Record<string, unknown>)?.chief_accountant as string || '',
-    sender_pinfl: (activeOrg as Record<string, unknown>)?.sender_pinfl as string || '',
-    sender_name: (activeOrg as Record<string, unknown>)?.sender_name as string || '',
+    phone: activeOrg?.phone || '',
+    oked: activeOrg?.oked || '',
+    viloyat: activeOrg?.viloyat || '',
+    tuman: activeOrg?.tuman || '',
+    qqsreg: activeOrg?.qqsreg || '',
+    qqs_stavka: activeOrg?.qqs_stavka || 'yoq',
+    director_pinfl: activeOrg?.director_pinfl || '',
+    chief_accountant: activeOrg?.chief_accountant || '',
+    sender_pinfl: activeOrg?.sender_pinfl || '',
+    sender_name: activeOrg?.sender_name || '',
   }))
   const [orgExtSaving, setOrgExtSaving] = useState(false)
+
+  // Sync form when active org or profile changes (e.g. org switch)
+  useEffect(() => {
+    setOrgExtForm({
+      name: activeOrg?.name || '',
+      inn: activeOrg?.inn || '',
+      director_name: activeOrg?.director_name || '',
+      bank_name: activeOrg?.bank_name || '',
+      bank_account: activeOrg?.bank_account || '',
+      mfo: activeOrg?.mfo || '',
+      address: activeOrg?.address || '',
+      phone: activeOrg?.phone || '',
+      oked: activeOrg?.oked || '',
+      viloyat: activeOrg?.viloyat || '',
+      tuman: activeOrg?.tuman || '',
+      qqsreg: activeOrg?.qqsreg || '',
+      qqs_stavka: activeOrg?.qqs_stavka || 'yoq',
+      director_pinfl: activeOrg?.director_pinfl || '',
+      chief_accountant: activeOrg?.chief_accountant || '',
+      sender_pinfl: activeOrg?.sender_pinfl || '',
+      sender_name: activeOrg?.sender_name || '',
+    })
+  }, [activeOrg])
+
+  useEffect(() => {
+    setProfile({ ...ctxProfile })
+  }, [ctxProfile])
 
   const { toast } = useToast()
   const lbl = 'block text-xs text-gray-400 mb-1'
@@ -177,7 +204,7 @@ export default function ProfilPage() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: T(t.contracts.title), value: contracts.length, icon: '📄' },
+              { label: T(t.contracts.title), value: contracts.filter(c => c.organization_id === activeOrg?.id).length, icon: '📄' },
               { label: T(t.cp.title), value: cps.length, icon: '🤝' },
               { label: T(t.orgs.title), value: orgs.length, icon: '🏢' },
             ].map(s => (
