@@ -168,7 +168,7 @@ const FEATURES: FeatureConfig[] = [
     apiType: '', resultField: '', fields: [], isCustomComponent: true,
   },
   {
-    key: 'firmenniy_blank', icon: '🏢', title: 'Firmenniy blank',
+    key: 'firmenniy_blank', icon: '🏢', title: "Tashkilot blankasi (firmenniy blank)",
     description: "Tashkilot sarlavhali bo'sh rasmiy xat blankini Word formatda yuklab oling",
     apiType: '', resultField: '', fields: [], isCustomComponent: true,
   },
