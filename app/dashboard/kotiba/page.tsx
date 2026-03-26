@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useDashboard } from '../context'
 import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
-import { downloadRasmiyXatWord } from '@/lib/downloadUtils'
+import { downloadRasmiyXatWord, downloadFirmenniyBlank } from '@/lib/downloadUtils'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 import HujjatResult from '../_components/HujjatResult'
 import BayonnomaMaker from './_components/BayonnomaMaker'
@@ -14,7 +14,7 @@ type KotibaFeature =
   | 'bayonnoma' | 'rasmiy_xat' | 'taklifnoma'
   | 'hisobot' | 'eslatma' | 'murojaatnoma' | 'tushuntirish_xati'
   | 'ishonchnoma' | 'dalolatnoma' | 'kafolat_xat' | 'tabriklash_xat' | 'rekvizitlar_xat'
-  | 'buyruq'
+  | 'buyruq' | 'firmenniy_blank'
 
 type FeatureConfig = {
   key: KotibaFeature
@@ -167,6 +167,11 @@ const FEATURES: FeatureConfig[] = [
     description: "Asosiy vosita, komissiya, safari, vazifa va boshqa buyruqlar",
     apiType: '', resultField: '', fields: [], isCustomComponent: true,
   },
+  {
+    key: 'firmenniy_blank', icon: '🏢', title: 'Firmenniy blank',
+    description: "Tashkilot sarlavhali bo'sh rasmiy xat blankini Word formatda yuklab oling",
+    apiType: '', resultField: '', fields: [], isCustomComponent: true,
+  },
 ]
 
 const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
@@ -195,6 +200,19 @@ export default function KotibaPage() {
   const currentFeature = FEATURES.find(f => f.key === selected)
 
   function selectFeature(key: KotibaFeature) {
+    if (key === 'firmenniy_blank') {
+      if (!activeOrg) return
+      downloadFirmenniyBlank({
+        orgName: activeOrg.name,
+        orgInn: activeOrg.inn,
+        orgDirector: activeOrg.director_name,
+        orgBankName: activeOrg.bank_name,
+        orgBankAccount: activeOrg.bank_account,
+        orgMfo: activeOrg.mfo,
+        orgAddress: activeOrg.address,
+      })
+      return
+    }
     const defaults: Record<string, string> = {}
     if (key === 'rasmiy_xat') defaults.sana = new Date().toISOString().slice(0, 10)
     setSelected(key); setFormData(defaults); setResult(null); setError('')
