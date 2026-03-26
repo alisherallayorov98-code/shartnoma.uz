@@ -69,18 +69,20 @@ export default function DashboardOverviewPage() {
   const showSubWarning = !isAdmin && isSubValid && subDaysLeft !== null && subDaysLeft <= 5
 
   // Faol shartnomalar muddati: extra_data.end_date yoki contract_date + 1 yil asosida
-  const now = Date.now()
-  const expiringContracts = useMemo(() => contracts.filter(c => {
-    if (c.status !== 'active') return false
-    const endDateStr = c.extra_data?.end_date
-    if (endDateStr) {
-      const daysLeft = (new Date(endDateStr).getTime() - now) / (1000 * 60 * 60 * 24)
-      return daysLeft >= 0 && daysLeft <= 30
-    }
-    const baseDate = c.contract_date || c.created_at
-    const daysOld = (now - new Date(baseDate).getTime()) / (1000 * 60 * 60 * 24)
-    return daysOld >= 330
-  }), [contracts, now])
+  const expiringContracts = useMemo(() => {
+    const now = Date.now()
+    return contracts.filter(c => {
+      if (c.status !== 'active') return false
+      const endDateStr = c.extra_data?.end_date
+      if (endDateStr) {
+        const daysLeft = (new Date(endDateStr).getTime() - now) / (1000 * 60 * 60 * 24)
+        return daysLeft >= 0 && daysLeft <= 30
+      }
+      const baseDate = c.contract_date || c.created_at
+      const daysOld = (now - new Date(baseDate).getTime()) / (1000 * 60 * 60 * 24)
+      return daysOld >= 330
+    })
+  }, [contracts])
 
   // ── Onboarding: new user with no organization ────────────────────────────
   if (orgs.length === 0) {

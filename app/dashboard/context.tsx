@@ -188,18 +188,23 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // ── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login'); return }
-      setUserEmail(session.user.email || '')
-      setUserId(session.user.id)
-      const [adminCheck] = await Promise.all([
-        fetch('/api/admin', { method: 'HEAD', headers: { Authorization: `Bearer ${session.access_token}` } }),
-        loadOrgs(),
-        loadCps(),
-        loadProfile(session.user.id),
-      ])
-      setIsAdmin(adminCheck.ok)
-      setInitialLoading(false)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) { router.push('/login'); return }
+        setUserEmail(session.user.email || '')
+        setUserId(session.user.id)
+        const [adminCheck] = await Promise.all([
+          fetch('/api/admin', { method: 'HEAD', headers: { Authorization: `Bearer ${session.access_token}` } }),
+          loadOrgs(),
+          loadCps(),
+          loadProfile(session.user.id),
+        ])
+        setIsAdmin(adminCheck.ok)
+      } catch (e) {
+        console.error('Dashboard init error:', e)
+      } finally {
+        setInitialLoading(false)
+      }
     }
     init()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
