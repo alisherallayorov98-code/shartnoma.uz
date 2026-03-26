@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import Link from 'next/link'
 import { useDashboard } from './context'
 import { useLang } from '@/lib/LanguageContext'
@@ -38,12 +39,15 @@ export default function DashboardOverviewPage() {
   const totalAll     = contracts.reduce((s, c) => s + (c.amount || 0), 0)
 
   const today = new Date().toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' })
-  const recentContracts = [...contracts]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 5)
+
+  const recentContracts = useMemo(() =>
+    [...contracts]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5),
+  [contracts])
 
   // Monthly chart — last 6 months
-  const monthlyData = (() => {
+  const monthlyData = useMemo(() => {
     const result: { label: string; count: number; amount: number }[] = []
     for (let i = 5; i >= 0; i--) {
       const d = new Date()
@@ -59,19 +63,24 @@ export default function DashboardOverviewPage() {
       result.push({ label, count: monthContracts.length, amount: monthContracts.reduce((s, c) => s + (c.amount || 0), 0) })
     }
     return result
-  })()
+  }, [contracts, lang])
   const maxCount = Math.max(...monthlyData.map(m => m.count), 1)
 
   const showSubWarning = !isAdmin && isSubValid && subDaysLeft !== null && subDaysLeft <= 5
 
-  // Faol shartnomalar muddati (1 yil hisobiday): 330+ kun o'tgan
+  // Faol shartnomalar muddati: extra_data.end_date yoki contract_date + 1 yil asosida
   const now = Date.now()
-  const expiringContracts = contracts.filter(c => {
+  const expiringContracts = useMemo(() => contracts.filter(c => {
     if (c.status !== 'active') return false
-    const created = new Date(c.created_at).getTime()
-    const daysOld = (now - created) / (1000 * 60 * 60 * 24)
+    const endDateStr = c.extra_data?.end_date
+    if (endDateStr) {
+      const daysLeft = (new Date(endDateStr).getTime() - now) / (1000 * 60 * 60 * 24)
+      return daysLeft >= 0 && daysLeft <= 30
+    }
+    const baseDate = c.contract_date || c.created_at
+    const daysOld = (now - new Date(baseDate).getTime()) / (1000 * 60 * 60 * 24)
     return daysOld >= 330
-  })
+  }), [contracts, now])
 
   // ── Onboarding: new user with no organization ────────────────────────────
   if (orgs.length === 0) {
@@ -296,7 +305,7 @@ export default function DashboardOverviewPage() {
               <div>
                 <div className="flex items-end gap-2 mb-3">
                   <span className="text-4xl font-bold text-white">{quota.used ?? '∞'}</span>
-                  <span className="text-xl text-gray-500 mb-1">/ {quota.limit ?? '∞'}</span>
+                  <span className="text-xl text-gray-500 mb-1">/ {quota.limit ?? 'Cheksiz'}</span>
                 </div>
                 <div className="text-xs text-gray-500 mb-3">Yaratilgan shartnomalar · {quota.plan} tarif</div>
                 {quota.limit && (

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Org, BankAccount, Counterparty, Contract, Subscription } from '@/lib/types'
@@ -212,18 +212,35 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     loadDemoAccess(activeOrg.id)
     loadContracts(activeOrg.id)
 
-    // Real-time: reload contracts when another tab/device changes them
-    const channel = supabase
+    // Real-time: reload data when another tab/device changes them
+    const contractsChannel = supabase
       .channel(`contracts:${activeOrg.id}`)
       .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'contracts',
+        event: '*', schema: 'public', table: 'contracts',
         filter: `organization_id=eq.${activeOrg.id}`,
       }, () => { loadContracts(activeOrg.id) })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    const cpsChannel = supabase
+      .channel(`counterparties:${activeOrg.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'counterparties',
+        filter: `organization_id=eq.${activeOrg.id}`,
+      }, () => { loadCps() })
+      .subscribe()
+
+    const orgsChannel = supabase
+      .channel(`organizations:${activeOrg.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'organizations',
+      }, () => { loadOrgs(activeOrg.id) })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(contractsChannel)
+      supabase.removeChannel(cpsChannel)
+      supabase.removeChannel(orgsChannel)
+    }
   }, [activeOrg?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -258,7 +275,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       return { plan: 'Bepul', used, limit: FREE_LIMIT, percent: Math.min((used / FREE_LIMIT) * 100, 100) }
     }
     const planLabel = subscription.plan === 'ai_pro' ? 'AI Pro' : subscription.plan === 'standard' ? 'Standart' : 'Bepul'
-    return { plan: planLabel, used: null, limit: null, percent: null }
+    return { plan: planLabel, used: orgContracts.length, limit: null, percent: null }
   }
 
   const reloadOrgs = useCallback(async () => {
@@ -273,9 +290,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     await loadContracts(activeOrg?.id)
   }, [loadContracts, activeOrg?.id])
 
+  const contractsLengthRef = useRef(0)
+  contractsLengthRef.current = contracts.length
+
   const loadMoreContracts = useCallback(async () => {
     if (!activeOrg) return
-    const offset = contracts.length
+    const offset = contractsLengthRef.current
     const { data, error } = await supabase.from('contracts')
       .select('*, organizations(*), counterparties(*)')
       .eq('organization_id', activeOrg.id)
@@ -283,7 +303,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .range(offset, offset + 49)
     if (error || !data) return
     setContracts(prev => [...prev, ...data])
-  }, [activeOrg, contracts.length])
+  }, [activeOrg])
 
   const reloadSubscription = useCallback(async () => {
     if (activeOrg) await loadSubscription(activeOrg.id)
