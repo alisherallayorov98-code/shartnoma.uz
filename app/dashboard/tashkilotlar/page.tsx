@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -23,6 +23,8 @@ export default function TashkilotlarPage() {
   const [saving, setSaving] = useState(false)
   const [orgModal, setOrgModal] = useState(false)
   const [bankModal, setBankModal] = useState(false)
+  const [rekvizitOrg, setRekvizitOrg] = useState<Org | null>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
 
   const lbl = 'block text-xs text-gray-400 mb-1'
   const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
@@ -104,6 +106,16 @@ export default function TashkilotlarPage() {
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">INN: {org.inn || '—'}</p>
                 </div>
+              </div>
+
+              <div className="flex justify-end mb-3" onClick={e => e.stopPropagation()}>
+                <button
+                  onClick={() => setRekvizitOrg(org)}
+                  className="flex items-center gap-1.5 text-xs bg-[#0F172A] border border-[#1E293B] hover:border-blue-500/50 text-gray-300 hover:text-blue-400 px-3 py-1.5 rounded-lg transition"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  Rekvizit kartochkasi
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs mb-4">
@@ -193,6 +205,11 @@ export default function TashkilotlarPage() {
         </Modal>
       )}
 
+      {/* Rekvizit kartochkasi modal */}
+      {rekvizitOrg && (
+        <RekvizitModal org={rekvizitOrg} onClose={() => setRekvizitOrg(null)} cardRef={cardRef} />
+      )}
+
       {/* Add bank account modal */}
       {bankModal && (
         <Modal title={T(t.orgTab.addAccount)} onClose={() => { setBankModal(false); setBankForm(emptyBank) }}>
@@ -217,6 +234,198 @@ export default function TashkilotlarPage() {
           </form>
         </Modal>
       )}
+    </div>
+  )
+}
+
+// ─── Rekvizit kartochkasi modal ───────────────────────────────────────────────
+function RekvizitModal({ org, onClose, cardRef }: { org: Org; onClose: () => void; cardRef: React.RefObject<HTMLDivElement | null> }) {
+  const { toast } = useToast()
+  const [exporting, setExporting] = useState<string | null>(null)
+
+  const row = (label: string, value?: string) =>
+    value ? { label, value } : null
+
+  const rows = [
+    row('Tashkilot nomi', org.name),
+    row('STIR (INN)', org.inn),
+    row('Direktor', org.director_name),
+    row('Manzil', org.address),
+    row('Telefon', org.phone),
+    row('Bank', org.bank_name),
+    row('Hisob raqami (X/R)', org.bank_account),
+    row('MFO', org.mfo),
+    row('OKED', org.oked),
+    row('QQS ro\'yxat raqami', org.qqsreg),
+  ].filter(Boolean) as { label: string; value: string }[]
+
+  const plainText = [
+    'REKVIZITLAR',
+    '─'.repeat(40),
+    ...rows.map(r => `${r.label.padEnd(24)}: ${r.value}`),
+    '─'.repeat(40),
+    'shartnoma.uz orqali yaratildi',
+  ].join('\n')
+
+  async function downloadJpeg() {
+    if (!cardRef.current) return
+    setExporting('jpeg')
+    try {
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(cardRef.current, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+      const link = document.createElement('a')
+      link.download = `rekvizit-${org.name}.jpg`
+      link.href = canvas.toDataURL('image/jpeg', 0.95)
+      link.click()
+    } finally { setExporting(null) }
+  }
+
+  async function downloadPdf() {
+    setExporting('pdf')
+    try {
+      const { default: jsPDF } = await import('jspdf')
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+      const F = 'helvetica'
+      const blue = [30, 64, 175] as [number, number, number]
+      // Header bar
+      doc.setFillColor(...blue)
+      doc.rect(0, 0, 210, 28, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFont(F, 'bold')
+      doc.setFontSize(16)
+      doc.text('REKVIZITLAR', 14, 12)
+      doc.setFontSize(10)
+      doc.setFont(F, 'normal')
+      doc.text(org.name, 14, 21)
+      // Rows
+      doc.setTextColor(0, 0, 0)
+      let y = 42
+      rows.forEach(({ label, value }) => {
+        doc.setFont(F, 'bold'); doc.setFontSize(9)
+        doc.setTextColor(100, 100, 100)
+        doc.text(label, 14, y)
+        doc.setFont(F, 'normal'); doc.setFontSize(11)
+        doc.setTextColor(20, 20, 20)
+        doc.text(value, 14, y + 6)
+        doc.setDrawColor(230, 230, 230)
+        doc.line(14, y + 9, 196, y + 9)
+        y += 16
+      })
+      // Footer
+      doc.setFontSize(8); doc.setTextColor(150, 150, 150)
+      doc.text('shartnoma.uz orqali yaratildi', 14, 285)
+      doc.save(`rekvizit-${org.name}.pdf`)
+    } finally { setExporting(null) }
+  }
+
+  async function downloadWord() {
+    setExporting('word')
+    try {
+      const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType } = await import('docx')
+      const F = 'Times New Roman'
+      const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+      const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder }
+      const thinLine = { style: BorderStyle.SINGLE, size: 4, color: 'E5E7EB' }
+      const lineBorders = { top: thinLine, bottom: noBorder, left: noBorder, right: noBorder }
+
+      const dataRows = rows.map(({ label, value }) =>
+        new TableRow({ children: [
+          new TableCell({
+            width: { size: 35, type: WidthType.PERCENTAGE },
+            borders: lineBorders,
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: 20, font: F, color: '6B7280' })] })],
+          }),
+          new TableCell({
+            width: { size: 65, type: WidthType.PERCENTAGE },
+            borders: lineBorders,
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            children: [new Paragraph({ children: [new TextRun({ text: value, size: 22, font: F, color: '111827' })] })],
+          }),
+        ]})
+      )
+
+      const doc = new Document({ sections: [{ children: [
+        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 60 }, children: [new TextRun({ text: 'REKVIZITLAR', bold: true, size: 32, font: F, color: '1E40AF' })] }),
+        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 320 }, children: [new TextRun({ text: org.name, bold: true, size: 26, font: F })] }),
+        new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: dataRows }),
+        new Paragraph({ spacing: { before: 480 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'shartnoma.uz orqali yaratildi', size: 16, font: F, color: '9CA3AF' })] }),
+      ]}]})
+
+      const blob = await Packer.toBlob(doc)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = `rekvizit-${org.name}.docx`; a.click()
+      URL.revokeObjectURL(url)
+    } finally { setExporting(null) }
+  }
+
+  async function copyText() {
+    await navigator.clipboard.writeText(plainText)
+    toast('Rekvizitlar nusxalandi', 'success')
+  }
+
+  const btnCls = (active: boolean) =>
+    `flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition border ${active ? 'opacity-50 cursor-wait' : ''}`
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[95vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B] flex-shrink-0">
+          <h2 className="text-base font-semibold text-white">Rekvizit kartochkasi</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition text-xl">×</button>
+        </div>
+
+        {/* Card preview */}
+        <div className="overflow-y-auto flex-1 p-6">
+          <div ref={cardRef} style={{ background: '#ffffff', borderRadius: 12, padding: 32, fontFamily: 'Arial, sans-serif' }}>
+            {/* Card header */}
+            <div style={{ background: 'linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%)', borderRadius: 8, padding: '20px 24px', marginBottom: 24 }}>
+              <div style={{ color: '#93c5fd', fontSize: 11, fontWeight: 600, letterSpacing: 2, marginBottom: 4 }}>REKVIZITLAR</div>
+              <div style={{ color: '#ffffff', fontSize: 18, fontWeight: 700 }}>{org.name}</div>
+            </div>
+            {/* Rows */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {rows.map(({ label, value }, i) => (
+                <div key={i} style={{ display: 'flex', borderBottom: '1px solid #f3f4f6', paddingTop: 10, paddingBottom: 10 }}>
+                  <div style={{ width: '40%', color: '#6b7280', fontSize: 12, paddingRight: 12 }}>{label}</div>
+                  <div style={{ flex: 1, color: '#111827', fontSize: 13, fontWeight: 600 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+            {/* Footer */}
+            <div style={{ marginTop: 24, textAlign: 'center', color: '#9ca3af', fontSize: 10 }}>
+              shartnoma.uz orqali yaratildi
+            </div>
+          </div>
+        </div>
+
+        {/* Export buttons */}
+        <div className="px-6 py-4 border-t border-[#1E293B] flex-shrink-0">
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={downloadJpeg} disabled={!!exporting}
+              className={btnCls(exporting === 'jpeg') + ' bg-purple-600/10 border-purple-600/30 text-purple-400 hover:bg-purple-600/20'}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              {exporting === 'jpeg' ? 'Yuklanmoqda...' : 'JPEG yuklab olish'}
+            </button>
+            <button onClick={downloadPdf} disabled={!!exporting}
+              className={btnCls(exporting === 'pdf') + ' bg-red-600/10 border-red-600/30 text-red-400 hover:bg-red-600/20'}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+              {exporting === 'pdf' ? 'Yuklanmoqda...' : 'PDF yuklab olish'}
+            </button>
+            <button onClick={downloadWord} disabled={!!exporting}
+              className={btnCls(exporting === 'word') + ' bg-blue-600/10 border-blue-600/30 text-blue-400 hover:bg-blue-600/20'}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              {exporting === 'word' ? 'Yuklanmoqda...' : 'Word yuklab olish'}
+            </button>
+            <button onClick={copyText}
+              className={btnCls(false) + ' bg-green-600/10 border-green-600/30 text-green-400 hover:bg-green-600/20'}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              Matnni nusxalash
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
