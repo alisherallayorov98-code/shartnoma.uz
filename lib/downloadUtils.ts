@@ -197,7 +197,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
   } = await import('docx')
 
   const F = 'Times New Roman'
-  const NB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' } as const
+  const NB = { style: BorderStyle.NIL, size: 0, color: 'auto' } as const
   const noBorders = { top: NB, bottom: NB, left: NB, right: NB }
 
   type LineKind = 'empty' | 'separator' | 'title' | 'main' | 'sub' | 'label' | 'bullet' | 'twocol' | 'body'
@@ -424,7 +424,7 @@ export async function downloadRasmiyXatWord(opts: {
   } = await import('docx')
 
   const F = 'Times New Roman'
-  const NB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' } as const
+  const NB = { style: BorderStyle.NIL, size: 0, color: 'auto' } as const
   const noBorders = { top: NB, bottom: NB, left: NB, right: NB }
 
   // Sana formatlash: YYYY-MM-DD → DD.MM.YYYY
@@ -593,8 +593,9 @@ export async function downloadFirmenniyBlank(opts: {
   } = await import('docx')
 
   const F = 'Times New Roman'
-  const NB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' } as const
+  const NB = { style: BorderStyle.NIL, size: 0, color: 'auto' } as const
   const noBorders = { top: NB, bottom: NB, left: NB, right: NB }
+  const tableNoBorders = { top: NB, bottom: NB, left: NB, right: NB, insideH: NB, insideV: NB }
   const year = new Date().getFullYear()
 
   // ── Chap ustun: tashkilot nomi + ma'lumotlar ──────────────────────────────
@@ -647,7 +648,7 @@ export async function downloadFirmenniyBlank(opts: {
   // ── 1. Sarlavha jadvali ───────────────────────────────────────────────────
   children.push(new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
-    borders: noBorders,
+    borders: tableNoBorders,
     rows: [new TableRow({
       children: [
         new TableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, borders: noBorders, children: leftLines }),
@@ -659,7 +660,7 @@ export async function downloadFirmenniyBlank(opts: {
   // ── 2. Qalin gorizontal chiziq ────────────────────────────────────────────
   children.push(new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
-    borders: noBorders,
+    borders: tableNoBorders,
     rows: [new TableRow({
       children: [new TableCell({
         borders: { top: NB, left: NB, right: NB, bottom: { style: BorderStyle.THICK, size: 12, color: '000000' } },
@@ -668,11 +669,11 @@ export async function downloadFirmenniyBlank(opts: {
     })],
   }))
 
-  // ── 3. "Xat № ___ dan «___» ___ 202_ y." satri ───────────────────────────
+  // ── 3. "Xat № ___ ___-yil ________ son" satri ────────────────────────────
   children.push(new Paragraph({
     spacing: { before: 60, after: 200 },
     children: [
-      new TextRun({ text: `Xat \u2116 _______ dan  "____" ________________ ${year} y.`, size: 20, font: F, color: '000000' }),
+      new TextRun({ text: `Xat ${String.fromCharCode(8470)} _______     ____-yil  ________________________`, size: 20, font: F, color: '000000' }),
     ],
   }))
 
