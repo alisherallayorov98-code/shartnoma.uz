@@ -16,6 +16,8 @@ import AiModal from './_components/AiModal'
 import { cyrillicToLatin } from '@/lib/downloadUtils'
 import { latinToCyrillic } from '@/lib/scriptNorm'
 import { fillPlaceholders } from '@/lib/contractUtils'
+import { generateContractPDF } from '@/lib/export/contractPdf'
+import { generateContractDOCX } from '@/lib/export/contractDocx'
 import { fetchAi } from '@/lib/fetchAi'
 import { logAudit } from '@/lib/audit'
 import { FaTelegram, FaFilePdf } from 'react-icons/fa'
@@ -379,20 +381,20 @@ export default function ShartnomalarPage() {
     setSaving(false)
     if (error) { toast(`Xato: ${error.message}`, 'error'); return }
     setModal(null)
-    reloadContracts()
+    setServerResults(null); reloadContracts()
   }
 
   // ── Update status ──────────────────────────────────────────────────────────
   async function updateStatus(id: string, status: string) {
     const { error } = await supabase.from('contracts').update({ status }).eq('id', id)
     if (error) { toast(`Xato: ${error.message}`, 'error'); return }
-    reloadContracts()
+    setServerResults(null); reloadContracts()
   }
 
   async function toggleSigned(c: Contract, side: 'signed_us' | 'signed_cp') {
     const { error } = await supabase.from('contracts').update({ [side]: !c[side] }).eq('id', c.id)
     if (error) { toast(`Xato: ${error.message}`, 'error'); return }
-    reloadContracts()
+    setServerResults(null); reloadContracts()
     // If both sides are now signed, send notification email
     const newUs = side === 'signed_us' ? !c.signed_us : c.signed_us
     const newCp = side === 'signed_cp' ? !c.signed_cp : c.signed_cp
@@ -443,7 +445,7 @@ export default function ShartnomalarPage() {
     if (error) { toast(`Xato: ${error.message}`, 'error'); return }
     if (contract) logAudit('delete', 'contracts', id, { contract_number: contract.contract_number, contract_type: contract.contract_type })
     toast("Shartnoma o'chirildi", 'info')
-    reloadContracts()
+    setServerResults(null); reloadContracts()
   }
 
   // ── Copy contract ──────────────────────────────────────────────────────────
@@ -487,254 +489,6 @@ export default function ShartnomalarPage() {
     window.open(`mailto:?subject=${subject}&body=${body}`)
   }
 
-  // ── PDF generation ─────────────────────────────────────────────────────────
-  async function generatePDF(c: Contract) {
-    const { default: jsPDF } = await import('jspdf')
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-
-    const pageWidth  = doc.internal.pageSize.getWidth()   // 210
-    const pageHeight = doc.internal.pageSize.getHeight()  // 297
-    const ML = 25, MR = 20, MT = 20, MB = 30
-    const contentWidth = pageWidth - ML - MR
-    let y = MT
-
-    // ─ Header ─
-    const orgName = cyrillicToLatin(c.organizations?.name || 'Tashkilot')
-    doc.setFontSize(9)
-    doc.setTextColor(120, 120, 120)
-    // Tashkilot nomi uzun bo'lsa wrap qiladi
-    const orgNameLines = doc.splitTextToSize(orgName, contentWidth) as string[]
-    for (const ln of orgNameLines) { doc.text(ln, ML, y); y += 5 }
-
-    doc.setFontSize(14)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(20, 20, 20)
-    const typeName = cyrillicToLatin((CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type)
-    doc.text(typeName.toUpperCase(), pageWidth / 2, y, { align: 'center' })
-    y += 7
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`No ${c.contract_number}`, pageWidth / 2, y, { align: 'center' })
-    y += 5
-    doc.setFontSize(9.5)
-    doc.setTextColor(80, 80, 80)
-    const dateStr = cyrillicToLatin(`${c.city || 'Toshkent'} shahri,  ${formatDateUz(c.contract_date)}`)
-    doc.text(dateStr, pageWidth / 2, y, { align: 'center' })
-    y += 6
-
-    // ─ Divider ─
-    doc.setDrawColor(180, 180, 180)
-    doc.line(ML, y, pageWidth - MR, y)
-    y += 7
-
-    // ─ Content ─
-    function guardY(need: number) {
-      if (y + need > pageHeight - MB) { doc.addPage(); y = MT }
-    }
-
-    // Inline highlight tokens
-    const hlTokens: Array<{ val: string; r: number; g: number; b: number }> = []
-    const _pname = cyrillicToLatin(c.product_name || '').trim()
-    const _amount = cyrillicToLatin(Number(c.amount || 0).toLocaleString('uz-UZ')).trim()
-    if (_pname) hlTokens.push({ val: _pname, r: 0, g: 90, b: 200 })
-    if (_amount && _amount !== '0') hlTokens.push({ val: _amount, r: 180, g: 30, b: 30 })
-
-    function drawLine(line: string, startX: number, lineY: number) {
-      if (!hlTokens.length) { doc.text(line, startX, lineY); return }
-      let rem = line
-      let cx = startX
-      while (rem.length > 0) {
-        let best: { idx: number; len: number; r: number; g: number; b: number } | null = null
-        for (const h of hlTokens) {
-          const idx = rem.indexOf(h.val)
-          if (idx !== -1 && (!best || idx < best.idx)) best = { idx, len: h.val.length, r: h.r, g: h.g, b: h.b }
-        }
-        if (!best) { doc.setTextColor(30, 30, 30); doc.text(rem, cx, lineY); break }
-        if (best.idx > 0) {
-          const before = rem.slice(0, best.idx)
-          doc.setTextColor(30, 30, 30); doc.text(before, cx, lineY)
-          cx += doc.getTextWidth(before)
-        }
-        const hl = rem.slice(best.idx, best.idx + best.len)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(best.r, best.g, best.b); doc.text(hl, cx, lineY)
-        doc.setFont('helvetica', 'normal')
-        cx += doc.getTextWidth(hl)
-        rem = rem.slice(best.idx + best.len)
-      }
-      doc.setTextColor(30, 30, 30)
-    }
-
-    // Strip party/signature block — PDF draws it separately below
-    const filledContent = fillPlaceholders(c.content || '', c)
-    const rekvizitIdx = filledContent.search(/\n[ \t]*(\d+\.\s*)?(TOMONLARNING REKVIZITLARI|TOMONLARNING IMZOLARI|PARTIES' DETAILS)/i)
-    const contentForPdf = rekvizitIdx !== -1 ? filledContent.slice(0, rekvizitIdx) : filledContent
-    const rawLines = contentForPdf.split('\n')
-    for (let li = 0; li < rawLines.length; li++) {
-      const raw = rawLines[li]
-      const safe = cyrillicToLatin(raw)
-      const trimmed = safe.trim()
-
-      if (!trimmed) { y += 2.5; continue }
-
-      const isSection = /^(\d+[\.\)]\s|§\s*\d+)/.test(trimmed) ||
-        (trimmed.length <= 60 && /^[A-Z\s\.\-:'"]{6,}$/.test(trimmed))
-      const isLabel = /^(BUYURTMACHI|IJROCHI|TOMONLAR|M\.O\.|Imzo|Sign)/i.test(trimmed)
-
-      if (isSection || isLabel) {
-        y += 2
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(9.5)
-        doc.setTextColor(10, 10, 10)
-        const wrapped = doc.splitTextToSize(trimmed, contentWidth)
-        for (const wl of wrapped) { guardY(6); doc.text(wl, ML, y); y += 5.5 }
-        y += 0.5
-        doc.setFont('helvetica', 'normal')
-      } else {
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(9.5)
-        doc.setTextColor(30, 30, 30)
-        const prevRaw = li > 0 ? rawLines[li - 1] : ''
-        const indent = !prevRaw.trim() ? 8 : 0
-        const firstPart = doc.splitTextToSize(trimmed, contentWidth - indent)
-        guardY(5.5)
-        drawLine(firstPart[0], ML + indent, y); y += 5.5
-        if (firstPart.length > 1) {
-          const rest = doc.splitTextToSize(firstPart.slice(1).join(' '), contentWidth)
-          for (const wl of rest) { guardY(5.5); drawLine(wl, ML, y); y += 5.5 }
-        }
-      }
-    }
-
-    y += 8
-
-    // ─ Spec items table ─
-    if (c.spec_items && c.spec_items.length > 0) {
-      if (y > pageHeight - 60) { doc.addPage(); y = MT }
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(10)
-      doc.setTextColor(20, 20, 20)
-      doc.text('SPESIFIKATSIYA', ML, y)
-      y += 6
-
-      const cols = ['#', 'Nomi', 'Birlik', 'Miqdori', 'Narxi', 'QQS%', 'Summa']
-      const colW = [8, 58, 16, 18, 24, 14, 22]  // jami: 160 — ML=25 + 160 = 185 < 190 (210-20)
-      const rowH = 6.5
-
-      doc.setFont('helvetica', 'bold')
-      doc.setFillColor(40, 50, 80)
-      doc.setDrawColor(150, 150, 180)
-      let cx = ML
-      doc.setFontSize(7.5)
-      doc.setTextColor(255, 255, 255)
-      cols.forEach((col, i) => {
-        doc.rect(cx, y, colW[i], rowH, 'FD')
-        doc.text(col, cx + 1.5, y + 4.5)
-        cx += colW[i]
-      })
-      y += rowH
-
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(8)
-      doc.setTextColor(20, 20, 20)
-      let total = 0
-      c.spec_items.forEach((item, idx) => {
-        if (y > pageHeight - MB - 10) { doc.addPage(); y = MT }
-        cx = ML
-        if (idx % 2 === 0) {
-          doc.setFillColor(248, 249, 255)
-          doc.rect(ML, y, colW.reduce((a, b) => a + b, 0), rowH, 'F')
-        }
-        const rowData = [
-          String(idx + 1),
-          cyrillicToLatin(item.nomi || ''),
-          cyrillicToLatin(item.birlik || ''),
-          String(item.miqdori),
-          item.narxi.toLocaleString(),
-          item.qqs_foiz === 'siz' ? '-' : `${item.qqs_foiz}%`,
-          item.summa.toLocaleString(),
-        ]
-        rowData.forEach((cell, i) => {
-          doc.setDrawColor(180, 180, 200)
-          doc.rect(cx, y, colW[i], rowH, 'S')
-          // Matn ustiga splitTextToSize, birinchi satrini olamiz
-          const cellText = doc.splitTextToSize(cell, colW[i] - 2) as string[]
-          doc.text(cellText[0] || '', cx + 1.5, y + 4.5)
-          cx += colW[i]
-        })
-        total += item.summa || 0
-        y += rowH
-      })
-
-      // Jami satr
-      doc.setFillColor(230, 240, 255)
-      doc.rect(ML, y, colW.reduce((a, b) => a + b, 0), rowH, 'F')
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(8.5)
-      const jamiX = ML + colW[0] + colW[1] + colW[2] + colW[3] + colW[4]
-      doc.text("Jami:", jamiX + 1, y + 4.5)
-      doc.text(total.toLocaleString() + " so'm", jamiX + colW[5] + 1, y + 4.5)
-      doc.setFont('helvetica', 'normal')
-      y += rowH + 6
-    }
-
-    // ─ Imzolar ─
-    if (y > pageHeight - 60) { doc.addPage(); y = MT }
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(40, 40, 40)
-    doc.text('TOMONLARNING IMZOLARI', pageWidth / 2, y, { align: 'center' })
-    y += 8
-
-    const leftX = ML
-    const rightX = pageWidth / 2 + 10
-
-    const sigOrgName = cyrillicToLatin(c.organizations?.name || '___')
-    const sigCpName  = cyrillicToLatin(c.counterparties?.name || '___')
-    const sigOrgDir  = cyrillicToLatin(c.organizations?.director_name || '___')
-    const sigCpDir   = cyrillicToLatin(c.counterparties?.director_name || '___')
-
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.text('BUYURTMACHI:', leftX, y)
-    doc.text('IJROCHI:', rightX, y)
-    y += 5
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    // Uzun nomlar uchun truncate (40mm ichida)
-    const orgNameShort = doc.splitTextToSize(sigOrgName, 80) as string[]
-    const cpNameShort  = doc.splitTextToSize(sigCpName, 80) as string[]
-    doc.text(orgNameShort[0], leftX, y)
-    doc.text(cpNameShort[0], rightX, y)
-    y += 6
-
-    if (y > pageHeight - MB - 25) { doc.addPage(); y = MT }
-    y += 22
-    doc.setDrawColor(80, 80, 80)
-    doc.line(leftX, y, leftX + 70, y)
-    doc.line(rightX, y, rightX + 70, y)
-    y += 4
-    doc.setFontSize(8)
-    doc.setTextColor(40, 40, 40)
-    doc.text(`/ ${sigOrgDir}`, leftX, y)
-    doc.text(`/ ${sigCpDir}`, rightX, y)
-    y += 5
-    doc.setTextColor(100, 100, 100)
-    doc.text('M.O.', leftX + 30, y)
-    doc.text('M.O.', rightX + 30, y)
-
-    // ─ Footer ─
-    const totalPages = ((doc.internal as unknown) as { getNumberOfPages(): number }).getNumberOfPages()
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i)
-      doc.setFontSize(7)
-      doc.setTextColor(150, 150, 150)
-      doc.text('Shartnoma.uz', pageWidth / 2, pageHeight - 10, { align: 'center' })
-      doc.text(`${i} / ${totalPages}`, pageWidth - MR, pageHeight - 10, { align: 'right' })
-    }
-
-    doc.save(`shartnoma-${c.contract_number || 'yangi'}.pdf`)
-  }
 
   // ── Excel (CSV) export ─────────────────────────────────────────────────────
   function exportToCSV(list: Contract[]) {
@@ -764,452 +518,12 @@ export default function ShartnomalarPage() {
     a.click(); URL.revokeObjectURL(url)
   }
 
-  // ── DOCX generation ────────────────────────────────────────────────────────
-  async function generateDOCX(c: Contract, returnBlob = false): Promise<Blob | void> {
-    const {
-      Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-      WidthType, AlignmentType, BorderStyle, Footer, PageNumber, UnderlineType,
-    } = await import('docx')
-
-    const typeName = (CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type
-    const F = 'Times New Roman'
-
-    // Border helpers
-    const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
-    const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder }
-    const thinBorder = { style: BorderStyle.SINGLE, size: 6, color: '888888' }
-    const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder }
-
-    // Line classifier for contract content
-    function lineKind(line: string): 'empty' | 'main' | 'sub' | 'sub_label' | 'label' | 'bullet' | 'body' {
-      const t = line.trim()
-      if (!t || /^={3,}$|^-{3,}$/.test(t)) return 'empty'
-      if (/^(\d+\.\s+\S|§\s*\d)/.test(t) && !/^\d+\.\d/.test(t)) return 'main'
-      if (/^\d+\.\d+/.test(t)) return /:\s*$/.test(t) ? 'sub_label' : 'sub'
-      if (/^[A-ZЎҚҒҲ][A-ZЎҚҒҲ\s]{2,20}:\s*$/.test(t)) return 'label'
-      if (/^[-–•]\s/.test(t)) return 'bullet'
-      return 'body'
-    }
-
-    // Rich text runs — highlights amounts (500 000 000), percentages (20%),
-    // and deadline numbers (30 (o'ttiz)) in red+bold; rest in normal black.
-    // UnderlineType.NONE explicitly prevents Word from auto-applying list underline.
-    function richRuns(text: string, baseBold = false) {
-      const base = { font: F, size: 24, color: '000000', italics: false, underline: { type: UnderlineType.NONE } }
-      const pat = /(\d{1,3}(?:\s\d{3})+(?:\s*\([^)]+\))?|\d+[,.]?\d*\s*%|\d+\s*\([^)]+\))/g
-      const runs = []
-      let last = 0, m: RegExpExecArray | null
-      while ((m = pat.exec(text)) !== null) {
-        if (m.index > last) runs.push(new TextRun({ ...base, text: text.slice(last, m.index), bold: baseBold }))
-        runs.push(new TextRun({ ...base, text: m[0], bold: true, color: 'CC0000' }))
-        last = m.index + m[0].length
-      }
-      if (last < text.length) runs.push(new TextRun({ ...base, text: text.slice(last), bold: baseBold }))
-      return runs.length ? runs : [new TextRun({ ...base, text, bold: baseBold })]
-    }
-
-    // ── Content cleaning ──────────────────────────────────────────────────────
-    const rawLines = fillPlaceholders(c.content || '', c).split('\n')
-
-    let startIdx = 0
-    for (let i = 0; i < rawLines.length; i++) {
-      const t = rawLines[i].trim()
-      if (/^(\d+\.\s+[A-ZЎҚҒҲA-z]|§\s*\d)/.test(t) && !/^\d+\.\d+/.test(t)) { startIdx = i; break }
-    }
-    let endIdx = rawLines.length
-    for (let i = 0; i < rawLines.length; i++) {
-      const t = rawLines[i].trim()
-      if (/^TOMONLARNING\s+(REKVIZITLARI|MA['']LUMOTLARI|IMZOLARI)/i.test(t) ||
-          /^TOMONLAR\s+(IMZOSI|REKVIZIT)/i.test(t)) { endIdx = i; break }
-    }
-
-    const cleanedLines = rawLines.slice(startIdx, endIdx)
-
-    // ── Bilingual 2-column rendering for xalqaro contracts ─────────────────
-    const midBorder = { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC' }
-    const biL = { top: noBorder, bottom: noBorder, left: noBorder, right: midBorder }
-    const biR = { top: noBorder, bottom: noBorder, left: midBorder, right: noBorder }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function biCell(text: string, borders: any, isHeading: boolean) {
-      return new TableCell({
-        width: { size: 50, type: WidthType.PERCENTAGE },
-        borders,
-        margins: { top: 40, bottom: 40, left: 150, right: 150 },
-        children: [new Paragraph({
-          alignment: isHeading ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
-          spacing: { after: 0, line: 240 },
-          children: isHeading
-            ? [new TextRun({ text, bold: true, size: 21, font: F, color: '1F3864' })]
-            : richRuns(text),
-        })],
-      })
-    }
-
-    function biRow(en: string, uz: string, isHeading = false) {
-      return new TableRow({ children: [biCell(en, biL, isHeading), biCell(uz, biR, isHeading)] })
-    }
-
-    function biSpacerRow() {
-      return new TableRow({ children: [
-        new TableCell({ borders: biL, margins: { top: 0, bottom: 0, left: 0, right: 0 }, children: [new Paragraph({ text: '', spacing: { after: 0, line: 60 } })] }),
-        new TableCell({ borders: biR, margins: { top: 0, bottom: 0, left: 0, right: 0 }, children: [new Paragraph({ text: '', spacing: { after: 0, line: 60 } })] }),
-      ]})
-    }
-
-    function buildBilingualTable() {
-      const rows: ReturnType<typeof biRow>[] = []
-      let li = 0
-      const lines = cleanedLines
-      while (li < lines.length) {
-        const t = lines[li].trim()
-        if (!t || /^={3,}$|^-{3,}$/.test(t)) {
-          rows.push(biSpacerRow())
-          li++; continue
-        }
-        // Article heading: "ARTICLE N. ... / N-MODDA. ..."
-        if (/^ARTICLE\s+\d+\./i.test(t)) {
-          const si = t.indexOf(' / ')
-          rows.push(biRow(si !== -1 ? t.slice(0, si) : t, si !== -1 ? t.slice(si + 3) : '', true))
-          li++; continue
-        }
-        // Bullet/label with inline " / " separator
-        if (t.includes(' / ') && !/^\d+\.\d+/.test(t)) {
-          const si = t.indexOf(' / ')
-          rows.push(biRow(t.slice(0, si), t.slice(si + 3)))
-          li++; continue
-        }
-        // Sub-paragraph: EN line + following UZ line (no number/article prefix)
-        const next = lines[li + 1]?.trim() || ''
-        const nextIsNew = !next || /^ARTICLE\s+\d+\./i.test(next) || /^\d+\.\d+/.test(next) || /^[-–•]\s/.test(next) || /^={3,}$|^-{3,}$/.test(next)
-        if (next && !nextIsNew) {
-          rows.push(biRow(t, next))
-          li += 2; continue
-        }
-        rows.push(biRow(t, ''))
-        li++
-      }
-      return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows })
-    }
-
-    const contentParagraphs = c.contract_type === 'xalqaro'
-      ? [buildBilingualTable()]
-      : cleanedLines.map((line, i, arr) => {
-      const t = line.trim()
-      const kind = lineKind(line)
-
-      // Empty lines: minimal height, no extra space
-      if (kind === 'empty') return new Paragraph({ text: '', spacing: { after: 0, line: 80 } })
-
-      if (kind === 'main') return new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 120, after: 40 },
-        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
-      })
-
-      if (kind === 'sub_label') return new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
-        indent: { left: 0, firstLine: 0 },
-        spacing: { before: 20, after: 0 },
-        children: [new TextRun({ text: t, bold: true, underline: {}, size: 24, font: F, color: '000000' })],
-      })
-
-      if (kind === 'sub') return new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
-        indent: { left: 0, firstLine: 0 },
-        spacing: { before: 0, after: 10, line: 240 },
-        children: richRuns(t),
-      })
-
-      if (kind === 'label') return new Paragraph({
-        spacing: { before: 60, after: 10 },
-        children: [new TextRun({ text: t, bold: true, size: 22, font: F, color: '000000' })],
-      })
-
-      if (kind === 'bullet') {
-        const bt = t.replace(/^[-–•]\s*/, '')
-        return new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          indent: { left: 360, hanging: 180 },
-          spacing: { after: 10, line: 240 },
-          children: richRuns(`– ${bt}`),
-        })
-      }
-
-      const prevKind = i > 0 ? lineKind(arr[i - 1]) : 'empty'
-      const isStart = ['empty','main','sub','sub_label','label'].includes(prevKind)
-      return new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
-        indent: isStart ? { firstLine: 360 } : {},
-        spacing: { after: 10, line: 240 },
-        children: richRuns(t),
-      })
-    })
-
-    // City LEFT / Date RIGHT header
-    const cityDateTable = new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
-      rows: [new TableRow({
-        children: [
-          new TableCell({
-            borders: noBorders,
-            width: { size: 50, type: WidthType.PERCENTAGE },
-            children: [new Paragraph({
-              alignment: AlignmentType.LEFT,
-              spacing: { after: 320 },
-              children: [new TextRun({ text: `${c.city || 'Toshkent'} shahri`, size: 22, font: F })],
-            })],
-          }),
-          new TableCell({
-            borders: noBorders,
-            width: { size: 50, type: WidthType.PERCENTAGE },
-            children: [new Paragraph({
-              alignment: AlignmentType.RIGHT,
-              spacing: { after: 320 },
-              children: [new TextRun({ text: formatDateUz(c.contract_date) || '', size: 22, font: F })],
-            })],
-          }),
-        ],
-      })],
-    })
-
-    // Party labels depend on contract type
-    const partyLabels: Record<string, [string, string]> = {
-      oldi_sotdi: ['SOTUVCHI', 'XARIDOR'],
-      xizmat:     ['BUYURTMACHI', 'IJROCHI'],
-      ijara:      ['IJARABERUVCHI', 'IJARACHI'],
-      pudrat:     ['BUYURTMACHI', 'PUDRATCHI'],
-    }
-    const [label1, label2] = partyLabels[c.contract_type] || ['1-TOMON', '2-TOMON']
-
-    // Org details helper — all text bold dark black, no hyperlink coloring
-    const B = { font: F, color: '000000', bold: true }
-    function orgCell(title: string, org: { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string } | null | undefined) {
-      const mfoInn = [org?.mfo ? `MFO: ${org.mfo}` : '', org?.inn ? `INN: ${org.inn}` : ''].filter(Boolean).join('   ')
-      const details = [
-        new Paragraph({ children: [new TextRun({ ...B, text: title, size: 24 })], spacing: { after: 80 } }),
-        new Paragraph({ children: [new TextRun({ ...B, text: org?.name || '___', size: 22 })], spacing: { after: 50 } }),
-        ...(org?.address ? [new Paragraph({ children: [new TextRun({ ...B, text: `Manzil: ${org.address}`, size: 20 })], spacing: { after: 40 } })] : []),
-        ...(org?.bank_account ? [new Paragraph({ children: [new TextRun({ ...B, text: `H/R: ${org.bank_account}`, size: 20 })], spacing: { after: 40 } })] : []),
-        ...(org?.bank_name ? [new Paragraph({ children: [new TextRun({ ...B, text: `Bank: ${org.bank_name}`, size: 20 })], spacing: { after: 40 } })] : []),
-        ...(mfoInn ? [new Paragraph({ children: [new TextRun({ ...B, text: mfoInn, size: 20 })], spacing: { after: 40 } })] : []),
-        new Paragraph({ children: [new TextRun({ ...B, text: `Rahbar: ${org?.director_name || '___'}`, size: 20 })], spacing: { after: 160 } }),
-        new Paragraph({ children: [new TextRun({ ...B, text: '_________________________', size: 22 })], spacing: { after: 20 } }),
-        new Paragraph({ children: [new TextRun({ ...B, text: 'M.O.', size: 20 })], spacing: { after: 0 } }),
-      ]
-      return new TableCell({ borders: cellBorders, margins: { top: 160, bottom: 160, left: 220, right: 220 }, children: details })
-    }
-
-    const sigTable = new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
-      rows: [new TableRow({
-        children: [
-          orgCell(label1, c.organizations),
-          orgCell(label2, c.counterparties),
-        ],
-      })],
-    })
-
-    // Footer with page numbers
-    const footer = new Footer({
-      children: [new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [
-          new TextRun({ text: 'Shartnoma.uz  |  bet ', size: 18, font: F, color: '999999' }),
-          new TextRun({ children: [PageNumber.CURRENT], size: 18, font: F, color: '999999' }),
-          new TextRun({ text: ' / ', size: 18, font: F, color: '999999' }),
-          new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: F, color: '999999' }),
-        ],
-      })],
-    })
-
-    // ── 1-ILOVA: Spec table ──────────────────────────────────────────────────
-    const specItems = (c.spec_items || []) as Array<{
-      nomi: string; birlik: string; miqdori: number; narxi: number
-      qqs_foiz: string; qqs_summa: number; summa: number
-    }>
-
-    const headerBg = '1F3864'
-    const headerCell = (text: string, w: number, align: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.CENTER) =>
-      new TableCell({
-        width: { size: w, type: WidthType.PERCENTAGE },
-        shading: { fill: headerBg },
-        borders: cellBorders,
-        margins: { top: 60, bottom: 60, left: 100, right: 100 },
-        children: [new Paragraph({
-          alignment: align,
-          children: [new TextRun({ text, bold: true, size: 18, font: F, color: 'FFFFFF' })],
-        })],
-      })
-
-    const dataCell = (text: string, w: number, align: (typeof AlignmentType)[keyof typeof AlignmentType] = AlignmentType.CENTER, bold = false, color = '000000') =>
-      new TableCell({
-        width: { size: w, type: WidthType.PERCENTAGE },
-        borders: cellBorders,
-        margins: { top: 50, bottom: 50, left: 100, right: 100 },
-        children: [new Paragraph({
-          alignment: align,
-          children: [new TextRun({ text, bold, size: 20, font: F, color })],
-        })],
-      })
-
-    const specSection = specItems.length > 0 ? [
-      // Page break before appendix
-      new Paragraph({ pageBreakBefore: true, text: '' }),
-      // Appendix header
-      new Paragraph({
-        alignment: AlignmentType.RIGHT,
-        spacing: { after: 40 },
-        children: [new TextRun({ text: '1-ILOVA', bold: true, size: 22, font: F })],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.RIGHT,
-        spacing: { after: 40 },
-        children: [new TextRun({ text: `№${c.contract_number}-sonli shartnomaga`, size: 20, font: F })],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.RIGHT,
-        spacing: { after: 200 },
-        children: [new TextRun({ text: `${c.contract_date} dan`, size: 20, font: F })],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 0, after: 200 },
-        children: [new TextRun({ text: 'NARXNI KELISHISH PROTOKOLI', bold: true, size: 26, font: F, underline: {} })],
-      }),
-      // Spec table
-      new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        rows: [
-          // Header row
-          new TableRow({
-            tableHeader: true,
-            children: [
-              headerCell('№', 4),
-              headerCell('Tovarlar (ish, xizmatlar) nomi', 26, AlignmentType.LEFT),
-              headerCell("O'lchov birligi", 9),
-              headerCell('Miqdori', 7),
-              headerCell('Narxi (so\'m)', 12),
-              headerCell('Yetkazib berish qiymati', 13),
-              headerCell('QQS stavkasi', 9),
-              headerCell('QQS summasi', 10),
-              headerCell('QQS bilan jami', 10),
-            ],
-          }),
-          // Data rows
-          ...specItems.map((item, i) => {
-            const base = item.miqdori * item.narxi
-            const fmt = (n: number) => n.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-            const qqs = item.qqs_foiz === 'siz' ? 'QQSsiz' : item.qqs_foiz + '%'
-            return new TableRow({
-              children: [
-                dataCell(String(i + 1), 4),
-                dataCell(item.nomi || '—', 26, AlignmentType.LEFT),
-                dataCell(item.birlik || 'dona', 9),
-                dataCell(String(item.miqdori), 7, AlignmentType.RIGHT),
-                dataCell(fmt(item.narxi), 12, AlignmentType.RIGHT),
-                dataCell(fmt(base), 13, AlignmentType.RIGHT),
-                dataCell(qqs, 9),
-                dataCell(fmt(item.qqs_summa), 10, AlignmentType.RIGHT),
-                dataCell(fmt(item.summa), 10, AlignmentType.RIGHT, true, 'CC0000'),
-              ],
-            })
-          }),
-          // Total row
-          (() => {
-            const totalBase = specItems.reduce((s, i) => s + i.miqdori * i.narxi, 0)
-            const totalQqs = specItems.reduce((s, i) => s + i.qqs_summa, 0)
-            const totalSum = specItems.reduce((s, i) => s + i.summa, 0)
-            const fmt = (n: number) => n.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-            return new TableRow({
-              children: [
-                new TableCell({
-                  columnSpan: 5,
-                  borders: cellBorders,
-                  shading: { fill: 'F2F2F2' },
-                  margins: { top: 60, bottom: 60, left: 100, right: 100 },
-                  children: [new Paragraph({
-                    alignment: AlignmentType.RIGHT,
-                    children: [new TextRun({ text: 'JAMI:', bold: true, size: 22, font: F })],
-                  })],
-                }),
-                dataCell(fmt(totalBase), 13, AlignmentType.RIGHT, true),
-                dataCell('', 9),
-                dataCell(fmt(totalQqs), 10, AlignmentType.RIGHT, true),
-                dataCell(fmt(totalSum), 10, AlignmentType.RIGHT, true, 'CC0000'),
-              ],
-            })
-          })(),
-        ],
-      }),
-      // Total in words
-      new Paragraph({
-        spacing: { before: 120, after: 80 },
-        children: [new TextRun({
-          text: `Jami so'z bilan: ${numberToWords(Math.round(specItems.reduce((s, i) => s + i.summa, 0)), 'uz')} so'm`,
-          bold: true, size: 22, font: F,
-        })],
-      }),
-      new Paragraph({
-        spacing: { after: 240 },
-        children: [new TextRun({
-          text: "Ushbu Protokol Shartnomaning ajralmas qismi hisoblanadi va ikki nusxada tuzilgan.",
-          size: 20, font: F, italics: true,
-        })],
-      }),
-      // Signature table for appendix
-      new Paragraph({ text: '', spacing: { after: 240 } }),
-      sigTable,
-    ] : []
-
-    const doc = new Document({
-      sections: [{
-        properties: {
-          page: { margin: { top: 1134, bottom: 1134, left: 567, right: 851 } },
-        },
-        footers: { default: footer },
-        children: [
-          // Document title
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 120 },
-            children: [new TextRun({ text: typeName.toUpperCase(), bold: true, size: 32, font: F })],
-          }),
-          // Contract number
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 80 },
-            children: [new TextRun({ text: `№ ${c.contract_number}`, bold: true, size: 26, font: F })],
-          }),
-          // City + Date row
-          cityDateTable,
-          // Content
-          ...contentParagraphs,
-          // Spacer before signatures
-          new Paragraph({ text: '', spacing: { after: 480 } }),
-          // Signature table (bordered)
-          sigTable,
-          // 1-ILOVA: spec table (if exists)
-          ...specSection,
-        ],
-      }],
-    })
-
-    const blob = await Packer.toBlob(doc)
-    if (returnBlob) return blob
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `shartnoma-${c.contract_number || 'yangi'}.docx`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
 
   // ── Telegram orqali yuborish ────────────────────────────────────────────────
   async function sendByTelegram(c: Contract) {
     toast('Word fayl tayyorlanmoqda...', 'info')
     try {
-      const blob = await generateDOCX(c, true) as Blob
+      const blob = await generateContractDOCX(c, true) as Blob
       if (!blob) return
 
       const fileName = `contract-shares/${c.id}-${Date.now()}.docx`
@@ -1324,7 +638,7 @@ export default function ShartnomalarPage() {
     if (error) { toast(`Saqlashda xato: ${error.message}`, 'error'); return }
     logAudit('update', 'contracts', aiContract.id, { action: 'ai_fix', changes_count: fixResult.o_zgartirishlar.length })
     toast("Shartnoma muvaffaqiyatli yangilandi", 'success')
-    reloadContracts()
+    setServerResults(null); reloadContracts()
     setAiModal(false)
     setFixResult(null)
   }
@@ -1386,7 +700,7 @@ export default function ShartnomalarPage() {
       supabase.from('contracts').update({ status }).eq('id', id)
     ))
     setSelectedIds(new Set())
-    reloadContracts()
+    setServerResults(null); reloadContracts()
   }
 
   // ── Quota info ─────────────────────────────────────────────────────────────
@@ -1623,7 +937,7 @@ export default function ShartnomalarPage() {
                         {/* DOCX — primary */}
                         <button
                           title="Word yuklab olish"
-                          onClick={() => generateDOCX(c)}
+                          onClick={() => generateContractDOCX(c)}
                           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-blue-500/10 transition"
                         >
                           <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
@@ -1634,7 +948,7 @@ export default function ShartnomalarPage() {
                         {/* PDF */}
                         <button
                           title="PDF yuklab olish"
-                          onClick={() => generatePDF(c)}
+                          onClick={() => generateContractPDF(c)}
                           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 transition"
                         >
                           <FaFilePdf className="w-4 h-4 text-[#E2192A]" />
@@ -1753,8 +1067,8 @@ export default function ShartnomalarPage() {
         <ViewContractModal
           viewContract={viewContract}
           onClose={() => setModal(null)}
-          onGenerateDOCX={generateDOCX}
-          onGeneratePDF={generatePDF}
+          onGenerateDOCX={generateContractDOCX}
+          onGeneratePDF={generateContractPDF}
           onSendByTelegram={sendByTelegram}
           onRunAiAnalysis={runAiAnalysis}
           onToggleSigned={toggleSigned}
