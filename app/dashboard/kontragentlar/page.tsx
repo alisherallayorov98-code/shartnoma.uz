@@ -9,6 +9,7 @@ import { Modal, ModalActions } from '../_components/Modal'
 import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import type { Counterparty } from '@/lib/types'
+import { getBankByMfo } from '@/lib/bankMfo'
 
 const emptyCp = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', phone: '', qqsreg: '' }
 
@@ -340,7 +341,11 @@ export default function KontragentlarPage() {
               </div>
               <div>
                 <label className={lbl}>MFO</label>
-                <input className={inp} placeholder="00873" maxLength={5} value={cpForm.mfo} onChange={e => setCpForm({ ...cpForm, mfo: e.target.value })}/>
+                <input className={inp} placeholder="00873" maxLength={5} value={cpForm.mfo} onChange={e => {
+                  const mfo = e.target.value
+                  const bankName = mfo.length === 5 ? getBankByMfo(mfo) : null
+                  setCpForm({ ...cpForm, mfo, ...(bankName ? { bank_name: bankName } : {}) })
+                }}/>
               </div>
               <div>
                 <label className={lbl}>Telefon</label>
