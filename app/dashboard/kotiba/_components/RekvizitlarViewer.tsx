@@ -38,8 +38,8 @@ export default function RekvizitlarViewer({ org }: { org: Org }) {
     })
   }
 
-  async function copyImage() {
-    const W = 740, PAD = 36, LINE = 32, TITLE_H = 64
+  async function downloadImage() {
+    const W = 740, PAD = 36, LINE = 34, TITLE_H = 64
     const H = TITLE_H + 20 + rows.length * LINE + PAD * 2
     const canvas = document.createElement('canvas')
     const scale = 2
@@ -48,56 +48,59 @@ export default function RekvizitlarViewer({ org }: { org: Org }) {
     const ctx = canvas.getContext('2d')!
     ctx.scale(scale, scale)
 
-    // Background
+    // Background + border
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, W, H)
-
-    // Title
-    ctx.fillStyle = '#000000'
-    ctx.font = 'bold 20px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText('TASHKILOT REKVIZITLARI', W / 2, PAD + 22)
-
-    // Line under title
-    ctx.beginPath()
-    ctx.moveTo(PAD, PAD + 36)
-    ctx.lineTo(W - PAD, PAD + 36)
-    ctx.strokeStyle = '#000000'
-    ctx.lineWidth = 1.5
-    ctx.stroke()
-
-    // Rows
-    let y = PAD + 60
-    ctx.textAlign = 'left'
-    for (const row of rows) {
-      ctx.font = 'bold 13px Arial'
-      ctx.fillStyle = '#444444'
-      ctx.fillText(row.label + ':', PAD, y)
-      ctx.font = '13px Arial'
-      ctx.fillStyle = '#000000'
-      ctx.fillText(row.value, 220, y)
-      y += LINE
-    }
-
-    // Border
-    ctx.strokeStyle = '#dddddd'
+    ctx.strokeStyle = '#e2e8f0'
     ctx.lineWidth = 1
     ctx.strokeRect(0.5, 0.5, W - 1, H - 1)
 
-    canvas.toBlob(async blob => {
+    // Title background
+    ctx.fillStyle = '#f8fafc'
+    ctx.fillRect(0, 0, W, TITLE_H)
+
+    // Title
+    ctx.fillStyle = '#111827'
+    ctx.font = 'bold 18px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillText('TASHKILOT REKVIZITLARI', W / 2, PAD + 20)
+
+    // Line under title
+    ctx.beginPath()
+    ctx.moveTo(0, TITLE_H)
+    ctx.lineTo(W, TITLE_H)
+    ctx.strokeStyle = '#e2e8f0'
+    ctx.lineWidth = 1
+    ctx.stroke()
+
+    // Rows
+    let y = TITLE_H + 28
+    ctx.textAlign = 'left'
+    for (const row of rows) {
+      ctx.font = '12px Arial'
+      ctx.fillStyle = '#6b7280'
+      ctx.fillText(row.label, PAD, y)
+      ctx.font = '13px Arial'
+      ctx.fillStyle = '#111827'
+      ctx.fillText(row.value, 200, y)
+      // divider
+      ctx.beginPath()
+      ctx.moveTo(PAD, y + 10)
+      ctx.lineTo(W - PAD, y + 10)
+      ctx.strokeStyle = '#f1f5f9'
+      ctx.lineWidth = 0.5
+      ctx.stroke()
+      y += LINE
+    }
+
+    canvas.toBlob(blob => {
       if (!blob) return
-      try {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-        setCopied('image'); setTimeout(() => setCopied(null), 2000)
-      } catch {
-        // fallback: download
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${org.name}_rekvizitlar.png`
-        a.click()
-        URL.revokeObjectURL(url)
-      }
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${org.name}_rekvizitlar.png`
+      a.click()
+      URL.revokeObjectURL(url)
     }, 'image/png')
   }
 
@@ -141,10 +144,10 @@ export default function RekvizitlarViewer({ org }: { org: Org }) {
           📄 PDF
         </button>
         <button
-          onClick={copyImage}
+          onClick={downloadImage}
           className="flex items-center gap-2 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-200 px-4 py-2 rounded-lg text-sm font-semibold transition"
         >
-          {copied === 'image' ? '✓ Nusxalandi' : '🖼 Rasm'}
+          🖼 Rasm
         </button>
         <button
           onClick={copyText}
