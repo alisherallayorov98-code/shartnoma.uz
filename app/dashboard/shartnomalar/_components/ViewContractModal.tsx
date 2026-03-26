@@ -24,7 +24,7 @@ const STATUSES: Record<string, Record<Lang, string>> = {
 interface ViewContractModalProps {
   viewContract: Contract
   onClose: () => void
-  onGenerateDOCX: (c: Contract) => Promise<void>
+  onGenerateDOCX: (c: Contract) => Promise<void | Blob>
   onGeneratePDF: (c: Contract) => Promise<void>
   onSendByTelegram: (c: Contract) => Promise<void>
   onRunAiAnalysis: (c: Contract, type: 'tahlil' | 'grammatika') => void

@@ -21,6 +21,26 @@ const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = 
 
 type HubFeature = 'xulosa' | 'tarjima' | 'grammatika' | 'tahlil' | 'qa' | 'clause' | 'recommend' | 'write'
 
+// ─── Typed results per feature ────────────────────────────────────────────────
+type XulosaResult    = { xulosa: string; asosiy_shartlar?: string[]; muddat?: string; summa?: string; muhim_bandlar?: string[] }
+type TarjimaResult   = { tarjima: string }
+type GrammatikResult = { xatolar_soni?: number; umumiy_baho?: string; xatolar: { xato: string; togri: string; izoh: string }[] }
+type TahlilResult    = { baho: string; umumiy: string; kuchli_tomonlar?: string[]; zaif_tomonlar?: string[]; yuridik_xatarlar?: { daraja: string; tavsif: string }[]; tavsiyalar?: string[] }
+type QaResult        = { javob: string; havola?: string }
+type ClauseResult    = { band: string; band_nomi?: string }
+type RecommendResult = { tur?: string; tur_nomi?: string; tavsiya: string; sabab?: string; qoshimcha_maslahat?: string }
+type WriteResult     = { shartnoma: string; bandlar_soni?: number }
+
+type HubResult =
+  | ({ _type: 'xulosa' }    & XulosaResult)
+  | ({ _type: 'tarjima' }   & TarjimaResult)
+  | ({ _type: 'grammatika'} & GrammatikResult)
+  | ({ _type: 'tahlil' }    & TahlilResult)
+  | ({ _type: 'qa' }        & QaResult)
+  | ({ _type: 'clause' }    & ClauseResult)
+  | ({ _type: 'recommend' } & RecommendResult)
+  | ({ _type: 'write' }     & WriteResult)
+
 const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; needsContract: boolean; premiumOnly: boolean }[] = [
   { key: 'xulosa',     icon: '📝', name: 'Xulosa',          desc: "Shartnomaning asosiy shartlarini qisqacha bayon qiladi",        needsContract: true,  premiumOnly: false },
   { key: 'tarjima',    icon: '🌐', name: 'Tarjima',          desc: "Shartnomani boshqa tilga professional tarjima qiladi",          needsContract: true,  premiumOnly: false },
@@ -31,6 +51,41 @@ const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; nee
   { key: 'recommend',  icon: '🎯', name: 'Tur tavsiyasi',    desc: "Vaziyatni ta'riflang — qaysi shartnoma turi mos ekanini aytadi", needsContract: false, premiumOnly: false },
   { key: 'write',      icon: '✍️', name: 'Shartnoma yoz',   desc: "Ma'lumotlar asosida to'liq shartnoma matnini yozadi",          needsContract: false, premiumOnly: true  },
 ]
+
+
+// ─── ResultActions: download/copy/save tugmalari ─────────────────────────────
+function ResultActions({
+  text, label, saveName, onPreview, toast,
+}: {
+  text: string; label: string; saveName: string
+  onPreview: (t: string) => void
+  toast: (msg: string, type: 'success' | 'error') => void
+}) {
+  return (
+    <div className="flex gap-2 flex-wrap">
+      <button onClick={() => onPreview(text)}
+        className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">
+        👁 Ko&apos;rish
+      </button>
+      <button onClick={() => downloadTextAsWord(text, label)}
+        className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">
+        📝 Word
+      </button>
+      <button onClick={() => downloadTextAsPDF(text, label)}
+        className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">
+        📄 PDF
+      </button>
+      <button onClick={() => navigator.clipboard.writeText(text)}
+        className="text-xs text-gray-500 hover:text-gray-300 transition">
+        📋 Nusxa
+      </button>
+      <button onClick={() => { saveAiResult(saveName, text); toast('Saqlandi!', 'success') }}
+        className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">
+        💾 Saqlash
+      </button>
+    </div>
+  )
+}
 
 export default function YuristPage() {
   const { lang } = useLang()
@@ -46,7 +101,7 @@ export default function YuristPage() {
   const [hubWriteDetails, setHubWriteDetails] = useState({ tur: 'oldi_sotdi', summa: '', org: '', cp: '', extra: '' })
   const [hubCp, setHubCp] = useState('')
   const [hubLoading, setHubLoading] = useState(false)
-  const [hubResult, setHubResult] = useState<Record<string, unknown> | null>(null)
+  const [hubResult, setHubResult] = useState<HubResult | null>(null)
   const [hubError, setHubError] = useState('')
   const [previewText, setPreviewText] = useState<string | null>(null)
 
@@ -96,7 +151,7 @@ export default function YuristPage() {
         setHubError("AI bo'sh natija qaytardi. Qayta urinib ko'ring.")
         return
       }
-      setHubResult(result)
+      setHubResult({ _type: hubFeature, ...result } as HubResult)
     } catch {
       setHubError('Serverga ulanishda xatolik')
     } finally {
@@ -207,7 +262,7 @@ export default function YuristPage() {
         })()}
 
         {/* Tarjima - til tanlash */}
-        {hubFeature === 'tarjima' && (
+        {hubResult?._type === 'tarjima' && (
           <div>
             <label className="block text-xs text-gray-400 mb-1">Tarjima tili</label>
             <div className="flex gap-2">
@@ -222,7 +277,7 @@ export default function YuristPage() {
         )}
 
         {/* Savol-javob */}
-        {hubFeature === 'qa' && (
+        {hubResult?._type === 'qa' && (
           <div>
             <label className="block text-xs text-gray-400 mb-1">Savolingiz</label>
             <div className="flex gap-2">
@@ -241,7 +296,7 @@ export default function YuristPage() {
         )}
 
         {/* Band qo'shish */}
-        {hubFeature === 'clause' && (
+        {hubResult?._type === 'clause' && (
           <div>
             <label className="block text-xs text-gray-400 mb-1">Ko'rsatma</label>
             <input value={hubInstruction} onChange={e => setHubInstruction(e.target.value)}
@@ -252,7 +307,7 @@ export default function YuristPage() {
         )}
 
         {/* Tur tavsiyasi */}
-        {hubFeature === 'recommend' && (
+        {hubResult?._type === 'recommend' && (
           <div>
             <label className="block text-xs text-gray-400 mb-1">Vaziyatni ta'riflang</label>
             <textarea value={hubDescription} onChange={e => setHubDescription(e.target.value)} rows={3}
@@ -262,7 +317,7 @@ export default function YuristPage() {
         )}
 
         {/* Shartnoma yozish */}
-        {hubFeature === 'write' && (
+        {hubResult?._type === 'write' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-400 mb-1">Shartnoma turi</label>
@@ -373,7 +428,7 @@ export default function YuristPage() {
           <div className="space-y-3">
             <div className="h-px bg-[#1E293B]"/>
 
-            {hubFeature === 'xulosa' && (
+            {hubResult._type === 'xulosa' && (
               <div className="space-y-3">
                 <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
                   <div className="text-xs text-gray-500 mb-1">Xulosa</div>
@@ -395,43 +450,21 @@ export default function YuristPage() {
                     {(hubResult.muhim_bandlar as string[]).map((s, i) => <div key={i} className="text-sm text-gray-200">• {s}</div>)}
                   </div>
                 )}
-                <div className="flex gap-2 flex-wrap">
-                  <button onClick={() => setPreviewText(String(hubResult.xulosa || ''))}
-                    className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
-                  <button onClick={() => downloadTextAsWord(String(hubResult.xulosa || ''), 'xulosa')}
-                    className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
-                  <button onClick={() => downloadTextAsPDF(String(hubResult.xulosa || ''), 'xulosa')}
-                    className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">📄 PDF</button>
-                  <button onClick={() => navigator.clipboard.writeText(String(hubResult.xulosa || ''))}
-                    className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
-                  <button onClick={() => { saveAiResult('Yurist xulosa', String(hubResult.xulosa || '')); toast('Saqlandi!', 'success') }}
-                    className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
-                </div>
+                <ResultActions text={hubResult.xulosa} label="xulosa" saveName="Yurist xulosa" onPreview={setPreviewText} toast={toast} />
               </div>
             )}
 
-            {hubFeature === 'tarjima' && (
+            {hubResult?._type === 'tarjima' && (
               <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                   <div className="text-xs text-gray-500">Tarjima</div>
-                  <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => setPreviewText(String(hubResult.tarjima || ''))}
-                      className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
-                    <button onClick={() => downloadTextAsWord(String(hubResult.tarjima || ''), 'tarjima')}
-                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
-                    <button onClick={() => downloadTextAsPDF(String(hubResult.tarjima || ''), 'tarjima')}
-                      className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">📄 PDF</button>
-                    <button onClick={() => navigator.clipboard.writeText(String(hubResult.tarjima || ''))}
-                      className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
-                    <button onClick={() => { saveAiResult('Tarjima', String(hubResult.tarjima || '')); toast('Saqlandi!', 'success') }}
-                      className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
-                  </div>
+                  <ResultActions text={hubResult.tarjima} label="tarjima" saveName="Tarjima" onPreview={setPreviewText} toast={toast} />
                 </div>
                 <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.tarjima || '')}</pre>
               </div>
             )}
 
-            {hubFeature === 'grammatika' && (
+            {hubResult._type === 'grammatika' && (
               <div className="space-y-3">
                 <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 flex items-center gap-3">
                   <span className="text-2xl">✏️</span>
@@ -453,7 +486,7 @@ export default function YuristPage() {
               </div>
             )}
 
-            {hubFeature === 'tahlil' && (
+            {hubResult._type === 'tahlil' && (
               <div className="space-y-3">
                 <div className={`rounded-xl p-4 border flex items-center gap-3 ${
                   String(hubResult.baho) === 'A' ? 'bg-emerald-900/40 border-emerald-700' :
@@ -491,7 +524,7 @@ export default function YuristPage() {
               </div>
             )}
 
-            {hubFeature === 'qa' && (
+            {hubResult?._type === 'qa' && (
               <div className="space-y-2">
                 <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
                   <div className="text-xs text-blue-400 mb-2 flex items-center justify-between">
@@ -509,26 +542,15 @@ export default function YuristPage() {
               </div>
             )}
 
-            {hubFeature === 'clause' && (
+            {hubResult?._type === 'clause' && (
               <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
                 {Boolean(hubResult.band_nomi) && <div className="text-blue-400 text-xs font-semibold mb-2">{String(hubResult.band_nomi)}</div>}
                 <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.band || '')}</pre>
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  <button onClick={() => setPreviewText(String(hubResult.band || ''))}
-                    className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
-                  <button onClick={() => downloadTextAsWord(String(hubResult.band || ''), 'band')}
-                    className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
-                  <button onClick={() => downloadTextAsPDF(String(hubResult.band || ''), 'band')}
-                    className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">📄 PDF</button>
-                  <button onClick={() => navigator.clipboard.writeText(String(hubResult.band || ''))}
-                    className="text-xs text-gray-500 hover:text-gray-300 transition">📋 Nusxa</button>
-                  <button onClick={() => { saveAiResult('Yuridik band', String(hubResult.band || '')); toast('Saqlandi!', 'success') }}
-                    className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
-                </div>
+                <div className="mt-3"><ResultActions text={hubResult.band} label="band" saveName="Yuridik band" onPreview={setPreviewText} toast={toast} /></div>
               </div>
             )}
 
-            {hubFeature === 'recommend' && (
+            {hubResult?._type === 'recommend' && (
               <div className="space-y-3">
                 <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 flex items-center gap-3">
                   <span className="text-3xl">🎯</span>
@@ -547,22 +569,11 @@ export default function YuristPage() {
               </div>
             )}
 
-            {hubFeature === 'write' && (
+            {hubResult?._type === 'write' && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="text-xs text-gray-500">{Number(hubResult.bandlar_soni || 0)} ta band</div>
-                  <div className="flex gap-2 flex-wrap">
-                    <button onClick={() => setPreviewText(String(hubResult.shartnoma || ''))}
-                      className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">👁 Ko&apos;rish</button>
-                    <button onClick={() => downloadTextAsWord(String(hubResult.shartnoma || ''), 'shartnoma')}
-                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">📝 Word</button>
-                    <button onClick={() => downloadTextAsPDF(String(hubResult.shartnoma || ''), 'shartnoma')}
-                      className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">📄 PDF</button>
-                    <button onClick={() => navigator.clipboard.writeText(String(hubResult.shartnoma || ''))}
-                      className="text-xs text-gray-400 hover:text-gray-200">📋 Nusxa</button>
-                    <button onClick={() => { saveAiResult('AI shartnoma', String(hubResult.shartnoma || '')); toast('Saqlandi!', 'success') }}
-                      className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">💾 Saqlash</button>
-                  </div>
+                  <ResultActions text={hubResult.shartnoma} label="shartnoma" saveName="AI shartnoma" onPreview={setPreviewText} toast={toast} />
                 </div>
                 <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 max-h-96 overflow-y-auto">
                   <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.shartnoma || '')}</pre>
