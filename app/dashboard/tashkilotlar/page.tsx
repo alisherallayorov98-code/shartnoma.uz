@@ -12,6 +12,12 @@ import type { Org } from '@/lib/types'
 const emptyOrg = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '' }
 const emptyBank = { bank_name: '', account_number: '', mfo: '', is_default: false }
 
+const validate = {
+  inn:     (v: string) => !v || /^\d{9}$/.test(v),
+  mfo:     (v: string) => !v || /^\d{5}$/.test(v),
+  account: (v: string) => !v || /^\d{20}$/.test(v),
+}
+
 export default function TashkilotlarPage() {
   const { lang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
@@ -24,7 +30,6 @@ export default function TashkilotlarPage() {
   const [orgModal, setOrgModal] = useState(false)
   const [bankModal, setBankModal] = useState(false)
   const [rekvizitOrg, setRekvizitOrg] = useState<Org | null>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
 
   const lbl = 'block text-xs text-gray-400 mb-1'
   const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
@@ -32,14 +37,13 @@ export default function TashkilotlarPage() {
   async function saveOrg(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
     if (!orgForm.name.trim()) { toast(T(t.msg.nameRequired), 'error'); setSaving(false); return }
-    if (orgForm.inn && !/^\d{9}$/.test(orgForm.inn)) { toast(T(t.msg.innInvalid), 'error'); setSaving(false); return }
-    if (orgForm.mfo && !/^\d{5}$/.test(orgForm.mfo)) { toast(T(t.msg.mfoInvalid), 'error'); setSaving(false); return }
-    if (orgForm.bank_account && !/^\d{20}$/.test(orgForm.bank_account)) { toast(T(t.msg.accountInvalid), 'error'); setSaving(false); return }
-    const { data: { session } } = await supabase.auth.getSession()
-    const { data: newOrg } = await supabase.from('organizations').insert({ ...orgForm, user_id: session!.user.id }).select().single()
+    if (!validate.inn(orgForm.inn)) { toast(T(t.msg.innInvalid), 'error'); setSaving(false); return }
+    if (!validate.mfo(orgForm.mfo)) { toast(T(t.msg.mfoInvalid), 'error'); setSaving(false); return }
+    if (!validate.account(orgForm.bank_account)) { toast(T(t.msg.accountInvalid), 'error'); setSaving(false); return }
+    const { data: newOrg } = await supabase.from('organizations').insert({ ...orgForm, user_id: userId }).select().single()
     if (newOrg) {
       await supabase.from('subscriptions').insert({
-        organization_id: newOrg.id, user_id: session!.user.id,
+        organization_id: newOrg.id, user_id: userId,
         plan: 'free', contracts_used: 0,
         period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       })
@@ -49,13 +53,12 @@ export default function TashkilotlarPage() {
 
   async function saveBankAccount(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
-    if (bankForm.mfo && !/^\d{5}$/.test(bankForm.mfo)) { toast(T(t.msg.mfoInvalid), 'error'); setSaving(false); return }
-    if (bankForm.account_number && !/^\d{20}$/.test(bankForm.account_number)) { toast(T(t.msg.accountInvalid), 'error'); setSaving(false); return }
-    const { data: { session } } = await supabase.auth.getSession()
+    if (!validate.mfo(bankForm.mfo)) { toast(T(t.msg.mfoInvalid), 'error'); setSaving(false); return }
+    if (!validate.account(bankForm.account_number)) { toast(T(t.msg.accountInvalid), 'error'); setSaving(false); return }
     if (bankForm.is_default && activeOrg) {
       await supabase.from('bank_accounts').update({ is_default: false }).eq('organization_id', activeOrg.id)
     }
-    const { error } = await supabase.from('bank_accounts').insert({ ...bankForm, organization_id: activeOrg!.id, user_id: session!.user.id })
+    const { error } = await supabase.from('bank_accounts').insert({ ...bankForm, organization_id: activeOrg!.id, user_id: userId })
     setSaving(false)
     if (error) { toast(`${T(t.msg.errorPrefix)}: ${error.message}`, 'error'); return }
     setBankModal(false); setBankForm(emptyBank); reloadOrgs()
@@ -206,7 +209,7 @@ export default function TashkilotlarPage() {
 
       {/* Rekvizit kartochkasi modal */}
       {rekvizitOrg && (
-        <RekvizitModal org={rekvizitOrg} onClose={() => setRekvizitOrg(null)} cardRef={cardRef} />
+        <RekvizitModal org={rekvizitOrg} onClose={() => setRekvizitOrg(null)} />
       )}
 
       {/* Add bank account modal */}
@@ -238,9 +241,10 @@ export default function TashkilotlarPage() {
 }
 
 // ─── Rekvizit kartochkasi modal ───────────────────────────────────────────────
-function RekvizitModal({ org, onClose, cardRef }: { org: Org; onClose: () => void; cardRef: React.RefObject<HTMLDivElement | null> }) {
+function RekvizitModal({ org, onClose }: { org: Org; onClose: () => void }) {
   const { toast } = useToast()
-  const [exporting, setExporting] = useState<string | null>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [exporting, setExporting] = useState<'jpeg' | 'pdf' | 'word' | null>(null)
 
   const row = (label: string, value?: string) =>
     value ? { label, value } : null
