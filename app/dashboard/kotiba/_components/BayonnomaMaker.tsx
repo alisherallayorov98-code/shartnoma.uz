@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { downloadTextAsPDF } from '@/lib/downloadUtils'
+import { saveAiDocument } from '@/lib/aiDocuments'
+import { useDashboard } from '../../context'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -47,7 +49,7 @@ type BoshqaForm = { kun_tartibi: string; qaror: string }
 
 interface Props {
   orgName: string; orgInn: string; direktorName: string
-  onSave?: (text: string) => void
+  onSaved?: () => void
 }
 
 // ─── Type configs ───────────────────────────────────────────────────────────
@@ -428,7 +430,8 @@ async function downloadAsWord(text: string, orgName: string, raqam: string) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }: Props) {
+export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSaved }: Props) {
+  const { activeOrg } = useDashboard()
   const [step, setStep] = useState<'type' | 'form'>('type')
   const [selType, setSelType] = useState<BayonnomaType | null>(null)
   const [result, setResult] = useState<string | null>(null)
@@ -454,16 +457,15 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
   const [direktor, setDirektor] = useState<DirektorForm>({ yangi_direktor:'', eski_direktor: direktorName, tayinlanish_sana:'', sabab:'' })
   const [boshqa, setBoshqa] = useState<BoshqaForm>({ kun_tartibi:'', qaror:'' })
 
-  // Load saved founders from localStorage
+  // Load (or reset) saved founders from localStorage when org changes
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`tasischilar_${orgInn}`)
-      if (saved) {
-        const parsed = JSON.parse(saved) as Taasischi[]
-        // eslint-disable-next-line
-        if (parsed.length > 0) setCommon(c => ({ ...c, tasischilar: parsed }))
-      }
-    } catch {}
+      const list: Taasischi[] = saved ? JSON.parse(saved) : [{ ism: '', ulush: '100%' }]
+      setCommon(c => ({ ...c, tasischilar: list.length > 0 ? list : [{ ism: '', ulush: '100%' }] }))
+    } catch {
+      setCommon(c => ({ ...c, tasischilar: [{ ism: '', ulush: '100%' }] }))
+    }
   }, [orgInn])
 
   function saveTasischilar(list: Taasischi[]) {
@@ -502,7 +504,10 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSave }
     if (!selType) return
     const text = generateText(selType, common, getSpecific(), orgName, orgInn, direktorName)
     setResult(text)
-    onSave?.(text)
+    if (activeOrg) {
+      saveAiDocument({ organization_id: activeOrg.id, section: 'kotiba', feature_key: 'bayonnoma', title: "Yig'ilish bayonnomasi", content: text, meta: {} })
+        .then(() => onSaved?.()).catch(console.error)
+    }
   }
 
   const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'

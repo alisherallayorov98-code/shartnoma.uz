@@ -23,13 +23,14 @@ type FeatureConfig = {
   fields: { key: string; label: string; placeholder: string; type?: string; textarea?: boolean }[]
   apiType: string
   resultField: string
+  isCustomComponent?: boolean
 }
 
 const FEATURES: FeatureConfig[] = [
   {
     key: 'bayonnoma', icon: '📝', title: "Yig'ilish bayonnomasi",
     description: "Kredit, dividend, xarid, ta'sischi va boshqa turlari",
-    apiType: 'bayonnoma', resultField: 'bayonnoma', fields: [],
+    apiType: '', resultField: '', fields: [], isCustomComponent: true,
   },
   {
     key: 'rasmiy_xat', icon: '✉️', title: 'Rasmiy xat',
@@ -161,7 +162,7 @@ const FEATURES: FeatureConfig[] = [
   {
     key: 'buyruq', icon: '📜', title: 'Tashkiliy buyruqlar',
     description: "Asosiy vosita, komissiya, safari, vazifa va boshqa buyruqlar",
-    apiType: '', resultField: '', fields: [],
+    apiType: '', resultField: '', fields: [], isCustomComponent: true,
   },
 ]
 
@@ -286,18 +287,12 @@ export default function KotibaPage() {
               {selected === 'bayonnoma' ? (
                 <BayonnomaMaker
                   orgName={activeOrg?.name || ''} orgInn={activeOrg?.inn || ''} direktorName={activeOrg?.director_name || ''}
-                  onSave={text => {
-                    if (activeOrg) saveAiDocument({ organization_id: activeOrg.id, section: 'kotiba', feature_key: 'bayonnoma', title: "Yig'ilish bayonnomasi", content: text, meta: {} })
-                      .then(() => setSavedKey(k => k + 1)).catch(console.error)
-                  }}
+                  onSaved={() => setSavedKey(k => k + 1)}
                 />
               ) : selected === 'buyruq' ? (
                 <BuyruqMaker
                   orgName={activeOrg?.name || ''} orgDirector={activeOrg?.director_name || ''}
-                  onSave={(text, title) => {
-                    if (activeOrg) saveAiDocument({ organization_id: activeOrg.id, section: 'kotiba', feature_key: 'buyruq', title, content: text, meta: {} })
-                      .then(() => setSavedKey(k => k + 1)).catch(console.error)
-                  }}
+                  onSaved={() => setSavedKey(k => k + 1)}
                 />
               ) : (
                 <>

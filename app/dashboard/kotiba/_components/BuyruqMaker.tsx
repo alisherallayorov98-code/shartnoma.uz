@@ -5,6 +5,8 @@ import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
 import {
   BUYRUQ_TYPES, BuyruqType, BuyruqFields, generateBuyruq
 } from '../buyruqTemplates'
+import { saveAiDocument } from '@/lib/aiDocuments'
+import { useDashboard } from '../../context'
 
 const FIELDS: Record<BuyruqType, { key: string; label: string; placeholder: string; textarea?: boolean; type?: string }[]> = {
   av_sotib_olish: [
@@ -126,10 +128,11 @@ const FIELDS: Record<BuyruqType, { key: string; label: string; placeholder: stri
 interface Props {
   orgName: string
   orgDirector: string
-  onSave: (text: string, title: string) => void
+  onSaved?: () => void
 }
 
-export default function BuyruqMaker({ orgName, orgDirector, onSave }: Props) {
+export default function BuyruqMaker({ orgName, orgDirector, onSaved }: Props) {
+  const { activeOrg } = useDashboard()
   const [step, setStep] = useState<'select' | 'form' | 'result'>('select')
   const [selectedType, setSelectedType] = useState<BuyruqType | null>(null)
   const [formData, setFormData] = useState<BuyruqFields>({})
@@ -152,7 +155,10 @@ export default function BuyruqMaker({ orgName, orgDirector, onSave }: Props) {
     setResult(text)
     setStep('result')
     const typeInfo = BUYRUQ_TYPES.find(t => t.key === selectedType)
-    onSave(text, typeInfo?.title || 'Buyruq')
+    if (activeOrg) {
+      saveAiDocument({ organization_id: activeOrg.id, section: 'kotiba', feature_key: 'buyruq', title: typeInfo?.title || 'Buyruq', content: text, meta: {} })
+        .then(() => onSaved?.()).catch(console.error)
+    }
   }
 
   function reset() {
