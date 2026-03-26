@@ -8,6 +8,7 @@ import type { Org, Counterparty } from '@/lib/types'
 import type { ContractStructure } from '@/lib/contractStructures'
 import { getStructure, structureToText, numberToWords } from '@/lib/contractStructures'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
+import { getBankByMfo } from '@/lib/bankMfo'
 import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
 import { useToast } from '@/lib/toast'
 import CityPicker from './CityPicker'
@@ -1316,7 +1317,11 @@ export default function ContractModal({
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">MFO</label>
-                <input value={newCp.mfo} onChange={e => setNewCp(p => ({ ...p, mfo: e.target.value }))}
+                <input value={newCp.mfo} onChange={e => {
+                    const mfo = e.target.value
+                    const bankName = mfo.length === 5 ? getBankByMfo(mfo) : null
+                    setNewCp(p => ({ ...p, mfo, ...(bankName ? { bank_name: bankName } : {}) }))
+                  }}
                   placeholder="01234"
                   className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
               </div>
