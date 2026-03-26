@@ -97,8 +97,8 @@ export default function TashkilotlarPage() {
                 <div className="w-12 h-12 bg-blue-600/10 border border-blue-600/30 rounded-xl flex items-center justify-center text-blue-400 font-bold text-xl flex-shrink-0">
                   {org.name[0]?.toUpperCase()}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-white">{org.name}</h3>
                     {activeOrg?.id === org.id && (
                       <span className="text-xs bg-blue-600/10 text-blue-400 border border-blue-600/30 px-2 py-0.5 rounded-full">{T(t.orgTab.active)}</span>
@@ -106,16 +106,15 @@ export default function TashkilotlarPage() {
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">INN: {org.inn || '—'}</p>
                 </div>
-              </div>
-
-              <div className="flex justify-end mb-3" onClick={e => e.stopPropagation()}>
-                <button
-                  onClick={() => setRekvizitOrg(org)}
-                  className="flex items-center gap-1.5 text-xs bg-[#0F172A] border border-[#1E293B] hover:border-blue-500/50 text-gray-300 hover:text-blue-400 px-3 py-1.5 rounded-lg transition"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  Rekvizit kartochkasi
-                </button>
+                <div onClick={e => e.stopPropagation()}>
+                  <button
+                    onClick={() => setRekvizitOrg(org)}
+                    className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg transition font-medium flex-shrink-0"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Rekvizit
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs mb-4">
