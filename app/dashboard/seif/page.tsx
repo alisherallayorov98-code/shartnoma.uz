@@ -115,13 +115,16 @@ export default function SeifPage() {
       let uploadBlob: Blob
       let finalName: string
 
+      const sanitize = (name: string) =>
+        name.replace(/[^a-zA-Z0-9.\-_]/g, '_').replace(/_+/g, '_')
+
       if (isImage) {
         setUploadProgress('Rasm siqilmoqda...')
         uploadBlob = await compressImageToPdf(file)
-        finalName = file.name.replace(/\.[^.]+$/, '') + '.pdf'
+        finalName = sanitize(file.name.replace(/\.[^.]+$/, '')) + '.pdf'
       } else {
         uploadBlob = file
-        finalName = file.name
+        finalName = sanitize(file.name)
       }
 
       setUploadProgress("Supabase ga yuklanmoqda...")
