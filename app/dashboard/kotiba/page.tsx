@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useDashboard } from '../context'
 import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
-import { downloadRasmiyXatWord, downloadFirmenniyBlank } from '@/lib/downloadUtils'
+import { downloadRasmiyXatWord, downloadFirmenniyBlank, downloadRekvizitlarWord } from '@/lib/downloadUtils'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 import HujjatResult from '../_components/HujjatResult'
 import BayonnomaMaker from './_components/BayonnomaMaker'
@@ -14,7 +14,7 @@ type KotibaFeature =
   | 'bayonnoma' | 'rasmiy_xat' | 'taklifnoma'
   | 'hisobot' | 'eslatma' | 'murojaatnoma' | 'tushuntirish_xati'
   | 'ishonchnoma' | 'dalolatnoma' | 'kafolat_xat' | 'tabriklash_xat' | 'rekvizitlar_xat'
-  | 'buyruq' | 'firmenniy_blank'
+  | 'buyruq' | 'firmenniy_blank' | 'tashkilot_rekvizitlari'
 
 type FeatureConfig = {
   key: KotibaFeature
@@ -172,6 +172,11 @@ const FEATURES: FeatureConfig[] = [
     description: "Tashkilot sarlavhali bo'sh rasmiy xat blankini Word formatda yuklab oling",
     apiType: '', resultField: '', fields: [], isCustomComponent: true,
   },
+  {
+    key: 'tashkilot_rekvizitlari', icon: '📋', title: 'Tashkilot rekvizitlari',
+    description: "Tashkilotingiz to'liq rekvizitlarini Word hujjat sifatida yuklab oling",
+    apiType: '', resultField: '', fields: [], isCustomComponent: true,
+  },
 ]
 
 const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
@@ -203,6 +208,19 @@ export default function KotibaPage() {
     if (key === 'firmenniy_blank') {
       if (!activeOrg) return
       downloadFirmenniyBlank({
+        orgName: activeOrg.name,
+        orgInn: activeOrg.inn,
+        orgDirector: activeOrg.director_name,
+        orgBankName: activeOrg.bank_name,
+        orgBankAccount: activeOrg.bank_account,
+        orgMfo: activeOrg.mfo,
+        orgAddress: activeOrg.address,
+      })
+      return
+    }
+    if (key === 'tashkilot_rekvizitlari') {
+      if (!activeOrg) return
+      downloadRekvizitlarWord({
         orgName: activeOrg.name,
         orgInn: activeOrg.inn,
         orgDirector: activeOrg.director_name,

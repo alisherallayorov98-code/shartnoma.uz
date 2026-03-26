@@ -755,3 +755,117 @@ export async function downloadFirmenniyBlank(opts: {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+// ─── Tashkilot rekvizitlari — Word hujjat ────────────────────────────────────
+export async function downloadRekvizitlarWord(opts: {
+  orgName: string
+  orgInn?: string
+  orgDirector?: string
+  orgBankName?: string
+  orgBankAccount?: string
+  orgMfo?: string
+  orgAddress?: string
+  orgPhone?: string
+}) {
+  const {
+    Document, Packer, Paragraph, TextRun, AlignmentType, Footer,
+    PageNumber, Table, TableRow, TableCell, WidthType, BorderStyle,
+  } = await import('docx')
+
+  const F = 'Times New Roman'
+  const NB = { style: BorderStyle.NIL, size: 0, color: 'auto' } as const
+  const noBorders = { top: NB, bottom: NB, left: NB, right: NB }
+  const tableNoBorders = { top: NB, bottom: NB, left: NB, right: NB, insideH: NB, insideV: NB }
+
+  function row(label: string, value?: string) {
+    if (!value) return null
+    return new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 35, type: WidthType.PERCENTAGE },
+          borders: noBorders,
+          children: [new Paragraph({
+            spacing: { after: 60 },
+            children: [new TextRun({ text: label, bold: true, size: 22, font: F, color: '000000' })],
+          })],
+        }),
+        new TableCell({
+          width: { size: 65, type: WidthType.PERCENTAGE },
+          borders: noBorders,
+          children: [new Paragraph({
+            spacing: { after: 60 },
+            children: [new TextRun({ text: value, size: 22, font: F, color: '000000' })],
+          })],
+        }),
+      ],
+    })
+  }
+
+  const rows = [
+    row('Tashkilot nomi:', opts.orgName),
+    row('STIR:', opts.orgInn),
+    row('Rahbar:', opts.orgDirector),
+    row('Yuridik manzil:', opts.orgAddress),
+    row('Bank:', opts.orgBankName),
+    row('Hisob raqami (X/R):', opts.orgBankAccount),
+    row('MFO:', opts.orgMfo),
+    row('Telefon:', opts.orgPhone),
+  ].filter(Boolean)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const children: any[] = []
+
+  // Sarlavha
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 0, after: 80 },
+    children: [new TextRun({ text: 'TASHKILOT REKVIZITLARI', bold: true, size: 28, font: F, color: '000000' })],
+  }))
+
+  // Chiziq
+  children.push(new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: tableNoBorders,
+    rows: [new TableRow({
+      children: [new TableCell({
+        borders: { top: NB, left: NB, right: NB, bottom: { style: BorderStyle.SINGLE, size: 6, color: '000000' } },
+        children: [new Paragraph({ text: '', spacing: { after: 10 } })],
+      })],
+    })],
+  }))
+
+  children.push(new Paragraph({ text: '', spacing: { after: 60 } }))
+
+  // Rekvizitlar jadvali
+  children.push(new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: tableNoBorders,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rows: rows as any,
+  }))
+
+  const doc = new Document({
+    sections: [{
+      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+      footers: {
+        default: new Footer({
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({ text: 'Shartnoma.uz', size: 16, font: F, color: '999999' }),
+            ],
+          })],
+        }),
+      },
+      children,
+    }],
+  })
+
+  const blob = await Packer.toBlob(doc)
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${opts.orgName.replace(/[^a-zA-Z0-9\u0400-\u04FF]/g, '_')}_rekvizitlar.docx`
+  a.click()
+  URL.revokeObjectURL(url)
+}
