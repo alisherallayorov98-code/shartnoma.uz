@@ -620,11 +620,6 @@ export async function downloadFirmenniyBlank(opts: {
 
   // ── O'ng ustun: bank rekvizitlari ─────────────────────────────────────────
   const rightLines = [
-    new Paragraph({
-      alignment: AlignmentType.RIGHT,
-      spacing: { after: 20 },
-      children: [new TextRun({ text: opts.orgName, bold: true, size: 22, font: F, color: '000000' })],
-    }),
     ...(opts.orgBankName ? [new Paragraph({
       alignment: AlignmentType.RIGHT,
       spacing: { after: 8 },
