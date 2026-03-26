@@ -654,18 +654,6 @@ export async function downloadFirmenniyBlank(opts: {
     }))
   }
 
-  // ── 4. Yupqa chiziq ───────────────────────────────────────────────────────
-  children.push(new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    borders: tableNoBorders,
-    rows: [new TableRow({
-      children: [new TableCell({
-        borders: { top: NB, left: NB, right: NB, bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000' } },
-        children: [new Paragraph({ text: '', spacing: { after: 10 } })],
-      })],
-    })],
-  }))
-
   // ── 5. № (chap) va sana (o'ng) ───────────────────────────────────────────
   children.push(new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
