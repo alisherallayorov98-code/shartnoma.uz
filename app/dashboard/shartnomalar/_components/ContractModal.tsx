@@ -567,17 +567,35 @@ export default function ContractModal({
                 {/* Amount */}
                 <div>
                   <label className={lbl}>{T(t.modal.amount)}</label>
-                  <input
-                    type="number"
-                    value={form.amount}
-                    onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                    className={inp}
-                    placeholder="0"
-                    min="0"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={form.amount}
+                      onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                      className={inp + ' flex-1'}
+                      placeholder="0"
+                      min="0"
+                    />
+                    {form.contract_type === 'xalqaro' && (
+                      <select
+                        value={form.valyuta || 'USD'}
+                        onChange={e => setForm(f => ({ ...f, valyuta: e.target.value }))}
+                        className="bg-[#0B1220] border border-[#1E293B] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600 min-w-[90px]"
+                      >
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="CNY">CNY</option>
+                        <option value="RUB">RUB</option>
+                        <option value="GBP">GBP</option>
+                        <option value="UZS">UZS</option>
+                      </select>
+                    )}
+                  </div>
                   {form.amount && parseFloat(form.amount) > 0 ? (
                     <p className="text-xs text-gray-500 mt-1">
-                      {numberToWords(parseFloat(form.amount), 'uz')} so'm
+                      {form.contract_type === 'xalqaro'
+                        ? `${parseFloat(form.amount).toLocaleString()} ${form.valyuta || 'USD'}`
+                        : `${numberToWords(parseFloat(form.amount), 'uz')} so'm`}
                     </p>
                   ) : (
                     <p className="text-xs text-yellow-600 mt-1">⚠ Summa kiritilmagan</p>
