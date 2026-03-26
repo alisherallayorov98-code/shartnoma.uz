@@ -952,34 +952,6 @@ export function structureToText(
     })
   })
 
-  const [orgLabel, cpLabel] = TYPE_LABELS[header.contract_type || 'boshqa'] || ['1-TOMON', '2-TOMON']
-
-  lines.push('TOMONLARNING REKVIZITLARI')
-  lines.push('')
-  if (header.org) {
-    lines.push(`${orgLabel}: ${header.org.name}`)
-    lines.push(`INN: ${header.org.inn || '—'}`)
-    lines.push(`Rahbar: ${header.org.director_name || '—'}`)
-    lines.push(`Bank: ${header.org.bank_name || '—'}`)
-    lines.push(`H/r: ${header.org.bank_account || '—'}, MFO: ${header.org.mfo || '—'}`)
-    lines.push(`Manzil: ${header.org.address || '—'}`)
-  }
-  lines.push('')
-  if (header.cp) {
-    lines.push(`${cpLabel}: ${header.cp.name}`)
-    lines.push(`INN: ${header.cp.inn || '—'}`)
-    lines.push(`Rahbar: ${header.cp.director_name || '—'}`)
-    lines.push(`Bank: ${header.cp.bank_name || '—'}`)
-    lines.push(`H/r: ${header.cp.bank_account || '—'}, MFO: ${header.cp.mfo || '—'}`)
-    lines.push(`Manzil: ${header.cp.address || '—'}`)
-  }
-  lines.push('')
-  lines.push('_________________ / ' + (header.org?.director_name || '___'))
-  lines.push('        M.O.')
-  lines.push('')
-  lines.push('_________________ / ' + (header.cp?.director_name || '___'))
-  lines.push('        M.O.')
-
   // 1-ILOVA: spec items mavjud bo'lsa
   if (header.spec_items && header.spec_items.length > 0) {
     lines.push(buildSpecTable(header.spec_items, header.number, header.date, header.org, header.cp))

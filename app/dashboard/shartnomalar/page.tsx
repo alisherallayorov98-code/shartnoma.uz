@@ -548,7 +548,11 @@ export default function ShartnomalarPage() {
       doc.setTextColor(30, 30, 30)
     }
 
-    const rawLines = fillPlaceholders(c.content || '', c).split('\n')
+    // Strip party/signature block — PDF draws it separately below
+    const filledContent = fillPlaceholders(c.content || '', c)
+    const rekvizitIdx = filledContent.search(/\n[ \t]*(\d+\.\s*)?(TOMONLARNING REKVIZITLARI|TOMONLARNING IMZOLARI|PARTIES' DETAILS)/i)
+    const contentForPdf = rekvizitIdx !== -1 ? filledContent.slice(0, rekvizitIdx) : filledContent
+    const rawLines = contentForPdf.split('\n')
     for (let li = 0; li < rawLines.length; li++) {
       const raw = rawLines[li]
       const safe = cyrillicToLatin(raw)
