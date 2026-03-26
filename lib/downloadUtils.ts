@@ -576,7 +576,7 @@ export async function downloadRasmiyXatWord(opts: {
   URL.revokeObjectURL(url)
 }
 
-// ─── Firmenniy blank — bo'sh letterhead Word hujjat ──────────────────────────
+// ─── Tashkilot blankasi (firmenniy blank) — rasmiy xat shabloni ──────────────
 export async function downloadFirmenniyBlank(opts: {
   orgName: string
   orgInn?: string
@@ -588,127 +588,116 @@ export async function downloadFirmenniyBlank(opts: {
   orgPhone?: string
 }) {
   const {
-    Document, Packer, Paragraph, TextRun, AlignmentType, Footer, Header,
+    Document, Packer, Paragraph, TextRun, AlignmentType, Footer,
     PageNumber, Table, TableRow, TableCell, WidthType, BorderStyle,
   } = await import('docx')
 
   const F = 'Times New Roman'
   const NB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' } as const
   const noBorders = { top: NB, bottom: NB, left: NB, right: NB }
+  const year = new Date().getFullYear()
 
-  // Org info lines (left column)
+  // ── Chap ustun: tashkilot nomi + ma'lumotlar ──────────────────────────────
   const leftLines = [
     new Paragraph({
-      spacing: { after: 30 },
-      children: [new TextRun({ text: opts.orgName, bold: true, size: 28, font: F, color: '000000' })],
+      spacing: { after: 20 },
+      children: [new TextRun({ text: opts.orgName, bold: true, size: 22, font: F, color: '000000' })],
     }),
     ...(opts.orgInn ? [new Paragraph({
-      spacing: { after: 10 },
-      children: [new TextRun({ text: `STIR: ${opts.orgInn}`, size: 18, font: F, color: '555555' })],
+      spacing: { after: 8 },
+      children: [new TextRun({ text: `STIR: ${opts.orgInn}`, size: 16, font: F, color: '444444' })],
     })] : []),
     ...(opts.orgAddress ? [new Paragraph({
-      spacing: { after: 10 },
-      children: [new TextRun({ text: opts.orgAddress, size: 18, font: F, color: '555555' })],
+      spacing: { after: 8 },
+      children: [new TextRun({ text: opts.orgAddress, size: 16, font: F, color: '444444' })],
     })] : []),
     ...(opts.orgPhone ? [new Paragraph({
-      spacing: { after: 10 },
-      children: [new TextRun({ text: `Tel: ${opts.orgPhone}`, size: 18, font: F, color: '555555' })],
+      spacing: { after: 8 },
+      children: [new TextRun({ text: `Tel: ${opts.orgPhone}`, size: 16, font: F, color: '444444' })],
     })] : []),
   ]
 
-  // Bank info (right column)
+  // ── O'ng ustun: bank rekvizitlari ─────────────────────────────────────────
   const rightLines = [
+    new Paragraph({
+      alignment: AlignmentType.RIGHT,
+      spacing: { after: 20 },
+      children: [new TextRun({ text: opts.orgName, bold: true, size: 22, font: F, color: '000000' })],
+    }),
     ...(opts.orgBankName ? [new Paragraph({
       alignment: AlignmentType.RIGHT,
-      spacing: { after: 10 },
-      children: [new TextRun({ text: opts.orgBankName, size: 18, font: F, color: '555555' })],
+      spacing: { after: 8 },
+      children: [new TextRun({ text: opts.orgBankName, size: 16, font: F, color: '444444' })],
     })] : []),
     ...(opts.orgBankAccount ? [new Paragraph({
       alignment: AlignmentType.RIGHT,
-      spacing: { after: 10 },
-      children: [new TextRun({ text: `H/R: ${opts.orgBankAccount}`, size: 18, font: F, color: '555555' })],
+      spacing: { after: 8 },
+      children: [new TextRun({ text: `H/R: ${opts.orgBankAccount}`, size: 16, font: F, color: '444444' })],
     })] : []),
     ...(opts.orgMfo ? [new Paragraph({
       alignment: AlignmentType.RIGHT,
-      spacing: { after: 10 },
-      children: [new TextRun({ text: `MFO: ${opts.orgMfo}`, size: 18, font: F, color: '555555' })],
+      spacing: { after: 8 },
+      children: [new TextRun({ text: `MFO: ${opts.orgMfo}`, size: 16, font: F, color: '444444' })],
     })] : []),
-    // Raqam va sana uchun bo'sh joylar
-    new Paragraph({ text: '', spacing: { after: 20 } }),
-    new Paragraph({
-      alignment: AlignmentType.RIGHT,
-      spacing: { after: 10 },
-      children: [new TextRun({ text: '№ ___________', size: 22, font: F, color: '333333' })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.RIGHT,
-      spacing: { after: 10 },
-      children: [new TextRun({ text: `"____" ____________ ${new Date().getFullYear()} y.`, size: 22, font: F, color: '333333' })],
-    }),
   ]
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const children: any[] = []
 
-  // Header table
+  // ── 1. Sarlavha jadvali ───────────────────────────────────────────────────
   children.push(new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     borders: noBorders,
     rows: [new TableRow({
       children: [
-        new TableCell({ width: { size: 60, type: WidthType.PERCENTAGE }, borders: noBorders, children: leftLines }),
-        new TableCell({ width: { size: 40, type: WidthType.PERCENTAGE }, borders: noBorders, children: rightLines }),
+        new TableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, borders: noBorders, children: leftLines }),
+        new TableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, borders: noBorders, children: rightLines }),
       ],
     })],
   }))
 
-  // Separator line
+  // ── 2. Qalin gorizontal chiziq ────────────────────────────────────────────
   children.push(new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     borders: noBorders,
     rows: [new TableRow({
       children: [new TableCell({
-        borders: { top: NB, left: NB, right: NB, bottom: { style: BorderStyle.SINGLE, size: 8, color: '111111' } },
-        children: [new Paragraph({ text: '', spacing: { after: 40 } })],
+        borders: { top: NB, left: NB, right: NB, bottom: { style: BorderStyle.THICK, size: 12, color: '000000' } },
+        children: [new Paragraph({ text: '', spacing: { after: 20 } })],
       })],
     })],
   }))
 
-  // "Kimga" placeholder
-  children.push(new Paragraph({ text: '', spacing: { after: 60 } }))
+  // ── 3. "Xat № ___ dan «___» ___ 202_ y." satri ───────────────────────────
+  children.push(new Paragraph({
+    spacing: { before: 60, after: 200 },
+    children: [
+      new TextRun({ text: `Xat № _______ dan  «_____» ________________ ${year} y.`, size: 20, font: F, color: '222222' }),
+    ],
+  }))
+
+  // ── 4. Kimga (o'ng tomon) ─────────────────────────────────────────────────
   children.push(new Paragraph({
     alignment: AlignmentType.RIGHT,
-    spacing: { after: 20 },
-    children: [new TextRun({ text: 'Kimga: _________________________________', size: 22, font: F, color: '333333' })],
+    spacing: { after: 10 },
+    children: [new TextRun({ text: 'Kimga: ________________________________', size: 22, font: F, color: '333333' })],
   }))
   children.push(new Paragraph({
     alignment: AlignmentType.RIGHT,
     spacing: { after: 200 },
-    children: [new TextRun({ text: '________________________________', size: 22, font: F, color: '333333' })],
+    children: [new TextRun({ text: '_______________________________________', size: 22, font: F, color: '333333' })],
   }))
 
-  // Subject placeholder
-  children.push(new Paragraph({
-    alignment: AlignmentType.CENTER,
-    spacing: { before: 60, after: 200 },
-    children: [new TextRun({ text: 'MAVZU: _______________________________________', bold: true, size: 24, font: F, color: '333333' })],
-  }))
-
-  // Empty body lines
-  for (let i = 0; i < 18; i++) {
+  // ── 5. Bo'sh matn satrlari ────────────────────────────────────────────────
+  for (let i = 0; i < 20; i++) {
     children.push(new Paragraph({
-      spacing: { after: 60 },
+      spacing: { after: 40 },
       border: { bottom: { style: BorderStyle.SINGLE, size: 2, color: 'CCCCCC', space: 1 } },
       children: [new TextRun({ text: '', size: 24, font: F })],
     }))
   }
 
-  // Signature
-  children.push(new Paragraph({ text: '', spacing: { after: 200 } }))
-  children.push(new Paragraph({
-    spacing: { after: 40 },
-    children: [new TextRun({ text: 'Hurmat bilan,', size: 24, font: F, color: '000000' })],
-  }))
+  // ── 6. Imzo bloki ─────────────────────────────────────────────────────────
   children.push(new Paragraph({ text: '', spacing: { after: 300 } }))
   children.push(new Paragraph({
     spacing: { after: 20 },
@@ -721,16 +710,16 @@ export async function downloadFirmenniyBlank(opts: {
 
   const doc = new Document({
     sections: [{
-      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+      properties: { page: { margin: { top: 851, bottom: 1134, left: 1701, right: 851 } } },
       footers: {
         default: new Footer({
           children: [new Paragraph({
             alignment: AlignmentType.CENTER,
             children: [
-              new TextRun({ text: 'Shartnoma.uz  |  bet ', size: 18, font: F, color: '999999' }),
-              new TextRun({ children: [PageNumber.CURRENT], size: 18, font: F, color: '999999' }),
-              new TextRun({ text: ' / ', size: 18, font: F, color: '999999' }),
-              new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: F, color: '999999' }),
+              new TextRun({ text: 'Shartnoma.uz  |  bet ', size: 16, font: F, color: '999999' }),
+              new TextRun({ children: [PageNumber.CURRENT], size: 16, font: F, color: '999999' }),
+              new TextRun({ text: ' / ', size: 16, font: F, color: '999999' }),
+              new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 16, font: F, color: '999999' }),
             ],
           })],
         }),
@@ -744,7 +733,7 @@ export async function downloadFirmenniyBlank(opts: {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${opts.orgName.replace(/[^a-zA-Z0-9\u0400-\u04FF]/g, '_')}_blank.docx`
+  a.download = `${opts.orgName.replace(/[^a-zA-Z0-9\u0400-\u04FF]/g, '_')}_blanka.docx`
   a.click()
   URL.revokeObjectURL(url)
 }
