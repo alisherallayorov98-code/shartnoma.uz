@@ -10,6 +10,7 @@ import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import type { Specification, SpecItem } from '@/lib/types'
 import { generateSpecWord, generateSpecPDF } from '@/lib/specExport'
+import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 
 const emptySpecForm = { contract_id: '', spec_number: '', items: [] as SpecItem[], notes: '' }
 
@@ -94,14 +95,6 @@ export default function SpesifikatsiyalarPage() {
       return calcItem({ ...item, [field]: value })
     })
     setSpecItems(updated)
-  }
-
-  const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = {
-    oldi_sotdi: { uz: 'Oldi-sotdi', oz: 'Олди-сотди', ru: 'Купля-продажа' },
-    xizmat: { uz: 'Xizmat', oz: 'Хизмат', ru: 'Услуги' },
-    ijara: { uz: 'Ijara', oz: 'Ижара', ru: 'Аренда' },
-    pudrat: { uz: 'Pudrat', oz: 'Пудрат', ru: 'Подряд' },
-    boshqa: { uz: 'Boshqa', oz: 'Бошқа', ru: 'Другой' },
   }
 
   const specAsosiy = specItems.reduce((s, it) => s + it.miqdori * it.narxi, 0)

@@ -4,24 +4,13 @@ import Link from 'next/link'
 import { useDashboard } from './context'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
+import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 
 const STATUSES = {
   draft:     { bg: 'bg-[#1F2937]',    text: 'text-gray-300' },
   active:    { bg: 'bg-emerald-900', text: 'text-emerald-300' },
   completed: { bg: 'bg-blue-900',    text: 'text-blue-300' },
   cancelled: { bg: 'bg-red-900',     text: 'text-red-300' },
-}
-
-const CONTRACT_TYPES_I18N: Record<string, Record<'uz'|'oz'|'ru', string>> = {
-  oldi_sotdi: { uz: 'Oldi-sotdi',        oz: 'Олди-сотди',       ru: 'Купля-продажа' },
-  xizmat:     { uz: 'Xizmat',            oz: 'Хизмат',           ru: 'Услуги' },
-  ijara:      { uz: 'Ijara',             oz: 'Ижара',            ru: 'Аренда' },
-  pudrat:     { uz: 'Pudrat',            oz: 'Пудрат',           ru: 'Подряд' },
-  qoshimcha:  { uz: "Qo'shimcha",        oz: 'Қўшимча',          ru: 'Дополнительный' },
-  moliyaviy:  { uz: 'Moliyaviy yordam',  oz: 'Молиявий ёрдам',   ru: 'Финансовая помощь' },
-  daval:      { uz: 'Daval',             oz: 'Давал',            ru: 'Давальческий' },
-  xalqaro:    { uz: 'Xalqaro',           oz: 'Халқаро',          ru: 'Международный' },
-  boshqa:     { uz: 'Boshqa',            oz: 'Бошқа',            ru: 'Другой' },
 }
 
 export default function DashboardOverviewPage() {

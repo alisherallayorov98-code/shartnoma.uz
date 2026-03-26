@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
@@ -11,18 +11,7 @@ import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
 import { Modal, ModalActions } from '../_components/Modal'
 import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
-
-const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = {
-  oldi_sotdi: { uz: 'Oldi-sotdi', oz: 'Олди-сотди', ru: 'Купля-продажа' },
-  xizmat:    { uz: 'Xizmat',     oz: 'Хизмат',       ru: 'Услуги' },
-  ijara:     { uz: 'Ijara',      oz: 'Ижара',         ru: 'Аренда' },
-  pudrat:    { uz: 'Pudrat',     oz: 'Пудрат',        ru: 'Подряд' },
-  qoshimcha: { uz: "Qo'shimcha", oz: 'Қўшимча',       ru: 'Дополнительный' },
-  moliyaviy: { uz: 'Moliyaviy yordam', oz: 'Молиявий ёрдам', ru: 'Финансовая помощь' },
-  daval:     { uz: 'Daval',      oz: 'Давал',          ru: 'Давальческий' },
-  xalqaro:   { uz: 'Xalqaro',   oz: 'Халқаро',        ru: 'Международный' },
-  boshqa:    { uz: 'Boshqa',    oz: 'Бошқа',           ru: 'Другой' },
-}
+import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 
 const TYPE_TABS = [
   { key: 'barchasi', label: 'Barchasi' },
@@ -47,6 +36,11 @@ const typeColors: Record<string, string> = {
   daval:      'bg-cyan-900/60 text-cyan-300',
   xalqaro:    'bg-indigo-900/60 text-indigo-300',
   boshqa:     'bg-pink-900/60 text-pink-300',
+}
+
+type DbCustomTemplate = {
+  id: string; type: string; name: string
+  description: string | null; content: string
 }
 
 const emptyCustomTpl = { type: 'oldi_sotdi', name: '', description: '', content: '' }
@@ -80,12 +74,12 @@ export default function ShablonlarPage() {
     const { data, error } = await supabase.from('custom_templates')
       .select('*').eq('organization_id', orgId).order('created_at', { ascending: false })
     if (error) { console.error('loadCustomTemplates:', error.message); return }
-    setCustomTemplates((data || []).map((tpl: Record<string, unknown>) => ({
-      id: tpl.id as string,
-      type: tpl.type as string,
-      name: tpl.name as string,
-      description: (tpl.description as string) || '',
-      content: tpl.content as string,
+    setCustomTemplates((data as DbCustomTemplate[]).map(tpl => ({
+      id: tpl.id,
+      type: tpl.type,
+      name: tpl.name,
+      description: tpl.description || '',
+      content: tpl.content,
       icon: '📄',
       isDefault: false,
       tags: [],
@@ -145,16 +139,23 @@ export default function ShablonlarPage() {
       setEditingCustomTemplate(null)
       setCustomTplForm({ type: 'boshqa', name: baseName, description: `Word fayldan import: ${file.name}`, content: text })
       setCustomTemplateModal(true)
-    } catch {
-      toast("Faylni o'qishda xatolik yuz berdi", 'error')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Faylni o'qishda xatolik yuz berdi", 'error')
     } finally {
       setWordImporting(false)
       if (wordImportRef.current) wordImportRef.current.value = ''
     }
   }
 
-  const allTemplates = [...customTemplates, ...DEFAULT_TEMPLATES]
-  const filtered = templateFilter === 'barchasi' ? allTemplates : allTemplates.filter(tpl => tpl.type === templateFilter)
+  const allTemplates = useMemo(
+    () => [...customTemplates, ...DEFAULT_TEMPLATES],
+    [customTemplates]
+  )
+
+  const filtered = useMemo(
+    () => templateFilter === 'barchasi' ? allTemplates : allTemplates.filter(tpl => tpl.type === templateFilter),
+    [allTemplates, templateFilter]
+  )
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-5">
@@ -220,7 +221,7 @@ export default function ShablonlarPage() {
               </div>
             </div>
             <p className="text-gray-400 text-xs leading-relaxed flex-1">{getTplField(tpl, 'description', lang)}</p>
-            {tpl.tags.length > 0 && (
+            {(tpl.tags?.length ?? 0) > 0 && (
               <div className="flex flex-wrap gap-1">
                 {tpl.tags.slice(0, 3).map(tag => (
                   <span key={tag} className="text-xs bg-[#1F2937] text-gray-500 px-2 py-0.5 rounded">#{tag}</span>

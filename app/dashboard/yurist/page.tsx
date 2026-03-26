@@ -6,18 +6,7 @@ import { useDashboard } from '../context'
 import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
 import { fetchAi } from '@/lib/fetchAi'
 import { useToast } from '@/lib/toast'
-
-const CONTRACT_TYPES_I18N: Record<string, Record<'uz' | 'oz' | 'ru', string>> = {
-  oldi_sotdi: { uz: 'Oldi-sotdi', oz: 'Олди-сотди', ru: 'Купля-продажа' },
-  xizmat: { uz: 'Xizmat', oz: 'Хизмат', ru: 'Услуги' },
-  ijara: { uz: 'Ijara', oz: 'Ижара', ru: 'Аренда' },
-  pudrat: { uz: 'Pudrat', oz: 'Пудрат', ru: 'Подряд' },
-  qoshimcha: { uz: "Qo'shimcha", oz: 'Қўшимча', ru: 'Дополнительный' },
-  moliyaviy: { uz: 'Moliyaviy yordam', oz: 'Молиявий ёрдам', ru: 'Финансовая помощь' },
-  daval: { uz: 'Daval', oz: 'Давал', ru: 'Давальческий' },
-  xalqaro: { uz: 'Xalqaro', oz: 'Халқаро', ru: 'Международный' },
-  boshqa: { uz: 'Boshqa', oz: 'Бошқа', ru: 'Другой' },
-}
+import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 
 type HubFeature = 'xulosa' | 'tarjima' | 'grammatika' | 'tahlil' | 'qa' | 'clause' | 'recommend' | 'write'
 
