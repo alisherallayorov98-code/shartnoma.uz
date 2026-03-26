@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useDashboard } from './context'
 import { useLang } from '@/lib/LanguageContext'
@@ -27,6 +27,15 @@ export default function DashboardOverviewPage() {
   } = useDashboard()
 
   const quota = getQuotaInfo()
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+
+  function copyField(key: string, value: string) {
+    if (!value) return
+    navigator.clipboard.writeText(value).then(() => {
+      setCopiedField(key)
+      setTimeout(() => setCopiedField(null), 1500)
+    })
+  }
 
   const cntTotal     = contracts.length
   const cntActive    = contracts.filter(c => c.status === 'active').length
@@ -424,6 +433,52 @@ export default function DashboardOverviewPage() {
             ))}
           </div>
         </div>
+
+        {/* ── Rekvizitlar ── */}
+        {activeOrg && (
+          <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#1E293B] flex items-center justify-between">
+              <h2 className="font-semibold text-sm text-gray-200">🏦 Tashkilot rekvizitlari</h2>
+              <button
+                onClick={() => {
+                  const all = [
+                    activeOrg.name, activeOrg.inn, activeOrg.director_name,
+                    activeOrg.bank_name, activeOrg.bank_account, activeOrg.mfo,
+                    activeOrg.address,
+                  ].filter(Boolean).join('\n')
+                  copyField('all', all)
+                }}
+                className="text-xs text-blue-400 hover:text-blue-300 transition"
+              >
+                {copiedField === 'all' ? '✓ Nusxalandi' : '📋 Hammasini nusxalash'}
+              </button>
+            </div>
+            <div className="divide-y divide-[#1E293B]/50">
+              {[
+                { key: 'name',         label: 'Tashkilot nomi', value: activeOrg.name },
+                { key: 'inn',          label: 'INN (STIR)',      value: activeOrg.inn },
+                { key: 'director',     label: 'Rahbar',          value: activeOrg.director_name },
+                { key: 'bank_name',    label: 'Bank nomi',       value: activeOrg.bank_name },
+                { key: 'bank_account', label: 'Hisob raqami',    value: activeOrg.bank_account },
+                { key: 'mfo',          label: 'MFO',             value: activeOrg.mfo },
+                { key: 'address',      label: 'Manzil',          value: activeOrg.address },
+              ].filter(r => r.value).map(row => (
+                <div key={row.key} className="flex items-center justify-between px-5 py-3 hover:bg-[#1F2937] transition group">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs text-gray-500 mb-0.5">{row.label}</div>
+                    <div className="text-sm text-gray-200 font-mono truncate">{row.value}</div>
+                  </div>
+                  <button
+                    onClick={() => copyField(row.key, row.value!)}
+                    className="ml-4 shrink-0 text-xs px-2.5 py-1 rounded-lg transition opacity-0 group-hover:opacity-100 bg-[#1E293B] hover:bg-blue-600 text-gray-400 hover:text-white"
+                  >
+                    {copiedField === row.key ? '✓' : '📋'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Admin panel link ── */}
         {isAdmin && (
