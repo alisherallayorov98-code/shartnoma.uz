@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useDashboard } from '../context'
 import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
@@ -14,7 +14,7 @@ type FeatureConfig = {
   icon: string
   title: string
   description: string
-  fields: { key: string; label: string; placeholder: string; type?: string }[]
+  fields: { key: string; label: string; placeholder: string; type?: string; isCpField?: boolean }[]
   apiType: string
   resultField: string
 }
@@ -28,7 +28,7 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'dalolatnoma',
     resultField: 'dalolatnoma',
     fields: [
-      { key: 'kontragentar_ism', label: "Kontragent nomi", placeholder: "Raqamli Texnologiyalar MChJ" },
+      { key: 'kontragentar_ism', label: "Kontragent nomi", placeholder: "Raqamli Texnologiyalar MChJ", isCpField: true },
       { key: 'xizmat_turi', label: "Bajarilgan xizmat/ish turi", placeholder: "Dasturiy ta'minot ishlab chiqish" },
       { key: 'shartnoma_raqam', label: "Shartnoma raqami", placeholder: "2025/03-15" },
       { key: 'summa', label: "Summa (so'm)", placeholder: "15 000 000" },
@@ -43,7 +43,7 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'talabnoma',
     resultField: 'talabnoma',
     fields: [
-      { key: 'qarzdor', label: "Qarzdor nomi", placeholder: "ABC Savdo MChJ" },
+      { key: 'qarzdor', label: "Qarzdor nomi", placeholder: "ABC Savdo MChJ", isCpField: true },
       { key: 'qarz_summasi', label: "Qarz summasi (so'm)", placeholder: "50 000 000" },
       { key: 'shartnoma_raqam', label: "Shartnoma raqami", placeholder: "2024/08-01" },
       { key: 'muddat_utgan', label: "Muddati o'tgan kun soni", placeholder: "45" },
@@ -58,7 +58,7 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'tolov_grafigi',
     resultField: 'tolov_grafigi',
     fields: [
-      { key: 'kontragent', label: "Kontragent", placeholder: "Global Solutions LLC" },
+      { key: 'kontragent', label: "Kontragent", placeholder: "Global Solutions LLC", isCpField: true },
       { key: 'jami_summa', label: "Jami summa (so'm)", placeholder: "120 000 000" },
       { key: 'tolov_soni', label: "To'lovlar soni", placeholder: "12" },
       { key: 'boshlanish_sana', label: "Birinchi to'lov sanasi", placeholder: "2025-04-01", type: 'date' },
@@ -73,7 +73,7 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'talabnoma',
     resultField: 'talabnoma',
     fields: [
-      { key: 'qarzdor', label: "Qarzdor korxona", placeholder: "Yulduz Savdo AJ" },
+      { key: 'qarzdor', label: "Qarzdor korxona", placeholder: "Yulduz Savdo AJ", isCpField: true },
       { key: 'qarz_summasi', label: "Qarz summasi (so'm)", placeholder: "80 000 000" },
       { key: 'qarz_sababi', label: "Qarz sababi", placeholder: "Tovarlar yetkazib berilgan, to'lov amalga oshirilmagan" },
       { key: 'oxirgi_muhlat', label: "To'lov oxirgi muhlati", placeholder: "2025-04-10", type: 'date' },
@@ -83,7 +83,7 @@ const FEATURES: FeatureConfig[] = [
 ]
 
 export default function BuxgalterPage() {
-  const { activeOrg, hasAiAccess, contracts, openUpgradeModal } = useDashboard()
+  const { activeOrg, hasAiAccess, contracts, cps, openUpgradeModal } = useDashboard()
   const [selected, setSelected] = useState<BuxFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -91,6 +91,19 @@ export default function BuxgalterPage() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [savedKey, setSavedKey] = useState(0)
+  const [cpSearch, setCpSearch] = useState<Record<string, string>>({})
+  const [cpOpen, setCpOpen] = useState<string | null>(null)
+  const cpDropRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (cpDropRef.current && !cpDropRef.current.contains(e.target as Node)) {
+        setCpOpen(null)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const currentFeature = FEATURES.find(f => f.key === selected)
 
@@ -241,19 +254,56 @@ export default function BuxgalterPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {currentFeature.fields.map(field => (
-                <div key={field.key}>
-                  <label className="block text-xs text-gray-400 mb-1">{field.label}</label>
-                  <input
-                    type={field.type || 'text'}
-                    value={formData[field.key] || ''}
-                    onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
-                    placeholder={field.placeholder}
-                    className={inp}
-                  />
-                </div>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" ref={cpDropRef}>
+              {currentFeature.fields.map(field => {
+                if (field.isCpField) {
+                  const search = cpSearch[field.key] ?? formData[field.key] ?? ''
+                  const filtered = cps.filter(c =>
+                    c.name.toLowerCase().includes(search.toLowerCase())
+                  ).slice(0, 8)
+                  return (
+                    <div key={field.key} className="relative">
+                      <label className="block text-xs text-gray-400 mb-1">{field.label}</label>
+                      <input
+                        type="text"
+                        value={cpOpen === field.key ? search : (formData[field.key] || '')}
+                        onFocus={() => { setCpOpen(field.key); setCpSearch(p => ({ ...p, [field.key]: formData[field.key] || '' })) }}
+                        onChange={e => { setCpSearch(p => ({ ...p, [field.key]: e.target.value })); setCpOpen(field.key) }}
+                        placeholder={field.placeholder}
+                        className={inp}
+                        autoComplete="off"
+                      />
+                      {cpOpen === field.key && filtered.length > 0 && (
+                        <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                          {filtered.map(cp => (
+                            <button key={cp.id} type="button"
+                              onMouseDown={() => {
+                                setFormData(prev => ({ ...prev, [field.key]: cp.name }))
+                                setCpOpen(null)
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-[#1F2937] transition">
+                              <div className="text-sm text-white">{cp.name}</div>
+                              {cp.inn && <div className="text-xs text-gray-500">INN: {cp.inn}</div>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+                return (
+                  <div key={field.key}>
+                    <label className="block text-xs text-gray-400 mb-1">{field.label}</label>
+                    <input
+                      type={field.type || 'text'}
+                      value={formData[field.key] || ''}
+                      onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      className={inp}
+                    />
+                  </div>
+                )
+              })}
             </div>
 
             {activeOrg && (
