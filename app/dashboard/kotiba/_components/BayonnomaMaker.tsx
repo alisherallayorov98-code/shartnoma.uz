@@ -89,18 +89,23 @@ function generateText(
   const sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
   const sana = fmtSana(common.sana)
   const n = common.tasischilar.length || 1
+  const isYagona = n === 1
 
   const tasischiRoyxat = common.tasischilar.length > 0
     ? common.tasischilar.map((t, i) =>
-        `   ${i + 1}. ${t.ism} — "${orgName}" muassisi (ishtirokchisi) — ulushi: ${t.ulush}`
+        isYagona
+          ? `   ${i + 1}. ${t.ism} — "${orgName}" yagona ta'sischisi — ulushi: ${t.ulush}`
+          : `   ${i + 1}. ${t.ism} — "${orgName}" muassisi (ishtirokchisi) — ulushi: ${t.ulush}`
       ).join('\n')
-    : `   1. ${direktorName} — "${orgName}" muassisi (ishtirokchisi) — ulushi: 100%`
+    : `   1. ${direktorName} — "${orgName}" yagona ta'sischisi — ulushi: 100%`
 
   const tasischiImzolar = common.tasischilar.length > 0
     ? common.tasischilar.map(t =>
-        `Muassis (ishtirokchi):\n_________________ / ${t.ism} /\n"${orgName}" muassisi\n`
+        isYagona
+          ? `Yagona ta'sischi:\n_________________ / ${t.ism} /\n"${orgName}" yagona ta'sischisi\n`
+          : `Muassis (ishtirokchi):\n_________________ / ${t.ism} /\n"${orgName}" muassisi\n`
       ).join('\n')
-    : `Muassis (ishtirokchi):\n_________________ / ${direktorName} /\n"${orgName}" muassisi\n`
+    : `Yagona ta'sischi:\n_________________ / ${direktorName} /\n"${orgName}" yagona ta'sischisi\n`
 
   // Type-specific content
   let kunTartibi = ''
@@ -286,33 +291,31 @@ function generateText(
                         YIG'ILISH BAYONNOMASI
 
    "${orgName}" (INN: ${orgInn})
-   Muassislar (ishtirokchilar) umumiy yig'ilishi
+   ${isYagona ? "Yagona ta'sischi qarori" : "Muassislar (ishtirokchilar) umumiy yig'ilishi"}
 
 ${sep}
 
                            I. KIRISH QISMI
 
-   Yig'ilish turi: ${common.yig_tur === 'navbatdagi' ? 'Navbatdagi umumiy yig\'ilish' : 'Navbatdan tashqari umumiy yig\'ilish'}
+   ${isYagona ? "Qaror shakli: Yagona ta'sischining yozma qarori" : `Yig'ilish turi: ${common.yig_tur === 'navbatdagi' ? "Navbatdagi umumiy yig'ilish" : "Navbatdan tashqari umumiy yig'ilish"}`}
    O'tkazilish formati: Yuzma-yuz (bevosita ishtirok etish)
    O'tkazilgan joy: ${common.joy || '___'}
-   Yig'ilish sanasi: ${sana}
-   Yig'ilish boshlanish vaqti: soat ${common.boshlanish_vaqt || '10:00'}
-   Yig'ilish tugash vaqti: soat ${common.tugash_vaqt || '11:00'}
-
+   ${isYagona ? 'Qaror sanasi' : "Yig'ilish sanasi"}: ${sana}
+   ${isYagona ? '' : `Yig'ilish boshlanish vaqti: soat ${common.boshlanish_vaqt || '10:00'}\n   Yig'ilish tugash vaqti: soat ${common.tugash_vaqt || '11:00'}\n`}
    Raislik qiluvchi: ${direktorName} — "${orgName}" Direktori
-   Kotib: ${common.kotib || '___'}
-
-   Ishtirokchilar tarkibi:
-   Jami yig'ilishga taklif etilgan: ${numWord(n)} nafar muassis (ishtirokchi)
-   Yig'ilishda ishtirok etdi: ${numWord(n)} nafar
-   Ishtirok foizi: 100%
-
-   Ishtirokchilar ro'yxati:
+   ${isYagona ? '' : `Kotib: ${common.kotib || '___'}\n`}
+   ${isYagona ? "Ta'sischi:" : 'Ishtirokchilar tarkibi:\n   Jami yig\'ilishga taklif etilgan: ' + numWord(n) + ' nafar muassis (ishtirokchi)\n   Yig\'ilishda ishtirok etdi: ' + numWord(n) + ' nafar\n   Ishtirok foizi: 100%\n\n   Ishtirokchilar ro\'yxati:'}
 ${tasischiRoyxat}
 
-   Yig'ilish O'zbekiston Respublikasining 2022 yil 20 oktyabrdagi «Mas'uliyati cheklangan va qo'shimcha mas'uliyatli jamiyatlar to'g'risida»gi Qonuni hamda "${orgName}" Ustaviga muvofiq chaqirildi va o'tkazildi.
+   ${isYagona
+     ? `Mazkur qaror O'zbekiston Respublikasining 2022 yil 20 oktyabrdagi «Mas'uliyati cheklangan va qo'shimcha mas'uliyatli jamiyatlar to'g'risida»gi Qonuni hamda "${orgName}" Ustaviga muvofiq yagona ta'sischi tomonidan qabul qilinadi.`
+     : `Yig'ilish O'zbekiston Respublikasining 2022 yil 20 oktyabrdagi «Mas'uliyati cheklangan va qo'shimcha mas'uliyatli jamiyatlar to'g'risida»gi Qonuni hamda "${orgName}" Ustaviga muvofiq chaqirildi va o'tkazildi.`
+   }
 
-   Kvorumi tekshirildi: Yig'ilishda kompaniya ustav kapitalining 100% ulushini ifodalovchi muassis(lar) ishtirok etmoqda. Yig'ilish vakolatli deb e'tirof etildi.
+   ${isYagona
+     ? `Yagona ta'sischi sifatida kompaniya ustav kapitalining 100% ulushiga ega bo'lgan holda qaror qabul qilish vakolatiga ega.`
+     : `Kvorumi tekshirildi: Yig'ilishda kompaniya ustav kapitalining 100% ulushini ifodalovchi muassis(lar) ishtirok etmoqda. Yig'ilish vakolatli deb e'tirof etildi.`
+   }
 
 ${sep}
 
