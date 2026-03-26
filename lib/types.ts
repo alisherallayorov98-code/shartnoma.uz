@@ -37,6 +37,7 @@ export type Contract = {
   content?: string; city?: string; product_name?: string
   spec_items?: SpecItem[]; qqs_enabled?: boolean; qqs_rate?: number
   signed_us?: boolean; signed_cp?: boolean
+  extra_data?: Record<string, string>
 }
 
 export type Specification = {

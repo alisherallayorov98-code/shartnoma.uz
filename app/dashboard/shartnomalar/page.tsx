@@ -311,6 +311,21 @@ export default function ShartnomalarPage() {
       })
     }
 
+    // Collect extra fields into extra_data
+    const extra_data: Record<string, string> = {}
+    const extraKeys: (keyof typeof contractForm)[] = [
+      'ijara_manzil','ijara_maydon','oylik_tolov','ijara_muddat','ijara_boshlanish','ijara_tugash',
+      'xizmat_tavsif','xizmat_boshlanish','xizmat_tugash','xizmat_tolov',
+      'pudrat_obekt','pudrat_tavsif','pudrat_boshlanish','pudrat_tugash',
+      'qarz_maqsad','qarz_foiz','qarz_muddat',
+      'daval_material','daval_mahsulot','incoterms','yetkazish_joy','tolov_usuli','valyuta',
+      'asosiy_raqam','asosiy_sana','ozgartirish','yangi_muddat','yetkazish_muddat','yetkazish_place',
+    ]
+    for (const k of extraKeys) {
+      const v = contractForm[k]
+      if (v) extra_data[k] = v as string
+    }
+
     const payload = {
       contract_number: contractForm.contract_number,
       contract_date: contractForm.contract_date,
@@ -325,6 +340,7 @@ export default function ShartnomalarPage() {
       spec_items: contractForm.spec_items,
       qqs_enabled: contractForm.qqs_enabled,
       qqs_rate: contractForm.qqs_rate,
+      extra_data,
       user_id: userId,
     }
 
@@ -409,6 +425,7 @@ export default function ShartnomalarPage() {
       spec_items: c.spec_items || [],
       qqs_enabled: c.qqs_enabled || false,
       qqs_rate: c.qqs_rate || 12,
+      ...(c.extra_data || {}),
     }
     setContractForm(form)
     setModal('contract')
@@ -808,7 +825,76 @@ export default function ShartnomalarPage() {
 
     const cleanedLines = rawLines.slice(startIdx, endIdx)
 
-    const contentParagraphs = cleanedLines.map((line, i, arr) => {
+    // ── Bilingual 2-column rendering for xalqaro contracts ─────────────────
+    const midBorder = { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC' }
+    const biL = { top: noBorder, bottom: noBorder, left: noBorder, right: midBorder }
+    const biR = { top: noBorder, bottom: noBorder, left: midBorder, right: noBorder }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function biCell(text: string, borders: any, isHeading: boolean) {
+      return new TableCell({
+        width: { size: 50, type: WidthType.PERCENTAGE },
+        borders,
+        margins: { top: 40, bottom: 40, left: 150, right: 150 },
+        children: [new Paragraph({
+          alignment: isHeading ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
+          spacing: { after: 0, line: 240 },
+          children: isHeading
+            ? [new TextRun({ text, bold: true, size: 21, font: F, color: '1F3864' })]
+            : richRuns(text),
+        })],
+      })
+    }
+
+    function biRow(en: string, uz: string, isHeading = false) {
+      return new TableRow({ children: [biCell(en, biL, isHeading), biCell(uz, biR, isHeading)] })
+    }
+
+    function biSpacerRow() {
+      return new TableRow({ children: [
+        new TableCell({ borders: biL, margins: { top: 0, bottom: 0, left: 0, right: 0 }, children: [new Paragraph({ text: '', spacing: { after: 0, line: 60 } })] }),
+        new TableCell({ borders: biR, margins: { top: 0, bottom: 0, left: 0, right: 0 }, children: [new Paragraph({ text: '', spacing: { after: 0, line: 60 } })] }),
+      ]})
+    }
+
+    function buildBilingualTable() {
+      const rows: ReturnType<typeof biRow>[] = []
+      let li = 0
+      const lines = cleanedLines
+      while (li < lines.length) {
+        const t = lines[li].trim()
+        if (!t || /^={3,}$|^-{3,}$/.test(t)) {
+          rows.push(biSpacerRow())
+          li++; continue
+        }
+        // Article heading: "ARTICLE N. ... / N-MODDA. ..."
+        if (/^ARTICLE\s+\d+\./i.test(t)) {
+          const si = t.indexOf(' / ')
+          rows.push(biRow(si !== -1 ? t.slice(0, si) : t, si !== -1 ? t.slice(si + 3) : '', true))
+          li++; continue
+        }
+        // Bullet/label with inline " / " separator
+        if (t.includes(' / ') && !/^\d+\.\d+/.test(t)) {
+          const si = t.indexOf(' / ')
+          rows.push(biRow(t.slice(0, si), t.slice(si + 3)))
+          li++; continue
+        }
+        // Sub-paragraph: EN line + following UZ line (no number/article prefix)
+        const next = lines[li + 1]?.trim() || ''
+        const nextIsNew = !next || /^ARTICLE\s+\d+\./i.test(next) || /^\d+\.\d+/.test(next) || /^[-–•]\s/.test(next) || /^={3,}$|^-{3,}$/.test(next)
+        if (next && !nextIsNew) {
+          rows.push(biRow(t, next))
+          li += 2; continue
+        }
+        rows.push(biRow(t, ''))
+        li++
+      }
+      return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows })
+    }
+
+    const contentParagraphs = c.contract_type === 'xalqaro'
+      ? [buildBilingualTable()]
+      : cleanedLines.map((line, i, arr) => {
       const t = line.trim()
       const kind = lineKind(line)
 
