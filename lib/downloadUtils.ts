@@ -596,104 +596,126 @@ export async function downloadFirmenniyBlank(opts: {
   const NB = { style: BorderStyle.NIL, size: 0, color: 'auto' } as const
   const noBorders = { top: NB, bottom: NB, left: NB, right: NB }
   const tableNoBorders = { top: NB, bottom: NB, left: NB, right: NB, insideH: NB, insideV: NB }
+  const Nr = String.fromCharCode(8470)
   const year = new Date().getFullYear()
-
-  // ── Chap ustun: tashkilot nomi + ma'lumotlar ──────────────────────────────
-  const leftLines = [
-    new Paragraph({
-      spacing: { after: 20 },
-      children: [new TextRun({ text: opts.orgName, bold: true, size: 22, font: F, color: '000000' })],
-    }),
-    ...(opts.orgInn ? [new Paragraph({
-      spacing: { after: 8 },
-      children: [new TextRun({ text: `STIR: ${opts.orgInn}`, size: 16, font: F, color: '444444' })],
-    })] : []),
-    ...(opts.orgAddress ? [new Paragraph({
-      spacing: { after: 8 },
-      children: [new TextRun({ text: opts.orgAddress, size: 16, font: F, color: '444444' })],
-    })] : []),
-    ...(opts.orgPhone ? [new Paragraph({
-      spacing: { after: 8 },
-      children: [new TextRun({ text: `Tel: ${opts.orgPhone}`, size: 16, font: F, color: '444444' })],
-    })] : []),
-  ]
-
-  // ── O'ng ustun: bank rekvizitlari ─────────────────────────────────────────
-  const rightLines = [
-    ...(opts.orgBankName ? [new Paragraph({
-      alignment: AlignmentType.RIGHT,
-      spacing: { after: 8 },
-      children: [new TextRun({ text: opts.orgBankName, size: 16, font: F, color: '444444' })],
-    })] : []),
-    ...(opts.orgBankAccount ? [new Paragraph({
-      alignment: AlignmentType.RIGHT,
-      spacing: { after: 8 },
-      children: [new TextRun({ text: `H/R: ${opts.orgBankAccount}`, size: 16, font: F, color: '444444' })],
-    })] : []),
-    ...(opts.orgMfo ? [new Paragraph({
-      alignment: AlignmentType.RIGHT,
-      spacing: { after: 8 },
-      children: [new TextRun({ text: `MFO: ${opts.orgMfo}`, size: 16, font: F, color: '444444' })],
-    })] : []),
-  ]
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const children: any[] = []
 
-  // ── 1. Sarlavha jadvali ───────────────────────────────────────────────────
-  children.push(new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    borders: tableNoBorders,
-    rows: [new TableRow({
-      children: [
-        new TableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, borders: noBorders, children: leftLines }),
-        new TableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, borders: noBorders, children: rightLines }),
-      ],
-    })],
+  // ── 1. Tashkilot nomi — markazda, katta, qalin ────────────────────────────
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 0, after: 60 },
+    children: [new TextRun({ text: opts.orgName, bold: true, size: 40, font: F, color: '000000' })],
   }))
 
-  // ── 2. Qalin gorizontal chiziq ────────────────────────────────────────────
+  // ── 2. Ikki chiziq (DOUBLE border) ───────────────────────────────────────
   children.push(new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     borders: tableNoBorders,
     rows: [new TableRow({
       children: [new TableCell({
-        borders: { top: NB, left: NB, right: NB, bottom: { style: BorderStyle.THICK, size: 12, color: '000000' } },
+        borders: { top: NB, left: NB, right: NB, bottom: { style: BorderStyle.DOUBLE, size: 8, color: '000000' } },
         children: [new Paragraph({ text: '', spacing: { after: 20 } })],
       })],
     })],
   }))
 
-  // ── 3. "Xat № ___ ___-yil ________ son" satri ────────────────────────────
-  children.push(new Paragraph({
-    spacing: { before: 60, after: 200 },
-    children: [
-      new TextRun({ text: `Xat ${String.fromCharCode(8470)} _______     ____-yil  ________________________`, size: 20, font: F, color: '000000' }),
-    ],
+  // ── 3. Rekvizitlar (markazda, kichik) ────────────────────────────────────
+  // Manzil
+  if (opts.orgAddress) {
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 40, after: 10 },
+      children: [new TextRun({ text: `Yuridik manzil:  ${opts.orgAddress}`, size: 16, font: F, color: '000000' })],
+    }))
+  }
+  // Bank rekvizitlari qatori
+  const bankParts: string[] = []
+  if (opts.orgBankAccount) bankParts.push(`X/R: ${opts.orgBankAccount}`)
+  if (opts.orgMfo) bankParts.push(`MFO: ${opts.orgMfo}`)
+  if (opts.orgBankName) bankParts.push(opts.orgBankName)
+  if (bankParts.length > 0) {
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 10 },
+      children: [new TextRun({ text: bankParts.join('   '), size: 16, font: F, color: '000000' })],
+    }))
+  }
+  // STIR va telefon
+  const innPhone: string[] = []
+  if (opts.orgInn) innPhone.push(`STIR: ${opts.orgInn}`)
+  if (opts.orgPhone) innPhone.push(`Tel: ${opts.orgPhone}`)
+  if (innPhone.length > 0) {
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 0, after: 30 },
+      children: [new TextRun({ text: innPhone.join('   '), size: 16, font: F, color: '000000' })],
+    }))
+  }
+
+  // ── 4. Yupqa chiziq ───────────────────────────────────────────────────────
+  children.push(new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: tableNoBorders,
+    rows: [new TableRow({
+      children: [new TableCell({
+        borders: { top: NB, left: NB, right: NB, bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000' } },
+        children: [new Paragraph({ text: '', spacing: { after: 10 } })],
+      })],
+    })],
   }))
 
-  // ── 4. Kimga (o'ng tomon) ─────────────────────────────────────────────────
+  // ── 5. № (chap) va sana (o'ng) ───────────────────────────────────────────
+  children.push(new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: tableNoBorders,
+    rows: [new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: noBorders,
+          children: [new Paragraph({
+            spacing: { before: 60, after: 60 },
+            children: [new TextRun({ text: `${Nr}________`, size: 22, font: F, color: '000000' })],
+          })],
+        }),
+        new TableCell({
+          width: { size: 50, type: WidthType.PERCENTAGE },
+          borders: noBorders,
+          children: [new Paragraph({
+            alignment: AlignmentType.RIGHT,
+            spacing: { before: 60, after: 60 },
+            children: [new TextRun({ text: `"____" "________________" ${year} y.`, size: 22, font: F, color: '000000' })],
+          })],
+        }),
+      ],
+    })],
+  }))
+
+  // ── 6. Kimga (o'ng tomon) ────────────────────────────────────────────────
+  children.push(new Paragraph({ text: '', spacing: { after: 60 } }))
   children.push(new Paragraph({
     alignment: AlignmentType.RIGHT,
     spacing: { after: 10 },
-    children: [new TextRun({ text: 'Kimga: ________________________________', size: 22, font: F, color: '333333' })],
+    children: [new TextRun({ text: 'Kimga: ________________________________', size: 22, font: F, color: '000000' })],
   }))
   children.push(new Paragraph({
     alignment: AlignmentType.RIGHT,
     spacing: { after: 200 },
-    children: [new TextRun({ text: '_______________________________________', size: 22, font: F, color: '333333' })],
+    children: [new TextRun({ text: '________________________________________', size: 22, font: F, color: '000000' })],
   }))
 
-  // ── 5. Bo'sh matn satrlari ────────────────────────────────────────────────
-  for (let i = 0; i < 20; i++) {
+  // ── 7. Bo'sh matn satrlari ────────────────────────────────────────────────
+  for (let i = 0; i < 18; i++) {
     children.push(new Paragraph({
       spacing: { after: 40 },
-      border: { bottom: { style: BorderStyle.SINGLE, size: 2, color: 'CCCCCC', space: 1 } },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 2, color: 'BBBBBB', space: 1 } },
       children: [new TextRun({ text: '', size: 24, font: F })],
     }))
   }
 
-  // ── 6. Imzo bloki ─────────────────────────────────────────────────────────
+  // ── 8. Imzo bloki ─────────────────────────────────────────────────────────
   children.push(new Paragraph({ text: '', spacing: { after: 300 } }))
   children.push(new Paragraph({
     spacing: { after: 20 },
@@ -706,7 +728,7 @@ export async function downloadFirmenniyBlank(opts: {
 
   const doc = new Document({
     sections: [{
-      properties: { page: { margin: { top: 851, bottom: 1134, left: 1701, right: 851 } } },
+      properties: { page: { margin: { top: 851, bottom: 1134, left: 1134, right: 851 } } },
       footers: {
         default: new Footer({
           children: [new Paragraph({
