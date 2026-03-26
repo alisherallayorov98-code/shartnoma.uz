@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { downloadRekvizitlarWord, downloadTextAsPDF } from '@/lib/downloadUtils'
+import { downloadRekvizitlarWord, downloadRekvizitlarPDF } from '@/lib/downloadUtils'
 
 interface Org {
   name: string
@@ -102,12 +102,7 @@ export default function RekvizitlarViewer({ org }: { org: Org }) {
   }
 
   function downloadPdf() {
-    const text = [
-      'TASHKILOT REKVIZITLARI',
-      '═══════════════════════════════',
-      ...rows.map(r => `${r.label}:    ${r.value}`),
-    ].join('\n')
-    downloadTextAsPDF(text, `${org.name}_rekvizitlar`)
+    downloadRekvizitlarPDF(rows, org.name)
   }
 
   return (

@@ -744,6 +744,52 @@ export async function downloadFirmenniyBlank(opts: {
   URL.revokeObjectURL(url)
 }
 
+// ─── Tashkilot rekvizitlari — PDF ────────────────────────────────────────────
+export async function downloadRekvizitlarPDF(rows: { label: string; value: string }[], orgName: string) {
+  const { default: jsPDF } = await import('jspdf')
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+  const ML = 25, MR = 20, MT = 25
+  const pageW = 210
+  let y = MT
+
+  // Title
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  doc.setTextColor(10, 10, 10)
+  doc.text('TASHKILOT REKVIZITLARI', pageW / 2, y, { align: 'center' })
+  y += 8
+
+  // Separator line
+  doc.setDrawColor(80, 80, 80)
+  doc.setLineWidth(0.5)
+  doc.line(ML, y, pageW - MR, y)
+  y += 8
+
+  // Rows
+  const labelW = 55
+  const valueX = ML + labelW + 3
+  const valueW = pageW - MR - valueX
+
+  for (const row of rows) {
+    const safeLabel = cyrillicToLatin(row.label)
+    const safeValue = cyrillicToLatin(row.value)
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(60, 60, 60)
+    doc.text(safeLabel + ':', ML, y)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(10, 10, 10)
+    const wrapped = doc.splitTextToSize(safeValue, valueW)
+    doc.text(wrapped, valueX, y)
+    y += wrapped.length * 5.5 + 2
+  }
+
+  doc.save(`${orgName.replace(/[^a-zA-Z0-9\u0400-\u04FF]/g, '_')}_rekvizitlar.pdf`)
+}
+
 // ─── Tashkilot rekvizitlari — Word hujjat ────────────────────────────────────
 export async function downloadRekvizitlarWord(opts: {
   orgName: string
