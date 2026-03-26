@@ -257,9 +257,9 @@ export default function ContractModal({
   const specQqs = form.spec_items.reduce((s, i) => s + i.qqs_summa, 0)
 
   const [editStructure, setEditStructure] = useState<ContractStructure | null>(null)
+  const [structureUserEdited, setStructureUserEdited] = useState(false)
 
   function getStructureForEdit(): ContractStructure {
-    if (editStructure) return editStructure
     const org = orgs.find(o => o.id === form.organization_id)
     const cp = cps.find(c => c.id === form.counterparty_id)
     const amount = parseFloat(form.amount) || 0
@@ -310,12 +310,14 @@ export default function ContractModal({
   }
 
   function initStructureEdit() {
-    if (!editStructure) {
+    // Regenerate unless user has manually edited the structure text
+    if (!structureUserEdited) {
       setEditStructure(getStructureForEdit())
     }
   }
 
   function updateBolim(bi: number, sarlavha: string) {
+    setStructureUserEdited(true)
     setEditStructure(s => {
       if (!s) return s
       const bolimlar = s.bolimlar.map((b, i) => i === bi ? { ...b, sarlavha } : b)
@@ -324,6 +326,7 @@ export default function ContractModal({
   }
 
   function updateBand(bi: number, bdi: number, matn: string) {
+    setStructureUserEdited(true)
     setEditStructure(s => {
       if (!s) return s
       const bolimlar = s.bolimlar.map((b, i) => {
