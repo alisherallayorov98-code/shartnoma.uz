@@ -403,3 +403,175 @@ export async function downloadTextAsWord(text: string, filename: string) {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+// ─── Rasmiy xat — firmenniy blanks sifatida Word yuklash ─────────────────────
+export async function downloadRasmiyXatWord(opts: {
+  orgName: string
+  orgInn?: string
+  orgDirector?: string
+  orgBankName?: string
+  orgAddress?: string
+  xatRaqami?: string
+  sana?: string
+  kimga?: string
+  mavzu?: string
+  body: string
+  filename: string
+}) {
+  const {
+    Document, Packer, Paragraph, TextRun, AlignmentType, Footer, PageNumber,
+    Table, TableRow, TableCell, WidthType, BorderStyle,
+  } = await import('docx')
+
+  const F = 'Times New Roman'
+  const NB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' } as const
+  const noBorders = { top: NB, bottom: NB, left: NB, right: NB }
+
+  // Sana formatlash: YYYY-MM-DD → DD.MM.YYYY
+  let dateStr = ''
+  if (opts.sana) {
+    const d = new Date(opts.sana)
+    dateStr = `${d.getDate().toString().padStart(2,'0')}.${(d.getMonth()+1).toString().padStart(2,'0')}.${d.getFullYear()}`
+  } else {
+    const d = new Date()
+    dateStr = `${d.getDate().toString().padStart(2,'0')}.${(d.getMonth()+1).toString().padStart(2,'0')}.${d.getFullYear()}`
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const children: any[] = []
+
+  // ── 1. Sarlavha jadvali (chapda org, o'ngda raqam+sana) ──────────────────
+  const leftLines = [
+    new Paragraph({
+      spacing: { after: 30 },
+      children: [new TextRun({ text: opts.orgName, bold: true, size: 26, font: F, color: '000000' })],
+    }),
+    ...(opts.orgInn ? [new Paragraph({
+      spacing: { after: 10 },
+      children: [new TextRun({ text: `STIR: ${opts.orgInn}`, size: 18, font: F, color: '666666' })],
+    })] : []),
+    ...(opts.orgAddress ? [new Paragraph({
+      spacing: { after: 10 },
+      children: [new TextRun({ text: opts.orgAddress, size: 18, font: F, color: '666666' })],
+    })] : []),
+    ...(opts.orgBankName ? [new Paragraph({
+      spacing: { after: 10 },
+      children: [new TextRun({ text: opts.orgBankName, size: 18, font: F, color: '666666' })],
+    })] : []),
+  ]
+
+  const rightLines = [
+    ...(opts.xatRaqami ? [new Paragraph({
+      alignment: AlignmentType.RIGHT,
+      spacing: { after: 10 },
+      children: [new TextRun({ text: `№ ${opts.xatRaqami}`, size: 22, font: F, color: '000000' })],
+    })] : []),
+    new Paragraph({
+      alignment: AlignmentType.RIGHT,
+      spacing: { after: 10 },
+      children: [new TextRun({ text: dateStr, size: 22, font: F, color: '000000' })],
+    }),
+  ]
+
+  children.push(new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: noBorders,
+    rows: [new TableRow({
+      children: [
+        new TableCell({ width: { size: 65, type: WidthType.PERCENTAGE }, borders: noBorders, children: leftLines }),
+        new TableCell({ width: { size: 35, type: WidthType.PERCENTAGE }, borders: noBorders, children: rightLines }),
+      ],
+    })],
+  }))
+
+  // ── 2. Gorizontal chiziq (pastki chegara) ────────────────────────────────
+  children.push(new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: noBorders,
+    rows: [new TableRow({
+      children: [new TableCell({
+        borders: { top: NB, left: NB, right: NB, bottom: { style: BorderStyle.SINGLE, size: 8, color: '222222' } },
+        children: [new Paragraph({ text: '', spacing: { after: 60 } })],
+      })],
+    })],
+  }))
+
+  // ── 3. Kimga (o'ng tomon) ─────────────────────────────────────────────────
+  if (opts.kimga) {
+    children.push(new Paragraph({ text: '', spacing: { after: 40 } }))
+    children.push(new Paragraph({
+      alignment: AlignmentType.RIGHT,
+      spacing: { after: 20 },
+      children: [
+        new TextRun({ text: 'Kimga: ', bold: true, size: 22, font: F, color: '000000' }),
+        new TextRun({ text: opts.kimga, size: 22, font: F, color: '000000' }),
+      ],
+    }))
+  }
+  children.push(new Paragraph({ text: '', spacing: { after: 120 } }))
+
+  // ── 4. Mavzu (markazda, qalin) ────────────────────────────────────────────
+  if (opts.mavzu) {
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 60, after: 200 },
+      children: [new TextRun({ text: opts.mavzu, bold: true, underline: {}, size: 24, font: F, color: '000000' })],
+    }))
+  }
+
+  // ── 5. Asosiy mazmun ──────────────────────────────────────────────────────
+  for (const line of opts.body.split('\n')) {
+    const t = line.trim()
+    if (!t) { children.push(new Paragraph({ text: '', spacing: { after: 20 } })); continue }
+    children.push(new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      indent: { firstLine: 360 },
+      spacing: { after: 60, line: 276 },
+      children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
+    }))
+  }
+
+  // ── 6. Imzo bloki ─────────────────────────────────────────────────────────
+  children.push(new Paragraph({ text: '', spacing: { after: 400 } }))
+  children.push(new Paragraph({
+    spacing: { after: 40 },
+    children: [new TextRun({ text: 'Hurmat bilan,', size: 24, font: F, color: '000000' })],
+  }))
+  children.push(new Paragraph({ text: '', spacing: { after: 300 } }))
+  children.push(new Paragraph({
+    spacing: { after: 20 },
+    children: [
+      new TextRun({ text: 'Direktor', bold: true, size: 24, font: F, color: '000000' }),
+      new TextRun({ text: '   ___________________   ', size: 24, font: F, color: '000000' }),
+      new TextRun({ text: opts.orgDirector || '', bold: true, size: 24, font: F, color: '000000' }),
+    ],
+  }))
+
+  const doc = new Document({
+    sections: [{
+      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+      footers: {
+        default: new Footer({
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({ text: 'Shartnoma.uz  |  bet ', size: 18, font: F, color: '999999' }),
+              new TextRun({ children: [PageNumber.CURRENT], size: 18, font: F, color: '999999' }),
+              new TextRun({ text: ' / ', size: 18, font: F, color: '999999' }),
+              new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: F, color: '999999' }),
+            ],
+          })],
+        }),
+      },
+      children,
+    }],
+  })
+
+  const blob = await Packer.toBlob(doc)
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${opts.filename}.docx`
+  a.click()
+  URL.revokeObjectURL(url)
+}

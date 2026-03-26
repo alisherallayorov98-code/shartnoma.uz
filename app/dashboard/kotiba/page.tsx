@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useDashboard } from '../context'
 import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
+import { downloadRasmiyXatWord } from '@/lib/downloadUtils'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 import HujjatResult from '../_components/HujjatResult'
 import BayonnomaMaker from './_components/BayonnomaMaker'
@@ -20,7 +21,7 @@ type FeatureConfig = {
   icon: string
   title: string
   description: string
-  fields: { key: string; label: string; placeholder: string; type?: string; textarea?: boolean }[]
+  fields: { key: string; label: string; placeholder: string; type?: string; textarea?: boolean; isCpField?: boolean }[]
   apiType: string
   resultField: string
   isCustomComponent?: boolean
@@ -37,8 +38,10 @@ const FEATURES: FeatureConfig[] = [
     description: "Hamkorlar, davlat organlari yoki kontragentlarga rasmiy xat",
     apiType: 'rasmiy_xat', resultField: 'xat',
     fields: [
-      { key: 'kim_uchun', label: "Kimga", placeholder: "Soliq inspeksiyasi boshlig'iga" },
+      { key: 'kim_uchun', label: "Kimga", placeholder: "Soliq inspeksiyasi boshlig'iga", isCpField: true },
       { key: 'mavzu', label: 'Mavzu', placeholder: "Ma'lumot so'rash haqida" },
+      { key: 'xat_raqami', label: 'Xat raqami', placeholder: '25/03-15' },
+      { key: 'sana', label: 'Sana', placeholder: '', type: 'date' },
       { key: 'asosiy_mazmun', label: "Mazmun", placeholder: "2024-yil 3-kvartal hisoboti bo'yicha...", textarea: true },
       { key: 'muddati', label: 'Javob muddati (ixtiyoriy)', placeholder: '10 ish kuni ichida' },
     ],
@@ -169,7 +172,7 @@ const FEATURES: FeatureConfig[] = [
 const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
 export default function KotibaPage() {
-  const { activeOrg, hasAiAccess, openUpgradeModal } = useDashboard()
+  const { activeOrg, hasAiAccess, openUpgradeModal, cps } = useDashboard()
   const [selected, setSelected] = useState<KotibaFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [result, setResult] = useState<string | null>(null)
@@ -177,11 +180,25 @@ export default function KotibaPage() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [savedKey, setSavedKey] = useState(0)
+  const [cpSearch, setCpSearch] = useState<Record<string, string>>({})
+  const [cpOpen, setCpOpen] = useState<string | null>(null)
+  const cpDropRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (cpDropRef.current && !cpDropRef.current.contains(e.target as Node)) setCpOpen(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const currentFeature = FEATURES.find(f => f.key === selected)
 
   function selectFeature(key: KotibaFeature) {
-    setSelected(key); setFormData({}); setResult(null); setError('')
+    const defaults: Record<string, string> = {}
+    if (key === 'rasmiy_xat') defaults.sana = new Date().toISOString().slice(0, 10)
+    setSelected(key); setFormData(defaults); setResult(null); setError('')
+    setCpSearch({}); setCpOpen(null)
   }
 
   async function handleGenerate() {
@@ -295,19 +312,51 @@ export default function KotibaPage() {
                 />
               ) : (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {currentFeature.fields.map(field => (
-                      <div key={field.key} className={field.textarea ? 'sm:col-span-2' : ''}>
-                        <label className="block text-xs text-gray-400 mb-1">{field.label}</label>
-                        {field.textarea ? (
-                          <textarea value={formData[field.key] || ''} onChange={e => setFormData(p => ({ ...p, [field.key]: e.target.value }))}
-                            placeholder={field.placeholder} rows={3} className={`${inp} resize-y`}/>
-                        ) : (
-                          <input type={field.type || 'text'} value={formData[field.key] || ''} onChange={e => setFormData(p => ({ ...p, [field.key]: e.target.value }))}
-                            placeholder={field.placeholder} className={inp}/>
-                        )}
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" ref={cpDropRef}>
+                    {currentFeature.fields.map(field => {
+                      if (field.isCpField) {
+                        const search = cpSearch[field.key] ?? formData[field.key] ?? ''
+                        const filtered = cps.filter(c => c.name.toLowerCase().includes(search.toLowerCase())).slice(0, 8)
+                        return (
+                          <div key={field.key} className="relative">
+                            <label className="block text-xs text-gray-400 mb-1">{field.label}</label>
+                            <input
+                              type="text"
+                              value={cpOpen === field.key ? search : (formData[field.key] || '')}
+                              onFocus={() => { setCpOpen(field.key); setCpSearch(p => ({ ...p, [field.key]: formData[field.key] || '' })) }}
+                              onChange={e => { setCpSearch(p => ({ ...p, [field.key]: e.target.value })); setCpOpen(field.key) }}
+                              placeholder={field.placeholder}
+                              className={inp}
+                              autoComplete="off"
+                            />
+                            {cpOpen === field.key && filtered.length > 0 && (
+                              <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                                {filtered.map(cp => (
+                                  <button key={cp.id} type="button"
+                                    onMouseDown={() => { setFormData(p => ({ ...p, [field.key]: cp.name })); setCpOpen(null) }}
+                                    className="w-full text-left px-3 py-2 hover:bg-[#1F2937] transition">
+                                    <div className="text-sm text-white">{cp.name}</div>
+                                    {cp.inn && <div className="text-xs text-gray-500">INN: {cp.inn}</div>}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }
+                      return (
+                        <div key={field.key} className={field.textarea ? 'sm:col-span-2' : ''}>
+                          <label className="block text-xs text-gray-400 mb-1">{field.label}</label>
+                          {field.textarea ? (
+                            <textarea value={formData[field.key] || ''} onChange={e => setFormData(p => ({ ...p, [field.key]: e.target.value }))}
+                              placeholder={field.placeholder} rows={3} className={`${inp} resize-y`}/>
+                          ) : (
+                            <input type={field.type || 'text'} value={formData[field.key] || ''} onChange={e => setFormData(p => ({ ...p, [field.key]: e.target.value }))}
+                              placeholder={field.placeholder} className={inp}/>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
 
                   {activeOrg && (
@@ -338,13 +387,33 @@ export default function KotibaPage() {
               )}
 
               {result && (
-                <div className="border-t border-[#1E293B] pt-5">
+                <div className="border-t border-[#1E293B] pt-5 space-y-3">
                   <HujjatResult
                     result={result}
                     title={currentFeature?.title || 'hujjat'}
                     copied={copied}
                     onCopy={handleCopy}
                   />
+                  {selected === 'rasmiy_xat' && activeOrg && (
+                    <button
+                      onClick={() => downloadRasmiyXatWord({
+                        orgName: activeOrg.name,
+                        orgInn: activeOrg.inn,
+                        orgDirector: activeOrg.director_name,
+                        orgBankName: activeOrg.bank_name,
+                        orgAddress: activeOrg.address,
+                        xatRaqami: formData.xat_raqami,
+                        sana: formData.sana,
+                        kimga: formData.kim_uchun,
+                        mavzu: formData.mavzu,
+                        body: result,
+                        filename: `Rasmiy_xat_${formData.xat_raqami || new Date().toISOString().slice(0,10)}`,
+                      })}
+                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+                    >
+                      🏢 Firmenniy blanks (Word)
+                    </button>
+                  )}
                 </div>
               )}
             </div>
