@@ -336,7 +336,7 @@ export default function KontragentlarPage() {
               <label className={lbl}>Manzil</label>
               <input className={inp} placeholder="Toshkent shahri, ..." value={cpForm.address} onChange={e => setCpForm({ ...cpForm, address: e.target.value })}/>
             </div>
-            <ModalActions onClose={() => { setModal(false); setEditingCp(null); setCpForm(emptyCp); setBankNameEdited(false) }} saving={saving}/>
+            <ModalActions onClose={() => { setModal(false); setEditingCp(null); setCpForm(emptyCp) }} saving={saving}/>
           </form>
         </Modal>
       )}
