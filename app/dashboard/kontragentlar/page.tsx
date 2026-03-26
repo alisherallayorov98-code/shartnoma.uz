@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -10,6 +10,7 @@ import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import type { Counterparty } from '@/lib/types'
 import { getBankByMfo } from '@/lib/bankMfo'
+import CpDetailModal from './_components/CpDetailModal'
 
 const emptyCp = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', phone: '', qqsreg: '' }
 
@@ -48,6 +49,7 @@ export default function KontragentlarPage() {
   const [cpSearch, setCpSearch] = useState('')
   const [editingCp, setEditingCp] = useState<Counterparty | null>(null)
   const [cpForm, setCpForm] = useState(emptyCp)
+  const [bankNameEdited, setBankNameEdited] = useState(false)
   const [saving, setSaving] = useState(false)
   const [modal, setModal] = useState(false)
   const [cpDetail, setCpDetail] = useState<Counterparty | null>(null)
@@ -61,6 +63,14 @@ export default function KontragentlarPage() {
     (cp.inn || '').includes(cpSearch) ||
     (cp.director_name || '').toLowerCase().includes(cpSearch.toLowerCase())
   )
+
+  const cpContractCount = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const c of contracts) {
+      map.set(c.counterparty_id, (map.get(c.counterparty_id) ?? 0) + 1)
+    }
+    return map
+  }, [contracts])
 
   const lbl = 'block text-xs text-gray-400 mb-1'
   const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
@@ -176,7 +186,7 @@ export default function KontragentlarPage() {
             </svg>
             Ommaviy yuklash
           </button>
-          <button onClick={() => { setEditingCp(null); setCpForm(emptyCp); setModal(true) }}
+          <button onClick={() => { setEditingCp(null); setCpForm(emptyCp); setBankNameEdited(false); setModal(true) }}
             className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
             + {T(t.cpTab.addBtn)}
           </button>
@@ -199,7 +209,7 @@ export default function KontragentlarPage() {
           <div className="text-5xl mb-4">🤝</div>
           <p className="text-gray-400 font-medium">{cpSearch ? T(t.cpTab.noFound) : T(t.cpTab.noAdded)}</p>
           {!cpSearch && (
-            <button onClick={() => { setEditingCp(null); setCpForm(emptyCp); setModal(true) }}
+            <button onClick={() => { setEditingCp(null); setCpForm(emptyCp); setBankNameEdited(false); setModal(true) }}
               className="mt-3 text-blue-400 text-sm hover:text-blue-300">
               {T(t.cpTab.addBtn)}
             </button>
@@ -222,7 +232,7 @@ export default function KontragentlarPage() {
             </thead>
             <tbody>
               {filteredCps.map((cp, idx) => {
-                const cpContracts = contracts.filter(c => c.counterparty_id === cp.id).length
+                const cpContracts = cpContractCount.get(cp.id) ?? 0
                 return (
                   <tr key={cp.id}
                     className="border-t border-[#1E293B] hover:bg-[#1F2937] cursor-pointer transition group"
@@ -250,7 +260,7 @@ export default function KontragentlarPage() {
                         <button onClick={() => {
                           setEditingCp(cp)
                           setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: cp.bank_name, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '' })
-                          setModal(true)
+                          setBankNameEdited(false); setModal(true)
                         }} className="p-1.5 bg-[#1F2937] hover:bg-blue-700 rounded text-xs text-gray-300" title="Tahrirlash">✎</button>
                         <button onClick={() => deleteCp(cp.id)}
                           className="p-1.5 bg-[#1F2937] hover:bg-red-800 rounded text-xs text-gray-300" title="O'chirish">🗑</button>
@@ -269,54 +279,21 @@ export default function KontragentlarPage() {
 
       {/* Detail panel */}
       {cpDetail && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setCpDetail(null)}>
-          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-4 mb-5">
-              <div className="w-14 h-14 bg-orange-900/60 rounded-2xl flex items-center justify-center text-orange-300 font-bold text-2xl">
-                {cpDetail.name[0]?.toUpperCase()}
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-white">{cpDetail.name}</h2>
-                {cpDetail.inn && <p className="text-xs text-gray-500 mt-0.5">INN: {cpDetail.inn}</p>}
-              </div>
-              <button onClick={() => setCpDetail(null)} className="ml-auto w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded-lg hover:bg-[#1F2937] text-xl">×</button>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {[
-                ['Direktor', cpDetail.director_name],
-                ['Bank', cpDetail.bank_name],
-                ['Hisob raqami', cpDetail.bank_account],
-                ['MFO', cpDetail.mfo],
-                ['Manzil', cpDetail.address],
-                ['Telefon', cpDetail.phone],
-                ['QQS', cpDetail.qqsreg],
-              ].map(([label, val]) => val ? (
-                <div key={label}>
-                  <span className="text-gray-500 text-xs">{label}: </span>
-                  <span className="text-gray-300">{val}</span>
-                </div>
-              ) : null)}
-            </div>
-            <div className="flex gap-3 mt-5 pt-4 border-t border-[#1E293B]">
-              <button onClick={() => {
-                setEditingCp(cpDetail)
-                setCpForm({ name: cpDetail.name, inn: cpDetail.inn, director_name: cpDetail.director_name, bank_name: cpDetail.bank_name, bank_account: cpDetail.bank_account, mfo: cpDetail.mfo, address: cpDetail.address, phone: cpDetail.phone || '', qqsreg: cpDetail.qqsreg || '' })
-                setCpDetail(null); setModal(true)
-              }} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition">
-                Tahrirlash
-              </button>
-              <button onClick={() => deleteCp(cpDetail.id)}
-                className="px-4 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm transition">
-                O'chirish
-              </button>
-            </div>
-          </div>
-        </div>
+        <CpDetailModal
+          cp={cpDetail}
+          onClose={() => setCpDetail(null)}
+          onEdit={cp => {
+            setEditingCp(cp)
+            setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: cp.bank_name, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '' })
+            setBankNameEdited(false); setCpDetail(null); setModal(true)
+          }}
+          onDelete={id => { setCpDetail(null); deleteCp(id) }}
+        />
       )}
 
       {/* Add/Edit modal */}
       {modal && (
-        <Modal title={editingCp ? "Kontragentni tahrirlash" : T(t.cp.new)} onClose={() => { setModal(false); setEditingCp(null); setCpForm(emptyCp) }}>
+        <Modal title={editingCp ? "Kontragentni tahrirlash" : T(t.cp.new)} onClose={() => { setModal(false); setEditingCp(null); setCpForm(emptyCp); setBankNameEdited(false) }}>
           <form onSubmit={saveCp} className="space-y-4">
             <div>
               <label className={lbl}>Kontragent nomi *</label>
@@ -333,7 +310,7 @@ export default function KontragentlarPage() {
               </div>
               <div>
                 <label className={lbl}>Bank nomi</label>
-                <input className={inp} placeholder="Xalq banki" value={cpForm.bank_name} onChange={e => setCpForm({ ...cpForm, bank_name: e.target.value })}/>
+                <input className={inp} placeholder="Xalq banki" value={cpForm.bank_name} onChange={e => { setBankNameEdited(true); setCpForm({ ...cpForm, bank_name: e.target.value }) }}/>
               </div>
               <div>
                 <label className={lbl}>Hisob raqami</label>
@@ -343,7 +320,7 @@ export default function KontragentlarPage() {
                 <label className={lbl}>MFO</label>
                 <input className={inp} placeholder="00873" maxLength={5} value={cpForm.mfo} onChange={e => {
                   const mfo = e.target.value
-                  const bankName = mfo.length === 5 ? getBankByMfo(mfo) : null
+                  const bankName = mfo.length === 5 && !bankNameEdited ? getBankByMfo(mfo) : null
                   setCpForm({ ...cpForm, mfo, ...(bankName ? { bank_name: bankName } : {}) })
                 }}/>
               </div>
@@ -360,7 +337,7 @@ export default function KontragentlarPage() {
               <label className={lbl}>Manzil</label>
               <input className={inp} placeholder="Toshkent shahri, ..." value={cpForm.address} onChange={e => setCpForm({ ...cpForm, address: e.target.value })}/>
             </div>
-            <ModalActions onClose={() => { setModal(false); setEditingCp(null); setCpForm(emptyCp) }} saving={saving}/>
+            <ModalActions onClose={() => { setModal(false); setEditingCp(null); setCpForm(emptyCp); setBankNameEdited(false) }} saving={saving}/>
           </form>
         </Modal>
       )}
