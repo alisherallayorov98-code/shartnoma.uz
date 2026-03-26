@@ -228,7 +228,7 @@ export default function YuristPage() {
           return (
             <div className="space-y-3">
               {/* Counterparty filter */}
-              {cpOptions.length > 1 && (
+              {cpOptions.length > 0 && (
                 <div>
                   <label className="block text-xs text-gray-400 mb-1">Kontragent</label>
                   <select value={hubCp} onChange={e => { setHubCp(e.target.value); setHubContract(''); setHubResult(null); setHubError('') }}
@@ -306,13 +306,23 @@ export default function YuristPage() {
         {hubFeature === 'clause' && (
           <div className="space-y-3">
             <div>
+              <label className="block text-xs text-gray-400 mb-1">Kontragent (ixtiyoriy)</label>
+              <select value={hubCp} onChange={e => { setHubCp(e.target.value); setHubContract(''); setHubResult(null) }}
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
+                <option value="">— Barcha kontragentlar —</option>
+                {cpOptions.map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className="block text-xs text-gray-400 mb-1">Shartnoma (ixtiyoriy — band shu shartnomaga qo'shiladi)</label>
               <select value={hubContract} onChange={e => { setHubContract(e.target.value); setHubResult(null) }}
                 className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
                 <option value="">— Shartnoma tanlanmagan —</option>
-                {contractList.map(c => (
+                {filteredBycp.map(c => (
                   <option key={c.id} value={c.id}>
-                    #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]} · {c.counterparties?.name || '—'}
+                    #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]}
                   </option>
                 ))}
               </select>
