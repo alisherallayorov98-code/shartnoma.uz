@@ -15,7 +15,7 @@ const emptyEmp = {
 
 const STATUS_LABEL: Record<string, string> = {
   active: 'Faol',
-  fired:  'Ishdan bo\'yilgan',
+  fired:  'Ishdan bo\'shagan',
 }
 const STATUS_COLOR: Record<string, string> = {
   active: 'bg-green-500/20 text-green-400 border border-green-500/30',
@@ -136,7 +136,7 @@ export default function XodimlarPage() {
                   ? 'bg-blue-600 text-white'
                   : 'bg-[#111827] border border-[#1E293B] text-gray-400 hover:text-white'
               }`}>
-              {s === 'all' ? 'Barchasi' : s === 'active' ? 'Faol' : "Ishdan bo'yilgan"}
+              {s === 'all' ? 'Barchasi' : s === 'active' ? 'Faol' : "Ishdan bo'shagan"}
             </button>
           ))}
         </div>
@@ -268,7 +268,7 @@ export default function XodimlarPage() {
                 <select className={inp} value={form.status}
                   onChange={e => setForm({ ...form, status: e.target.value })}>
                   <option value="active">Faol</option>
-                  <option value="fired">Ishdan bo'yilgan</option>
+                  <option value="fired">Ishdan bo'shagan</option>
                 </select>
               </div>
             </div>
