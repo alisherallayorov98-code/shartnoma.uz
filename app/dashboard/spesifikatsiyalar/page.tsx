@@ -9,7 +9,7 @@ import { Modal, ModalActions } from '../_components/Modal'
 import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import type { Specification, SpecItem } from '@/lib/types'
-import { generateSpecWord, generateSpecPDF } from '@/lib/specExport'
+import { generateSpecWord } from '@/lib/specExport'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 
 const emptySpecForm = { contract_id: '', spec_number: '', items: [] as SpecItem[], notes: '' }
@@ -230,10 +230,10 @@ export default function SpesifikatsiyalarPage() {
                           className="flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition font-semibold">
                           📝 Word
                         </button>
-                        <button onClick={() => generateSpecPDF(spec, activeOrg, cps)}
-                          className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 px-2 py-1 rounded hover:bg-emerald-900/20 transition font-medium">
-                          📄 PDF
-                        </button>
+                        <a href="https://www.ilovepdf.com/ru/word_to_pdf" target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 px-2 py-1 rounded hover:bg-orange-900/20 transition font-medium">
+                          📄 Word→PDF
+                        </a>
                         <button onClick={() => {
                           setEditingSpec(spec)
                           const cpId = spec.contracts?.counterparty_id || ''
@@ -277,8 +277,8 @@ export default function SpesifikatsiyalarPage() {
               <div className="flex items-center gap-2">
                 <button onClick={() => generateSpecWord(viewSpec, activeOrg, cps)}
                   className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition font-semibold">📝 Word</button>
-                <button onClick={() => generateSpecPDF(viewSpec, activeOrg, cps)}
-                  className="px-3 py-1.5 text-xs bg-emerald-600/20 text-emerald-400 rounded-lg hover:bg-emerald-600/30 transition">📄 PDF</button>
+                <a href="https://www.ilovepdf.com/ru/word_to_pdf" target="_blank" rel="noopener noreferrer"
+                  className="px-3 py-1.5 text-xs bg-orange-500/10 text-orange-400 rounded-lg hover:bg-orange-500/20 transition">📄 Word→PDF</a>
                 <button onClick={() => {
                   setViewSpec(null)
                   setEditingSpec(viewSpec)

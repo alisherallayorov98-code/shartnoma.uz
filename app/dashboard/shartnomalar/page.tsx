@@ -16,7 +16,7 @@ import AiModal from './_components/AiModal'
 import { cyrillicToLatin } from '@/lib/downloadUtils'
 import { latinToCyrillic } from '@/lib/scriptNorm'
 import { fillPlaceholders } from '@/lib/contractUtils'
-import { generateContractPDF } from '@/lib/export/contractPdf'
+
 import { generateContractDOCX } from '@/lib/export/contractDocx'
 import { fetchAi } from '@/lib/fetchAi'
 import { logAudit } from '@/lib/audit'
@@ -931,14 +931,16 @@ export default function ShartnomalarPage() {
                             <text x="3.5" y="17" fontFamily="Arial" fontWeight="bold" fontSize="14" fill="white">W</text>
                           </svg>
                         </button>
-                        {/* PDF */}
-                        <button
-                          title="PDF yuklab olish"
-                          onClick={() => generateContractPDF(c)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 transition"
+                        {/* Word → PDF */}
+                        <a
+                          href="https://www.ilovepdf.com/ru/word_to_pdf"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Word faylni PDF ga o'tkazish"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-orange-500/10 transition"
                         >
-                          <FaFilePdf className="w-4 h-4 text-[#E2192A]" />
-                        </button>
+                          <FaFilePdf className="w-4 h-4 text-orange-400" />
+                        </a>
                         {/* AI (ai_pro only) */}
                         {hasAiAccess() && (
                           <button
@@ -1054,7 +1056,7 @@ export default function ShartnomalarPage() {
           viewContract={viewContract}
           onClose={() => setModal(null)}
           onGenerateDOCX={generateContractDOCX}
-          onGeneratePDF={generateContractPDF}
+          onGeneratePDF={async () => { window.open('https://www.ilovepdf.com/ru/word_to_pdf', '_blank') }}
           onSendByTelegram={sendByTelegram}
           onRunAiAnalysis={runAiAnalysis}
           onToggleSigned={toggleSigned}
