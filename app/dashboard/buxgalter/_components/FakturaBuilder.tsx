@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import type { Org, Counterparty } from '@/lib/types'
+import type { Org, Counterparty, Contract } from '@/lib/types'
 
-type Props = { org: Org | null; cps: Counterparty[] }
+type Props = { org: Org | null; cps: Counterparty[]; contracts?: Contract[] }
 type QqsFoiz = '0' | '12' | '15' | 'siz'
 type Item = { id: number; nomi: string; birlik: string; miqdori: string; narxi: string; qqs: QqsFoiz }
 
@@ -20,9 +20,10 @@ function calcItem(it: Item) {
 
 let _id = 1
 
-export default function FakturaBuilder({ org, cps }: Props) {
+export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
   const [fakRaqam, setFakRaqam] = useState('')
   const [sana, setSana] = useState(new Date().toISOString().split('T')[0])
+  const [shartnoma, setShartnoma] = useState('')
   const [xaridor, setXaridor] = useState('')
   const [xaridorInn, setXaridorInn] = useState('')
   const [xaridorBank, setXaridorBank] = useState('')
@@ -89,6 +90,7 @@ export default function FakturaBuilder({ org, cps }: Props) {
           children: [
             new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `SCHYOT-FAKTURA № ${fakRaqam || '___'}`, bold: true, size: 28 })] }),
             new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Sana: ${sana}`, size: 22 })] }),
+            ...(shartnoma ? [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Shartnoma: ${shartnoma}`, size: 20 })] })] : []),
             new Paragraph({ children: [] }),
             // Tomonlar table
             new Table({
@@ -178,6 +180,7 @@ export default function FakturaBuilder({ org, cps }: Props) {
       const headerRows = [
         [`SCHYOT-FAKTURA № ${fakRaqam || '___'}`],
         [`Sana: ${sana}`],
+        shartnoma ? [`Shartnoma: ${shartnoma}`] : [],
         [],
         ['SOTUVCHI:', org?.name || '___', '', 'XARIDOR:', xaridor || '___'],
         ['INN:', org?.inn || '___', '', 'INN:', xaridorInn || '___'],
@@ -259,6 +262,18 @@ export default function FakturaBuilder({ org, cps }: Props) {
           <label className="block text-xs text-gray-400 mb-1">Sana</label>
           <input type="date" value={sana} onChange={e => setSana(e.target.value)} className={inp} />
         </div>
+        {/* Shartnoma */}
+        <div className="sm:col-span-2">
+          <label className="block text-xs text-gray-400 mb-1">Shartnoma (ixtiyoriy)</label>
+          <select value={shartnoma} onChange={e => setShartnoma(e.target.value)} className={inp}>
+            <option value="">— Shartnoma tanlanmagan —</option>
+            {contracts.map(c => (
+              <option key={c.id} value={`${c.contract_number} (${c.contract_date})`}>
+                № {c.contract_number} · {c.contract_date} · {c.counterparties?.name || ''}
+              </option>
+            ))}
+          </select>
+        </div>
         {/* Xaridor */}
         <div className="relative" ref={cpRef}>
           <label className="block text-xs text-gray-400 mb-1">Xaridor (kontragent)</label>
@@ -303,14 +318,14 @@ export default function FakturaBuilder({ org, cps }: Props) {
         </div>
         <div className="space-y-2">
           {/* Header */}
-          <div className="hidden sm:grid grid-cols-[2fr_80px_80px_120px_80px] gap-2 text-xs text-gray-500 px-1">
-            <span>Nomi</span><span>Birlik</span><span>Miqdor</span><span>Narxi</span><span>QQS</span>
+          <div className="hidden sm:grid grid-cols-[2fr_70px_70px_110px_68px_100px_24px] gap-2 text-xs text-gray-500 px-1">
+            <span>Nomi</span><span>Birlik</span><span>Miqdor</span><span>Narxi (so&apos;m)</span><span>QQS</span><span className="text-right">Jami (so&apos;m)</span><span/>
           </div>
           {items.map((it, idx) => {
             const c = calcItem(it)
             return (
               <div key={it.id} className="bg-[#0F172A] border border-[#1E293B] rounded-lg p-2">
-                <div className="grid grid-cols-1 sm:grid-cols-[2fr_80px_80px_120px_80px_24px] gap-2 items-center">
+                <div className="grid grid-cols-1 sm:grid-cols-[2fr_70px_70px_110px_68px_100px_24px] gap-2 items-center">
                   <input type="text" value={it.nomi} onChange={e => updateItem(it.id, 'nomi', e.target.value)}
                     placeholder={`${idx + 1}. Mahsulot nomi`} className={inpSm} />
                   <select value={it.birlik} onChange={e => updateItem(it.id, 'birlik', e.target.value)} className={inpSm}>
@@ -327,15 +342,20 @@ export default function FakturaBuilder({ org, cps }: Props) {
                     <option value="0">0%</option>
                     <option value="siz">QQSsiz</option>
                   </select>
+                  {/* Jami per row */}
+                  <div className="text-right">
+                    {c.gross > 0 ? (
+                      <>
+                        <div className="text-sm font-semibold text-emerald-400">{fmt(c.gross)}</div>
+                        {c.qqs > 0 && <div className="text-[10px] text-amber-400/70">QQS: {fmt(c.qqs)}</div>}
+                      </>
+                    ) : (
+                      <span className="text-gray-600 text-xs">—</span>
+                    )}
+                  </div>
                   <button onClick={() => items.length > 1 && removeItem(it.id)}
                     className="text-gray-600 hover:text-red-400 transition text-sm leading-none">✕</button>
                 </div>
-                {c.gross > 0 && (
-                  <div className="mt-1 text-xs text-gray-500 flex flex-wrap gap-3">
-                    <span>Jami: <span className="text-white">{fmt(c.gross)}</span></span>
-                    {c.qqs > 0 && <span>QQSsiz: <span className="text-gray-300">{fmt(c.sozsiz)}</span> + QQS: <span className="text-amber-400">{fmt(c.qqs)}</span></span>}
-                  </div>
-                )}
               </div>
             )
           })}

@@ -343,7 +343,7 @@ export default function BuxgalterPage() {
               <TolovGrafigi org={activeOrg} cps={cps} />
             )}
             {currentFeature.isCustom && selected === 'faktura_builder' && (
-              <FakturaBuilder org={activeOrg} cps={cps} />
+              <FakturaBuilder org={activeOrg} cps={cps} contracts={contracts.filter(c => c.organization_id === activeOrg?.id)} />
             )}
 
             {/* AI form */}
