@@ -181,29 +181,40 @@ export async function POST(req: NextRequest) {
     const jOnly = jsonOnly(lang)
     let prompt = ''
 
+    // Shared guardian rules (injected into every contract-aware prompt)
+    const guardUz = `MUHIM CHEKLOVLAR:
+- Shartnomada YO'Q bo'lgan ma'lumotni O'YLAB TOPMANG
+- Aniq ko'rsatilmagan summalar, sanalar, tomonlar ismlarini O'ZINGIZDAN QO'SHMANG
+- Faqat shartnoma matni asosida ish ko'ring`
+
+    const guardRu = `ВАЖНЫЕ ОГРАНИЧЕНИЯ:
+- НЕ ПРИДУМЫВАЙТЕ информацию, которой нет в договоре
+- НЕ ДОБАВЛЯЙТЕ от себя суммы, даты, имена сторон, которые не указаны
+- Работайте ТОЛЬКО на основе текста договора`
+
+    const guard = lang === 'ru' ? guardRu : guardUz
+
     // ── 1. TAHLIL ──────────────────────────────────────────
     if (type === 'analysis') {
-      const labels: Record<string, string> = {
-        uz: `Siz O'zbekiston qonunchiligini yaxshi biladigan yurist yordamchisiz. Shartnomani tahlil qiling.\n${jOnly}\n{"baho":"A/B/C/D","umumiy":"...","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"yuqori|o'rta|past","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}`,
-        ru: `Вы юридический ассистент по законодательству Узбекистана. Проанализируйте договор.\n${jOnly}\n{"baho":"A/B/C/D","umumiy":"...","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"высокий|средний|низкий","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}`,
-        oz: `Сиз Ўзбекистон қонунчилигини яхши биладиган юрист ёрдамчисисиз.\n${jOnly}\n{"baho":"A/B/C/D","umumiy":"...","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"юқори|ўрта|паст","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}`,
-      }
-      prompt = `${labels[lang] || labels['uz']}\n\nSHARTNOMA:\n${truncate(content, 3000)}`
+      const task = lang === 'ru'
+        ? `Вы юридический ассистент по законодательству Узбекистана. Проанализируйте договор.\n${guardRu}\n- Указывайте только РЕАЛЬНЫЕ проблемы из текста, не выдумывайте\n- Если проблем нет — поле оставьте пустым массивом`
+        : `Siz O'zbekiston qonunchiligini yaxshi biladigan yurist yordamchisiz. Shartnomani tahlil qiling.\n${guardUz}\n- Faqat matnda MAVJUD muammolarni ko'rsating, o'ylab topmang\n- Muammo yo'q bo'lsa — bo'sh massiv qoldiring`
+      prompt = `${task}\n${jOnly}\n{"baho":"A/B/C/D","umumiy":"...","kuchli_tomonlar":["..."],"zaif_tomonlar":["..."],"yuridik_xatarlar":[{"daraja":"yuqori|o'rta|past","tavsif":"..."}],"tavsiyalar":["..."],"grammatika_xatolari":["..."]}\n\nSHARTNOMA:\n${truncate(content, 3000)}`
     }
 
     // ── 2. GRAMMATIKA ───────────────────────────────────────
     else if (type === 'grammar') {
-      const task = lang === 'ru' ? 'Найдите грамматические и стилистические ошибки.' :
-                   lang === 'oz' ? 'Грамматика ва услуб хатоларини топинг.' :
-                                   'Grammatika, imlo va uslub xatolarini toping.'
+      const task = lang === 'ru'
+        ? `Найдите грамматические и стилистические ошибки в тексте.\n${guardRu}\n- Указывайте ТОЛЬКО реальные ошибки из текста\n- Не изменяйте юридическое содержание\n- Если ошибок нет — xatolar_soni: 0, xatolar: []`
+        : `Matnda grammatika, imlo va uslub xatolarini toping.\n${guardUz}\n- Faqat matndagi HAQIQIY xatolarni ko'rsating\n- Yuridik mazmunni o'zgartirmang\n- Xato yo'q bo'lsa — xatolar_soni: 0, xatolar: []`
       prompt = `${task}\n${jOnly}\n{"xatolar_soni":0,"xatolar":[{"xato":"...","togri":"...","izoh":"..."}],"umumiy_baho":"..."}\n\nMATN:\n${truncate(content)}`
     }
 
     // ── 3. XULOSA ───────────────────────────────────────────
     else if (type === 'summary') {
-      const task = lang === 'ru' ? 'Напишите краткое резюме договора (5-8 предложений): главные условия, обязательства, сроки, сумма.' :
-                   lang === 'oz' ? 'Шартнома мазмунини қисқача баён қилинг (5-8 жумла).' :
-                                   "Shartnomaning asosiy shartlarini qisqacha bayon qiling (5-8 jumla): tomonlar, majburiyatlar, muddat, summa."
+      const task = lang === 'ru'
+        ? `Напишите краткое резюме договора (5-8 предложений).\n${guardRu}\n- Указывайте только то, что ЕСТЬ в тексте\n- Если сумма/срок не указаны — пишите "не указано"`
+        : `Shartnomaning qisqacha mazmunini yozing (5-8 jumla).\n${guardUz}\n- Faqat matnda BOR narsalarni ko'rsating\n- Summa/muddat ko'rsatilmagan bo'lsa — "ko'rsatilmagan" deb yozing`
       prompt = `${task}\n${jOnly}\n{"xulosa":"...","asosiy_shartlar":["..."],"muddat":"...","summa":"...","muhim_bandlar":["..."]}\n\nSHARTNOMA:\n${truncate(content)}`
     }
 
@@ -212,38 +223,35 @@ export async function POST(req: NextRequest) {
       const tLang = target_lang || 'ru'
       const targetName: Record<string, string> = { uz: "O'zbek tilida", ru: 'на русском языке', oz: "O'zbek Kirill yozuvida", en: 'in English' }
       const task = lang === 'ru'
-        ? `Переведите следующий договор ${targetName[tLang] || tLang}. Переводите юридические термины точно.`
-        : lang === 'oz'
-        ? `Қуйидаги шартномани ${targetName[tLang] || tLang} таржима қилинг. Юридик атамаларни тўғри таржима қилинг.`
-        : `Quyidagi shartnomani ${targetName[tLang] || tLang} tarjima qiling. Yuridik atamalarni to'g'ri tarjima qiling.`
+        ? `Переведите договор ${targetName[tLang] || tLang}.\n${guardRu}\n- Переводите ТОЧНО, не добавляйте и не убирайте содержимое\n- Сохраняйте структуру: нумерацию разделов, реквизиты в конце`
+        : `Shartnomani ${targetName[tLang] || tLang} tarjima qiling.\n${guardUz}\n- ANIQ tarjima qiling, mazmun qo'shmang va o'chirmang\n- Tuzilmani saqlang: bandlar raqami, oxiridagi rekvizitlar`
       prompt = `${task}\n${jOnly}\n{"tarjima":"..."}\n\nASL MATN:\n${truncate(content, 3000)}`
     }
 
     // ── 5. SAVOL-JAVOB ──────────────────────────────────────
     else if (type === 'qa') {
-      const task = lang === 'ru' ? `Ответьте на вопрос по договору. Вопрос: "${question}"` :
-                   lang === 'oz' ? `Шартнома бўйича саволга жавоб беринг. Савол: "${question}"` :
-                                   `Shartnoma bo'yicha savolga javob bering. Savol: "${question}"`
+      const task = lang === 'ru'
+        ? `Ответьте на вопрос ТОЛЬКО на основе текста договора. Вопрос: "${sanitize(question)}"\n${guardRu}\n- Если ответ не содержится в договоре — напишите "Bu shartnomada bu ma'lumot ko'rsatilmagan"\n- Не придумывайте информацию`
+        : `Savol: "${sanitize(question)}"\nFaqat shartnoma matni asosida javob bering.\n${guardUz}\n- Javob shartnomada bo'lmasa — "Bu shartnomada bu ma'lumot ko'rsatilmagan" deb yozing\n- Ma'lumot o'ylab topmang`
       prompt = `${task}\n${jOnly}\n{"javob":"...","havola":"shartnomaning qaysi bandiga tegishli"}\n\nSHARTNOMA:\n${truncate(content)}`
     }
 
     // ── 6. BAND QO'SHISH ────────────────────────────────────
     else if (type === 'clause') {
-      const task = lang === 'ru' ? `Напишите юридический пункт договора по инструкции: "${instruction}"` :
-                   lang === 'oz' ? `Кўрсатма бўйича шартнома банди ёзинг: "${instruction}"` :
-                                   `Ko'rsatma asosida shartnoma bandi yozing: "${instruction}"`
-      const ctxLabel = lang === 'ru' ? 'Контекст существующего договора:' : lang === 'oz' ? 'Mavjud shartnoma konteksti:' : 'Mavjud shartnoma konteksti:'
+      const task = lang === 'ru'
+        ? `Напишите юридический пункт договора по инструкции: "${sanitize(instruction)}"\n${guardRu}\n- Пункт должен соответствовать стилю и нумерации существующего договора\n- Не противоречьте уже имеющимся пунктам`
+        : `Ko'rsatma asosida shartnoma bandi yozing: "${sanitize(instruction)}"\n${guardUz}\n- Band mavjud shartnomaning uslubi va raqamlashiga mos bo'lsin\n- Mavjud bandlarga zid kelmang`
+      const ctxLabel = lang === 'ru' ? 'Контекст существующего договора:' : 'Mavjud shartnoma konteksti:'
       const ctx = content ? `\n\n${ctxLabel}\n${truncate(content, 2000)}` : ''
-      prompt = `${task}. O'zbekiston qonunchiligi asosida, rasmiy yuridik uslubda yozing.\n${jOnly}\n{"band":"...","band_nomi":"..."} ${ctx}`
+      prompt = `${task}\nO'zbekiston qonunchiligi asosida, rasmiy yuridik uslubda yozing.\n${jOnly}\n{"band":"...","band_nomi":"..."}${ctx}`
     }
 
     // ── 7. TUR TAVSIYASI ────────────────────────────────────
     else if (type === 'recommend') {
-      const task = lang === 'ru' ? `Определите тип договора по описанию: "${description}"` :
-                   lang === 'oz' ? `Таснифни ўқиб, шартнома турини аниқланг: "${description}"` :
-                                   `Tavsifni o'qib, qaysi shartnoma turi mos ekanini aniqlang: "${description}"`
-      const turlar = lang === 'ru' ? 'Доступные типы: oldi_sotdi, xizmat, ijara, pudrat, qoshimcha, moliyaviy, daval, xalqaro, boshqa' : 'Mavjud turlar: oldi_sotdi, xizmat, ijara, pudrat, qoshimcha, moliyaviy, daval, xalqaro, boshqa'
-      prompt = `${task}\n${turlar}\n${jOnly}\n{"tur":"oldi_sotdi","tur_nomi":"...","tavsiya":"...","sabab":"...","qoshimcha_maslahat":"..."}`
+      const task = lang === 'ru'
+        ? `Определите тип договора по описанию: "${sanitize(description)}"\nДоступные типы: oldi_sotdi, xizmat, ijara, pudrat, qoshimcha, moliyaviy, daval, xalqaro, boshqa\n- Выбирайте ТОЛЬКО из списка выше\n- Не рекомендуйте несуществующие типы`
+        : `Tavsifni o'qib shartnoma turini aniqlang: "${sanitize(description)}"\nMavjud turlar: oldi_sotdi, xizmat, ijara, pudrat, qoshimcha, moliyaviy, daval, xalqaro, boshqa\n- Faqat yuqoridagi ro'yxatdan tanlang\n- Mavjud bo'lmagan turlarni tavsiya etmang`
+      prompt = `${task}\n${jOnly}\n{"tur":"oldi_sotdi","tur_nomi":"...","tavsiya":"...","sabab":"...","qoshimcha_maslahat":"..."}`
     }
 
     // ── 8. SHARTNOMA YOZISH ─────────────────────────────────
@@ -266,12 +274,13 @@ export async function POST(req: NextRequest) {
         details?.cp_mfo  ? `MFO: ${details.cp_mfo}` : '',
         details?.cp_address ? `Manzil: ${details.cp_address}` : '',
       ].filter(Boolean).join(', ')
+      const writeRules = lang === 'ru'
+        ? `СТРОГИЕ ПРАВИЛА:\n- Используйте ТОЛЬКО предоставленные данные\n- Для незаполненных полей используйте ___\n- НЕ придумывайте реквизиты, суммы, сроки, адреса\n- Реквизиты сторон — ТОЛЬКО в последнем разделе договора`
+        : `QATIY QOIDALAR:\n- Faqat BERILGAN ma'lumotlardan foydalaning\n- To'ldirilmagan joylar uchun ___ ishlating\n- Rekvizitlar, summalar, muddatlar, manzillarni O'YLAB TOPMANG\n- Tomonlar rekvizitlari — FAQAT shartnomaning OXIRGI bo'limida`
       const task = lang === 'ru'
         ? `Напишите профессиональный договор. Тип: ${details?.tur || 'купля-продажа'}, Номер: ${raqam}, Дата: ${sana}, Сторона 1: ${orgBlock}, Сторона 2: ${cpBlock}, Сумма: ${details?.summa || '___'}, Дополнительно: ${details?.extra || 'нет'}`
-        : lang === 'oz'
-        ? `Профессионал шартнома матнини ёзинг. Тур: ${details?.tur || 'oldi-sotdi'}, Рақам: ${raqam}, Сана: ${sana}, 1-томон: ${orgBlock}, 2-томон: ${cpBlock}, Сумма: ${details?.summa || '___'}, Қўшимча: ${details?.extra || 'йўқ'}`
-        : `Professional shartnoma matnini yozing. Tur: ${details?.tur || 'oldi-sotdi'}, Raqam: ${raqam}, Sana: ${sana}, 1-tomon: ${orgBlock}, 2-tomon: ${cpBlock}, Summa: ${details?.summa || '___'}, Qo'shimcha: ${details?.extra || 'yo\'q'}`
-      prompt = `${task}\n\nO'zbekiston qonunchiligi asosida, rasmiy uslubda, to'liq bandlar bilan yozing. Tomonlar rekvizitlarini oxirgi bo'limga joylashtiring.\n${jOnly}\n{"shartnoma":"to'liq shartnoma matni...","bandlar_soni":0}`
+        : `Professional shartnoma yozing. Tur: ${details?.tur || 'oldi-sotdi'}, Raqam: ${raqam}, Sana: ${sana}, 1-tomon: ${orgBlock}, 2-tomon: ${cpBlock}, Summa: ${details?.summa || '___'}, Qo'shimcha: ${details?.extra || 'yo\'q'}`
+      prompt = `${task}\n\n${writeRules}\nO'zbekiston qonunchiligi asosida, rasmiy uslubda yozing.\n${jOnly}\n{"shartnoma":"to'liq shartnoma matni...","bandlar_soni":0}`
     }
 
     // ── 9. KAMCHILIKLARNI TO'G'IRLASH ──────────────────────
@@ -283,11 +292,12 @@ export async function POST(req: NextRequest) {
         ...(analysis?.grammatika_xatolari || []).map((s: string) => `- Grammatika xatosi: ${s}`),
       ].join('\n')
       const task = lang === 'ru'
-        ? `Улучшите договор, устранив все найденные проблемы. Проблемы:\n${issues}`
-        : lang === 'oz'
-        ? `Шартномани қуйидаги камчиликларни бартараф қилган ҳолда яхшиланг. Камчиликлар:\n${issues}`
-        : `Quyidagi kamchiliklarni bartaraf qilib shartnomani to'g'rilang. Kamchiliklar:\n${issues}`
-      prompt = `${task}\n\nO'zbekiston qonunchiligi asosida, rasmiy uslubda, hamma bandlarni saqlab yozing.\n${jOnly}\n{"shartnoma_yangi":"to'liq to'g'irlangan shartnoma...","o_zgartirishlar":["..."]}\n\nASL SHARTNOMA:\n${truncate(content, 3500)}`
+        ? `Улучшите договор, устранив найденные проблемы. Проблемы:\n${issues}`
+        : `Quyidagi kamchiliklarni bartaraf qilib shartnomani to'g'rilang:\n${issues}`
+      const fixRules = lang === 'ru'
+        ? `СТРОГИЕ ПРАВИЛА:\n- НЕ меняйте структуру и нумерацию разделов\n- НЕ удаляйте реквизиты из конца договора\n- НЕ добавляйте реквизиты в начало\n- Исправляйте только перечисленные проблемы`
+        : `QATIY QOIDALAR:\n- Bo'limlar tuzilmasi va raqamlarini O'ZGARTIRMANG\n- Oxiridagi rekvizitlarni O'CHIRMANG\n- Boshiga rekvizit QO'SHMANG\n- Faqat ko'rsatilgan muammolarni tuzating`
+      prompt = `${task}\n\n${fixRules}\n${jOnly}\n{"shartnoma_yangi":"to'liq to'g'irlangan shartnoma...","o_zgartirishlar":["..."]}\n\nASL SHARTNOMA:\n${truncate(content, 3500)}`
     }
 
     // ── 10. GRAMMATIKA XATOLARINI TO'G'IRLASH ──────────────
@@ -296,11 +306,12 @@ export async function POST(req: NextRequest) {
         .map((x: {xato:string;togri:string;izoh:string}) => `"${x.xato}" → "${x.togri}" (${x.izoh})`)
         .join('\n')
       const task = lang === 'ru'
-        ? `Исправьте следующие грамматические ошибки в тексте, сохраняя официальный стиль:\n${errList}`
-        : lang === 'oz'
-        ? `Matndagi quyidagi grammatika xatolarini to'g'rilang, rasmiy uslubni saqlang:\n${errList}`
-        : `Matndagi quyidagi grammatika xatolarini to'g'rilang, rasmiy uslubni saqlang:\n${errList}`
-      prompt = `${task}\n\n${jOnly}\n{"shartnoma_yangi":"to'liq to'g'irlangan matn...","o_zgartirishlar":["..."]}\n\nASL MATN:\n${truncate(content, 3500)}`
+        ? `Исправьте только перечисленные грамматические ошибки, всё остальное оставьте без изменений:\n${errList}`
+        : `Faqat quyidagi grammatika xatolarini to'g'rilang, qolganini o'zgartirmang:\n${errList}`
+      const fixGramRules = lang === 'ru'
+        ? `СТРОГИЕ ПРАВИЛА:\n- Исправляйте ТОЛЬКО перечисленные ошибки\n- НЕ меняйте структуру, юридическое содержание, реквизиты\n- НЕ добавляйте и не убирайте пункты`
+        : `QATIY QOIDALAR:\n- FAQAT ko'rsatilgan xatolarni tuzating\n- Tuzilma, yuridik mazmun, rekvizitlarni O'ZGARTIRMANG\n- Bandlar qo'shmang va o'chirmang`
+      prompt = `${task}\n\n${fixGramRules}\n${jOnly}\n{"shartnoma_yangi":"to'liq to'g'irlangan matn...","o_zgartirishlar":["..."]}\n\nASL MATN:\n${truncate(content, 3500)}`
     }
 
     // ── 11. TASHQI SHARTNOMA TUZATISH ──────────────────────
