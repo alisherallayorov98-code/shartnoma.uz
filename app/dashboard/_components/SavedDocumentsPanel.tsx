@@ -9,7 +9,7 @@ type AccentColor = 'cyan' | 'indigo' | 'blue'
 
 interface Props {
   orgId: string
-  section: 'kadrlar' | 'buxgalter' | 'kotiba'
+  section: 'kadrlar' | 'buxgalter' | 'kotiba' | 'yurist'
   accentColor?: AccentColor
   refreshKey?: number
 }
@@ -55,6 +55,16 @@ const FEATURE_META: Record<string, { label: string; icon: string; color: string 
   kafolat_xat:            { label: 'Kafolat xati',             icon: '🔐', color: 'bg-emerald-900/40 text-emerald-300' },
   tabriklash_xat:         { label: 'Tabriklash xati',          icon: '🎉', color: 'bg-rose-900/40 text-rose-300' },
   rekvizitlar_xat:        { label: 'Rekvizitlar xati',         icon: '🏦', color: 'bg-sky-900/40 text-sky-300' },
+  // Yurist AI
+  xulosa:                 { label: 'Xulosa',                   icon: '📝', color: 'bg-blue-900/40 text-blue-300' },
+  tarjima:                { label: 'Tarjima',                  icon: '🌐', color: 'bg-indigo-900/40 text-indigo-300' },
+  grammatika:             { label: 'Grammatika tekshiruvi',    icon: '✏️', color: 'bg-yellow-900/40 text-yellow-300' },
+  tahlil:                 { label: 'Chuqur tahlil',            icon: '📊', color: 'bg-orange-900/40 text-orange-300' },
+  qa:                     { label: 'Savol-Javob',              icon: '💬', color: 'bg-cyan-900/40 text-cyan-300' },
+  clause:                 { label: "Band qo'shish",            icon: '➕', color: 'bg-slate-700/40 text-slate-300' },
+  recommend:              { label: 'Tur tavsiyasi',            icon: '🎯', color: 'bg-teal-900/40 text-teal-300' },
+  write:                  { label: 'AI yozgan shartnoma',      icon: '✍️', color: 'bg-purple-900/40 text-purple-300' },
+  tuzatish:               { label: 'Tuzatilgan shartnoma',     icon: '📎', color: 'bg-emerald-900/40 text-emerald-300' },
 }
 
 

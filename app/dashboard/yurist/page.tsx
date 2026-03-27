@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { useLang } from '@/lib/LanguageContext'
 import { useDashboard } from '../context'
-import { downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
+import { downloadTextAsWord } from '@/lib/downloadUtils'
+import { saveAiDocument } from '@/lib/aiDocuments'
 import { fetchAi } from '@/lib/fetchAi'
 import { useToast } from '@/lib/toast'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
+import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 
 type HubFeature = 'xulosa' | 'tarjima' | 'grammatika' | 'tahlil' | 'qa' | 'clause' | 'recommend' | 'write' | 'tuzatish'
 
@@ -48,11 +50,11 @@ const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; nee
 
 // ─── ResultActions: download/copy/save tugmalari ─────────────────────────────
 function ResultActions({
-  text, label, saveName, onPreview, toast,
+  text, label, onPreview, onSave,
 }: {
-  text: string; label: string; saveName: string
+  text: string; label: string
   onPreview: (t: string) => void
-  toast: (msg: string, type: 'success' | 'error') => void
+  onSave: (t: string) => void
 }) {
   return (
     <div className="flex gap-2 flex-wrap">
@@ -68,11 +70,11 @@ function ResultActions({
         className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">
         📄 Word→PDF
       </a>
-      <button onClick={() => navigator.clipboard.writeText(text)}
+      <button onClick={() => navigator.clipboard.writeText(text).catch(() => {})}
         className="text-xs text-gray-500 hover:text-gray-300 transition">
         📋 Nusxa
       </button>
-      <button onClick={() => { saveAiResult(saveName, text); toast('Saqlandi!', 'success') }}
+      <button onClick={() => onSave(text)}
         className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">
         💾 Saqlash
       </button>
@@ -105,6 +107,10 @@ export default function YuristPage() {
   const [fixFileLoading, setFixFileLoading] = useState(false)
   const [fixEditedText, setFixEditedText] = useState('')
   const [fixEditMode, setFixEditMode] = useState(false)
+  const [savedPanelKey, setSavedPanelKey] = useState(0)
+  const [saveContractModal, setSaveContractModal] = useState<{ content: string; tur: string; raqam: string; sana: string } | null>(null)
+  const [saveContractCp, setSaveContractCp] = useState('')
+  const [saveContractLoading, setSaveContractLoading] = useState(false)
 
   const contractList = contracts.filter(c => c.organization_id === activeOrg?.id)
 
@@ -152,6 +158,72 @@ export default function YuristPage() {
       return
     }
     setHubError(".txt yoki .docx fayl yuklang")
+  }
+
+  async function saveToDb(featureKey: string, title: string, content: string) {
+    if (!activeOrg?.id) { toast('Tashkilot tanlanmagan', 'error'); return }
+    const result = await saveAiDocument({
+      organization_id: activeOrg.id,
+      section: 'yurist',
+      feature_key: featureKey,
+      title,
+      content,
+      meta: {},
+    })
+    if (result) { toast('Saqlandi!', 'success'); setSavedPanelKey(k => k + 1) }
+    else toast('Saqlashda xatolik', 'error')
+  }
+
+  async function runTuzatishDirect(contractContent: string) {
+    if (!hasAiAccess()) { openUpgradeModal(); return }
+    setHubFeature('tuzatish')
+    setFixContent(contractContent)
+    setFixFileName('tizimdan_shartnoma.txt')
+    setHubResult(null)
+    setHubError('')
+    setFixEditMode(false)
+    setHubLoading(true)
+    try {
+      const res  = await fetchAi({ type: 'tuzatish', lang, content: contractContent })
+      const data = await res.json()
+      if (data.error === 'premium_required') { openUpgradeModal(); return }
+      if (!res.ok || data.error) { setHubError(data.error || 'Xatolik'); return }
+      const result = data.result
+      if (!result || typeof result !== 'object') { setHubError("AI bo'sh natija qaytardi."); return }
+      setHubResult({ _type: 'tuzatish', ...result } as HubResult)
+      setFixEditedText((result as TuzatishResult).tuzatilgan_shartnoma || '')
+    } catch {
+      setHubError('Serverga ulanishda xatolik')
+    } finally {
+      setHubLoading(false)
+    }
+  }
+
+  async function saveContractToSystem() {
+    if (!saveContractModal || !activeOrg?.id) return
+    setSaveContractLoading(true)
+    try {
+      const today = new Date().toISOString().slice(0, 10)
+      const { data: { user } } = await supabase.auth.getUser()
+      const { error } = await supabase.from('contracts').insert({
+        organization_id: activeOrg.id,
+        counterparty_id: saveContractCp || null,
+        contract_type: saveContractModal.tur || 'boshqa',
+        contract_number: saveContractModal.raqam || `AI-${Date.now()}`,
+        contract_date: saveContractModal.sana || today,
+        amount: 0,
+        status: 'draft',
+        content: saveContractModal.content,
+        user_id: user?.id,
+      })
+      if (error) { toast(error.message, 'error'); return }
+      toast("Shartnoma tizimga saqlandi!", 'success')
+      setSaveContractModal(null)
+      setSaveContractCp('')
+      reloadContracts()
+    } finally {
+      setSaveContractLoading(false)
+    }
   }
 
   // Unique counterparties from contractList
@@ -626,7 +698,7 @@ export default function YuristPage() {
                     {(hubResult.muhim_bandlar as string[]).map((s, i) => <div key={i} className="text-sm text-gray-200">• {s}</div>)}
                   </div>
                 )}
-                <ResultActions text={hubResult.xulosa} label="xulosa" saveName="Yurist xulosa" onPreview={setPreviewText} toast={toast} />
+                <ResultActions text={hubResult.xulosa} label="xulosa" onPreview={setPreviewText} onSave={t => saveToDb('xulosa', 'Yurist xulosa', t)} />
               </div>
             )}
 
@@ -634,7 +706,7 @@ export default function YuristPage() {
               <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                   <div className="text-xs text-gray-500">Tarjima</div>
-                  <ResultActions text={hubResult.tarjima} label="tarjima" saveName="Tarjima" onPreview={setPreviewText} toast={toast} />
+                  <ResultActions text={hubResult.tarjima} label="tarjima" onPreview={setPreviewText} onSave={t => saveToDb('tarjima', 'Tarjima', t)} />
                 </div>
                 <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.tarjima || '')}</pre>
               </div>
@@ -667,7 +739,7 @@ export default function YuristPage() {
                       ? `\nXatolar:\n${(hubResult.xatolar as { xato: string; togri: string; izoh: string }[]).map(x => `❌ ${x.xato} → ✅ ${x.togri}\n   ${x.izoh}`).join('\n')}`
                       : '',
                   ].filter(Boolean).join('\n')}
-                  label="grammatika" saveName="Grammatika tekshiruvi" onPreview={setPreviewText} toast={toast}
+                  label="grammatika" onPreview={setPreviewText} onSave={t => saveToDb('grammatika', 'Grammatika tekshiruvi', t)}
                 />
               </div>
             )}
@@ -716,8 +788,15 @@ export default function YuristPage() {
                     (hubResult.yuridik_xatarlar as { daraja: string; tavsif: string }[])?.length ? `\nYuridik xatarlar:\n${(hubResult.yuridik_xatarlar as { daraja: string; tavsif: string }[]).map(x => `[${x.daraja}] ${x.tavsif}`).join('\n')}` : '',
                     (hubResult.tavsiyalar as string[])?.length ? `\nTavsiyalar:\n${(hubResult.tavsiyalar as string[]).map(s => '• ' + s).join('\n')}` : '',
                   ].filter(Boolean).join('\n')}
-                  label="tahlil" saveName="Yurist tahlil" onPreview={setPreviewText} toast={toast}
+                  label="tahlil" onPreview={setPreviewText} onSave={t => saveToDb('tahlil', 'Chuqur tahlil', t)}
                 />
+                {hubContract && contracts.find(c => c.id === hubContract)?.content?.trim() && (
+                  <button
+                    onClick={() => runTuzatishDirect(contracts.find(c => c.id === hubContract)?.content || '')}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold border border-orange-600/50 text-orange-400 hover:bg-orange-900/20 transition">
+                    🔧 Ushbu kamchiliklarni shartnomada tuzatish →
+                  </button>
+                )}
               </div>
             )}
 
@@ -742,7 +821,7 @@ export default function YuristPage() {
                     `Javob: ${String(hubResult.javob || '')}`,
                     hubResult.havola && String(hubResult.havola) !== 'shartnomaning qaysi bandiga tegishli' ? `📍 ${String(hubResult.havola)}` : '',
                   ].filter(Boolean).join('\n')}
-                  label="savol-javob" saveName="Yurist javob" onPreview={setPreviewText} toast={toast}
+                  label="savol-javob" onPreview={setPreviewText} onSave={t => saveToDb('qa', 'Yurist javob', t)}
                 />
               </div>
             )}
@@ -752,7 +831,7 @@ export default function YuristPage() {
                 {Boolean(hubResult.band_nomi) && <div className="text-blue-400 text-xs font-semibold">{String(hubResult.band_nomi)}</div>}
                 <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.band || '')}</pre>
                 <div className="flex items-center gap-3 flex-wrap">
-                  <ResultActions text={hubResult.band} label="band" saveName="Yuridik band" onPreview={setPreviewText} toast={toast} />
+                  <ResultActions text={hubResult.band} label="band" onPreview={setPreviewText} onSave={t => saveToDb('clause', 'Yuridik band', t)} />
                   {hubContract && (
                     <button onClick={() => addClauseToContract(String(hubResult.band || ''))} disabled={addingClause}
                       className="text-xs bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg font-semibold transition">
@@ -789,11 +868,16 @@ export default function YuristPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="text-xs text-gray-500">{Number(hubResult.bandlar_soni || 0)} ta band</div>
-                  <ResultActions text={hubResult.shartnoma} label="shartnoma" saveName="AI shartnoma" onPreview={setPreviewText} toast={toast} />
+                  <ResultActions text={hubResult.shartnoma} label="shartnoma" onPreview={setPreviewText} onSave={t => saveToDb('write', 'AI shartnoma', t)} />
                 </div>
                 <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 max-h-96 overflow-y-auto">
                   <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.shartnoma || '')}</pre>
                 </div>
+                <button
+                  onClick={() => setSaveContractModal({ content: hubResult.shartnoma, tur: hubWriteDetails.tur, raqam: hubWriteDetails.shartnoma_raqam, sana: hubWriteDetails.sana })}
+                  className="w-full py-2.5 rounded-xl text-sm font-semibold border border-emerald-600/50 text-emerald-400 hover:bg-emerald-900/30 transition">
+                  📂 Tizimga shartnoma sifatida saqlash →
+                </button>
               </div>
             )}
 
@@ -845,7 +929,12 @@ export default function YuristPage() {
                   )}
                 </div>
 
-                <ResultActions text={fixEditedText} label="tuzatilgan_shartnoma" saveName="Tuzatilgan shartnoma" onPreview={setPreviewText} toast={toast} />
+                <ResultActions text={fixEditedText} label="tuzatilgan_shartnoma" onPreview={setPreviewText} onSave={t => saveToDb('tuzatish', 'Tuzatilgan shartnoma', t)} />
+                <button
+                  onClick={() => setSaveContractModal({ content: fixEditedText, tur: 'boshqa', raqam: '', sana: new Date().toISOString().slice(0, 10) })}
+                  className="w-full py-2.5 rounded-xl text-sm font-semibold border border-emerald-600/50 text-emerald-400 hover:bg-emerald-900/30 transition">
+                  📂 Tizimga shartnoma sifatida saqlash →
+                </button>
               </div>
             )}
 
@@ -866,6 +955,67 @@ export default function YuristPage() {
             className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
             Pro versiyani olish →
           </button>
+        </div>
+      )}
+
+      {/* Saved documents panel */}
+      {activeOrg?.id && (
+        <SavedDocumentsPanel orgId={activeOrg.id} section="yurist" accentColor="blue" refreshKey={savedPanelKey} />
+      )}
+
+      {/* Save to contracts modal */}
+      {saveContractModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B]">
+              <h3 className="font-semibold text-white">📂 Tizimga shartnoma sifatida saqlash</h3>
+              <button onClick={() => { setSaveContractModal(null); setSaveContractCp('') }}
+                className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
+            </div>
+            <div className="p-6 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Shartnoma raqami</label>
+                  <input value={saveContractModal.raqam}
+                    onChange={e => setSaveContractModal({ ...saveContractModal, raqam: e.target.value })}
+                    placeholder="2025/01"
+                    className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600"/>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Sana</label>
+                  <input type="date" value={saveContractModal.sana}
+                    onChange={e => setSaveContractModal({ ...saveContractModal, sana: e.target.value })}
+                    className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600"/>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Shartnoma turi</label>
+                <select value={saveContractModal.tur}
+                  onChange={e => setSaveContractModal({ ...saveContractModal, tur: e.target.value })}
+                  className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 cursor-pointer">
+                  {Object.entries(CONTRACT_TYPES_I18N).map(([k, v]) => <option key={k} value={k}>{v[lang]}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Kontragent (ixtiyoriy)</label>
+                <select value={saveContractCp} onChange={e => setSaveContractCp(e.target.value)}
+                  className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 cursor-pointer">
+                  <option value="">— Kontragent tanlanmagan —</option>
+                  {cps.map(cp => <option key={cp.id} value={cp.id}>{cp.name}</option>)}
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={saveContractToSystem} disabled={saveContractLoading}
+                  className="flex-1 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition">
+                  {saveContractLoading ? '⏳ Saqlanmoqda...' : '💾 Saqlash'}
+                </button>
+                <button onClick={() => { setSaveContractModal(null); setSaveContractCp('') }}
+                  className="flex-1 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 py-2.5 rounded-xl text-sm transition">
+                  Bekor qilish
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
