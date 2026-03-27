@@ -294,8 +294,9 @@ export function tplOrindoshlik(f: F, org: Org): string {
   const sana   = fmtD(f.boshlanish_sana)
   const kunlar = blank(f.kunlar, 'dushanba, chorshanba, juma')
   const soat   = blank(f.soat_soni, '4')
+  const raqam  = blank(f.shartnoma_raqam, '___')
 
-  return `TASHQI O'RINDOSHLIK BO'YICHA MEHNAT SHARTNOMASI № ___
+  return `TASHQI O'RINDOSHLIK BO'YICHA MEHNAT SHARTNOMASI № ${raqam}
 
 ${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 

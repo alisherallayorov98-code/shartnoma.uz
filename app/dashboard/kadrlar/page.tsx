@@ -74,6 +74,7 @@ const FEATURES: FeatureConfig[] = [
     title: "Tashqi o'rindoshlik shartnomasi",
     description: "Asosiy ish joyini saqlab, qo'shimcha ravishda ishlash uchun mehnat shartnomasi",
     fields: [
+      { key: 'shartnoma_raqam', label: 'Shartnoma raqami', placeholder: '02/2026-OR', optional: true },
       { key: 'xodim_ism',  label: 'Xodim F.I.O.',       placeholder: 'Karimov Jasur Hamidovich' },
       { key: 'jshshir',    label: 'JSHSHIR (14 raqam)', placeholder: '12345678901234' },
       { key: 'passport',   label: 'Pasport seriya/raqam', placeholder: 'AB 1234567' },
