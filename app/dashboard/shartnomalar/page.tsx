@@ -527,7 +527,7 @@ export default function ShartnomalarPage() {
         a.download = `shartnoma-${c.contract_number || 'yangi'}.docx`; a.click()
         URL.revokeObjectURL(url)
         toast("Word fayl yuklab olindi. Telegramda hamkorga yuboring.", 'info')
-        window.open('https://web.telegram.org', '_blank')
+        window.open('tg://', '_blank')
         return
       }
 
@@ -550,7 +550,7 @@ export default function ShartnomalarPage() {
       ].join('\n')
 
       window.open(
-        `https://t.me/share/url?url=${encodeURIComponent(signedData.signedUrl)}&text=${encodeURIComponent(text)}`,
+        `tg://msg_url?url=${encodeURIComponent(signedData.signedUrl)}&text=${encodeURIComponent(text)}`,
         '_blank'
       )
     } catch {
