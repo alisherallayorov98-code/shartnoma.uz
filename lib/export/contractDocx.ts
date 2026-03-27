@@ -224,6 +224,26 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
     rows: [new TableRow({ children: [orgCell(label1, c.organizations), orgCell(label2, c.counterparties)] })],
   })
 
+  // Simple signature table for spec appendix — only name, director, signature, stamp
+  function specOrgCell(title: string, org: OrgLike) {
+    return new TableCell({
+      borders: cellBorders,
+      margins: { top: 160, bottom: 160, left: 220, right: 220 },
+      children: [
+        new Paragraph({ children: [new TextRun({ ...B, text: title, size: 24 })], spacing: { after: 80 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: org?.name || '___', size: 22 })], spacing: { after: 200 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: `Rahbar: ${org?.director_name || '___'}`, size: 20 })], spacing: { after: 240 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: '_________________________', size: 22 })], spacing: { after: 20 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: 'M.O.', size: 20 })], spacing: { after: 0 } }),
+      ],
+    })
+  }
+
+  const specSigTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [new TableRow({ children: [specOrgCell(label1, c.organizations), specOrgCell(label2, c.counterparties)] })],
+  })
+
   const footer = new Footer({
     children: [new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -332,7 +352,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
       children: [new TextRun({ text: "Ushbu Protokol Shartnomaning ajralmas qismi hisoblanadi va ikki nusxada tuzilgan.", size: 20, font: F, italics: true })],
     }),
     new Paragraph({ text: '', spacing: { after: 240 } }),
-    sigTable,
+    specSigTable,
   ] : []
 
   const doc = new Document({
