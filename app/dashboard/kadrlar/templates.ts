@@ -1058,3 +1058,182 @@ Xodim imzo qo'yishdan bosh tortsa, dalolatnoma tuziladi va buyruq yopiq
 xatda pochta orqali yuboriladi (MK 182 5-qismi).
 `
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 11. XIZMAT SAFARI BUYRUG'I
+// Huquqiy asos: MK 166–170-moddalar (xizmat safari);
+//               "Xizmat safarlariga yuborish tartibi to'g'risida" Nizom (2018)
+// ═══════════════════════════════════════════════════════════════════════════════
+export function tplSafariBuyruq(f: F, org: Org): string {
+  const sana        = fmtD(f.buyruq_sana)
+  const raqam       = blank(f.buyruq_raqam, '___')
+  const safBosh     = fmtD(f.safari_bosh)
+  const safTugash   = fmtD(f.safari_tugash)
+  const bolim       = f.bolim ? ` "${f.bolim}" bo'limi,` : ''
+  const xarajat     = blank(f.xarajat_manba, "tashkilot hisobidan")
+
+  // Kunlar soni
+  let kunlar = '___'
+  if (f.safari_bosh && f.safari_tugash) {
+    const d1 = new Date(f.safari_bosh)
+    const d2 = new Date(f.safari_tugash)
+    const diff = Math.round((d2.getTime() - d1.getTime()) / 86400000) + 1
+    if (diff > 0) kunlar = String(diff)
+  }
+
+  return `${org.name}
+INN: ${org.inn}
+
+════════════════════════════════════════════════════════════════
+                    BUYRUQ № ${raqam}
+                    "${sana}"
+
+         XIZMAT SAFARIGA YUBORISH TO'G'RISIDA
+════════════════════════════════════════════════════════════════
+
+O'QITAMAN / BUYURAMAN:
+
+${blank(f.xodim_ism)}, JSHSHIR: ${blank(f.jshshir, '______________')},
+"${blank(f.lavozim)}" lavozimi,${bolim}
+${safBosh} sanadan ${safTugash} sanagacha (${kunlar} kun)
+${blank(f.safari_manzil)} ga xizmat safariga YUBORILSIN.
+
+Safari maqsadi:
+${blank(f.safari_maqsad, '________________')}
+
+Safari xarajatlari: ${xarajat}.
+
+Kadrlar bo'limiga topshiriqlar:
+  1. Safari topshirig'i (komandirovka guvohnomasi) rasmiylashtirilib,
+     xodimga topshirilsin;
+  2. Safarga ketish va qaytish sanasi mehnat daftarchasiga qayd etilsin;
+  3. Safar tugagach 3 (uch) ish kuni ichida avans hisoboti taqdim etilsin
+     (MK 169-moddasi).
+
+Asoslar:
+  — O'zbekiston Respublikasi Mehnat kodeksining 166–170-moddalari;
+  — Xizmat safarlariga yuborish tartibi to'g'risida amaldagi Nizom.
+
+════════════════════════════════════════════════════════════════
+Direktor:  _________________________  ${org.director_name}
+           M.O.
+
+Buyruq bilan tanishtirildi:
+  Kadrlar bo'limi: _________________________  "${sana}"
+  Xodim: _________________________  ${blank(f.xodim_ism)}  "${sana}"
+`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 12. QO'SHIMCHA KELISHUV (MEHNAT SHARTNOMASIGA O'ZGARTIRISH)
+// Huquqiy asos: MK 75-moddasi (shartlarni o'zgartirish);
+//               FK 354-moddasi (shartnomani o'zgartirish tartibi)
+// ═══════════════════════════════════════════════════════════════════════════════
+export function tplQoshimchaKelishuv(f: F, org: Org): string {
+  const sana        = fmtD(f.kelishuv_sana)
+  const raqam       = blank(f.kelishuv_raqam, '___')
+  const aslRaq      = blank(f.asl_shartnoma_raq, '___')
+  const aslSan      = fmtD(f.asl_shartnoma_san)
+  const kuchga      = fmtD(f.kuchga_kirish)
+
+  return `QO'SHIMCHA KELISHUV № ${raqam}
+MEHNAT SHARTNOMASIGA
+
+${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
+
+Ushbu Qo'shimcha kelishuv quyidagi tomonlar o'rtasida tuzildi:
+
+ISH BERUVCHI: ${org.name}, INN: ${org.inn},
+              direktor ${org.director_name} nomidan,
+
+XODIM:        ${blank(f.xodim_ism)}, JSHSHIR: ${blank(f.jshshir, '______________')},
+
+birgalikda "Tomonlar" deb ataluvchilar.
+
+1. KELISHUV PREDMETI
+
+1.1. Tomonlar ${aslSan} sanali № ${aslRaq}-sonli mehnat shartnomasiga
+     quyidagi o'zgartirishlarni kiritishga kelishdi:
+
+${blank(f.ozgartirishlar, '________________')}
+
+1.2. Ushbu o'zgartirishlar ${kuchga} sanadan kuchga kiradi.
+
+2. UMUMIY QOIDALAR
+
+2.1. Ushbu Qo'shimcha kelishuvda ko'rsatilmagan barcha qoidalarda
+     asosiy mehnat shartnomasi (№ ${aslRaq}) o'z kuchini saqlab qoladi.
+2.2. Ushbu Qo'shimcha kelishuv ikki nusxada tuzilgan, har bir tomon
+     uchun bittadan; ikkala nusxa ham teng yuridik kuchga ega.
+2.3. Asoslar: O'zbekiston Respublikasi Mehnat kodeksining 75-moddasi;
+     Fuqarolik kodeksining 354-moddasi.
+
+════════════════════════════════════════════════════════════════
+ISH BERUVCHI:                          XODIM:
+${org.name}                            ${blank(f.xodim_ism)}
+INN: ${org.inn}                        JSHSHIR: ${blank(f.jshshir, '______________')}
+
+_________________________              _________________________
+${org.director_name}                   "${sana}"
+M.O.
+`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 13. MEHNAT DAFTARCHASI YOZUVI (SHAKL)
+// Huquqiy asos: MK 81-moddasi; O'zR Vazirlar Mahkamasi 2022-yil 262-sonli
+//               Qaror (mehnat daftarchasini yuritish tartibi)
+// ═══════════════════════════════════════════════════════════════════════════════
+export function tplMehnatDaftarcha(f: F, org: Org): string {
+  const yozuvSana   = fmtD(f.yozuv_sana)
+  const buyruqSana  = fmtD(f.buyruq_sana)
+  const raqam       = blank(f.yozuv_raqam, '___')
+  const buyruqRaq   = blank(f.buyruq_raqam, '___')
+  const bolim       = f.bolim ? `"${f.bolim}" bo'limi, ` : ''
+  const tur         = blank(f.yozuv_turi, 'Ishga qabul')
+  const mkModda     = f.mk_modda ? `MK ${f.mk_modda}-moddasi` : 'O\'zR Mehnat kodeksi'
+
+  // Tur asosida yozuv matni
+  const turMatn: Record<string, string> = {
+    'Ishga qabul':             `${org.name} korxonasiga ${bolim}"${blank(f.lavozim)}" lavozimiga qabul qilindi`,
+    "Ishdan bo'shatish":       `${org.name} korxonasidan ${bolim}"${blank(f.lavozim)}" lavozimidan bo'shatildi`,
+    "Lavozim o'zgartirish":    `${org.name} korxonasida "${blank(f.lavozim)}" lavozimiga o'tkazildi`,
+  }
+  const yozuvMatn = turMatn[tur] || `${org.name}: ${tur} — "${blank(f.lavozim)}" lavozimi`
+
+  return `MEHNAT DAFTARCHASI YOZUVI
+(Rasmiy shakl — O'zR VMQ 2022-yil 262-son asosida)
+
+════════════════════════════════════════════════════════════════
+Xodim: ${blank(f.xodim_ism)}
+
+YOZUV MA'LUMOTLARI:
+────────────────────────────────────────────────────────────────
+Tartib №    : ${raqam}
+Yozuv sanasi: ${yozuvSana}
+Yozuv mazmuni:
+  ${yozuvMatn}.
+
+Asosiy hujjat:
+  Buyruq № ${buyruqRaq}, "${buyruqSana}" sanali.
+  Huquqiy asos: ${mkModda}.
+
+════════════════════════════════════════════════════════════════
+JADVAL KO'RINISHI (Daftarchaga kiritish uchun):
+────────────────────────────────────────────────────────────────
+ №   │ Sana       │ Ma'lumot                             │ Hujjat
+─────┼────────────┼──────────────────────────────────────┼──────────────
+ ${raqam.padEnd(3)} │ ${yozuvSana} │ ${yozuvMatn.slice(0, 36).padEnd(36)} │ Buyruq № ${buyruqRaq}
+─────┴────────────┴──────────────────────────────────────┴──────────────
+
+KADRLAR BO'LIMI TASDIQI:
+════════════════════════════════════════════════════════════════
+Kadrlar bo'limi mudiri: _________________________
+Ism-sharif:             ________________
+Sana:                   "${yozuvSana}"
+Muhr:                   M.O.
+
+IZOH: Ushbu shakl mehnat daftarchasiga yozuv kiritish uchun
+namunadir. Asl yozuv belgilangan tartibda qo'lda kiritiladi.
+`
+}

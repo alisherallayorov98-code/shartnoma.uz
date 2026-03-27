@@ -10,18 +10,20 @@ import {
   tplMehnatShartnoma, tplOrindoshlik, tplFuqaroviy, tplMaxfiylik,
   tplBuyruqQabul, tplBuyruqBoshtash, tplTatilBuyruq,
   tplBuyruqLavozim, tplBuyruqMukofot, tplBuyruqJazo,
+  tplSafariBuyruq, tplQoshimchaKelishuv, tplMehnatDaftarcha,
 } from './templates'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type KadrFeature =
   | 'mehnat_shartnoma' | 'orindoshlik_shartnoma' | 'fuqaroviy_shartnoma' | 'maxfiylik_shartnoma'
   | 'buyruq_qabul' | 'buyruq_boshtash' | 'tatil_buyruq' | 'buyruq_lavozim'
-  | 'buyruq_mukofot' | 'buyruq_jazo'
+  | 'buyruq_mukofot' | 'buyruq_jazo' | 'safari_buyruq'
+  | 'qoshimcha_kelishuv' | 'mehnat_daftarcha'
   | 'ishonchnoma' | 'lavozim_yoriqnoma'
 
 type Category = 'shartnoma' | 'buyruq' | 'boshqa'
 
-type FieldDef = { key: string; label: string; placeholder: string; type?: string; textarea?: boolean; optional?: boolean }
+type FieldDef = { key: string; label: string; placeholder: string; type?: string; textarea?: boolean; optional?: boolean; isSelect?: boolean; options?: { value: string; label: string }[] }
 
 type FeatureConfig = {
   key: KadrFeature
@@ -230,6 +232,68 @@ const FEATURES: FeatureConfig[] = [
     ],
   },
 
+  {
+    key: 'safari_buyruq',
+    category: 'buyruq',
+    icon: '✈️',
+    title: "Xizmat safari buyrug'i",
+    description: "Xodimni xizmat safariga yuborish to'g'risida rasmiy buyruq (MK 166-170-mod.)",
+    fields: [
+      { key: 'xodim_ism',       label: 'Xodim F.I.O.',                    placeholder: 'Qodirov Sardor Hamidovich' },
+      { key: 'jshshir',         label: 'JSHSHIR (14 raqam)',               placeholder: '12345678901234' },
+      { key: 'lavozim',         label: 'Lavozim',                          placeholder: 'Savdo menejeri' },
+      { key: 'bolim',           label: "Bo'lim (ixtiyoriy)",               placeholder: "Savdo bo'limi", optional: true },
+      { key: 'safari_manzil',   label: 'Safari manzili (shahar/mamlakat)', placeholder: 'Samarqand shahri' },
+      { key: 'safari_maqsad',   label: 'Safari maqsadi',                   placeholder: "Shartnoma imzolash, mijozlar bilan uchrashuv", textarea: true },
+      { key: 'safari_bosh',     label: 'Safari boshlanishi',               placeholder: '', type: 'date' },
+      { key: 'safari_tugash',   label: 'Safari tugashi',                   placeholder: '', type: 'date' },
+      { key: 'xarajat_manba',   label: "Xarajat manbai (ixtiyoriy)",       placeholder: "Tashkilot hisobidan", optional: true },
+      { key: 'buyruq_sana',     label: 'Buyruq sanasi',                    placeholder: '', type: 'date' },
+      { key: 'buyruq_raqam',    label: "Buyruq raqami (ixtiyoriy)",        placeholder: '15-k', optional: true },
+    ],
+  },
+
+  // ── Boshqa hujjatlar ──
+  {
+    key: 'qoshimcha_kelishuv',
+    category: 'boshqa',
+    icon: '📎',
+    title: "Qo'shimcha kelishuv",
+    description: "Mehnat shartnomasiga o'zgartirish kiritish uchun ikki tomonlama kelishuv (MK 75-mod.)",
+    fields: [
+      { key: 'kelishuv_raqam',    label: "Kelishuv raqami (ixtiyoriy)",  placeholder: '01/2026-KK', optional: true },
+      { key: 'kelishuv_sana',     label: 'Kelishuv sanasi',              placeholder: '', type: 'date' },
+      { key: 'xodim_ism',         label: 'Xodim F.I.O.',                 placeholder: 'Rahimov Bobur Aliyevich' },
+      { key: 'jshshir',           label: 'JSHSHIR (14 raqam)',           placeholder: '12345678901234' },
+      { key: 'asl_shartnoma_raq', label: 'Asl shartnoma raqami',        placeholder: '01/2024-MS' },
+      { key: 'asl_shartnoma_san', label: 'Asl shartnoma sanasi',        placeholder: '', type: 'date' },
+      { key: 'ozgartirishlar',    label: "O'zgartirishlar mazmuni",      placeholder: "Ish haqi 5 000 000 so'mdan 7 000 000 so'mga oshirilsin; lavozim nomi o'zgartirilsin...", textarea: true },
+      { key: 'kuchga_kirish',     label: 'Kuchga kirish sanasi',         placeholder: '', type: 'date' },
+    ],
+  },
+  {
+    key: 'mehnat_daftarcha',
+    category: 'boshqa',
+    icon: '📒',
+    title: "Mehnat daftarchasi yozuvi",
+    description: "Mehnat daftarchasiga qabul/bo'shatish/lavozim o'zgartirish yozuvi shakli (MK 81-mod.)",
+    fields: [
+      { key: 'xodim_ism',      label: 'Xodim F.I.O.',                 placeholder: 'Umarov Sardor Bekovich' },
+      { key: 'yozuv_turi', label: 'Yozuv turi', placeholder: '', isSelect: true, options: [
+        { value: 'Ishga qabul',          label: 'Ishga qabul' },
+        { value: "Ishdan bo'shatish",    label: "Ishdan bo'shatish" },
+        { value: "Lavozim o'zgartirish", label: "Lavozim o'zgartirish" },
+      ]},
+      { key: 'lavozim',        label: 'Lavozim',                      placeholder: 'Bosh muhandis' },
+      { key: 'bolim',          label: "Bo'lim (ixtiyoriy)",            placeholder: "Ishlab chiqarish bo'limi", optional: true },
+      { key: 'yozuv_sana',     label: 'Yozuv sanasi',                 placeholder: '', type: 'date' },
+      { key: 'yozuv_raqam',    label: 'Yozuv tartib raqami',          placeholder: '12' },
+      { key: 'buyruq_raqam',   label: "Asosiy buyruq raqami",         placeholder: '14-k' },
+      { key: 'buyruq_sana',    label: "Asosiy buyruq sanasi",         placeholder: '', type: 'date' },
+      { key: 'mk_modda',       label: "MK moddasi (ixtiyoriy)",       placeholder: '76', optional: true },
+    ],
+  },
+
   // ── Boshqa hujjatlar (AI) ──
   {
     key: 'ishonchnoma',
@@ -336,6 +400,9 @@ export default function KadrlarPage() {
           case 'buyruq_lavozim':        text = tplBuyruqLavozim(formData, org); break
           case 'buyruq_mukofot':        text = tplBuyruqMukofot(formData, org); break
           case 'buyruq_jazo':           text = tplBuyruqJazo(formData, org); break
+          case 'safari_buyruq':         text = tplSafariBuyruq(formData, org); break
+          case 'qoshimcha_kelishuv':    text = tplQoshimchaKelishuv(formData, org); break
+          case 'mehnat_daftarcha':      text = tplMehnatDaftarcha(formData, org); break
           default: text = ''
         }
       } else {
@@ -534,6 +601,13 @@ export default function KadrlarPage() {
                         rows={3}
                         className={`${inp} resize-y`}
                       />
+                    ) : field.isSelect ? (
+                      <select
+                        value={formData[field.key] || field.options?.[0]?.value || ''}
+                        onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        className={inp}>
+                        {field.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
                     ) : (
                       <input
                         type={field.type || 'text'}
