@@ -74,7 +74,9 @@ export function tplMehnatShartnoma(f: F, org: Org, tur: string): string {
 
   const asosiyRaqam = f.sinov ? '4' : '3'
 
-  return `MEHNAT SHARTNOMASI № ___
+  const raqam = blank(f.shartnoma_raqam, '___')
+
+  return `MEHNAT SHARTNOMASI № ${raqam}
 (${turText})
 
 ${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"

@@ -54,6 +54,7 @@ const FEATURES: FeatureConfig[] = [
     title: 'Mehnat shartnomasi',
     description: "Doimiy, muddatli, yarim stavkali, masofaviy yoki amaliyot — to'liq matn avtomatik",
     fields: [
+      { key: 'shartnoma_raqam', label: 'Shartnoma raqami', placeholder: '01/2026-MS', optional: true },
       { key: 'xodim_ism',     label: 'Xodim F.I.O.',       placeholder: 'Rahimov Bobur Aliyevich' },
       { key: 'jshshir',       label: 'JSHSHIR (14 raqam)', placeholder: '12345678901234' },
       { key: 'passport',      label: 'Pasport seriya/raqam', placeholder: 'AB 1234567', optional: true },
