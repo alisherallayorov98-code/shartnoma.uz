@@ -575,10 +575,11 @@ M.O.                                       Sana: ${sana}
 export function tplMaxfiylik(f: F, org: Org): string {
   const sana   = fmtD()
   const muddat = blank(f.muddat, '3 yil')
+  const raqam  = blank(f.shartnoma_raqam, '___')
 
   return `MAXFIYLIK (KONFIDENSIALLIK) SHARTNOMASI
 (Non-Disclosure Agreement — NDA)
-№ ___
+№ ${raqam}
 
 ${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 

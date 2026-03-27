@@ -112,6 +112,7 @@ const FEATURES: FeatureConfig[] = [
     title: 'Maxfiylik (NDA) shartnomasi',
     description: "Tijorat siri va maxfiy ma'lumotlarni muhofaza qilish uchun konfidensiallik shartnomasi",
     fields: [
+      { key: 'shartnoma_raqam', label: 'Shartnoma raqami', placeholder: '04/2026-NDA', optional: true },
       { key: 'xodim_ism', label: 'Xodim F.I.O.',        placeholder: 'Nazarov Dilshod Karimovich' },
       { key: 'jshshir',   label: 'JSHSHIR (14 raqam)', placeholder: '12345678901234' },
       { key: 'passport',  label: 'Pasport seriya/raqam', placeholder: 'AB 1234567', optional: true },
