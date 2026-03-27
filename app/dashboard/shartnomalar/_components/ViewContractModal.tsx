@@ -120,13 +120,18 @@ export default function ViewContractModal({
           </div>
 
           {/* Contract text */}
-          {viewContract.content && (
-            <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
-              <pre className="text-sm text-gray-200 whitespace-pre-wrap font-sans leading-relaxed">
-                {fillPlaceholders(viewContract.content, viewContract)}
-              </pre>
-            </div>
-          )}
+          {viewContract.content && (() => {
+            const filled = fillPlaceholders(viewContract.content, viewContract)
+            const rekvizitIdx = filled.search(/\n[ \t]*(\d+\.\s*)?(TOMONLARNING\s+(REKVIZITLARI|MA['']LUMOTLARI|IMZOLARI)|TOMONLAR\s+(IMZOSI|REKVIZIT))/i)
+            const displayText = rekvizitIdx !== -1 ? filled.slice(0, rekvizitIdx) : filled
+            return (
+              <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
+                <pre className="text-sm text-gray-200 whitespace-pre-wrap font-sans leading-relaxed">
+                  {displayText}
+                </pre>
+              </div>
+            )
+          })()}
 
           {/* Spec items */}
           {viewContract.spec_items && viewContract.spec_items.length > 0 && (
