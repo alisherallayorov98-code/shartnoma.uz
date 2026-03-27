@@ -14,7 +14,7 @@ type BuxFeature =
   | 'akt_sverki' | 'avans_hisobot' | 'xarajat_hisobot' | 'jarima_hisobi'
   | 'tolov_grafigi_calc' | 'faktura_builder'
 
-type FieldDef = { key: string; label: string; placeholder: string; type?: string; isCpField?: boolean; isSelect?: boolean; options?: { value: string; label: string }[]; hint?: string }
+type FieldDef = { key: string; label: string; placeholder: string; type?: string; isCpField?: boolean; isContractField?: boolean; isSelect?: boolean; options?: { value: string; label: string }[]; hint?: string }
 
 type FeatureConfig = {
   key: BuxFeature
@@ -36,9 +36,9 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'dalolatnoma',
     resultField: 'dalolatnoma',
     fields: [
+      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2025/03-15", isContractField: true },
       { key: 'kontragentar_ism', label: "Buyurtmachi (kontragent)", placeholder: "Raqamli Texnologiyalar MChJ", isCpField: true },
       { key: 'xizmat_turi', label: "Bajarilgan xizmat/ish turi", placeholder: "Dasturiy ta'minot ishlab chiqish xizmati" },
-      { key: 'shartnoma_raqam', label: "Shartnoma raqami", placeholder: "2025/03-15" },
       { key: 'summa', label: "Summa (so'm)", placeholder: "15 000 000" },
       { key: 'sana', label: "Dalolatnoma sanasi", placeholder: "2025-03-20", type: 'date' },
     ],
@@ -51,9 +51,9 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'talabnoma',
     resultField: 'talabnoma',
     fields: [
+      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2024/08-01", isContractField: true },
       { key: 'qarzdor', label: "Qarzdor tashkilot", placeholder: "ABC Savdo MChJ", isCpField: true },
       { key: 'qarz_summasi', label: "Qarz summasi (so'm)", placeholder: "50 000 000" },
-      { key: 'shartnoma_raqam', label: "Shartnoma raqami", placeholder: "2024/08-01" },
       { key: 'muddat_utgan', label: "Muddati o'tgan kunlar soni", placeholder: "45" },
       { key: 'jarima_foiz', label: "Kunlik jarima foizi (%)", placeholder: "0.1", hint: "FK 350-mod.: 0.05%–0.5% oralig'ida" },
       { key: 'oxirgi_muhlat', label: "Javob berish muhlati (ish kuni)", placeholder: "10" },
@@ -67,10 +67,10 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'talabnoma',
     resultField: 'talabnoma',
     fields: [
+      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2025/01-05", isContractField: true },
       { key: 'qarzdor', label: "Qarzdor korxona", placeholder: "Yulduz Savdo AJ", isCpField: true },
       { key: 'qarz_summasi', label: "Qarz summasi (so'm)", placeholder: "80 000 000" },
       { key: 'qarz_sababi', label: "Qarz sababi/asosi", placeholder: "Tovarlar yetkazib berilgan, shartnoma 2025/01-05 bo'yicha to'lov kechiktirilgan" },
-      { key: 'shartnoma_raqam', label: "Shartnoma raqami", placeholder: "2025/01-05" },
       { key: 'oxirgi_muhlat', label: "Oxirgi to'lov muhlati", placeholder: "2025-05-01", type: 'date' },
       { key: 'sudga_murojaat', label: "Sud ogohlantirish", placeholder: "Ha", isSelect: true, options: [{ value: 'Ha', label: "Ha — sud ogohlantirishini kiritish" }, { value: "Yo'q", label: "Yo'q — oddiy talab xati" }] },
     ],
@@ -83,8 +83,8 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'akt_sverki',
     resultField: 'akt_sverki',
     fields: [
+      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2025/02-10", isContractField: true },
       { key: 'kontragent', label: "Kontragent", placeholder: "Global Solutions LLC", isCpField: true },
-      { key: 'shartnoma_raqam', label: "Shartnoma raqami", placeholder: "2025/02-10" },
       { key: 'davr', label: "Tekshirish davri", placeholder: "2025-yil I chorak (01.01–31.03)" },
       { key: 'debet_summa', label: "Debet (yetkazgan summa)", placeholder: "45 000 000" },
       { key: 'kredit_summa', label: "Kredit (to'langan summa)", placeholder: "30 000 000" },
@@ -134,8 +134,8 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'jarima_hisobi',
     resultField: 'jarima_hisobi',
     fields: [
+      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2024/11-22", isContractField: true },
       { key: 'qarzdor', label: "Qarzdor tashkilot", placeholder: "Beta Qurilish MChJ", isCpField: true },
-      { key: 'shartnoma_raqam', label: "Shartnoma raqami", placeholder: "2024/11-22" },
       { key: 'shartnoma_sana', label: "Shartnoma sanasi", placeholder: "2024-11-22", type: 'date' },
       { key: 'shartnoma_band', label: "Jarima belgilangan band", placeholder: "6.3" },
       { key: 'qarz_summasi', label: "Asosiy qarz (so'm)", placeholder: "35 000 000" },
@@ -174,16 +174,40 @@ export default function BuxgalterPage() {
   const [cpSearch, setCpSearch] = useState<Record<string, string>>({})
   const [cpOpen, setCpOpen] = useState<string | null>(null)
   const cpDropRef = useRef<HTMLDivElement>(null)
+  const [contractSearch, setContractSearch] = useState('')
+  const [contractOpen, setContractOpen] = useState(false)
+  const contractDropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (cpDropRef.current && !cpDropRef.current.contains(e.target as Node)) {
-        setCpOpen(null)
-      }
+      if (cpDropRef.current && !cpDropRef.current.contains(e.target as Node)) setCpOpen(null)
+      if (contractDropRef.current && !contractDropRef.current.contains(e.target as Node)) setContractOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  const orgContracts = contracts.filter(c => c.organization_id === activeOrg?.id)
+
+  function selectContract(c: typeof contracts[0]) {
+    if (!currentFeature?.fields) return
+    const fieldKeys = currentFeature.fields.map(f => f.key)
+    const patch: Record<string, string> = { shartnoma_raqam: c.contract_number }
+    if (c.contract_date) patch.shartnoma_sana = c.contract_date
+    const cpName = c.counterparties?.name || ''
+    if (cpName) {
+      if (fieldKeys.includes('qarzdor')) patch.qarzdor = cpName
+      if (fieldKeys.includes('kontragent')) patch.kontragent = cpName
+      if (fieldKeys.includes('kontragentar_ism')) patch.kontragentar_ism = cpName
+    }
+    if (c.amount) {
+      if (fieldKeys.includes('summa')) patch.summa = String(c.amount)
+      if (fieldKeys.includes('qarz_summasi')) patch.qarz_summasi = String(c.amount)
+    }
+    setFormData(prev => ({ ...prev, ...patch }))
+    setContractOpen(false)
+    setContractSearch('')
+  }
 
   const currentFeature = FEATURES.find(f => f.key === selected)
 
@@ -351,6 +375,53 @@ export default function BuxgalterPage() {
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" ref={cpDropRef}>
                   {currentFeature.fields.map(field => {
+                    if (field.isContractField) {
+                      const search = contractSearch.toLowerCase()
+                      const filtered = orgContracts.filter(c =>
+                        c.contract_number.toLowerCase().includes(search) ||
+                        (c.counterparties?.name || '').toLowerCase().includes(search)
+                      ).slice(0, 10)
+                      const selected = formData['shartnoma_raqam']
+                      return (
+                        <div key={field.key} className="relative sm:col-span-2" ref={contractDropRef}>
+                          <label className="block text-xs text-gray-400 mb-1">{field.label}</label>
+                          <input
+                            type="text"
+                            value={contractOpen ? contractSearch : (selected || '')}
+                            onFocus={() => { setContractOpen(true); setContractSearch(selected || '') }}
+                            onChange={e => { setContractSearch(e.target.value); setFormData(p => ({ ...p, shartnoma_raqam: e.target.value })); setContractOpen(true) }}
+                            placeholder={orgContracts.length ? "Shartnoma raqami kiriting yoki ro'yxatdan tanlang..." : field.placeholder}
+                            className={inp + ' pr-8'}
+                            autoComplete="off"
+                          />
+                          {selected && !contractOpen && (
+                            <button type="button" onClick={() => { setFormData(p => ({ ...p, shartnoma_raqam: '' })); setContractSearch('') }}
+                              className="absolute right-2.5 top-[30px] text-gray-500 hover:text-gray-300 text-xs">✕</button>
+                          )}
+                          {contractOpen && filtered.length > 0 && (
+                            <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+                              {filtered.map(c => (
+                                <button key={c.id} type="button" onMouseDown={() => selectContract(c)}
+                                  className="w-full text-left px-3 py-2.5 hover:bg-[#1F2937] transition border-b border-[#1E293B] last:border-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-white">№ {c.contract_number}</span>
+                                    <span className="text-xs text-gray-500">{c.contract_date}</span>
+                                    {c.status === 'active' && <span className="text-[10px] bg-emerald-600/20 text-emerald-400 rounded px-1">faol</span>}
+                                  </div>
+                                  {c.counterparties?.name && <div className="text-xs text-gray-400 mt-0.5">{c.counterparties.name}</div>}
+                                  {c.amount ? <div className="text-xs text-blue-400/70">{Number(c.amount).toLocaleString('uz-UZ')} so&apos;m</div> : null}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {contractOpen && filtered.length === 0 && contractSearch && (
+                            <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-[#111827] border border-[#1E293B] rounded-lg px-3 py-2 text-xs text-gray-500">
+                              Topilmadi — qo&apos;lda kiriting
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
                     if (field.isSelect) {
                       return (
                         <div key={field.key}>
