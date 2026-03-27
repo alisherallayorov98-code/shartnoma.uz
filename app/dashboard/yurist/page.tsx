@@ -88,7 +88,7 @@ export default function YuristPage() {
   const [hubQuestion, setHubQuestion] = useState('')
   const [hubInstruction, setHubInstruction] = useState('')
   const [hubDescription, setHubDescription] = useState('')
-  const [hubWriteDetails, setHubWriteDetails] = useState({ tur: 'oldi_sotdi', summa: '', org: '', cp: '', extra: '' })
+  const [hubWriteDetails, setHubWriteDetails] = useState({ tur: 'oldi_sotdi', summa: '', org: '', cp: '', extra: '', shartnoma_raqam: '', sana: '' })
   const [writeCpSearch, setWriteCpSearch] = useState('')
   const [writeCpOpen, setWriteCpOpen] = useState(false)
   const [hubCp, setHubCp] = useState('')
@@ -150,7 +150,23 @@ export default function YuristPage() {
       if (hubFeature === 'clause')    body.instruction = hubInstruction
       if (hubFeature === 'tarjima')   body.target_lang = hubTargetLang
       if (hubFeature === 'recommend') { body.description = hubDescription; delete body.content }
-      if (hubFeature === 'write')     { body.details = hubWriteDetails; delete body.content }
+      if (hubFeature === 'write') {
+        const selectedCp = cps.find(c => c.name === hubWriteDetails.cp)
+        body.details = {
+          ...hubWriteDetails,
+          org_inn: activeOrg?.inn || '',
+          org_director: activeOrg?.director_name || '',
+          org_bank: activeOrg?.bank_name || '',
+          org_mfo: activeOrg?.mfo || '',
+          org_address: activeOrg?.address || '',
+          cp_inn: selectedCp?.inn || '',
+          cp_director: selectedCp?.director_name || '',
+          cp_bank: selectedCp?.bank_name || '',
+          cp_mfo: selectedCp?.mfo || '',
+          cp_address: selectedCp?.address || '',
+        }
+        delete body.content
+      }
       const res  = await fetchAi(body)
       const data = await res.json()
       if (data.error === 'premium_required') { openUpgradeModal(); return }
@@ -195,6 +211,7 @@ export default function YuristPage() {
           return (
             <button key={f.key}
               onClick={() => {
+                if (locked) { openUpgradeModal(); return }
                 setHubFeature(f.key); setHubResult(null); setHubError(''); setHubLoading(false)
                 if (!f.needsContract) { setHubContract(''); setHubCp('') }
                 if (f.key === 'write') {
@@ -206,7 +223,7 @@ export default function YuristPage() {
                 hubFeature === f.key
                   ? 'bg-blue-600/10 border-blue-600/50 shadow-lg shadow-blue-900/20'
                   : locked
-                  ? 'bg-[#111827] border-[#1E293B] opacity-60 cursor-default'
+                  ? 'bg-[#111827] border-[#1E293B] opacity-60 hover:border-blue-600/40 cursor-pointer'
                   : 'bg-[#111827] border-[#1E293B] hover:border-blue-600/40'
               }`}>
               {locked && (
@@ -370,6 +387,16 @@ export default function YuristPage() {
               <label className="block text-xs text-gray-400 mb-1">Summa</label>
               <input value={hubWriteDetails.summa} onChange={e => setHubWriteDetails({ ...hubWriteDetails, summa: e.target.value })}
                 placeholder="10 000 000 so'm" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Shartnoma raqami</label>
+              <input value={hubWriteDetails.shartnoma_raqam} onChange={e => setHubWriteDetails({ ...hubWriteDetails, shartnoma_raqam: e.target.value })}
+                placeholder="2025/01" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Sana</label>
+              <input type="date" value={hubWriteDetails.sana} onChange={e => setHubWriteDetails({ ...hubWriteDetails, sana: e.target.value })}
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20"/>
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">Birinchi tomon</label>
@@ -555,6 +582,16 @@ export default function YuristPage() {
                     <div className="text-gray-500 text-xs">{x.izoh}</div>
                   </div>
                 ))}
+                <ResultActions
+                  text={[
+                    `Grammatika tekshiruvi: ${Number(hubResult.xatolar_soni ?? (hubResult.xatolar as unknown[])?.length ?? 0)} ta xato`,
+                    hubResult.umumiy_baho ? `Umumiy baho: ${hubResult.umumiy_baho}` : '',
+                    (hubResult.xatolar as { xato: string; togri: string; izoh: string }[])?.length
+                      ? `\nXatolar:\n${(hubResult.xatolar as { xato: string; togri: string; izoh: string }[]).map(x => `❌ ${x.xato} → ✅ ${x.togri}\n   ${x.izoh}`).join('\n')}`
+                      : '',
+                  ].filter(Boolean).join('\n')}
+                  label="grammatika" saveName="Grammatika tekshiruvi" onPreview={setPreviewText} toast={toast}
+                />
               </div>
             )}
 
@@ -593,6 +630,17 @@ export default function YuristPage() {
                   </div>
                 ))}
                 {(hubResult.tavsiyalar as string[])?.map((s, i) => <div key={i} className="text-gray-200 text-sm">• {s}</div>)}
+                <ResultActions
+                  text={[
+                    `Baho: ${hubResult.baho}`,
+                    hubResult.umumiy,
+                    (hubResult.kuchli_tomonlar as string[])?.length ? `\nKuchli tomonlar:\n${(hubResult.kuchli_tomonlar as string[]).map(s => '• ' + s).join('\n')}` : '',
+                    (hubResult.zaif_tomonlar as string[])?.length ? `\nZaif tomonlar:\n${(hubResult.zaif_tomonlar as string[]).map(s => '• ' + s).join('\n')}` : '',
+                    (hubResult.yuridik_xatarlar as { daraja: string; tavsif: string }[])?.length ? `\nYuridik xatarlar:\n${(hubResult.yuridik_xatarlar as { daraja: string; tavsif: string }[]).map(x => `[${x.daraja}] ${x.tavsif}`).join('\n')}` : '',
+                    (hubResult.tavsiyalar as string[])?.length ? `\nTavsiyalar:\n${(hubResult.tavsiyalar as string[]).map(s => '• ' + s).join('\n')}` : '',
+                  ].filter(Boolean).join('\n')}
+                  label="tahlil" saveName="Yurist tahlil" onPreview={setPreviewText} toast={toast}
+                />
               </div>
             )}
 
@@ -611,6 +659,14 @@ export default function YuristPage() {
                 {Boolean(hubResult.havola) && String(hubResult.havola) !== 'shartnomaning qaysi bandiga tegishli' && (
                   <div className="text-gray-500 text-xs">📍 {String(hubResult.havola)}</div>
                 )}
+                <ResultActions
+                  text={[
+                    `Savol: ${hubQuestion}`,
+                    `Javob: ${String(hubResult.javob || '')}`,
+                    hubResult.havola && String(hubResult.havola) !== 'shartnomaning qaysi bandiga tegishli' ? `📍 ${String(hubResult.havola)}` : '',
+                  ].filter(Boolean).join('\n')}
+                  label="savol-javob" saveName="Yurist javob" onPreview={setPreviewText} toast={toast}
+                />
               </div>
             )}
 
@@ -645,7 +701,7 @@ export default function YuristPage() {
                 <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 text-sm text-gray-200 leading-relaxed">{String(hubResult.tavsiya || '')}</div>
                 {Boolean(hubResult.sabab) && <div className="text-gray-500 text-xs">💡 {String(hubResult.sabab)}</div>}
                 {Boolean(hubResult.qoshimcha_maslahat) && <div className="text-gray-500 text-xs">📌 {String(hubResult.qoshimcha_maslahat)}</div>}
-                <button onClick={() => { setHubFeature('write'); setHubWriteDetails({ ...hubWriteDetails, tur: String(hubResult.tur || 'oldi_sotdi') }); setHubResult(null) }}
+                <button onClick={() => { setHubFeature('write'); setHubWriteDetails({ ...hubWriteDetails, tur: String(hubResult.tur || 'oldi_sotdi'), org: activeOrg?.name || '' }); setHubResult(null) }}
                   className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-xl transition">
                   ✍️ Shu tur bo'yicha shartnoma yoz →
                 </button>
