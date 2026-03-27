@@ -34,17 +34,17 @@ type DividendForm = {
   dividend_davr: string; dividend_jami: string; dividend_tolov_muddat: string
 }
 type XaridForm = {
-  xarid_nima: string; xarid_narx: string; xarid_sotuvchi: string; xarid_maqsad: string
+  xarid_nima: string; xarid_narx: string; xarid_sotuvchi: string; xarid_maqsad: string; moliya_manba: string
 }
 type SotishForm = {
   sotish_nima: string; sotish_inventar: string; sotish_balans: string
-  sotish_xaridor: string; sotish_narx: string; sotish_sabab: string
+  sotish_xaridor: string; sotish_narx: string; sotish_sabab: string; sotish_mablag_maqsad: string
 }
 type TaasischiChiqishForm = {
   chiquvchi_ism: string; chiquvchi_ulush: string; chiquvchi_qiymat: string; hisobdan_chiqarish: string
 }
 type DirektorForm = {
-  yangi_direktor: string; eski_direktor: string; tayinlanish_sana: string; sabab: string
+  yangi_direktor: string; yangi_direktor_pinfl: string; eski_direktor: string; tayinlanish_sana: string; sabab: string
 }
 type BoshqaForm = { kun_tartibi: string; qaror: string }
 
@@ -76,6 +76,17 @@ function fmtSana(iso: string) {
   const d = new Date(iso)
   const months = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr']
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} yil`
+}
+
+function calcDividends(tasischilar: Taasischi[], jami: string): string {
+  const total = parseFloat(jami.replace(/[\s,]/g, ''))
+  if (!tasischilar.length) return ''
+  return tasischilar.map(t => {
+    const pct = parseFloat(t.ulush.replace('%', '').trim())
+    if (isNaN(total) || isNaN(pct)) return `      — ${t.ism} (${t.ulush}): hisoblab chiqilsin`
+    const amount = Math.round(total * pct / 100)
+    return `      — ${t.ism} (${t.ulush}): ${amount.toLocaleString('ru-RU')} so'm`
+  }).join('\n')
 }
 
 // ─── Document generator ──────────────────────────────────────────────────────
@@ -139,7 +150,7 @@ function generateText(
 
    Muassis(lar) ma'ruza mazmunini diqqat bilan tingladi va bank kreditini jalb qilish tashabbusini qo'llab-quvvatlashini bildirdi. Kredit shartnomasini kompaniya manfaatlaridan kelib chiqib, eng qulay shartlarda tuzish zarurligini ta'kidladi.`
 
-    qarorlar = `   1. "${orgName}" (INN: ${orgInn}) tomonidan kompaniyaning ishlab chiqarish va xo'jalik faoliyatini moliyalashtirish maqsadida ${k.bank_nomi || '___'} muassasasidan ${k.kredit_miqdori || '___'} so'm miqdorida, ${k.kredit_muddat || '___'} yil muddatga, yillik ${k.kredit_foiz || '___'}% foiz stavkasi asosida kredit olishga ruxsat berilsin va mazkur qaror maqullansın.
+    qarorlar = `   1. "${orgName}" (INN: ${orgInn}) tomonidan kompaniyaning ishlab chiqarish va xo'jalik faoliyatini moliyalashtirish maqsadida ${k.bank_nomi || '___'} muassasasidan ${k.kredit_miqdori || '___'} so'm miqdorida, ${k.kredit_muddat || '___'} yil muddatga, yillik ${k.kredit_foiz || '___'}% foiz stavkasi asosida kredit olishga ruxsat berilsin va mazkur qaror tasdiqlansin.
 
    2. "${orgName}" Direktori ${direktorName}ga quyidagi vakolatlar berilsin:
       a) bank muassasasi bilan kredit shartnomasini tuzish va imzolash;
@@ -168,13 +179,20 @@ function generateText(
 
    Muassis(lar) taklif etilgan dividend miqdori va taqsimlash tartibini o'rganib, qo'llab-quvvatladi.`
 
+    const dividendRows = common.tasischilar.length > 0
+      ? calcDividends(common.tasischilar, d.dividend_jami || '0')
+      : `      — ${direktorName} (100%): ${d.dividend_jami || '___'} so'm`
+
     qarorlar = `   1. "${orgName}" ning ${d.dividend_davr || '___'} davrida olingan toza foydasidan ${d.dividend_jami || '___'} so'm miqdorida dividend taqsimlansin.
 
-   2. Dividend har bir ishtirokchining ustav kapitalidagi ulushiga mutanosib ravishda quyidagicha taqsimlansin:\n${common.tasischilar.map(t => `      — ${t.ism} (${t.ulush}): hisoblab chiqilsin`).join('\n') || `      — ${direktorName} (100%): ${d.dividend_jami || '___'} so'm`}
+   2. Dividend har bir ishtirokchining ustav kapitalidagi ulushiga mutanosib ravishda quyidagicha taqsimlansin:
+${dividendRows}
 
    3. Dividendlar ${d.dividend_tolov_muddat || '30 (o\'ttiz) kalendar kun'} ichida to'liq to'lansin.
 
-   4. Dividendlardan O'zbekiston Respublikasi qonunchiligiga muvofiq soliq ushlab qolinsin.`
+   4. Dividendlardan O'zbekiston Respublikasi qonunchiligiga muvofiq (jismoniy shaxslar uchun 5% yoki qo'llaniladigan stavka bo'yicha) soliq ushlab qolinsin va davlat byudjetiga o'tkazilsin.
+
+   5. Dividend to'lovlarini amalga oshirish va soliq hisobotini taqdim etish vakolati Direktorgа yuklatilsin.`
   }
 
   else if (type === 'xarid') {
@@ -195,9 +213,11 @@ function generateText(
 
    2. Sotib olish maqsadi: ${x.xarid_maqsad || '___'}.
 
-   3. Mazkur xaridni amalga oshirish uchun zarur bo'lgan barcha hujjatlarni tayyorlash va imzolash vakolati Direktorgа berilsin.
+   3. Moliyaviy hisob-kitoblar ${x.moliya_manba || "kompaniyaning o'z mablag'lari"} hisobidan amalga oshirilsin.
 
-   4. Moliyaviy hisob-kitoblar kompaniyaning joriy mablag'lari hisobidan amalga oshirilsin.`
+   4. Mazkur xaridni amalga oshirish uchun zarur bo'lgan barcha hujjatlarni tayyorlash va imzolash vakolati Direktorgа berilsin.
+
+   5. Sotib olingan mulk kompaniya balansiga qabul qilinsin va hisobga olinsin.`
   }
 
   else if (type === 'sotish') {
@@ -214,13 +234,15 @@ function generateText(
 
    Muassis(lar) taklif etilgan sotish shartlarini o'rganib, maqsadga muvofiq deb topdi.`
 
-    qarorlar = `   1. "${orgName}" balansidagi ${s.sotish_nima || '___'} (inventar raqami: ${s.sotish_inventar || '___'})ni ${s.sotish_narx || '___'} so'm narxida ${s.sotish_xaridor || '___'}ga sotishga ruxsat berilsin.
+    qarorlar = `   1. "${orgName}" balansidagi ${s.sotish_nima || '___'} (inventar raqami: ${s.sotish_inventar || '___'}, boshlang'ich balans qiymati: ${s.sotish_balans || '___'} so'm)ni ${s.sotish_narx || '___'} so'm narxida ${s.sotish_xaridor || '___'}ga sotishga ruxsat berilsin.
 
    2. Sotish sababi: ${s.sotish_sabab || '___'}.
 
-   3. Sotish bitimini rasmiylashtirish va tegishli hujjatlarni imzolash vakolati Direktorgа yuklatilsin.
+   3. Sotish bitimini rasmiylashtirish, mulkni hisobdan chiqarish va tegishli hujjatlarni imzolash vakolati Direktorgа yuklatilsin.
 
-   4. Sotishdan tushgan mablag'lar kompaniyaning joriy faoliyatini moliyalashtirish uchun ishlatilsin.`
+   4. Sotishdan tushgan ${s.sotish_narx || '___'} so'm miqdoridagi mablag' ${s.sotish_mablag_maqsad || "kompaniyaning joriy xo'jalik faoliyatini moliyalashtirish"} uchun yo'naltirilsin.
+
+   5. Buxgalteriya xizmati sotilgan mulkni belgilangan tartibda balansdan chiqarsin va soliq hisobotini taqdim etsin.`
   }
 
   else if (type === 'tasischichiqish') {
@@ -235,14 +257,16 @@ function generateText(
 
    MUHOKAMADA QATNASHDI: ${common.tasischilar.filter(ts => ts.ism !== t.chiquvchi_ism).map(ts => ts.ism).join(', ') || 'Boshqa muassislar'}.`
 
-    qarorlar = `   1. "${orgName}" muassisi ${t.chiquvchi_ism || '___'}ning jamiyatdan chiqib ketish arizasi qabul qilinsin.
+    qarorlar = `   1. "${orgName}" muassisi ${t.chiquvchi_ism || '___'}ning jamiyatdan o'z ixtiyori bilan chiqib ketish arizasi qabul qilinsin va qaror kuchga kirsin.
 
-   2. Chiqib ketayotgan muassisning ustav kapitalidagi ${t.chiquvchi_ulush || '___'}% ulushi (qiymati ${t.chiquvchi_qiymat || '___'} so'm) ${t.hisobdan_chiqarish || 'qolgan muassislar o\'rtasida ulushlariga mutanosib taqsimlansin'}.
+   2. Chiqib ketayotgan muassisning ustav kapitalidagi ${t.chiquvchi_ulush || '___'}% ulushi (haqiqiy qiymati: ${t.chiquvchi_qiymat || '___'} so'm) — ${t.hisobdan_chiqarish || 'qolgan muassislar o\'rtasida ulushlariga mutanosib taqsimlansin'}.
 
-   3. Direktorgа quyidagilar yuklatilsin:
-      a) chiqib ketayotgan muassisga uning ulushi qiymatini belgilangan muddatda to'lash;
-      b) ta'sis hujjatlariga tegishli o'zgartirishlar kiritish;
-      v) davlat ro'yxatidan o'tkazish organlarga belgilangan tartibda xabar qilish.`
+   3. O'zR MCJ qonunining 26-moddasi asosida ulush qiymati (${t.chiquvchi_qiymat || '___'} so'm) ushbu qaror qabul qilingan sanadan boshlab 3 (uch) oy ichida ${t.chiquvchi_ism || '___'}ga to'liq to'lansin.
+
+   4. Direktorgа quyidagilar yuklatilsin:
+      a) ushbu qaror qabul qilingan kundan boshlab 15 (o'n besh) kalendar kun ichida davlat ro'yxatidan o'tkazish organlariga (Adliya vazirligiga) o'zgartirish haqida xabar berish;
+      b) ta'sis hujjatlariga (ustav va ta'sis shartnomasiga) tegishli o'zgartirishlar kiritish va qayta ro'yxatdan o'tkazish;
+      v) soliq organlariga belgilangan muddatda xabar qilish.`
   }
 
   else if (type === 'direktor') {
@@ -260,13 +284,16 @@ function generateText(
    Muassis(lar) taklif qilingan nomzodini o'rganib, lavozimga munosib deb topdi.`
 
     const tSana = d.tayinlanish_sana ? fmtSana(String(d.tayinlanish_sana)) + 'dan' : 'ushbu qaror qabul qilingan sanadan'
-    qarorlar = `   1. "${orgName}" Direktori ${d.eski_direktor || '___'}ning vakolatlari ${tSana} boshlab tugatilsin.
+    qarorlar = `   1. "${orgName}" Direktori ${d.eski_direktor || '___'}ning vakolatlari ${tSana} boshlab tugatilsin va lavozimdan ozod qilinsin.
 
-   2. "${orgName}" Direktori lavozimiga ${d.yangi_direktor || '___'} ${tSana} boshlab tayinlansin.
+   2. "${orgName}" Direktori lavozimiga ${d.yangi_direktor || '___'}${d.yangi_direktor_pinfl ? ` (JSHSHIR: ${d.yangi_direktor_pinfl})` : ''} ${tSana} boshlab tayinlansin.
 
-   3. Yangi Direktor ${d.yangi_direktor || '___'}ga kompaniyani boshqarish va vakillik qilish bo'yicha to'liq vakolat berilsin.
+   3. Yangi Direktor ${d.yangi_direktor || '___'}ga O'zR qonunchiligi va "${orgName}" Ustavi doirasida kompaniyani boshqarish, manfaatlarini ifodalash va barcha hujjatlarga imzo chekish vakolati to'liq berilsin.
 
-   4. Ta'sis hujjatlariga tegishli o'zgartirishlar kiritilsin va davlat ro'yxatidan o'tkazish organlariga xabar qilinsin.`
+   4. Direktorgа quyidagilar yuklatilsin:
+      a) ushbu qaror qabul qilingan kundan boshlab 15 (o'n besh) kalendar kun ichida davlat ro'yxatidan o'tkazish organlariga (Adliya vazirligiga) o'zgartirish haqida xabar berish;
+      b) ta'sis hujjatlariga tegishli o'zgartirishlar kiritish va qayta ro'yxatdan o'tkazish;
+      v) bank va boshqa tashkilotlarda imzo kartochkalarini yangilash.`
   }
 
   else {
@@ -455,10 +482,10 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSaved 
     garov_fio:'', garov_passport:'', garov_manzil:'',
   })
   const [dividend, setDividend] = useState<DividendForm>({ dividend_davr:'', dividend_jami:'', dividend_tolov_muddat:'30 (o\'ttiz) kun' })
-  const [xarid, setXarid] = useState<XaridForm>({ xarid_nima:'', xarid_narx:'', xarid_sotuvchi:'', xarid_maqsad:'' })
-  const [sotish, setSotish] = useState<SotishForm>({ sotish_nima:'', sotish_inventar:'', sotish_balans:'', sotish_xaridor:'', sotish_narx:'', sotish_sabab:'' })
+  const [xarid, setXarid] = useState<XaridForm>({ xarid_nima:'', xarid_narx:'', xarid_sotuvchi:'', xarid_maqsad:'', moliya_manba:"kompaniyaning o'z mablag'lari" })
+  const [sotish, setSotish] = useState<SotishForm>({ sotish_nima:'', sotish_inventar:'', sotish_balans:'', sotish_xaridor:'', sotish_narx:'', sotish_sabab:'', sotish_mablag_maqsad:"kompaniyaning joriy xo'jalik faoliyatini moliyalashtirish" })
   const [tasischichiqish, setTaasischiChiqish] = useState<TaasischiChiqishForm>({ chiquvchi_ism:'', chiquvchi_ulush:'', chiquvchi_qiymat:'', hisobdan_chiqarish:'qolgan muassislar o\'rtasida ulushlariga mutanosib taqsimlansin' })
-  const [direktor, setDirektor] = useState<DirektorForm>({ yangi_direktor:'', eski_direktor: direktorName, tayinlanish_sana:'', sabab:'' })
+  const [direktor, setDirektor] = useState<DirektorForm>({ yangi_direktor:'', yangi_direktor_pinfl:'', eski_direktor: direktorName, tayinlanish_sana:'', sabab:'' })
   const [boshqa, setBoshqa] = useState<BoshqaForm>({ kun_tartibi:'', qaror:'' })
 
   const [foundersFromDb, setFoundersFromDb] = useState(false)
@@ -723,6 +750,15 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSaved 
               <label className={lbl}>Xarid maqsadi</label>
               <input className={inp} value={xarid.xarid_maqsad} onChange={e => setXarid(x => ({ ...x, xarid_maqsad: e.target.value }))} placeholder="Ishlab chiqarishni kengaytirish"/>
             </div>
+            <div className="sm:col-span-2">
+              <label className={lbl}>Moliya manbai</label>
+              <select className={sel} value={xarid.moliya_manba} onChange={e => setXarid(x => ({ ...x, moliya_manba: e.target.value }))}>
+                <option value="kompaniyaning o'z mablag'lari">Kompaniyaning o'z mablag'lari</option>
+                <option value="bank krediti mablag'lari">Bank krediti mablag'lari</option>
+                <option value="qarz mablag'lari (muassislar qarzlari)">Qarz mablag'lari (muassislar qarzlari)</option>
+                <option value="lizing shartnomasi asosida">Lizing shartnomasi asosida</option>
+              </select>
+            </div>
           </div>
         </div>
       )}
@@ -754,6 +790,16 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSaved 
             <div>
               <label className={lbl}>Sotish sababi</label>
               <input className={inp} value={sotish.sotish_sabab} onChange={e => setSotish(s => ({ ...s, sotish_sabab: e.target.value }))} placeholder="Eskirgan, foydalanilmayapti"/>
+            </div>
+            <div className="sm:col-span-2">
+              <label className={lbl}>Tushgan mablag' qayerga sarflanadi</label>
+              <select className={sel} value={sotish.sotish_mablag_maqsad} onChange={e => setSotish(s => ({ ...s, sotish_mablag_maqsad: e.target.value }))}>
+                <option value="kompaniyaning joriy xo'jalik faoliyatini moliyalashtirish">Joriy xo'jalik faoliyatini moliyalashtirish</option>
+                <option value="bank krediti qarzini to'lash">Bank krediti qarzini to'lash</option>
+                <option value="yangi asosiy vosita sotib olish">Yangi asosiy vosita sotib olish</option>
+                <option value="ustav kapitalini to'ldirish">Ustav kapitalini to'ldirish</option>
+                <option value="muassislarga dividend to'lash">Muassislarga dividend to'lash</option>
+              </select>
             </div>
           </div>
         </div>
@@ -796,6 +842,10 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSaved 
               <input className={inp} value={direktor.yangi_direktor} onChange={e => setDirektor(d => ({ ...d, yangi_direktor: e.target.value }))} placeholder="Familiya Ism Sharif"/>
             </div>
             <div>
+              <label className={lbl}>Yangi direktor JSHSHIR (PINFL)</label>
+              <input className={inp} value={direktor.yangi_direktor_pinfl} onChange={e => setDirektor(d => ({ ...d, yangi_direktor_pinfl: e.target.value }))} placeholder="30405704070022"/>
+            </div>
+            <div>
               <label className={lbl}>Eski direktor F.I.Sh.</label>
               <input className={inp} value={direktor.eski_direktor} onChange={e => setDirektor(d => ({ ...d, eski_direktor: e.target.value }))} placeholder={direktorName}/>
             </div>
@@ -803,9 +853,9 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSaved 
               <label className={lbl}>Tayinlanish sanasi</label>
               <input type="date" className={inp} value={direktor.tayinlanish_sana} onChange={e => setDirektor(d => ({ ...d, tayinlanish_sana: e.target.value }))}/>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className={lbl}>O&apos;zgartirish sababi</label>
-              <input className={inp} value={direktor.sabab} onChange={e => setDirektor(d => ({ ...d, sabab: e.target.value }))} placeholder="O'z ixtiyori bilan bo'shatish talabi..."/>
+              <input className={inp} value={direktor.sabab} onChange={e => setDirektor(d => ({ ...d, sabab: e.target.value }))} placeholder="O'z ixtiyori bilan bo'shatish talabi bilan"/>
             </div>
           </div>
         </div>
