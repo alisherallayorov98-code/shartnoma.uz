@@ -57,13 +57,6 @@ const FEATURE_META: Record<string, { label: string; icon: string; color: string 
   rekvizitlar_xat:        { label: 'Rekvizitlar xati',         icon: '🏦', color: 'bg-sky-900/40 text-sky-300' },
 }
 
-const CONTRACT_TYPE_LABELS: Record<string, string> = {
-  belgilanmagan_muddatli: 'Belgilanmagan muddatli',
-  belgilangan_muddatli: 'Belgilangan muddatli',
-  yarim_stavkada: 'Yarim stavkada',
-  masofaviy: 'Masofaviy',
-  amaliyot: 'Amaliyot',
-}
 
 function formatDate(iso: string) {
   const d = new Date(iso)
@@ -74,6 +67,8 @@ function formatDate(iso: string) {
 function getMeta(key: string) {
   return FEATURE_META[key] || { label: key, icon: '📄', color: 'bg-gray-700/40 text-gray-300' }
 }
+
+const PAGE_SIZE = 8
 
 export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cyan', refreshKey = 0 }: Props) {
   const ac = ACCENT[accentColor]
@@ -86,6 +81,7 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState<string>('all')
+  const [showAll, setShowAll] = useState(false)
 
   const reload = useCallback(async () => {
     setLoading(true)
@@ -129,6 +125,7 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
   const inp = 'bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
   const filteredDocs = docs.filter(d => activeFilter === 'all' || d.feature_key === activeFilter)
+  const visibleDocs = showAll ? filteredDocs : filteredDocs.slice(0, PAGE_SIZE)
   const featureKeys = [...new Set(docs.map(d => d.feature_key))]
 
   return (
@@ -171,57 +168,54 @@ export default function SavedDocumentsPanel({ orgId, section, accentColor = 'cya
           <div className="text-gray-600 text-xs mt-1">Hujjat yaratsangiz, u shu yerda ko&apos;rinadi</div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filteredDocs.map(doc => {
-            const m = getMeta(doc.feature_key)
-            return (
-              <div key={doc.id}
-                className="bg-[#0F172A] border border-[#1E293B] hover:border-[#374151] rounded-xl p-4 flex flex-col gap-3 transition group">
-                {/* Top: icon + badge */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${m.color}`}>
+        <>
+          <div className="divide-y divide-[#1E293B]">
+            {visibleDocs.map(doc => {
+              const m = getMeta(doc.feature_key)
+              return (
+                <div key={doc.id}
+                  className="flex items-center gap-3 py-2.5 hover:bg-[#0F172A] rounded-lg px-2 -mx-2 transition group">
+                  {/* Icon */}
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0 ${m.color}`}>
                     {m.icon}
                   </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${ac.badge} whitespace-nowrap`}>
-                    {m.label}
-                  </span>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-gray-200 truncate">{doc.title}</div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded border ${ac.badge}`}>{m.label}</span>
+                      <span className="text-[10px] text-gray-600">{formatDate(doc.created_at)}</span>
+                    </div>
+                  </div>
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition">
+                    <button onClick={() => openView(doc)} title="Ko'rish"
+                      className="w-7 h-7 flex items-center justify-center rounded text-gray-400 hover:text-white hover:bg-[#1F2937] transition text-sm">👁</button>
+                    <button onClick={() => downloadTextAsWord(doc.content, doc.title)} title="Word"
+                      className="w-7 h-7 flex items-center justify-center rounded text-gray-500 hover:text-blue-300 hover:bg-blue-900/20 transition text-sm">📝</button>
+                    <button onClick={() => downloadTextAsPDF(doc.content, doc.title)} title="PDF"
+                      className="w-7 h-7 flex items-center justify-center rounded text-gray-500 hover:text-red-300 hover:bg-red-900/20 transition text-sm">📄</button>
+                    <button onClick={() => handleDelete(doc.id)} disabled={deletingId === doc.id}
+                      className={`h-7 flex items-center justify-center rounded transition text-xs px-1.5 ${
+                        confirmDelete === doc.id ? 'bg-red-600 text-white' : 'text-gray-600 hover:text-red-400 hover:bg-red-900/20'
+                      }`}>
+                      {deletingId === doc.id ? '…' : confirmDelete === doc.id ? 'Ha?' : '🗑'}
+                    </button>
+                    {confirmDelete === doc.id && (
+                      <button onClick={() => setConfirmDelete(null)} className="h-7 px-1 text-xs text-gray-500 hover:text-white transition">✕</button>
+                    )}
+                  </div>
                 </div>
-                {/* Title */}
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-200 leading-snug line-clamp-2">{doc.title}</div>
-                  {doc.meta?.contract_type && (
-                    <div className="text-xs text-gray-500 mt-1">{CONTRACT_TYPE_LABELS[doc.meta.contract_type] || doc.meta.contract_type}</div>
-                  )}
-                  <div className="text-xs text-gray-600 mt-1">{formatDate(doc.created_at)}</div>
-                </div>
-                {/* Actions */}
-                <div className="flex items-center gap-1 pt-2 border-t border-[#1E293B]">
-                  <button onClick={() => openView(doc)} title="Ko'rish"
-                    className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-[#1F2937] transition">
-                    👁 Ko&apos;rish
-                  </button>
-                  <button onClick={() => downloadTextAsWord(doc.content, doc.title)} title="Word"
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-blue-300 hover:bg-blue-900/20 transition text-sm">
-                    📝
-                  </button>
-                  <button onClick={() => downloadTextAsPDF(doc.content, doc.title)} title="PDF"
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-300 hover:bg-red-900/20 transition text-sm">
-                    📄
-                  </button>
-                  <button onClick={() => handleDelete(doc.id)} disabled={deletingId === doc.id}
-                    className={`h-8 flex items-center justify-center rounded-lg transition text-xs px-2 ${
-                      confirmDelete === doc.id ? 'bg-red-600 text-white' : 'text-gray-600 hover:text-red-400 hover:bg-red-900/20'
-                    }`}>
-                    {deletingId === doc.id ? '…' : confirmDelete === doc.id ? 'Ha?' : '🗑'}
-                  </button>
-                  {confirmDelete === doc.id && (
-                    <button onClick={() => setConfirmDelete(null)} className="h-8 px-1.5 text-xs text-gray-500 hover:text-white transition">✕</button>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+          {filteredDocs.length > PAGE_SIZE && (
+            <button onClick={() => setShowAll(p => !p)}
+              className="w-full mt-3 py-2 text-xs text-gray-500 hover:text-gray-300 border border-[#1E293B] rounded-lg transition">
+              {showAll ? '▲ Kamroq' : `▼ Yana ${filteredDocs.length - PAGE_SIZE} ta ko'rish`}
+            </button>
+          )}
+        </>
       )}
 
       {/* View / Edit Modal */}
