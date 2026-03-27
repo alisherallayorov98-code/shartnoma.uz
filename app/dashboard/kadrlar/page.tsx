@@ -263,10 +263,13 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'mehnat_shartnoma',
     resultField: 'shartnoma',
     fields: [
-      { key: 'lavozim',          label: 'Lavozim nomi',           placeholder: 'Bosh muhasib' },
-      { key: 'bolim',            label: "Bo'lim",                 placeholder: "Moliya bo'limi" },
-      { key: 'asosiy_vazifalar', label: 'Asosiy vazifalar',       placeholder: "Hisobot tuzish, soliq hisobotlari, bank operatsiyalari...", textarea: true },
-      { key: 'talablar',         label: "Talablar (ta'lim, tajriba)", placeholder: "Oliy iqtisodiy ta'lim, 3 yil tajriba...", textarea: true },
+      { key: 'lavozim',          label: 'Lavozim nomi',               placeholder: 'Bosh muhasib' },
+      { key: 'bolim',            label: "Bo'lim",                     placeholder: "Moliya bo'limi" },
+      { key: 'boysunadi',        label: 'Kimga bo\'ysunadi',          placeholder: "Moliya direktori, Bosh direktor" },
+      { key: 'asosiy_vazifalar', label: 'Asosiy vazifalar',           placeholder: "Hisobot tuzish, soliq hisobotlari, bank operatsiyalari...", textarea: true },
+      { key: 'huquqlar',         label: 'Huquqlar (ixtiyoriy)',       placeholder: "Hujjatlarni imzolash, bo'lim xodimlariga topshiriq berish...", textarea: true, optional: true },
+      { key: 'javobgarlik',      label: 'Javobgarlik (ixtiyoriy)',    placeholder: "Moliyaviy hisobot aniqligi, soliq muddatlari...", textarea: true, optional: true },
+      { key: 'talablar',         label: "Malaka talablari",           placeholder: "Oliy iqtisodiy ta'lim, 3 yil tajriba...", textarea: true },
     ],
   },
 ]
