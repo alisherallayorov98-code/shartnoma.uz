@@ -31,6 +31,7 @@ export default function FakturaBuilder({ org, cps }: Props) {
   const [cpSearch, setCpSearch] = useState('')
   const [cpOpen, setCpOpen] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [xlsxLoading, setXlsxLoading] = useState(false)
   const cpRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -167,6 +168,82 @@ export default function FakturaBuilder({ org, cps }: Props) {
     } finally { setDownloading(false) }
   }
 
+  async function downloadExcel() {
+    setXlsxLoading(true)
+    try {
+      const XLSX = await import('xlsx')
+      const wb = XLSX.utils.book_new()
+
+      // Header info rows
+      const headerRows = [
+        [`SCHYOT-FAKTURA № ${fakRaqam || '___'}`],
+        [`Sana: ${sana}`],
+        [],
+        ['SOTUVCHI:', org?.name || '___', '', 'XARIDOR:', xaridor || '___'],
+        ['INN:', org?.inn || '___', '', 'INN:', xaridorInn || '___'],
+        ['Bank:', org?.bank_name || '___', '', '', ''],
+        ['H/R:', org?.bank_account || '___', '', '', ''],
+        ['MFO:', org?.mfo || '___', '', '', ''],
+        [],
+      ]
+
+      // Table header
+      const tableHeader = ['№', 'Mahsulot/xizmat nomi', 'Birlik', 'Miqdor', 'Narxi (so\'m)', 'Jami QQSsiz', 'QQS %', 'QQS (so\'m)', 'Jami (so\'m)']
+
+      // Table data rows
+      const dataRows = items.map((it, i) => {
+        const c = calcItem(it)
+        return [
+          i + 1,
+          it.nomi || '',
+          it.birlik,
+          parseFloat(it.miqdori) || 0,
+          parseFloat(it.narxi.replace(/[\s,]/g, '')) || 0,
+          c.sozsiz,
+          it.qqs === 'siz' ? 'QQSsiz' : `${it.qqs}%`,
+          c.qqs,
+          c.gross,
+        ]
+      })
+
+      // Totals row
+      const totalsRow = ['', 'JAMI', '', '', '', totalSozsiz, '', totalQqs, totalGross]
+
+      // Footer rows
+      const footerRows = [
+        [],
+        [`Jami QQSsiz: ${fmt(totalSozsiz)} so'm`],
+        [`QQS: ${fmt(totalQqs)} so'm`],
+        [`JAMI TO'LASH: ${fmt(totalGross)} so'm`],
+        [],
+        [`To'lov maqsadi: Schyot-faktura № ${fakRaqam || '___'} ga asosan to'lov`],
+        [`Bank: ${org?.bank_name || '___'}  H/R: ${org?.bank_account || '___'}  MFO: ${org?.mfo || '___'}`],
+        [],
+        [`Sotuvchi rahbari: _________________ / ${org?.director_name || '___'}    M.O.   Sana: ${sana}`],
+        ['Bosh buxgalter:   _________________ / ___'],
+      ]
+
+      const allRows = [
+        ...headerRows,
+        tableHeader,
+        ...dataRows,
+        totalsRow,
+        ...footerRows,
+      ]
+
+      const ws = XLSX.utils.aoa_to_sheet(allRows)
+
+      // Column widths
+      ws['!cols'] = [
+        { wch: 4 }, { wch: 35 }, { wch: 10 }, { wch: 8 },
+        { wch: 16 }, { wch: 16 }, { wch: 8 }, { wch: 14 }, { wch: 16 },
+      ]
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Faktura')
+      XLSX.writeFile(wb, `faktura_${fakRaqam || sana}.xlsx`)
+    } finally { setXlsxLoading(false) }
+  }
+
   const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 placeholder-gray-500'
   const inpSm = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-600 placeholder-gray-500'
 
@@ -285,10 +362,16 @@ export default function FakturaBuilder({ org, cps }: Props) {
         </div>
       )}
 
-      <button onClick={downloadWord} disabled={downloading || totalGross === 0}
-        className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:bg-[#1E293B] disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
-        {downloading ? '⏳ Yuklanmoqda...' : '📄 Word (.docx) yuklab olish'}
-      </button>
+      <div className="flex flex-wrap gap-3">
+        <button onClick={downloadWord} disabled={downloading || totalGross === 0}
+          className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:bg-[#1E293B] disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
+          {downloading ? '⏳ Yuklanmoqda...' : '📄 Word (.docx)'}
+        </button>
+        <button onClick={downloadExcel} disabled={xlsxLoading || totalGross === 0}
+          className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-[#1E293B] disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
+          {xlsxLoading ? '⏳ Yuklanmoqda...' : '📊 Excel (.xlsx)'}
+        </button>
+      </div>
     </div>
   )
 }
