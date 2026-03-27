@@ -401,6 +401,7 @@ Xodim tanishdi: _________________________ / ___
 Sana: _______________   M.O.
 
 Rasmiy yuridik uslubda, O'zbekiston Mehnat kodeksiga muvofiq. Kamida 600 so'z.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"shartnoma":"to'liq lavozim yo'riqnomasi matni..."}`
       } else {
@@ -468,6 +469,7 @@ MAJBURIY BO'LIMLAR:
    Sana: _______________   M.O.
 
 Yuridik uslubda, Mehnat kodeksi moddalariga havolalar bilan. Kamida 700 so'z.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"shartnoma":"to'liq mehnat shartnomasi matni..."}`
       }
@@ -561,6 +563,7 @@ ${tur === 'tatil' ? `TA'TIL: ${d.tatil_boshlanish || '___'} – ${d.tatil_tugash
 ${turContent[tur] || turContent['qabul']}
 
 Buyruq to'liq, rasmiy, O'zbekiston Mehnat kodeksiga muvofiq bo'lsin. Barcha moddalar to'g'ri ko'rsatilsin.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"buyruq":"to'liq buyruq matni..."}`
     }
@@ -617,6 +620,7 @@ MAJBURIY TUZILMA:
    Notarial tasdiqlash (agar zarur): _______________
 
 Rasmiy O'zbek tilida, FKning 126-134-moddalariga muvofiq. Hujjat to'liq va huquqiy jihatdan to'g'ri bo'lsin.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"ishonchnoma":"to'liq ishonchnoma matni..."}`
     }
@@ -671,6 +675,7 @@ TO'LOV GRAFIGI TUZILMASI:
    Qarzdor: _________________________  M.O.
    Sana: _______________
 
+\nMUHIM: Faqat berilgan raqamlar bilan hisoblang. Summalarni o'ylab topmang. Ko'rsatilmagan joylar uchun ___ ishlating. Hisob-kitoblarni aniq ko'rsating.
 ${jOnly}
 {"dalolatnoma":"to'liq to'lov grafigi matni..."}`
       } else {
@@ -726,6 +731,7 @@ MAJBURIY TUZILMA:
    Sana: _______________
 
 Rasmiy buxgalteriya hujjati uslubida, to'liq to'ldiring.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"dalolatnoma":"to'liq dalolatnoma matni..."}`
       }
@@ -788,6 +794,7 @@ SCHYOT-FAKTURA TUZILMASI:
    M.O.   Sana: ${d.sana || '___'}
 
 Rasmiy buxgalteriya schyot-faktura uslubida, O'zbekiston MV standartlari bo'yicha.
+\nMUHIM: Faqat berilgan raqamlar bilan hisoblang. Summalarni o'ylab topmang. Ko'rsatilmagan joylar uchun ___ ishlating. Hisob-kitoblarni aniq ko'rsating.
 ${jOnly}
 {"faktura":"to'liq schyot-faktura matni..."}`
     }
@@ -860,6 +867,7 @@ TALABNOMA TUZILMASI:
    M.O.   Sana: _______________
 
 Rasmiy-yuridik uslubda, qat'iy, huquqiy asosli. Kamida 400 so'z.
+\nMUHIM: Faqat berilgan raqamlar bilan hisoblang. Summalarni o'ylab topmang. Ko'rsatilmagan joylar uchun ___ ishlating. Hisob-kitoblarni aniq ko'rsating.
 ${jOnly}
 {"talabnoma":"to'liq talabnoma matni..."}`
     }
@@ -901,6 +909,7 @@ MAJBURIY TALABLAR — quyidagi tuzilmada yozing:
 6. IMZOLAR bloki: "Raislik qiluvchi: _________________ / ${d.raislik_qilgan || '___'}" va "Kotib: _________________ / ___"
 
 Uslub: rasmiy, aniq, qisqa jumlalar. Kamida 500 so'z. Hujjat to'liq bo'lishi shart — hech qanday [xxx] yoki "..." qoldirma.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"bayonnoma":"to'liq bayonnoma matni..."}`
     }
@@ -950,6 +959,7 @@ MAJBURIY TALABLAR — quyidagi tuzilmada yozing:
    M.O.
 
 Uslub: rasmiy, muloyim, ishbilarmonlik toni. Kamida 300 so'z. Barcha jumlalar to'liq va mazmunli bo'lsin.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"xat":"to'liq xat matni..."}`
     }
@@ -998,6 +1008,7 @@ MAJBURIY TALABLAR — quyidagi tuzilmada yozing:
    M.O.   Sana: _______________
 
 Uslub: rasmiy va iliq, mehmonni hurmat qiluvchi ton. Kamida 250 so'z. Tadbir va maqsad to'liq tushunilsin.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"taklifnoma":"to'liq taklifnoma matni..."}`
     }
@@ -1067,6 +1078,7 @@ MAJBURIY TALABLAR — quyidagi tuzilmada yozing:
    Sana: _______________  M.O.
 
 Uslub: aniq, raqamlar va faktlar asosida, rasmiy. Kamida 600 so'z. Har bir bo'lim to'liq mazmunli bo'lsin.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"hisobot":"to'liq hisobot matni..."}`
     }
@@ -1115,6 +1127,7 @@ MAJBURIY TALABLAR — quyidagi tuzilmada yozing:
    Sana: _______________
 
 Uslub: lo'nda, aniq, rasmiy, buyruqli ton. Kamida 200 so'z. Barcha gap to'liq bo'lsin.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"eslatma":"to'liq eslatma matni..."}`
     }
@@ -1166,6 +1179,7 @@ MAJBURIY TALABLAR — quyidagi tuzilmada yozing:
    M.O.   Sana: _______________
 
 Uslub: aniq, huquqiy asosli, rasmiy. Kamida 400 so'z. Hamma talablar asosli va mantiqli bo'lsin.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"murojaatnoma":"to'liq murojaatnoma matni..."}`
     }
@@ -1223,6 +1237,7 @@ MAJBURIY TALABLAR — quyidagi tuzilmada yozing:
    Sana: _______________
 
 Uslub: kamtarona, mas'uliyatli, rasmiy. Kamida 300 so'z. Hujjat ishonchli va samimiy bo'lsin.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"tushuntirish":"to'liq tushuntirish xati matni..."}`
     }
@@ -1268,6 +1283,7 @@ HUJJAT TUZILMASI:
    "${d.kontragent || '___'}" rahbari: _________________________
    M.O.   Sana: _______________
 
+\nMUHIM: Faqat berilgan raqamlar bilan hisoblang. Summalarni o'ylab topmang. Ko'rsatilmagan joylar uchun ___ ishlating. Hisob-kitoblarni aniq ko'rsating.
 ${jOnly}
 {"tolov_grafigi":"to'liq to'lov grafigi matni..."}`
     }
@@ -1297,6 +1313,7 @@ HUJJAT TUZILMASI:
 9. Imzo bloki: direktor, M.O., sana
 
 Kafolat xati ishonchli, aniq va yuridik jihatdan to'g'ri bo'lsin. Kamida 250 so'z.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"kafolat_xat":"to'liq kafolat xati matni..."}`
     }
@@ -1322,6 +1339,7 @@ HUJJAT TUZILMASI:
 7. Imzo bloki
 
 Ton: rasmiy lekin iliq, samimiy. 150-200 so'z.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"tabriklash_xat":"to'liq tabriklash xati matni..."}`
     }
@@ -1350,6 +1368,7 @@ HUJJAT TUZILMASI:
 9. Imzo bloki
 
 Uslub: qisqa, aniq, rasmiy. 150-200 so'z.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
 ${jOnly}
 {"rekvizitlar_xat":"to'liq so'rov xati matni..."}`
     }
@@ -1403,6 +1422,7 @@ AKT TUZILMASI:
    M.O.   Sana: _______________         M.O.   Sana: _______________
 
 Rasmiy buxgalteriya uslubida. O'zbekiston buxgalteriya standartlariga muvofiq (BHMS).
+\nMUHIM: Faqat berilgan raqamlar bilan hisoblang. Summalarni o'ylab topmang. Ko'rsatilmagan joylar uchun ___ ishlating. Hisob-kitoblarni aniq ko'rsating.
 ${jOnly}
 {"akt_sverki":"to'liq akt sverki matni..."}`
     }
@@ -1471,6 +1491,7 @@ AV-3 SHAKLI TUZILMASI:
    M.O.
 
 O'zbek tili, rasmiy buxgalteriya uslubi, O'zR BHMS 10 standarti asosida.
+\nMUHIM: Faqat berilgan raqamlar bilan hisoblang. Summalarni o'ylab topmang. Ko'rsatilmagan joylar uchun ___ ishlating. Hisob-kitoblarni aniq ko'rsating.
 ${jOnly}
 {"avans_hisobot":"to'liq avans hisoboti matni..."}`
     }
@@ -1520,6 +1541,7 @@ HUJJAT TUZILMASI:
    M.O.   Sana: _______________
 
 Rasmiy buxgalteriya uslubi, O'zR Soliq kodeksi 305-321-moddalari asosida.
+\nMUHIM: Faqat berilgan raqamlar bilan hisoblang. Summalarni o'ylab topmang. Ko'rsatilmagan joylar uchun ___ ishlating. Hisob-kitoblarni aniq ko'rsating.
 ${jOnly}
 {"xarajat_hisobot":"to'liq xarajat hisoboti matni..."}`
     }
@@ -1593,6 +1615,7 @@ HUJJAT TUZILMASI:
    M.O.   Sana: _______________
 
 Rasmiy yuridik-buxgalteriya uslubida, FK moddalari ko'rsatilgan.
+\nMUHIM: Faqat berilgan raqamlar bilan hisoblang. Summalarni o'ylab topmang. Ko'rsatilmagan joylar uchun ___ ishlating. Hisob-kitoblarni aniq ko'rsating.
 ${jOnly}
 {"jarima_hisobi":"to'liq jarima hisob-kitob varaqasi matni..."}`
     }
