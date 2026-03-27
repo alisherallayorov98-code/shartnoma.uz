@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useLang } from '@/lib/LanguageContext'
 import { useDashboard } from '../context'
-import { downloadTextAsPDF, downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
+import { downloadTextAsWord, saveAiResult } from '@/lib/downloadUtils'
 import { fetchAi } from '@/lib/fetchAi'
 import { useToast } from '@/lib/toast'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
@@ -61,10 +61,10 @@ function ResultActions({
         className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">
         📝 Word
       </button>
-      <button onClick={() => downloadTextAsPDF(text, label)}
+      <a href="https://www.ilovepdf.com/ru/word_to_pdf" target="_blank" rel="noopener noreferrer"
         className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">
-        📄 PDF
-      </button>
+        📄 Word→PDF
+      </a>
       <button onClick={() => navigator.clipboard.writeText(text)}
         className="text-xs text-gray-500 hover:text-gray-300 transition">
         📋 Nusxa
@@ -80,7 +80,7 @@ function ResultActions({
 export default function YuristPage() {
   const { lang } = useLang()
   const { toast } = useToast()
-  const { contracts, activeOrg, hasAiAccess, subscription, openUpgradeModal, reloadContracts } = useDashboard()
+  const { contracts, activeOrg, cps, hasAiAccess, subscription, openUpgradeModal, reloadContracts } = useDashboard()
 
   const [hubFeature, setHubFeature] = useState<HubFeature>('xulosa')
   const [hubContract, setHubContract] = useState('')
@@ -89,6 +89,8 @@ export default function YuristPage() {
   const [hubInstruction, setHubInstruction] = useState('')
   const [hubDescription, setHubDescription] = useState('')
   const [hubWriteDetails, setHubWriteDetails] = useState({ tur: 'oldi_sotdi', summa: '', org: '', cp: '', extra: '' })
+  const [writeCpSearch, setWriteCpSearch] = useState('')
+  const [writeCpOpen, setWriteCpOpen] = useState(false)
   const [hubCp, setHubCp] = useState('')
   const [hubLoading, setHubLoading] = useState(false)
   const [hubResult, setHubResult] = useState<HubResult | null>(null)
@@ -192,7 +194,14 @@ export default function YuristPage() {
           const locked = !hasAiAccess()
           return (
             <button key={f.key}
-              onClick={() => { setHubFeature(f.key); setHubResult(null); setHubError(''); setHubLoading(false); if (!f.needsContract) { setHubContract(''); setHubCp('') } }}
+              onClick={() => {
+                setHubFeature(f.key); setHubResult(null); setHubError(''); setHubLoading(false)
+                if (!f.needsContract) { setHubContract(''); setHubCp('') }
+                if (f.key === 'write') {
+                  setHubWriteDetails(d => ({ ...d, org: activeOrg?.name || '' }))
+                  setWriteCpSearch(''); setWriteCpOpen(false)
+                }
+              }}
               className={`relative text-left p-4 rounded-xl border transition ${
                 hubFeature === f.key
                   ? 'bg-blue-600/10 border-blue-600/50 shadow-lg shadow-blue-900/20'
@@ -364,13 +373,45 @@ export default function YuristPage() {
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">Birinchi tomon</label>
-              <input value={hubWriteDetails.org} onChange={e => setHubWriteDetails({ ...hubWriteDetails, org: e.target.value })}
-                placeholder="Tashkilot nomi" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
+              <div className="w-full bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-2 text-sm text-white flex items-center gap-2">
+                <span className="text-green-400 text-xs">✓</span>
+                <span>{activeOrg?.name || '—'}</span>
+                {activeOrg?.inn && <span className="text-gray-500 text-xs ml-auto">INN: {activeOrg.inn}</span>}
+              </div>
             </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Ikkinchi tomon</label>
-              <input value={hubWriteDetails.cp} onChange={e => setHubWriteDetails({ ...hubWriteDetails, cp: e.target.value })}
-                placeholder="Kontragent nomi" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
+            <div className="relative">
+              <label className="block text-xs text-gray-400 mb-1">Ikkinchi tomon (kontragent)</label>
+              <input
+                type="text"
+                value={writeCpSearch}
+                onFocus={() => setWriteCpOpen(true)}
+                onChange={e => { setWriteCpSearch(e.target.value); setWriteCpOpen(true); setHubWriteDetails({ ...hubWriteDetails, cp: e.target.value }) }}
+                onBlur={() => setTimeout(() => setWriteCpOpen(false), 150)}
+                placeholder="Kontragent nomi yoki tanlang…"
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"
+                autoComplete="off"
+              />
+              {writeCpOpen && (() => {
+                const filtered = cps.filter(c =>
+                  !writeCpSearch || c.name.toLowerCase().includes(writeCpSearch.toLowerCase())
+                ).slice(0, 8)
+                return filtered.length > 0 ? (
+                  <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+                    {filtered.map(cp => (
+                      <button key={cp.id} type="button"
+                        onMouseDown={() => {
+                          setWriteCpSearch(cp.name)
+                          setHubWriteDetails({ ...hubWriteDetails, cp: cp.name })
+                          setWriteCpOpen(false)
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-[#1F2937] transition border-b border-[#1E293B]/50 last:border-0">
+                        <div className="text-sm text-white">{cp.name}</div>
+                        {cp.inn && <div className="text-xs text-gray-500">INN: {cp.inn}</div>}
+                      </button>
+                    ))}
+                  </div>
+                ) : null
+              })()}
             </div>
             <div className="col-span-2">
               <label className="block text-xs text-gray-400 mb-1">Qo'shimcha shartlar (ixtiyoriy)</label>
@@ -445,10 +486,10 @@ export default function YuristPage() {
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">
                   📝 Word yuklash
                 </button>
-                <button onClick={() => { downloadTextAsPDF(previewText, sel.name); setPreviewText(null) }}
-                  className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2.5 rounded-xl text-sm font-semibold transition">
-                  📄 PDF yuklash
-                </button>
+                <a href="https://www.ilovepdf.com/ru/word_to_pdf" target="_blank" rel="noopener noreferrer"
+                  className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2.5 rounded-xl text-sm font-semibold transition text-center">
+                  📄 Word→PDF
+                </a>
               </div>
             </div>
           </div>
