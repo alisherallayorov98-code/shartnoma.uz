@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import type { Org, BankAccount, Counterparty, Contract, Subscription } from '@/lib/types'
+import type { Org, BankAccount, Counterparty, Contract, Subscription, Employee } from '@/lib/types'
 
 const FREE_LIMIT = 5
 
@@ -31,6 +31,7 @@ type DashboardContextType = {
   activeOrg: Org | null
   bankAccounts: BankAccount[]
   cps: Counterparty[]
+  employees: Employee[]
   contracts: Contract[]
   contractsTotal: number
   subscription: Subscription | null
@@ -54,6 +55,7 @@ type DashboardContextType = {
   switchOrg: (org: Org) => void
   reloadOrgs: () => Promise<void>
   reloadCps: () => Promise<void>
+  reloadEmployees: () => Promise<void>
   reloadContracts: () => Promise<void>
   loadMoreContracts: () => Promise<void>
   reloadSubscription: () => Promise<void>
@@ -74,12 +76,12 @@ const defaultProfile: Profile = {
 
 export const DashboardContext = createContext<DashboardContextType>({
   userId: '', userEmail: '', isAdmin: false,
-  orgs: [], activeOrg: null, bankAccounts: [], cps: [], contracts: [], contractsTotal: 0,
+  orgs: [], activeOrg: null, bankAccounts: [], cps: [], employees: [], contracts: [], contractsTotal: 0,
   subscription: null, demoAccess: null, profile: defaultProfile,
   sidebarOpen: true, setSidebarOpen: () => {}, orgDropdown: false, setOrgDropdown: () => {},
   initialLoading: true,
   isFree: true, isDemoActive: false, isSubValid: false, subDaysLeft: null,
-  switchOrg: () => {}, reloadOrgs: async () => {}, reloadCps: async () => {},
+  switchOrg: () => {}, reloadOrgs: async () => {}, reloadCps: async () => {}, reloadEmployees: async () => {},
   reloadContracts: async () => {}, loadMoreContracts: async () => {}, reloadSubscription: async () => {},
   canCreateContract: () => false, hasAiAccess: () => false, getQuotaInfo: () => null,
   openUpgradeModal: () => {}, closeUpgradeModal: () => {}, upgradeModalOpen: false,
@@ -99,6 +101,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [activeOrg, setActiveOrg] = useState<Org | null>(null)
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [cps, setCps] = useState<Counterparty[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
   const [contracts, setContracts] = useState<Contract[]>([])
   const [contractsTotal, setContractsTotal] = useState(0)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
@@ -165,6 +168,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setCps(data || [])
   }, [])
 
+  const loadEmployees = useCallback(async (orgId?: string) => {
+    const base = supabase.from('employees').select('*').order('ism', { ascending: true })
+    const { data, error } = orgId ? await base.eq('organization_id', orgId) : await base
+    if (error) { console.error('loadEmployees:', error.message); return }
+    setEmployees(data || [])
+  }, [])
+
   const loadContracts = useCallback(async (orgId?: string, limit = 50) => {
     const base = supabase.from('contracts').select('*, organizations(*), counterparties(*)', { count: 'exact' }).order('created_at', { ascending: false }).limit(limit)
     const { data, count, error } = orgId ? await base.eq('organization_id', orgId) : await base
@@ -216,6 +226,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     loadSubscription(activeOrg.id)
     loadDemoAccess(activeOrg.id)
     loadContracts(activeOrg.id)
+    loadEmployees(activeOrg.id)
 
     // Real-time: reload data when another tab/device changes them
     const contractsChannel = supabase
@@ -241,10 +252,19 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }, () => { loadOrgs(activeOrg.id) })
       .subscribe()
 
+    const employeesChannel = supabase
+      .channel(`employees:${activeOrg.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'employees',
+        filter: `organization_id=eq.${activeOrg.id}`,
+      }, () => { loadEmployees(activeOrg.id) })
+      .subscribe()
+
     return () => {
       supabase.removeChannel(contractsChannel)
       supabase.removeChannel(cpsChannel)
       supabase.removeChannel(orgsChannel)
+      supabase.removeChannel(employeesChannel)
     }
   }, [activeOrg?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -291,6 +311,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     await loadCps()
   }, [loadCps])
 
+  const reloadEmployees = useCallback(async () => {
+    await loadEmployees(activeOrg?.id)
+  }, [loadEmployees, activeOrg?.id])
+
   const reloadContracts = useCallback(async () => {
     await loadContracts(activeOrg?.id)
   }, [loadContracts, activeOrg?.id])
@@ -317,12 +341,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   return (
     <DashboardContext.Provider value={{
       userId, userEmail, isAdmin,
-      orgs, activeOrg, bankAccounts, cps, contracts, contractsTotal, subscription, demoAccess, profile,
+      orgs, activeOrg, bankAccounts, cps, employees, contracts, contractsTotal, subscription, demoAccess, profile,
       sidebarOpen, setSidebarOpen, orgDropdown, setOrgDropdown,
       initialLoading,
       isFree, isDemoActive, isSubValid, subDaysLeft,
       switchOrg,
-      reloadOrgs, reloadCps, reloadContracts, loadMoreContracts, reloadSubscription,
+      reloadOrgs, reloadCps, reloadEmployees, reloadContracts, loadMoreContracts, reloadSubscription,
       canCreateContract, hasAiAccess, getQuotaInfo,
       openUpgradeModal: () => setUpgradeModalOpen(true),
       closeUpgradeModal: () => setUpgradeModalOpen(false),

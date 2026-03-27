@@ -346,8 +346,20 @@ const CATS: { key: Category; label: string; icon: string }[] = [
 ]
 
 // ── Main component ───────────────────────────────────────────────────────────
+// Fields that can be auto-filled from employee record
+const EMP_FIELD_MAP: Record<string, string> = {
+  xodim_ism: 'ism',
+  ijrochi_ism: 'ism',
+  jshshir: 'jshshir',
+  passport: 'passport',
+  lavozim: 'lavozim',
+  bolim: 'bolim',
+  maosh: 'maosh',
+  xodim_tel: 'tel',
+}
+
 export default function KadrlarPage() {
-  const { activeOrg, hasAiAccess, openUpgradeModal } = useDashboard()
+  const { activeOrg, hasAiAccess, openUpgradeModal, employees } = useDashboard()
   const [activeCat, setActiveCat] = useState<Category>('shartnoma')
   const [selected, setSelected] = useState<KadrFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
@@ -357,6 +369,8 @@ export default function KadrlarPage() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [savedKey, setSavedKey] = useState(0)
+  const [empSearch, setEmpSearch] = useState('')
+  const [empOpen, setEmpOpen] = useState(false)
 
   const currentFeature = FEATURES.find(f => f.key === selected)
 
@@ -367,6 +381,8 @@ export default function KadrlarPage() {
     setError('')
     setCopied(false)
     setMehnatTur('belgilanmagan_muddatli')
+    setEmpSearch('')
+    setEmpOpen(false)
   }
 
   function goBack() {
@@ -576,6 +592,53 @@ export default function KadrlarPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Employee selector — shown for forms with mappable fields */}
+            {currentFeature.fields.some(f => EMP_FIELD_MAP[f.key]) && employees.length > 0 && (
+              <div className="relative">
+                <label className="block text-xs text-gray-400 mb-1">Mavjud xodimdan avtoto'ldirish</label>
+                <input
+                  type="text"
+                  value={empSearch}
+                  onFocus={() => setEmpOpen(true)}
+                  onChange={e => { setEmpSearch(e.target.value); setEmpOpen(true) }}
+                  onBlur={() => setTimeout(() => setEmpOpen(false), 150)}
+                  placeholder="Xodim ismini kiriting yoki tanlang…"
+                  className={inp}
+                  autoComplete="off"
+                />
+                {empOpen && (() => {
+                  const filtered = employees.filter(e =>
+                    !empSearch || e.ism.toLowerCase().includes(empSearch.toLowerCase())
+                  ).slice(0, 8)
+                  return filtered.length > 0 ? (
+                    <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl overflow-hidden max-h-52 overflow-y-auto">
+                      {filtered.map(emp => (
+                        <button key={emp.id} type="button"
+                          onMouseDown={() => {
+                            const patch: Record<string, string> = {}
+                            currentFeature.fields.forEach(f => {
+                              const empKey = EMP_FIELD_MAP[f.key]
+                              if (empKey && emp[empKey as keyof typeof emp]) {
+                                patch[f.key] = String(emp[empKey as keyof typeof emp])
+                              }
+                            })
+                            setFormData(prev => ({ ...prev, ...patch }))
+                            setEmpSearch(emp.ism)
+                            setEmpOpen(false)
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-[#1F2937] transition border-b border-[#1E293B]/50 last:border-0">
+                          <div className="text-sm text-white">{emp.ism}</div>
+                          <div className="text-xs text-gray-500">
+                            {[emp.lavozim, emp.bolim].filter(Boolean).join(' · ') || '—'}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null
+                })()}
               </div>
             )}
 

@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { key: 'counterparties',  href: '/dashboard/kontragentlar', icon: '🤝', label: t.nav.counterparties },
   { key: 'yurist_ai',       href: '/dashboard/yurist',        icon: '⚖️', label: t.nav.yurist_ai },
   { key: 'kadrlar',         href: '/dashboard/kadrlar',       icon: '👥', label: t.nav.kadrlar },
+  { key: 'xodimlar',        href: '/dashboard/xodimlar',      icon: '🧑‍💼', label: t.nav.xodimlar },
   { key: 'buxgalter',       href: '/dashboard/buxgalter',     icon: '💼', label: t.nav.buxgalter },
   { key: 'kotiba',          href: '/dashboard/kotiba',        icon: '🗂️', label: t.nav.kotiba },
   { key: 'seif',            href: '/dashboard/seif',          icon: '🔒', label: t.nav.seif },

@@ -22,6 +22,13 @@ export type Counterparty = {
   phone?: string; qqsreg?: string
 }
 
+export type Employee = {
+  id: string; organization_id: string; ism: string
+  jshshir?: string; passport?: string; lavozim?: string
+  bolim?: string; maosh?: string; ish_boshi?: string
+  status?: string; tel?: string; created_at: string
+}
+
 export type SpecItem = {
   nomi: string; izoh?: string; shtrix_kodi?: string; birlik: string; miqdori: number; narxi: number
   yetkazib_narxi?: number

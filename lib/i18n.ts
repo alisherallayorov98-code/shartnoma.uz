@@ -20,6 +20,7 @@ export const t = {
     profile:        { uz: 'Profil',             oz: 'Профил',            ru: 'Профиль' },
     yurist_ai:      { uz: 'Yurist AI',          oz: 'Юрист AI',          ru: 'Юрист AI' },
     kadrlar:        { uz: 'Kadrlar',            oz: 'Кадрлар',           ru: 'Кадры' },
+    xodimlar:       { uz: 'Xodimlar',           oz: 'Ходимлар',          ru: 'Сотрудники' },
     buxgalter:      { uz: 'Buxgalter',          oz: 'Бухгалтер',         ru: 'Бухгалтер' },
     kotiba:         { uz: 'Kotiba AI',           oz: 'Котиба AI',         ru: 'Секретарь AI' },
     seif:           { uz: 'Seif',               oz: 'Сейф',              ru: 'Сейф' },
