@@ -71,7 +71,19 @@ export default function SeifPage() {
   const [activeCategory, setActiveCategory] = useState('barchasi')
   const [dragOver, setDragOver] = useState(false)
   const [uploadCategory, setUploadCategory] = useState('boshqa')
+  const [uploadName, setUploadName] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Preview modal
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewName, setPreviewName] = useState('')
+  const [previewLoading, setPreviewLoading] = useState(false)
+
+  // Edit modal
+  const [editDoc, setEditDoc] = useState<OrgDoc | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editCategory, setEditCategory] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
 
   async function loadDocs() {
     if (!activeOrg) return
@@ -86,6 +98,13 @@ export default function SeifPage() {
   }
 
   useEffect(() => { loadDocs() }, [activeOrg?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close preview on Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setPreviewUrl(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   async function handleFiles(files: FileList | null) {
     if (!files || !activeOrg) return
@@ -127,6 +146,11 @@ export default function SeifPage() {
         finalName = sanitize(file.name)
       }
 
+      // Use custom name if provided
+      const displayName = uploadName.trim()
+        ? uploadName.trim().replace(/\.pdf$/i, '') + '.pdf'
+        : finalName
+
       setUploadProgress("Supabase ga yuklanmoqda...")
       const filePath = `${activeOrg.id}/${Date.now()}-${finalName}`
 
@@ -138,7 +162,7 @@ export default function SeifPage() {
 
       const { error: dbError } = await supabase.from('org_documents').insert({
         organization_id: activeOrg.id,
-        name: finalName,
+        name: displayName,
         category: uploadCategory,
         file_path: filePath,
         file_size: uploadBlob.size,
@@ -151,6 +175,7 @@ export default function SeifPage() {
       }
 
       if (fileInputRef.current) fileInputRef.current.value = ''
+      setUploadName('')
       await loadDocs()
     } catch (e) {
       setUploadError(e instanceof Error ? e.message : 'Xatolik yuz berdi')
@@ -158,6 +183,18 @@ export default function SeifPage() {
       setUploading(false)
       setUploadProgress('')
     }
+  }
+
+  async function handlePreview(doc: OrgDoc) {
+    setPreviewLoading(true)
+    setPreviewName(doc.name)
+    setPreviewUrl('loading')
+    const { data, error } = await supabase.storage
+      .from('org-documents')
+      .createSignedUrl(doc.file_path, 300)
+    setPreviewLoading(false)
+    if (error || !data) { setPreviewUrl(null); return }
+    setPreviewUrl(data.signedUrl)
   }
 
   async function handleDownload(doc: OrgDoc) {
@@ -184,12 +221,34 @@ export default function SeifPage() {
     }
   }
 
+  function openEdit(doc: OrgDoc) {
+    setEditDoc(doc)
+    setEditName(doc.name.replace(/\.pdf$/i, ''))
+    setEditCategory(doc.category)
+  }
+
+  async function saveEdit() {
+    if (!editDoc) return
+    setEditSaving(true)
+    const newName = editName.trim()
+      ? editName.trim().replace(/\.pdf$/i, '') + '.pdf'
+      : editDoc.name
+    const { error } = await supabase.from('org_documents')
+      .update({ name: newName, category: editCategory })
+      .eq('id', editDoc.id)
+    setEditSaving(false)
+    if (error) return
+    setDocs(prev => prev.map(d => d.id === editDoc.id ? { ...d, name: newName, category: editCategory } : d))
+    setEditDoc(null)
+  }
+
   const filtered = activeCategory === 'barchasi'
     ? docs
     : docs.filter(d => d.category === activeCategory)
 
   const totalSize = docs.reduce((s, d) => s + d.file_size, 0)
   const usedPercent = Math.min((docs.length / MAX_DOCS) * 100, 100)
+  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
   return (
     <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#0B1220]">
@@ -249,17 +308,28 @@ export default function SeifPage() {
 
         {/* Upload */}
         <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <label className="text-xs text-gray-400">Kategoriya:</label>
-            <select
-              value={uploadCategory}
-              onChange={e => setUploadCategory(e.target.value)}
-              className="bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-600 cursor-pointer"
-            >
-              {CATEGORIES.filter(c => c.key !== 'barchasi').map(c => (
-                <option key={c.key} value={c.key}>{c.icon} {c.label}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Hujjat nomi (ixtiyoriy)</label>
+              <input
+                className={inp}
+                placeholder="Ustav 2024-yil yangilangan"
+                value={uploadName}
+                onChange={e => setUploadName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Kategoriya</label>
+              <select
+                value={uploadCategory}
+                onChange={e => setUploadCategory(e.target.value)}
+                className={`${inp} cursor-pointer`}
+              >
+                {CATEGORIES.filter(c => c.key !== 'barchasi').map(c => (
+                  <option key={c.key} value={c.key}>{c.icon} {c.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div
@@ -372,10 +442,23 @@ export default function SeifPage() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
+                        onClick={() => handlePreview(doc)}
+                        className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium"
+                      >
+                        👁 Ko&apos;rish
+                      </button>
+                      <button
                         onClick={() => handleDownload(doc)}
                         className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition font-medium"
                       >
                         ↓ Yuklab olish
+                      </button>
+                      <button
+                        onClick={() => openEdit(doc)}
+                        className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-400 hover:text-white px-2.5 py-1.5 rounded-lg transition"
+                        title="Tahrirlash"
+                      >
+                        ✎
                       </button>
                       <button
                         onClick={() => handleDelete(doc)}
@@ -393,6 +476,78 @@ export default function SeifPage() {
         </div>
 
       </div>
+
+      {/* ── Preview Modal ── */}
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex flex-col"
+          onClick={e => { if (e.target === e.currentTarget) setPreviewUrl(null) }}
+        >
+          <div className="flex items-center justify-between px-5 py-3 bg-[#111827] border-b border-[#1E293B] flex-shrink-0">
+            <div className="text-sm font-medium text-white truncate max-w-lg">📄 {previewName}</div>
+            <button
+              onClick={() => setPreviewUrl(null)}
+              className="text-gray-400 hover:text-white transition text-xl leading-none ml-4 flex-shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            {previewUrl === 'loading' || previewLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <iframe
+                src={previewUrl}
+                className="w-full h-full"
+                title={previewName}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Modal ── */}
+      {editDoc && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+          onClick={e => { if (e.target === e.currentTarget) setEditDoc(null) }}>
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6 w-full max-w-md space-y-4">
+            <h3 className="text-sm font-semibold text-white">Hujjatni tahrirlash</h3>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Hujjat nomi</label>
+              <input
+                className={inp}
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                placeholder="Hujjat nomi"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Kategoriya</label>
+              <select
+                className={`${inp} cursor-pointer`}
+                value={editCategory}
+                onChange={e => setEditCategory(e.target.value)}
+              >
+                {CATEGORIES.filter(c => c.key !== 'barchasi').map(c => (
+                  <option key={c.key} value={c.key}>{c.icon} {c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={saveEdit} disabled={editSaving}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2 rounded-lg text-sm font-semibold transition">
+                {editSaving ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+              <button onClick={() => setEditDoc(null)}
+                className="flex-1 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 py-2 rounded-lg text-sm transition">
+                Bekor qilish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
