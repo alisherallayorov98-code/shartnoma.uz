@@ -202,11 +202,14 @@ export default function SeifPage() {
       .from('org-documents')
       .createSignedUrl(doc.file_path, 120)
     if (error || !data) return
+    const res = await fetch(data.signedUrl)
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = data.signedUrl
+    a.href = url
     a.download = doc.name
-    a.target = '_blank'
     a.click()
+    URL.revokeObjectURL(url)
   }
 
   async function handleDelete(doc: OrgDoc) {
