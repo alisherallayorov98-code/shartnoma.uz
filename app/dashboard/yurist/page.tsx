@@ -196,6 +196,7 @@ export default function YuristPage() {
         const selectedCp = cps.find(c => c.name === hubWriteDetails.cp)
         body.details = {
           ...hubWriteDetails,
+          org: activeOrg?.name || hubWriteDetails.org,
           org_inn: activeOrg?.inn || '',
           org_director: activeOrg?.director_name || '',
           org_bank: activeOrg?.bank_name || '',
@@ -248,7 +249,7 @@ export default function YuristPage() {
       </div>
 
       {/* Feature cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {FEATURES.map(f => {
           const locked = !hasAiAccess()
           return (
@@ -556,9 +557,9 @@ export default function YuristPage() {
 
         {/* Action button */}
         {canUse && !hubLoading && !hubResult && (
-          <button onClick={runHubFeature}
-            className="w-full py-3 rounded-xl text-sm font-semibold transition bg-orange-500 hover:bg-orange-600 text-white">
-            {sel.icon} {sel.name} boshlash
+          <button onClick={runHubFeature} disabled={fixFileLoading}
+            className="w-full py-3 rounded-xl text-sm font-semibold transition bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed">
+            {fixFileLoading ? '⏳ Fayl o\'qilmoqda...' : `${sel.icon} ${sel.name} boshlash`}
           </button>
         )}
 
@@ -848,7 +849,7 @@ export default function YuristPage() {
               </div>
             )}
 
-            <button onClick={() => { setHubResult(null); setHubError('') }}
+            <button onClick={() => { setHubResult(null); setHubError(''); setFixEditMode(false) }}
               className="text-xs text-gray-500 hover:text-gray-400 transition">🔄 Qayta bajarish</button>
           </div>
         )}

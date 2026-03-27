@@ -248,12 +248,30 @@ export async function POST(req: NextRequest) {
 
     // ── 8. SHARTNOMA YOZISH ─────────────────────────────────
     else if (type === 'write') {
+      const raqam = details?.shartnoma_raqam ? `№ ${details.shartnoma_raqam}` : '№ ___'
+      const sana  = details?.sana || '___'
+      const orgBlock = [
+        details?.org || '___',
+        details?.org_director ? `Direktor: ${details.org_director}` : '',
+        details?.org_inn ? `INN: ${details.org_inn}` : '',
+        details?.org_bank ? `Bank: ${details.org_bank}` : '',
+        details?.org_mfo  ? `MFO: ${details.org_mfo}` : '',
+        details?.org_address ? `Manzil: ${details.org_address}` : '',
+      ].filter(Boolean).join(', ')
+      const cpBlock = [
+        details?.cp || '___',
+        details?.cp_director ? `Direktor: ${details.cp_director}` : '',
+        details?.cp_inn ? `INN: ${details.cp_inn}` : '',
+        details?.cp_bank ? `Bank: ${details.cp_bank}` : '',
+        details?.cp_mfo  ? `MFO: ${details.cp_mfo}` : '',
+        details?.cp_address ? `Manzil: ${details.cp_address}` : '',
+      ].filter(Boolean).join(', ')
       const task = lang === 'ru'
-        ? `Напишите профессиональный договор на основе данных. Тип: ${details?.tur || 'купля-продажа'}, Продавец: ${details?.org || '___'}, Покупатель: ${details?.cp || '___'}, Сумма: ${details?.summa || '___'}, Дополнительно: ${details?.extra || 'нет'}`
+        ? `Напишите профессиональный договор. Тип: ${details?.tur || 'купля-продажа'}, Номер: ${raqam}, Дата: ${sana}, Сторона 1: ${orgBlock}, Сторона 2: ${cpBlock}, Сумма: ${details?.summa || '___'}, Дополнительно: ${details?.extra || 'нет'}`
         : lang === 'oz'
-        ? `Қуйидаги маълумотлар асосида профессионал шартнома матнини ёзинг. Тур: ${details?.tur || 'oldi-sotdi'}, Сотувчи: ${details?.org || '___'}, Харидор: ${details?.cp || '___'}, Сумма: ${details?.summa || '___'}, Қўшимча: ${details?.extra || 'йўқ'}`
-        : `Quyidagi ma'lumotlar asosida professional shartnoma matnini yozing. Tur: ${details?.tur || 'oldi-sotdi'}, Sotuvchi: ${details?.org || '___'}, Xaridor: ${details?.cp || '___'}, Summa: ${details?.summa || '___'}, Qo'shimcha: ${details?.extra || 'yo\'q'}`
-      prompt = `${task}\n\nO'zbekiston qonunchiligi asosida, rasmiy uslubda, to'liq bandlar bilan yozing.\n${jOnly}\n{"shartnoma":"to'liq shartnoma matni...","bandlar_soni":0}`
+        ? `Профессионал шартнома матнини ёзинг. Тур: ${details?.tur || 'oldi-sotdi'}, Рақам: ${raqam}, Сана: ${sana}, 1-томон: ${orgBlock}, 2-томон: ${cpBlock}, Сумма: ${details?.summa || '___'}, Қўшимча: ${details?.extra || 'йўқ'}`
+        : `Professional shartnoma matnini yozing. Tur: ${details?.tur || 'oldi-sotdi'}, Raqam: ${raqam}, Sana: ${sana}, 1-tomon: ${orgBlock}, 2-tomon: ${cpBlock}, Summa: ${details?.summa || '___'}, Qo'shimcha: ${details?.extra || 'yo\'q'}`
+      prompt = `${task}\n\nO'zbekiston qonunchiligi asosida, rasmiy uslubda, to'liq bandlar bilan yozing. Tomonlar rekvizitlarini oxirgi bo'limga joylashtiring.\n${jOnly}\n{"shartnoma":"to'liq shartnoma matni...","bandlar_soni":0}`
     }
 
     // ── 9. KAMCHILIKLARNI TO'G'IRLASH ──────────────────────
