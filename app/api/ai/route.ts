@@ -58,7 +58,7 @@ function checkRate(userId: string): boolean {
   e.n++; return true
 }
 
-function truncate(text: string, max = 4000): string {
+function truncate(text: string, max = 5000): string {
   return text.length <= max ? text : text.slice(0, max) + '\n...[qisqartirildi]'
 }
 
@@ -305,12 +305,33 @@ export async function POST(req: NextRequest) {
 
     // ── 11. TASHQI SHARTNOMA TUZATISH ──────────────────────
     else if (type === 'tuzatish') {
-      const task = lang === 'ru'
-        ? `Вы опытный юрист по законодательству Узбекистана. Тщательно проанализируйте договор и устраните ВСЕ недостатки:\n1. Юридические риски и слабые пункты\n2. Грамматические и стилистические ошибки\n3. Логические противоречия\n4. Отсутствующие обязательные пункты\n\nВерните исправленный ПОЛНЫЙ текст договора со списком всех изменений.`
+      const rules = lang === 'ru'
+        ? `СТРОГИЕ ПРАВИЛА (нарушение недопустимо):
+1. НЕЛЬЗЯ менять структуру договора — порядок разделов, нумерацию пунктов
+2. НЕЛЬЗЯ добавлять реквизиты сторон в начало договора — они должны быть ТОЛЬКО в конце
+3. НЕЛЬЗЯ удалять раздел реквизитов/подписей в конце договора — сохранить полностью
+4. НЕЛЬЗЯ добавлять новые разделы — только исправлять существующие
+5. НЕЛЬЗЯ менять названия сторон, суммы, даты — если они уже указаны
+6. МОЖНО: исправлять юридические формулировки, грамматику, устранять противоречия внутри существующих пунктов`
         : lang === 'oz'
-        ? `Сиз Ўзбекистон қонунчилиги бўйича тажрибали юристсиз. Шартномани мукаммал таҳлил қилинг ва БАРЧА камчиликларни бартараф этинг:\n1. Юридик хатарлар ва заиф бандлар\n2. Грамматика ва услуб хатолари\n3. Мантиқий зиддиятлар\n4. Мажбурий бандлар йўқлиги\n\nТўлиқ тузатилган шартнома матнини ва ўзгартиришлар рўйхатини қайтаринг.`
-        : `Siz O'zbekiston qonunchiligini yaxshi biladigan tajribali yuristasiz. Shartnomani to'liq tahlil qiling va BARCHA kamchiliklarini bartaraf eting:\n1. Yuridik xatarlar va zaif bandlar\n2. Grammatika va uslub xatolari\n3. Mantiqiy ziddiyatlar\n4. Majburiy bandlar yo'qligi\n\nTo'liq tuzatilgan shartnoma matnini va o'zgartirishlar ro'yxatini qaytaring.`
-      prompt = `${task}\n\n${jOnly}\n{"tuzatilgan_shartnoma":"to'liq tuzatilgan matn...","ozgartirishlar":[{"original":"...","fixed":"...","izoh":"..."}],"ozgartirishlar_soni":5,"umumiy_baho":"..."}\n\nSHARTNOMA:\n${truncate(content, 3500)}`
+        ? `QATIY QOIDALAR (buzish mumkin emas):
+1. Shartnoma tuzilmasini — bo'limlar tartibini, bandlar raqamlarini O'ZGARTIRMANG
+2. Tomonlar rekvizitlarini shartnoma BOSHIGA qo'shmang — ular FAQAT oxirida bo'ladi
+3. Shartnoma oxiridagi rekvizitlar/imzolar bo'limini O'CHIRMANG — to'liq saqlang
+4. Yangi bo'limlar QO'SHMANG — faqat mavjudlarini tuzating
+5. Tomonlar nomlari, summalar, sanalarni O'ZGARTIRMANG — agar allaqachon ko'rsatilgan bo'lsa
+6. MUMKIN: yuridik iboralarni, grammatikani tuzatish, mavjud bandlar ichidagi ziddiyatlarni bartaraf etish`
+        : `QATIY QOIDALAR (buzish mumkin emas):
+1. Shartnoma tuzilmasini — bo'limlar tartibini, bandlar raqamlarini O'ZGARTIRMANG
+2. Tomonlar rekvizitlarini shartnoma BOSHIGA qo'shmang — ular FAQAT oxirida bo'ladi
+3. Shartnoma oxiridagi rekvizitlar/imzolar bo'limini O'CHIRMANG — to'liq saqlang
+4. Yangi bo'limlar QO'SHMANG — faqat mavjudlarini tuzating
+5. Tomonlar nomlari, summalar, sanalarni O'ZGARTIRMANG — agar allaqachon ko'rsatilgan bo'lsa
+6. MUMKIN: yuridik iboralarni, grammatikani tuzatish, mavjud bandlar ichidagi ziddiyatlarni bartaraf etish`
+      const task = lang === 'ru'
+        ? `Вы опытный юрист по законодательству Узбекистана. Проанализируйте договор и устраните недостатки, СТРОГО соблюдая правила выше.`
+        : `Siz O'zbekiston qonunchiligini yaxshi biladigan tajribali yuristasiz. Shartnomani tahlil qiling va kamchiliklarini bartaraf eting, yuqoridagi QATIY QOIDALARGA rioya qiling.`
+      prompt = `${task}\n\n${rules}\n\n${jOnly}\n{"tuzatilgan_shartnoma":"to'liq tuzatilgan matn (tuzilma o'zgarishsiz)...","ozgartirishlar":[{"original":"...","fixed":"...","izoh":"..."}],"ozgartirishlar_soni":5,"umumiy_baho":"..."}\n\nSHARTNOMA:\n${truncate(content, 5000)}`
     }
 
     // ── 12. MEHNAT SHARTNOMASI ──────────────────────────────
