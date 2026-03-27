@@ -211,6 +211,24 @@ export default function BuxgalterPage() {
     setCopied(false)
   }
 
+  function updateFormData(patch: Record<string, string>) {
+    setFormData(prev => {
+      const next = { ...prev, ...patch }
+      // Auto-calc kechikish_kun for jarima_hisobi
+      if (selected === 'jarima_hisobi') {
+        const muddat = next.tolov_muddat || prev.tolov_muddat
+        const hisob = next.hisoblash_sana || prev.hisoblash_sana
+        if (muddat && hisob) {
+          const d1 = new Date(muddat)
+          const d2 = new Date(hisob)
+          const diff = Math.round((d2.getTime() - d1.getTime()) / 86400000)
+          if (!isNaN(diff) && diff >= 0) next.kechikish_kun = String(diff)
+        }
+      }
+      return next
+    })
+  }
+
   async function handleGenerate() {
     if (!currentFeature || currentFeature.isCustom) return
     if (!activeOrg) { setError("Avval tashkilot tanlang!"); return }
@@ -477,7 +495,7 @@ export default function BuxgalterPage() {
                         <input
                           type={field.type || 'text'}
                           value={formData[field.key] || ''}
-                          onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                          onChange={e => updateFormData({ [field.key]: e.target.value })}
                           placeholder={field.placeholder}
                           className={inp}
                         />
