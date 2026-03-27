@@ -36,8 +36,8 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'dalolatnoma',
     resultField: 'dalolatnoma',
     fields: [
-      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2025/03-15", isContractField: true },
       { key: 'kontragentar_ism', label: "Buyurtmachi (kontragent)", placeholder: "Raqamli Texnologiyalar MChJ", isCpField: true },
+      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2025/03-15", isContractField: true },
       { key: 'xizmat_turi', label: "Bajarilgan xizmat/ish turi", placeholder: "Dasturiy ta'minot ishlab chiqish xizmati" },
       { key: 'summa', label: "Summa (so'm)", placeholder: "15 000 000" },
       { key: 'sana', label: "Dalolatnoma sanasi", placeholder: "2025-03-20", type: 'date' },
@@ -51,8 +51,8 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'talabnoma',
     resultField: 'talabnoma',
     fields: [
-      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2024/08-01", isContractField: true },
       { key: 'qarzdor', label: "Qarzdor tashkilot", placeholder: "ABC Savdo MChJ", isCpField: true },
+      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2024/08-01", isContractField: true },
       { key: 'qarz_summasi', label: "Qarz summasi (so'm)", placeholder: "50 000 000" },
       { key: 'muddat_utgan', label: "Muddati o'tgan kunlar soni", placeholder: "45" },
       { key: 'jarima_foiz', label: "Kunlik jarima foizi (%)", placeholder: "0.1", hint: "FK 350-mod.: 0.05%–0.5% oralig'ida" },
@@ -67,8 +67,8 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'talabnoma',
     resultField: 'talabnoma',
     fields: [
-      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2025/01-05", isContractField: true },
       { key: 'qarzdor', label: "Qarzdor korxona", placeholder: "Yulduz Savdo AJ", isCpField: true },
+      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2025/01-05", isContractField: true },
       { key: 'qarz_summasi', label: "Qarz summasi (so'm)", placeholder: "80 000 000" },
       { key: 'qarz_sababi', label: "Qarz sababi/asosi", placeholder: "Tovarlar yetkazib berilgan, shartnoma 2025/01-05 bo'yicha to'lov kechiktirilgan" },
       { key: 'oxirgi_muhlat', label: "Oxirgi to'lov muhlati", placeholder: "2025-05-01", type: 'date' },
@@ -83,8 +83,8 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'akt_sverki',
     resultField: 'akt_sverki',
     fields: [
-      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2025/02-10", isContractField: true },
       { key: 'kontragent', label: "Kontragent", placeholder: "Global Solutions LLC", isCpField: true },
+      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2025/02-10", isContractField: true },
       { key: 'davr', label: "Tekshirish davri", placeholder: "2025-yil I chorak (01.01–31.03)" },
       { key: 'debet_summa', label: "Debet (yetkazgan summa)", placeholder: "45 000 000" },
       { key: 'kredit_summa', label: "Kredit (to'langan summa)", placeholder: "30 000 000" },
@@ -134,8 +134,8 @@ const FEATURES: FeatureConfig[] = [
     apiType: 'jarima_hisobi',
     resultField: 'jarima_hisobi',
     fields: [
-      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2024/11-22", isContractField: true },
       { key: 'qarzdor', label: "Qarzdor tashkilot", placeholder: "Beta Qurilish MChJ", isCpField: true },
+      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2024/11-22", isContractField: true },
       { key: 'shartnoma_sana', label: "Shartnoma sanasi", placeholder: "2024-11-22", type: 'date' },
       { key: 'shartnoma_band', label: "Jarima belgilangan band", placeholder: "6.3" },
       { key: 'qarz_summasi', label: "Asosiy qarz (so'm)", placeholder: "35 000 000" },
@@ -376,11 +376,17 @@ export default function BuxgalterPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" ref={cpDropRef}>
                   {currentFeature.fields.map(field => {
                     if (field.isContractField) {
+                      // Find selected counterparty value from any cp field in this feature
+                      const cpFieldKeys = ['qarzdor', 'kontragent', 'kontragentar_ism']
+                      const selectedCp = cpFieldKeys.map(k => formData[k]).find(v => v) || ''
                       const search = contractSearch.toLowerCase()
-                      const filtered = orgContracts.filter(c =>
-                        c.contract_number.toLowerCase().includes(search) ||
-                        (c.counterparties?.name || '').toLowerCase().includes(search)
-                      ).slice(0, 10)
+                      const filtered = orgContracts.filter(c => {
+                        const cpName = (c.counterparties?.name || '').toLowerCase()
+                        // Filter by selected counterparty if one is chosen
+                        if (selectedCp && !cpName.includes(selectedCp.toLowerCase())) return false
+                        // Then filter by search text
+                        return !search || c.contract_number.toLowerCase().includes(search) || cpName.includes(search)
+                      }).slice(0, 10)
                       const selected = formData['shartnoma_raqam']
                       return (
                         <div key={field.key} className="relative sm:col-span-2" ref={contractDropRef}>
@@ -390,7 +396,7 @@ export default function BuxgalterPage() {
                             value={contractOpen ? contractSearch : (selected || '')}
                             onFocus={() => { setContractOpen(true); setContractSearch(selected || '') }}
                             onChange={e => { setContractSearch(e.target.value); setFormData(p => ({ ...p, shartnoma_raqam: e.target.value })); setContractOpen(true) }}
-                            placeholder={orgContracts.length ? "Shartnoma raqami kiriting yoki ro'yxatdan tanlang..." : field.placeholder}
+                            placeholder={selectedCp && orgContracts.some(c => (c.counterparties?.name || '').toLowerCase().includes(selectedCp.toLowerCase())) ? `${selectedCp} shartnomalaridan tanlang...` : orgContracts.length ? "Shartnoma raqami kiriting yoki ro'yxatdan tanlang..." : field.placeholder}
                             className={inp + ' pr-8'}
                             autoComplete="off"
                           />
