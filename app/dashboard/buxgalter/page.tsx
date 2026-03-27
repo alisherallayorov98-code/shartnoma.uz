@@ -8,6 +8,7 @@ import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 import HujjatResult from '../_components/HujjatResult'
 import TolovGrafigi from './_components/TolovGrafigi'
 import FakturaBuilder from './_components/FakturaBuilder'
+import AktSverki from './_components/AktSverki'
 
 type BuxFeature =
   | 'dalolatnoma' | 'talabnoma' | 'debitor_undirish'
@@ -80,16 +81,7 @@ const FEATURES: FeatureConfig[] = [
     icon: '🔄',
     title: 'Akt sverki',
     description: "Kontragent bilan o'zaro hisob-kitoblarni tekshirish akti (BHMS asosida)",
-    apiType: 'akt_sverki',
-    resultField: 'akt_sverki',
-    fields: [
-      { key: 'kontragent', label: "Kontragent", placeholder: "Global Solutions LLC", isCpField: true },
-      { key: 'shartnoma_raqam', label: "Shartnoma tanlash / raqami", placeholder: "2025/02-10", isContractField: true },
-      { key: 'davr', label: "Tekshirish davri", placeholder: "2025-yil I chorak (01.01–31.03)" },
-      { key: 'debet_summa', label: "Debet (yetkazgan summa)", placeholder: "45 000 000" },
-      { key: 'kredit_summa', label: "Kredit (to'langan summa)", placeholder: "30 000 000" },
-      { key: 'bosh_qoldiq', label: "Boshlanish qoldig'i", placeholder: "0" },
-    ],
+    isCustom: true,
   },
   {
     key: 'avans_hisobot',
@@ -368,6 +360,9 @@ export default function BuxgalterPage() {
             )}
             {currentFeature.isCustom && selected === 'faktura_builder' && (
               <FakturaBuilder org={activeOrg} cps={cps} contracts={contracts.filter(c => c.organization_id === activeOrg?.id)} />
+            )}
+            {currentFeature.isCustom && selected === 'akt_sverki' && (
+              <AktSverki org={activeOrg} cps={cps} contracts={contracts.filter(c => c.organization_id === activeOrg?.id)} />
             )}
 
             {/* AI form */}
