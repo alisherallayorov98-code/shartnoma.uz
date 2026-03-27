@@ -1294,14 +1294,257 @@ ${jOnly}
 {"rekvizitlar_xat":"to'liq so'rov xati matni..."}`
     }
 
+    // ── AKT SVERKI ──────────────────────────────────────────
+    else if (type === 'akt_sverki') {
+      const d = details || {}
+      prompt = `Siz O'zbekiston Respublikasi buxgalteriya va moliya qonunchiligini mukammal biladigan bosh buxgalter yordamchisiz. Quyidagi ma'lumotlar asosida rasmiy o'zaro hisob-kitoblarni tekshirish akti (akt sverki) yarating.
+
+TASHKILOT (TASHABBUSKOR):
+Tashkilot: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'})
+Rahbar: ${d.direktor || '___'}
+Bank: ${d.bank_name || '___'}, H/R: ${d.bank_account || '___'}, MFO: ${d.mfo || '___'}
+
+KONTRAGENT: ${d.kontragent || '___'}
+SHARTNOMA: ${d.shartnoma_raqam || '___'}
+DAVR: ${d.davr || '___'}
+BOSHLANISH QOLDIQ: ${d.bosh_qoldiq || "0"}
+DEBET (Bizning yetkazgan): ${d.debet_summa || '___'} so'm
+KREDIT (Kontragent to'lagan): ${d.kredit_summa || '___'} so'm
+
+AKT TUZILMASI:
+
+1. SARLAVHA (markazda):
+   O'ZARO HISOB-KITOBLARNI TEKSHIRISH AKTI
+   ${d.davr || '___'} davri uchun
+   Tuzilgan sana: _______________
+
+2. TOMONLAR:
+   Biz: "${d.tashkilot || '___'}", INN: ${d.tashkilot_inn || '___'}
+   Kontragent: "${d.kontragent || '___'}"
+   Ular o'rtasidagi ${d.shartnoma_raqam || '___'} raqamli shartnoma bo'yicha
+
+3. HISOB-KITOB JADVALI:
+   | Sana | Operatsiya tavsifi | Debet (so'm) | Kredit (so'm) | Qoldiq (so'm) |
+   (Kamida 3-5 ta operatsiya yozing: yetkazib berish, to'lov, qaytarish kabilar)
+   Boshlanish qoldig'i: ${d.bosh_qoldiq || '0'} so'm
+   Jami debet: ${d.debet_summa || '___'} so'm
+   Jami kredit: ${d.kredit_summa || '___'} so'm
+   Yakuniy qoldiq: ___ so'm (${d.kontragent || '___'} zimmasidagi qarz / yoki bizning qarzimiz)
+
+4. YAKUNIY MA'LUMOT:
+   "${d.davr || '___'}" davri yakunida "${d.kontragent || '___'}" tashkiloti zimmasidagi qarz: ___ so'm
+   (yoki: "${d.tashkilot || '___'}" zimmasidagi qarz: ___ so'm)
+   Tomonlar hisob-kitoblarni to'g'ri deb hisoblaydi / yoki: Tafovut aniqlandi: ___ so'm
+
+5. IMZOLAR (ikki tomonlama):
+   "${d.tashkilot || '___'}":                    "${d.kontragent || '___'}":
+   Bosh buxgalter: _________ / ___    Bosh buxgalter: _________ / ___
+   Rahbar: _________ / ${d.direktor || '___'}      Rahbar: _________ / ___
+   M.O.   Sana: _______________         M.O.   Sana: _______________
+
+Rasmiy buxgalteriya uslubida. O'zbekiston buxgalteriya standartlariga muvofiq (BHMS).
+${jOnly}
+{"akt_sverki":"to'liq akt sverki matni..."}`
+    }
+
+    // ── AVANS HISOBOTI ──────────────────────────────────────
+    else if (type === 'avans_hisobot') {
+      const d = details || {}
+      const berilganAvans = parseFloat((d.avans_miqdori || '0').replace(/[\s,]/g, '')) || 0
+      const sarflangan = parseFloat((d.sarflangan || '0').replace(/[\s,]/g, '')) || 0
+      const qoldiq = berilganAvans - sarflangan
+
+      prompt = `Siz O'zbekiston Respublikasi buxgalteriya qoidalarini mukammal biladigan bosh buxgalter yordamchisiz. Quyidagi ma'lumotlar asosida rasmiy avans hisobotini yarating (O'zR Moliya vazirligi № AV-3 shakl asosida).
+
+TASHKILOT:
+Tashkilot: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'})
+Bosh buxgalter: ${d.direktor || '___'}
+
+HISOBOT BERUVCHI XODIM:
+Ismi: ${d.xodim_ism || '___'}
+Lavozimi: ${d.lavozim || '___'}
+Bo'limi: ${d.bolim || '___'}
+
+AVANS MA'LUMOTLARI:
+Avans maqsadi: ${d.avans_maqsad || '___'}
+Berilgan avans: ${d.avans_miqdori || '___'} so'm
+Berilgan sana: ${d.avans_sana || '___'}
+Hisob-kitob sanasi: ${d.hisobot_sana || '___'}
+Sarflangan: ${d.sarflangan || '___'} so'm
+Qoldiq/Oshib ketish: ${qoldiq >= 0 ? `Qoldiq ${Math.abs(qoldiq).toLocaleString('uz-UZ')} so'm` : `Oshib ketish ${Math.abs(qoldiq).toLocaleString('uz-UZ')} so'm`}
+
+XARAJATLAR TAFSILOTI: ${d.xarajatlar || '___'}
+
+AV-3 SHAKLI TUZILMASI:
+
+1. SARLAVHA:
+   AVANS HISOBOTI № ___
+   Sana: ${d.hisobot_sana || '___'}
+   Tashkilot: ${d.tashkilot || '___'}
+
+2. HISOBOT BERUVCHI:
+   Ismi: ${d.xodim_ism || '___'}
+   Lavozimi: ${d.lavozim || '___'}   Bo'limi: ${d.bolim || '___'}
+   Avans oldi: ${d.avans_miqdori || '___'} so'm   Sana: ${d.avans_sana || '___'}
+   Avans maqsadi: ${d.avans_maqsad || '___'}
+
+3. XARAJATLAR JADVALI:
+   | № | Sana | Hujjat turi va raqami | Xarajat tavsifi | Summa (so'm) |
+   (${d.xarajatlar || 'xarajatlarni to\'g\'ri taqsimlang, kamida 3-5 qator'})
+   Jami sarflangan: ${d.sarflangan || '___'} so'm
+
+4. HISOB-KITOB:
+   Berilgan avans:           ${d.avans_miqdori || '___'} so'm
+   Sarflangan:               ${d.sarflangan || '___'} so'm
+   Qoldiq (qaytarilsin):     ${qoldiq >= 0 ? Math.abs(qoldiq).toLocaleString('uz-UZ') : '—'} so'm
+   Oshib ketgan (to'lansin): ${qoldiq < 0 ? Math.abs(qoldiq).toLocaleString('uz-UZ') : '—'} so'm
+
+5. ILOVALAR:
+   1. Cheklar va kvitansiyalar — ___ dona
+   2. Tovar/xizmat cheklarining nusxasi — ___ bet
+   3. Boshqa hujjatlar — ___ bet
+
+6. IMZOLAR:
+   Hisobot berdi: _________________ / ${d.xodim_ism || '___'}   Sana: _______________
+   Tekshirdi: _________________ / ___   (Buxgalter)
+   Tasdiqladi: _________________ / ${d.direktor || '___'}   (Bosh buxgalter)
+   M.O.
+
+O'zbek tili, rasmiy buxgalteriya uslubi, O'zR BHMS 10 standarti asosida.
+${jOnly}
+{"avans_hisobot":"to'liq avans hisoboti matni..."}`
+    }
+
+    // ── XARAJAT HISOBOTI ────────────────────────────────────
+    else if (type === 'xarajat_hisobot') {
+      const d = details || {}
+      prompt = `Siz O'zbekiston Respublikasi buxgalteriya va soliq qonunchiligini mukammal biladigan bosh buxgalter yordamchisiz. Quyidagi ma'lumotlar asosida rasmiy xarajat hisobotini yarating.
+
+TASHKILOT: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'})
+RAHBAR: ${d.direktor || '___'}
+DAVR: ${d.davr || '___'}
+XARAJAT TURI: ${d.xarajat_turi || '___'}
+JAMI XARAJAT: ${d.jami_xarajat || '___'} so'm
+XARAJAT TAFSILOTI: ${d.xarajat_tafsilot || '___'}
+MAS'UL XODIM: ${d.mas_ul || '___'}
+MAQSAD: ${d.maqsad || '___'}
+
+HUJJAT TUZILMASI:
+
+1. SARLAVHA:
+   XARAJAT HISOBOTI
+   ${d.davr || '___'} davri uchun
+   Tashkilot: ${d.tashkilot || '___'}
+   Tuzilgan sana: _______________
+
+2. KIRISH: Hisobotning maqsadi va davr qisqacha tavsifi
+
+3. XARAJATLAR TASNIFI (kategoriya bo'yicha jadvali):
+   | № | Xarajat kategoriyasi | Hujjat asosi | Summa (so'm) | Izoh |
+   (${d.xarajat_tafsilot || 'kategoriyalarni batafsil sanab o\'ting'})
+   Jami: ${d.jami_xarajat || '___'} so'm
+
+4. SOLIQ JIHATDAN TASNIFI (O'zR Soliq kodeksi asosida):
+   - Soliqqa tortiladigan xarajatlar: ___ so'm
+   - Soliqqa tortilmaydigan xarajatlar: ___ so'm
+   - QQS chegirma (agar qo'llanilsa): ___ so'm
+
+5. TAHLIL: Xarajatlar to'g'riligi va asosliligi haqida qisqa xulosa
+
+6. ILOVALAR: Birlamchi hujjatlar ro'yxati (cheklar, hisob-fakturalar, dalolatnomalar)
+
+7. IMZO BLOKI:
+   Tuzdi: _________________ / ${d.mas_ul || '___'}
+   Bosh buxgalter: _________________ / ___
+   Tasdiqladi: _________________ / ${d.direktor || '___'}
+   M.O.   Sana: _______________
+
+Rasmiy buxgalteriya uslubi, O'zR Soliq kodeksi 305-321-moddalari asosida.
+${jOnly}
+{"xarajat_hisobot":"to'liq xarajat hisoboti matni..."}`
+    }
+
+    // ── JARIMA/PENI HISOBI ──────────────────────────────────
+    else if (type === 'jarima_hisobi') {
+      const d = details || {}
+      const qarz = parseFloat((d.qarz_summasi || '0').replace(/[\s,]/g, '')) || 0
+      const kunlar = parseInt(d.kechikish_kun || '0') || 0
+      const foiz = parseFloat(d.jarima_foiz || '0.1') / 100
+      const peni = Math.round(qarz * foiz * kunlar)
+      const jami = qarz + peni
+
+      prompt = `Siz O'zbekiston Respublikasi fuqarolik va moliya qonunchiligini mukammal biladigan yurist-buxgalter yordamchisiz. Quyidagi ma'lumotlar asosida rasmiy jarima (peni) hisob-kitobini yarating.
+
+KREDITOR:
+Tashkilot: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'})
+Rahbar: ${d.direktor || '___'}
+Bank: ${d.bank_name || '___'}, H/R: ${d.bank_account || '___'}, MFO: ${d.mfo || '___'}
+
+QARZDOR: ${d.qarzdor || '___'}
+SHARTNOMA: ${d.shartnoma_raqam || '___'}
+ASOSIY QARZ: ${d.qarz_summasi || '___'} so'm
+SHARTNOMA SANASI: ${d.shartnoma_sana || '___'}
+TO'LOV MUDDATI (shartnoma bo'yicha): ${d.tolov_muddat || '___'}
+HAQIQIY TO'LOV SANASI / HISOBLASH SANASI: ${d.hisoblash_sana || '___'}
+KECHIKISH KUNLARI: ${kunlar} kun
+KUNLIK JARIMA: ${d.jarima_foiz || '0.1'}% (shartnoma ${d.shartnoma_band || '___'}-bandi)
+HISOBLANGAN PENI: ${peni.toLocaleString('uz-UZ')} so'm
+JAMI UNDIRILADIGAN: ${jami.toLocaleString('uz-UZ')} so'm
+
+HUJJAT TUZILMASI:
+
+1. SARLAVHA (markazda):
+   JARIMA (PENI) HISOB-KITOB VARAQASI
+   № ___   Sana: _______________
+
+2. ASOSLAR:
+   - ${d.shartnoma_raqam || '___'} raqamli shartnoma (sanasi: ${d.shartnoma_sana || '___'})
+   - O'zR Fuqarolik kodeksining 327-moddasi (pul majburiyatini bajarmaslik)
+   - O'zR FK 350-moddasi (foizlar undirish asosi)
+   - Shartnomaning ${d.shartnoma_band || '___'}-bandi (jarima shartlari)
+
+3. HISOB-KITOB FORMULASI:
+   Peni = Asosiy qarz × Kunlik foiz % × Kechikish kunlari
+   Peni = ${qarz.toLocaleString('uz-UZ')} × ${d.jarima_foiz || '0.1'}% × ${kunlar} kun
+   Peni = ${peni.toLocaleString('uz-UZ')} so'm
+
+4. JADVALLI HISOB-KITOB:
+   | Ko'rsatkich | Qiymat |
+   | Asosiy qarz summasi | ${qarz.toLocaleString('uz-UZ')} so'm |
+   | To'lov muddati (shartnoma) | ${d.tolov_muddat || '___'} |
+   | Haqiqiy to'lov / Hisoblash sanasi | ${d.hisoblash_sana || '___'} |
+   | Kechikish kunlari | ${kunlar} kun |
+   | Kunlik jarima stavkasi | ${d.jarima_foiz || '0.1'}% |
+   | HISOBLANGAN PENI | ${peni.toLocaleString('uz-UZ')} so'm |
+   | Asosiy qarz | ${qarz.toLocaleString('uz-UZ')} so'm |
+   | JAMI UNDIRILADIGAN | ${jami.toLocaleString('uz-UZ')} so'm |
+
+5. XULOSAVIY QISM:
+   Yuqoridagi hisob-kitobga asosan "${d.qarzdor || '___'}" tashkilotidan quyidagi summa undirish zarur:
+   – Asosiy qarz: ${qarz.toLocaleString('uz-UZ')} so'm
+   – Jarima (peni) ${d.tolov_muddat || '___'} – ${d.hisoblash_sana || '___'} davri uchun: ${peni.toLocaleString('uz-UZ')} so'm
+   – JAMI: ${jami.toLocaleString('uz-UZ')} so'm (${jami > 0 ? 'so\'zlar bilan: [yozing]' : 'nol'})
+
+   Agar ${d.oxirgi_muddat || '10 (o\'n) ish kuni'} ichida to'lov amalga oshirilmasa, iqtisodiy sudga murojaat qilinadi.
+
+6. IMZO:
+   "${d.tashkilot || '___'}" bosh buxgalteri: _________________ / ___
+   Rahbari: _________________ / ${d.direktor || '___'}
+   M.O.   Sana: _______________
+
+Rasmiy yuridik-buxgalteriya uslubida, FK moddalari ko'rsatilgan.
+${jOnly}
+{"jarima_hisobi":"to'liq jarima hisob-kitob varaqasi matni..."}`
+    }
+
     else {
       return NextResponse.json({ error: "Noto'g'ri type" }, { status: 400 })
     }
 
-    const longTypes = ['analysis', 'grammar', 'write', 'fix', 'fix_grammar', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi', 'bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati', 'kafolat_xat', 'tabriklash_xat', 'rekvizitlar_xat']
+    const longTypes = ['analysis', 'grammar', 'write', 'fix', 'fix_grammar', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi', 'bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati', 'kafolat_xat', 'tabriklash_xat', 'rekvizitlar_xat', 'akt_sverki', 'avans_hisobot', 'xarajat_hisobot', 'jarima_hisobi']
     const kotibaTypes = ['bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati', 'kafolat_xat', 'tabriklash_xat', 'rekvizitlar_xat']
     const kadrTypes = ['mehnat_shartnoma', 'buyruq', 'ishonchnoma']
-    const buxTypes = ['dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi']
+    const buxTypes = ['dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi', 'akt_sverki', 'avans_hisobot', 'xarajat_hisobot', 'jarima_hisobi']
     const professionalTypes = [...kotibaTypes, ...kadrTypes, ...buxTypes]
     const systemPrompt = professionalTypes.includes(type)
       ? `Siz O'zbekiston Respublikasi qonunchiligini, mehnat kodeksini va ish yuritish qoidalarini mukammal biladigan professional hujjat tuzuvchisiz. Siz faqat professional, to'liq va yuqori sifatli rasmiy hujjatlar yaratasiz. Qoidalar:
