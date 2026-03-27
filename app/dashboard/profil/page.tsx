@@ -6,6 +6,7 @@ import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { useToast } from '@/lib/toast'
+import { getBankByMfo } from '@/lib/bankMfo'
 
 export default function ProfilPage() {
   const { lang } = useLang()
@@ -32,6 +33,8 @@ export default function ProfilPage() {
   const [foundersLoading, setFoundersLoading] = useState(false)
   const [addFounder, setAddFounder] = useState({ full_name: '', ulush: '' })
   const [addFounderMsg, setAddFounderMsg] = useState('')
+  const [editFounderId, setEditFounderId] = useState<string | null>(null)
+  const [editFounderData, setEditFounderData] = useState({ full_name: '', ulush: '' })
 
   async function loadFounders() {
     if (!activeOrg) return
@@ -65,6 +68,19 @@ export default function ProfilPage() {
     setFounders(f => f.filter(x => x.id !== id))
   }
 
+  async function saveEditFounder(id: string) {
+    const ulush = parseFloat(editFounderData.ulush)
+    if (!editFounderData.full_name.trim() || isNaN(ulush) || ulush <= 0 || ulush > 100) return
+    const othersTotal = founders.filter(f => f.id !== id).reduce((s, f) => s + f.ulush, 0)
+    if (othersTotal + ulush > 100) return
+    const { error } = await supabase.from('tasischilar')
+      .update({ full_name: editFounderData.full_name.trim(), ulush })
+      .eq('id', id)
+    if (error) return
+    setFounders(f => f.map(x => x.id === id ? { ...x, full_name: editFounderData.full_name.trim(), ulush } : x))
+    setEditFounderId(null)
+  }
+
   // Org ext form state
   const [orgExtForm, setOrgExtForm] = useState<Record<string, string>>(() => ({
     name: activeOrg?.name || '',
@@ -84,6 +100,7 @@ export default function ProfilPage() {
     chief_accountant: activeOrg?.chief_accountant || '',
     sender_pinfl: activeOrg?.sender_pinfl || '',
     sender_name: activeOrg?.sender_name || '',
+    ustav_kapital: activeOrg?.ustav_kapital || '',
   }))
   const [orgExtSaving, setOrgExtSaving] = useState(false)
 
@@ -107,6 +124,7 @@ export default function ProfilPage() {
       chief_accountant: activeOrg?.chief_accountant || '',
       sender_pinfl: activeOrg?.sender_pinfl || '',
       sender_name: activeOrg?.sender_name || '',
+      ustav_kapital: activeOrg?.ustav_kapital || '',
     })
   }, [activeOrg])
 
@@ -409,25 +427,53 @@ export default function ProfilPage() {
               ) : (
                 <div className="divide-y divide-[#1E293B]">
                   {founders.map((f, i) => (
-                    <div key={f.id} className="flex items-center px-5 py-3 gap-4">
-                      <div className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-gray-200 font-medium truncate">{f.full_name}</div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-white">{f.ulush}%</div>
-                          <div className="w-20 h-1.5 bg-[#0F172A] rounded-full mt-1 overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${f.ulush}%` }}/>
+                    <div key={f.id}>
+                      {editFounderId === f.id ? (
+                        <div className="flex items-center px-5 py-3 gap-2">
+                          <input className={`${lbl.replace('block text-xs text-gray-400 mb-1', '')} flex-1 bg-[#0F172A] border border-blue-600/50 text-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none`}
+                            value={editFounderData.full_name}
+                            onChange={e => setEditFounderData(p => ({ ...p, full_name: e.target.value }))}
+                            placeholder="F.I.Sh."
+                          />
+                          <input className="w-20 bg-[#0F172A] border border-blue-600/50 text-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none text-center"
+                            type="number" min="0.01" max="100" step="0.01"
+                            value={editFounderData.ulush}
+                            onChange={e => setEditFounderData(p => ({ ...p, ulush: e.target.value }))}
+                            placeholder="%"
+                          />
+                          <button type="button" onClick={() => saveEditFounder(f.id)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">✓</button>
+                          <button type="button" onClick={() => setEditFounderId(null)}
+                            className="bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-400 px-3 py-1.5 rounded-lg text-xs transition">✕</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center px-5 py-3 gap-4">
+                          <div className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-gray-200 font-medium truncate">{f.full_name}</div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-white">{f.ulush}%</div>
+                              <div className="w-20 h-1.5 bg-[#0F172A] rounded-full mt-1 overflow-hidden">
+                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${f.ulush}%` }}/>
+                              </div>
+                            </div>
+                            <button type="button" onClick={() => { setEditFounderId(f.id); setEditFounderData({ full_name: f.full_name, ulush: String(f.ulush) }) }}
+                              className="text-gray-500 hover:text-blue-400 transition p-1 rounded">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                              </svg>
+                            </button>
+                            <button type="button" onClick={() => deleteFounder(f.id)}
+                              className="text-gray-600 hover:text-red-400 transition p-1 rounded">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                              </svg>
+                            </button>
                           </div>
                         </div>
-                        <button type="button" onClick={() => deleteFounder(f.id)}
-                          className="text-gray-600 hover:text-red-400 transition p-1 rounded">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                          </svg>
-                        </button>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -521,11 +567,19 @@ export default function ProfilPage() {
                 </div>
                 <div>
                   <label className={lbl}>MFO</label>
-                  <input className={inp} placeholder="00873" value={orgExtForm.mfo || ''} onChange={e => setOrgExtForm({ ...orgExtForm, mfo: e.target.value })}/>
+                  <input className={inp} placeholder="00873" value={orgExtForm.mfo || ''} onChange={e => {
+                    const mfo = e.target.value
+                    const bankName = mfo.length === 5 ? getBankByMfo(mfo) : null
+                    setOrgExtForm({ ...orgExtForm, mfo, ...(bankName ? { bank_name: bankName } : {}) })
+                  }}/>
                 </div>
                 <div>
                   <label className={lbl}>OKED (faoliyat kodi)</label>
                   <input className={inp} placeholder="46130" value={orgExtForm.oked || ''} onChange={e => setOrgExtForm({ ...orgExtForm, oked: e.target.value })}/>
+                </div>
+                <div className="col-span-2">
+                  <label className={lbl}>Ustav kapitali (so&apos;mda)</label>
+                  <input className={inp} placeholder="5 000 000" value={orgExtForm.ustav_kapital || ''} onChange={e => setOrgExtForm({ ...orgExtForm, ustav_kapital: e.target.value })}/>
                 </div>
               </div>
             </div>

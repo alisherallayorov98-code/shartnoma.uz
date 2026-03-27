@@ -8,6 +8,7 @@ export type Org = {
   qqsreg?: string; qqs_stavka?: string
   director_pinfl?: string; chief_accountant?: string
   sender_pinfl?: string; sender_name?: string
+  ustav_kapital?: string
 }
 
 export type BankAccount = {
