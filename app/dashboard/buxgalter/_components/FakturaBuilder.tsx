@@ -318,14 +318,15 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
         </div>
         <div className="space-y-2">
           {/* Header */}
-          <div className="hidden sm:grid grid-cols-[2fr_70px_70px_110px_68px_100px_24px] gap-2 text-xs text-gray-500 px-1">
-            <span>Nomi</span><span>Birlik</span><span>Miqdor</span><span>Narxi (so&apos;m)</span><span>QQS</span><span className="text-right">Jami (so&apos;m)</span><span/>
+          <div className="hidden sm:grid grid-cols-[2fr_60px_55px_95px_55px_85px_72px_78px_24px] gap-2 text-xs text-gray-500 px-1">
+            <span>Nomi</span><span>Birlik</span><span>Miqdor</span><span>Narxi (so&apos;m)</span><span>QQS</span>
+            <span className="text-right">Sozsiz</span><span className="text-right">QQS summa</span><span className="text-right">Jami</span><span/>
           </div>
           {items.map((it, idx) => {
             const c = calcItem(it)
             return (
               <div key={it.id} className="bg-[#0F172A] border border-[#1E293B] rounded-lg p-2">
-                <div className="grid grid-cols-1 sm:grid-cols-[2fr_70px_70px_110px_68px_100px_24px] gap-2 items-center">
+                <div className="grid grid-cols-1 sm:grid-cols-[2fr_60px_55px_95px_55px_85px_72px_78px_24px] gap-2 items-center">
                   <input type="text" value={it.nomi} onChange={e => updateItem(it.id, 'nomi', e.target.value)}
                     placeholder={`${idx + 1}. Mahsulot nomi`} className={inpSm} />
                   <select value={it.birlik} onChange={e => updateItem(it.id, 'birlik', e.target.value)} className={inpSm}>
@@ -342,16 +343,17 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
                     <option value="0">0%</option>
                     <option value="siz">QQSsiz</option>
                   </select>
-                  {/* Jami per row */}
-                  <div className="text-right">
-                    {c.gross > 0 ? (
-                      <>
-                        <div className="text-sm font-semibold text-emerald-400">{fmt(c.gross)}</div>
-                        {c.qqs > 0 && <div className="text-[10px] text-amber-400/70">QQS: {fmt(c.qqs)}</div>}
-                      </>
-                    ) : (
-                      <span className="text-gray-600 text-xs">—</span>
-                    )}
+                  {/* Sozsiz summa */}
+                  <div className="text-right text-xs">
+                    {c.sozsiz > 0 ? <span className="text-gray-300">{fmt(c.sozsiz)}</span> : <span className="text-gray-600">—</span>}
+                  </div>
+                  {/* QQS summasi */}
+                  <div className="text-right text-xs">
+                    {c.qqs > 0 ? <span className="text-amber-400">{fmt(c.qqs)}</span> : <span className="text-gray-600">—</span>}
+                  </div>
+                  {/* Jami (gross) */}
+                  <div className="text-right text-xs font-semibold">
+                    {c.gross > 0 ? <span className="text-emerald-400">{fmt(c.gross)}</span> : <span className="text-gray-600">—</span>}
                   </div>
                   <button onClick={() => items.length > 1 && removeItem(it.id)}
                     className="text-gray-600 hover:text-red-400 transition text-sm leading-none">✕</button>
