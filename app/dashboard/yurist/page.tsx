@@ -9,7 +9,7 @@ import { useToast } from '@/lib/toast'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 
-type HubFeature = 'xulosa' | 'tarjima' | 'grammatika' | 'tahlil' | 'qa' | 'clause' | 'recommend' | 'write'
+type HubFeature = 'xulosa' | 'tarjima' | 'grammatika' | 'tahlil' | 'qa' | 'clause' | 'recommend' | 'write' | 'tuzatish'
 
 // ─── Typed results per feature ────────────────────────────────────────────────
 type XulosaResult    = { xulosa: string; asosiy_shartlar?: string[]; muddat?: string; summa?: string; muhim_bandlar?: string[] }
@@ -20,6 +20,7 @@ type QaResult        = { javob: string; havola?: string }
 type ClauseResult    = { band: string; band_nomi?: string }
 type RecommendResult = { tur?: string; tur_nomi?: string; tavsiya: string; sabab?: string; qoshimcha_maslahat?: string }
 type WriteResult     = { shartnoma: string; bandlar_soni?: number }
+type TuzatishResult  = { tuzatilgan_shartnoma: string; ozgartirishlar: { original: string; fixed: string; izoh: string }[]; ozgartirishlar_soni?: number; umumiy_baho?: string }
 
 type HubResult =
   | ({ _type: 'xulosa' }    & XulosaResult)
@@ -30,6 +31,7 @@ type HubResult =
   | ({ _type: 'clause' }    & ClauseResult)
   | ({ _type: 'recommend' } & RecommendResult)
   | ({ _type: 'write' }     & WriteResult)
+  | ({ _type: 'tuzatish' } & TuzatishResult)
 
 const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; needsContract: boolean; premiumOnly: boolean }[] = [
   { key: 'xulosa',     icon: '📝', name: 'Xulosa',          desc: "Shartnomaning asosiy shartlarini qisqacha bayon qiladi",        needsContract: true,  premiumOnly: false },
@@ -40,6 +42,7 @@ const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; nee
   { key: 'clause',     icon: '➕', name: "Band qo'shish",    desc: "Ko'rsatma asosida yangi band yozib beradi",                    needsContract: false, premiumOnly: true  },
   { key: 'recommend',  icon: '🎯', name: 'Tur tavsiyasi',    desc: "Vaziyatni ta'riflang — qaysi shartnoma turi mos ekanini aytadi", needsContract: false, premiumOnly: false },
   { key: 'write',      icon: '✍️', name: 'Shartnoma yoz',   desc: "Ma'lumotlar asosida to'liq shartnoma matnini yozadi",          needsContract: false, premiumOnly: true  },
+  { key: 'tuzatish',  icon: '📎', name: 'Tuzatish',        desc: "Tashqaridan kelgan shartnomani tahlil qilib, kamchiliklarini bartaraf etadi", needsContract: false, premiumOnly: true  },
 ]
 
 
@@ -97,6 +100,11 @@ export default function YuristPage() {
   const [hubError, setHubError] = useState('')
   const [previewText, setPreviewText] = useState<string | null>(null)
   const [addingClause, setAddingClause] = useState(false)
+  const [fixContent, setFixContent] = useState('')
+  const [fixFileName, setFixFileName] = useState('')
+  const [fixFileLoading, setFixFileLoading] = useState(false)
+  const [fixEditedText, setFixEditedText] = useState('')
+  const [fixEditMode, setFixEditMode] = useState(false)
 
   const contractList = contracts.filter(c => c.organization_id === activeOrg?.id)
 
@@ -116,6 +124,36 @@ export default function YuristPage() {
     }
   }
 
+  async function handleFileUpload(file: File) {
+    setFixFileName(file.name)
+    setFixContent('')
+    setHubResult(null)
+    setHubError('')
+    const name = file.name.toLowerCase()
+    if (name.endsWith('.txt')) {
+      const text = await file.text()
+      setFixContent(text)
+      return
+    }
+    if (name.endsWith('.docx')) {
+      setFixFileLoading(true)
+      try {
+        const fd = new FormData()
+        fd.append('file', file)
+        const res = await fetch('/api/extract-text', { method: 'POST', body: fd })
+        const data = await res.json()
+        if (data.error) { setHubError(data.error); return }
+        setFixContent(data.text)
+      } catch {
+        setHubError("Faylni o'qishda xatolik")
+      } finally {
+        setFixFileLoading(false)
+      }
+      return
+    }
+    setHubError(".txt yoki .docx fayl yuklang")
+  }
+
   // Unique counterparties from contractList
   const cpOptions = Array.from(
     new Map(contractList.map(c => [c.counterparty_id, c.counterparties?.name || '—'])).entries()
@@ -129,10 +167,14 @@ export default function YuristPage() {
   async function runHubFeature() {
     if (!hasAiAccess()) { openUpgradeModal(); return }
     const selectedContract = contracts.find(c => c.id === hubContract)
-    const content = selectedContract?.content || ''
+    const content = hubFeature === 'tuzatish' ? fixContent : (selectedContract?.content || '')
     const needsContract = ['tahlil', 'grammatika', 'xulosa', 'tarjima', 'qa'].includes(hubFeature)
     if (needsContract && !content.trim()) {
       setHubError("Shartnomani tanlang yoki uning matni bo'sh. Avval shartnoma yaratib, matn kiriting.")
+      return
+    }
+    if (hubFeature === 'tuzatish' && !fixContent.trim()) {
+      setHubError("Avval shartnoma faylini yuklang yoki matnni yapishtirib qo'ying.")
       return
     }
     if (hubFeature === 'qa' && !hubQuestion.trim()) { setHubError("Iltimos, savolingizni kiriting."); return }
@@ -143,7 +185,7 @@ export default function YuristPage() {
     try {
       const typeMap: Record<HubFeature, string> = {
         tahlil: 'analysis', grammatika: 'grammar', xulosa: 'summary',
-        tarjima: 'translate', qa: 'qa', clause: 'clause', recommend: 'recommend', write: 'write',
+        tarjima: 'translate', qa: 'qa', clause: 'clause', recommend: 'recommend', write: 'write', tuzatish: 'tuzatish',
       }
       const body: Record<string, unknown> = { type: typeMap[hubFeature], lang, content }
       if (hubFeature === 'qa')        body.question    = hubQuestion
@@ -177,6 +219,7 @@ export default function YuristPage() {
         return
       }
       setHubResult({ _type: hubFeature, ...result } as HubResult)
+      if (hubFeature === 'tuzatish') setFixEditedText((result as TuzatishResult).tuzatilgan_shartnoma || '')
     } catch {
       setHubError('Serverga ulanishda xatolik')
     } finally {
@@ -444,6 +487,39 @@ export default function YuristPage() {
               <label className="block text-xs text-gray-400 mb-1">Qo'shimcha shartlar (ixtiyoriy)</label>
               <textarea value={hubWriteDetails.extra} onChange={e => setHubWriteDetails({ ...hubWriteDetails, extra: e.target.value })} rows={2}
                 placeholder="Masalan: To'lov muddati 30 kun, yetkazib berish Toshkentda..."
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500 resize-none"/>
+            </div>
+          </div>
+        )}
+
+        {/* Shartnoma tuzatish - fayl yuklash */}
+        {hubFeature === 'tuzatish' && (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Shartnoma faylini yuklang</label>
+              <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-[#1E293B] rounded-xl cursor-pointer hover:border-blue-600/50 transition bg-[#0F172A]">
+                <input type="file" accept=".txt,.docx" className="hidden"
+                  onChange={e => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]) }}/>
+                {fixFileName ? (
+                  <div className="text-center px-4">
+                    <div className="text-2xl mb-1">📄</div>
+                    <div className="text-sm text-white truncate">{fixFileName}</div>
+                    {fixFileLoading && <div className="text-xs text-blue-400 mt-1">⏳ O'qilmoqda...</div>}
+                    {fixContent && !fixFileLoading && <div className="text-xs text-green-400 mt-1">✓ {fixContent.length.toLocaleString()} belgi o'qildi</div>}
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">📎</div>
+                    <div className="text-sm text-gray-400">Fayl yuklash uchun bosing</div>
+                    <div className="text-xs text-gray-600 mt-1">.docx yoki .txt</div>
+                  </div>
+                )}
+              </label>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Yoki matnni to&apos;g&apos;ridan-to&apos;g&apos;ri yapishtirib qo&apos;ying</label>
+              <textarea value={fixContent} onChange={e => setFixContent(e.target.value)} rows={5}
+                placeholder="Shartnoma matnini bu yerga yapishtirib qo'ying..."
                 className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500 resize-none"/>
             </div>
           </div>
@@ -717,6 +793,58 @@ export default function YuristPage() {
                 <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 max-h-96 overflow-y-auto">
                   <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.shartnoma || '')}</pre>
                 </div>
+              </div>
+            )}
+
+            {hubResult?._type === 'tuzatish' && (
+              <div className="space-y-4">
+                {/* Summary */}
+                <div className="bg-emerald-900/30 border border-emerald-700/40 rounded-xl p-4 flex items-center gap-3">
+                  <span className="text-2xl">✅</span>
+                  <div>
+                    <div className="text-white font-semibold">
+                      {Number(hubResult.ozgartirishlar_soni || hubResult.ozgartirishlar?.length || 0)} ta o&apos;zgarish kiritildi
+                    </div>
+                    {Boolean(hubResult.umumiy_baho) && <div className="text-gray-400 text-xs mt-0.5">{String(hubResult.umumiy_baho)}</div>}
+                  </div>
+                </div>
+
+                {/* Changes list */}
+                {(hubResult.ozgartirishlar as { original: string; fixed: string; izoh: string }[])?.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs text-gray-500 font-semibold uppercase tracking-wide">O&apos;zgartirishlar ro&apos;yxati</div>
+                    <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                      {(hubResult.ozgartirishlar as { original: string; fixed: string; izoh: string }[]).map((o, i) => (
+                        <div key={i} className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-3 space-y-1">
+                          {Boolean(o.original) && <div className="text-xs text-red-400 line-through leading-relaxed">{o.original}</div>}
+                          <div className="text-xs text-emerald-400 leading-relaxed">→ {o.fixed}</div>
+                          {Boolean(o.izoh) && <div className="text-xs text-gray-500 leading-relaxed">{o.izoh}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Corrected contract - view / edit */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Tuzatilgan shartnoma</div>
+                    <button onClick={() => setFixEditMode(!fixEditMode)}
+                      className="text-xs text-blue-400 hover:text-blue-300 transition px-2 py-1 rounded-lg bg-blue-600/10">
+                      {fixEditMode ? '👁 Ko\'rish' : '✏️ Tahrirlash'}
+                    </button>
+                  </div>
+                  {fixEditMode ? (
+                    <textarea value={fixEditedText} onChange={e => setFixEditedText(e.target.value)} rows={16}
+                      className="w-full bg-white text-gray-900 rounded-xl px-5 py-4 text-sm font-serif leading-relaxed resize-y border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  ) : (
+                    <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 max-h-96 overflow-y-auto">
+                      <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{fixEditedText}</pre>
+                    </div>
+                  )}
+                </div>
+
+                <ResultActions text={fixEditedText} label="tuzatilgan_shartnoma" saveName="Tuzatilgan shartnoma" onPreview={setPreviewText} toast={toast} />
               </div>
             )}
 

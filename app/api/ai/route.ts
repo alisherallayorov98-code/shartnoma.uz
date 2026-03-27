@@ -285,7 +285,17 @@ export async function POST(req: NextRequest) {
       prompt = `${task}\n\n${jOnly}\n{"shartnoma_yangi":"to'liq to'g'irlangan matn...","o_zgartirishlar":["..."]}\n\nASL MATN:\n${truncate(content, 3500)}`
     }
 
-    // ── 11. MEHNAT SHARTNOMASI ──────────────────────────────
+    // ── 11. TASHQI SHARTNOMA TUZATISH ──────────────────────
+    else if (type === 'tuzatish') {
+      const task = lang === 'ru'
+        ? `Вы опытный юрист по законодательству Узбекистана. Тщательно проанализируйте договор и устраните ВСЕ недостатки:\n1. Юридические риски и слабые пункты\n2. Грамматические и стилистические ошибки\n3. Логические противоречия\n4. Отсутствующие обязательные пункты\n\nВерните исправленный ПОЛНЫЙ текст договора со списком всех изменений.`
+        : lang === 'oz'
+        ? `Сиз Ўзбекистон қонунчилиги бўйича тажрибали юристсиз. Шартномани мукаммал таҳлил қилинг ва БАРЧА камчиликларни бартараф этинг:\n1. Юридик хатарлар ва заиф бандлар\n2. Грамматика ва услуб хатолари\n3. Мантиқий зиддиятлар\n4. Мажбурий бандлар йўқлиги\n\nТўлиқ тузатилган шартнома матнини ва ўзгартиришлар рўйхатини қайтаринг.`
+        : `Siz O'zbekiston qonunchiligini yaxshi biladigan tajribali yuristasiz. Shartnomani to'liq tahlil qiling va BARCHA kamchiliklarini bartaraf eting:\n1. Yuridik xatarlar va zaif bandlar\n2. Grammatika va uslub xatolari\n3. Mantiqiy ziddiyatlar\n4. Majburiy bandlar yo'qligi\n\nTo'liq tuzatilgan shartnoma matnini va o'zgartirishlar ro'yxatini qaytaring.`
+      prompt = `${task}\n\n${jOnly}\n{"tuzatilgan_shartnoma":"to'liq tuzatilgan matn...","ozgartirishlar":[{"original":"...","fixed":"...","izoh":"..."}],"ozgartirishlar_soni":5,"umumiy_baho":"..."}\n\nSHARTNOMA:\n${truncate(content, 3500)}`
+    }
+
+    // ── 12. MEHNAT SHARTNOMASI ──────────────────────────────
     else if (type === 'mehnat_shartnoma') {
       const d = details || {}
       const isYoriqnoma = d.asosiy_vazifalar || d.talablar  // lavozim yo'riqnomasi uchun
@@ -1541,7 +1551,7 @@ ${jOnly}
       return NextResponse.json({ error: "Noto'g'ri type" }, { status: 400 })
     }
 
-    const longTypes = ['analysis', 'grammar', 'write', 'fix', 'fix_grammar', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi', 'bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati', 'kafolat_xat', 'tabriklash_xat', 'rekvizitlar_xat', 'akt_sverki', 'avans_hisobot', 'xarajat_hisobot', 'jarima_hisobi']
+    const longTypes = ['analysis', 'grammar', 'write', 'fix', 'fix_grammar', 'tuzatish', 'mehnat_shartnoma', 'buyruq', 'ishonchnoma', 'dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi', 'bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati', 'kafolat_xat', 'tabriklash_xat', 'rekvizitlar_xat', 'akt_sverki', 'avans_hisobot', 'xarajat_hisobot', 'jarima_hisobi']
     const kotibaTypes = ['bayonnoma', 'rasmiy_xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma', 'tushuntirish_xati', 'kafolat_xat', 'tabriklash_xat', 'rekvizitlar_xat']
     const kadrTypes = ['mehnat_shartnoma', 'buyruq', 'ishonchnoma']
     const buxTypes = ['dalolatnoma', 'schet_faktura', 'talabnoma', 'tolov_grafigi', 'akt_sverki', 'avans_hisobot', 'xarajat_hisobot', 'jarima_hisobi']
