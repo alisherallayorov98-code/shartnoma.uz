@@ -93,6 +93,7 @@ const FEATURES: FeatureConfig[] = [
     title: "Fuqaroviy-huquqiy yollanma shartnomasi",
     description: "Mehnat shartnomasi emas — bir martalik yoki vaqtinchalik xizmat uchun podryad shartnomasi",
     fields: [
+      { key: 'shartnoma_raqam', label: 'Shartnoma raqami', placeholder: '03/2026-FH', optional: true },
       { key: 'ijrochi_ism',    label: 'Ijrochi F.I.O.',         placeholder: 'Toshmatov Alisher Baxtiyorovich' },
       { key: 'ijrochi_jshshir', label: 'JSHSHIR (14 raqam)',    placeholder: '12345678901234' },
       { key: 'passport',       label: 'Pasport seriya/raqam',    placeholder: 'AB 1234567' },

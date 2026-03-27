@@ -407,11 +407,12 @@ M.O.                                       Sana: ${sana}
 // Huquqiy asos: FK 734–756-moddalar (podryad); FK 779–791 (haq evaziga xizmat)
 // ═══════════════════════════════════════════════════════════════════════════════
 export function tplFuqaroviy(f: F, org: Org): string {
-  const sana = fmtD(f.boshlanish_sana) || fmtD()
+  const sana  = fmtD(f.boshlanish_sana) || fmtD()
+  const raqam = blank(f.shartnoma_raqam, '___')
 
   return `FUQAROVIY-HUQUQIY TUSIDAGI XIZMAT KO'RSATISH SHARTNOMASI
 (Podryad / Yollanma shartnomasi)
-№ ___
+№ ${raqam}
 
 ${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 
