@@ -55,6 +55,7 @@ export default function KontragentlarPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [importRows, setImportRows] = useState<Record<string, string>[] | null>(null)
   const [importing, setImporting] = useState(false)
+  const [stirLoading, setStirLoading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const filteredCps = cps.filter(cp =>
@@ -100,6 +101,28 @@ export default function KontragentlarPage() {
     setSaving(false)
     if (cpErr) { toast(`${T(t.msg.errorPrefix)}: ${cpErr.message}`, 'error'); return }
     setModal(false); setCpForm(emptyCp); reloadCps()
+  }
+
+  async function lookupStirCp(inn: string) {
+    if (!inn || !/^\d{9}$/.test(inn)) { toast('STIR 9 raqamdan iborat bo\'lishi kerak', 'error'); return }
+    setStirLoading(true)
+    try {
+      const res = await fetch(`/api/stir?stir=${inn}`)
+      const data = await res.json()
+      if (!res.ok) { toast(data.error || 'STIR ma\'lumot topilmadi', 'error'); return }
+      const co = data.company
+      setCpForm(prev => ({
+        ...prev,
+        name: co.name || prev.name,
+        director_name: co.director_name || prev.director_name,
+        address: co.address || prev.address,
+      }))
+      toast('Ma\'lumotlar to\'ldirildi', 'success')
+    } catch {
+      toast('STIR so\'rovida xatolik', 'error')
+    } finally {
+      setStirLoading(false)
+    }
   }
 
   async function deleteCp(id: string) {
@@ -301,7 +324,16 @@ export default function KontragentlarPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={lbl}>STIR (INN)</label>
-                <input className={inp} placeholder="123456789" maxLength={9} value={cpForm.inn} onChange={e => setCpForm({ ...cpForm, inn: e.target.value })}/>
+                <div className="flex gap-2">
+                  <input className={inp} placeholder="123456789" maxLength={9} value={cpForm.inn} onChange={e => setCpForm({ ...cpForm, inn: e.target.value })}/>
+                  <button type="button" disabled={stirLoading || !cpForm.inn}
+                    onClick={() => lookupStirCp(cpForm.inn)}
+                    className="px-2.5 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600/30 text-blue-400 rounded-lg text-xs disabled:opacity-40 transition flex-shrink-0"
+                    title="Soliqdan ma'lumot olish">
+                    {stirLoading ? '...' : '🔍'}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">9 raqam kiriting va 🔍 bosing</p>
               </div>
               <div>
                 <label className={lbl}>Direktor F.I.Sh</label>

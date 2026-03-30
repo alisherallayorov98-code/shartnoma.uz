@@ -1,7 +1,7 @@
 // ─── Shared types for Shartnoma.uz dashboard ─────────────────────────────────
 
 export type Org = {
-  id: string; name: string; inn: string; director_name: string
+  id: string; user_id: string; name: string; inn: string; director_name: string
   bank_name: string; bank_account: string; mfo: string; address: string
   stamp_url?: string; signature_url?: string
   phone?: string; oked?: string; viloyat?: string; tuman?: string

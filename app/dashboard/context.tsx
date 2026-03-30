@@ -203,6 +203,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         if (!session) { router.push('/login'); return }
         setUserEmail(session.user.email || '')
         setUserId(session.user.id)
+
+        // Accept pending org invites for this user's email
+        if (session.user.email) {
+          await supabase.from('org_members')
+            .update({ user_id: session.user.id, status: 'active' })
+            .eq('invited_email', session.user.email.toLowerCase())
+            .eq('status', 'pending')
+        }
+
         const [adminCheck] = await Promise.all([
           fetch('/api/admin', { method: 'HEAD', headers: { Authorization: `Bearer ${session.access_token}` } }),
           loadOrgs(),

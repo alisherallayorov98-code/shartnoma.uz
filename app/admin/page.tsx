@@ -27,16 +27,21 @@ type Payment = {
 type NewUser = {
   id: string; email: string; created_at: string; last_sign_in_at: string
 }
+type Feedback = {
+  id: string; user_email: string; category: string; title: string
+  message: string; status: string; created_at: string
+}
 
 export default function AdminPage() {
   const router = useRouter()
   const tokenRef = useRef<string>('')
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'clients'|'payments'|'demo'|'new'>('clients')
+  const [tab, setTab] = useState<'clients'|'payments'|'demo'|'new'|'feedback'>('clients')
   const [clients, setClients] = useState<Client[]>([])
   const [demos, setDemos] = useState<DemoRow[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [newUsers, setNewUsers] = useState<NewUser[]>([])
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const [search, setSearch] = useState('')
   const [planFilter, setPlanFilter] = useState('all')
   const [msg, setMsg] = useState<{text:string;ok:boolean}>({text:'',ok:true})
@@ -122,6 +127,13 @@ export default function AdminPage() {
     })))
     setNewUsers(data.newUsers || [])
     await loadDemos()
+    // Load feedback separately (direct Supabase query - no admin API needed)
+    const { data: fbData } = await supabase
+      .from('feedback')
+      .select('id, user_email, category, title, message, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    setFeedbacks(fbData || [])
   }
 
   async function loadDemos() {
@@ -395,6 +407,7 @@ export default function AdminPage() {
               { key:'payments', label:`To'lovlar (${payments.length})` },
               { key:'demo', label:`Demo (${demos.filter(d=>d.is_active).length})` },
               { key:'new', label:`Yangi (${filteredNewUsers.length})` },
+              { key:'feedback', label:`Takliflar (${feedbacks.filter(f=>f.status==='new').length})` },
             ].map(t=>(
               <button key={t.key} onClick={()=>setTab(t.key as any)}
                 className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${tab===t.key?'border-blue-500 text-white':'border-transparent text-gray-500 hover:text-white'}`}>
@@ -649,6 +662,45 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* ── FEEDBACK ── */}
+        {tab==='feedback' && (
+          <div className="space-y-2">
+            {feedbacks.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">Hali takliflar yo&apos;q</div>
+            ) : feedbacks.map(fb => (
+              <div key={fb.id} className={`bg-gray-900 border rounded-xl p-4 ${fb.status==='new' ? 'border-blue-800/60' : 'border-gray-800'}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        fb.category==='bug' ? 'bg-red-900/40 text-red-400' :
+                        fb.category==='taklif' ? 'bg-blue-900/40 text-blue-400' :
+                        fb.category==='savol' ? 'bg-yellow-900/40 text-yellow-400' :
+                        'bg-gray-800 text-gray-400'
+                      }`}>
+                        {fb.category==='bug'?'🐛 Xato':fb.category==='taklif'?'💡 Taklif':fb.category==='savol'?'❓ Savol':'📝 Boshqa'}
+                      </span>
+                      {fb.status==='new' && <span className="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full">Yangi</span>}
+                      <span className="text-xs text-gray-500">{fb.user_email}</span>
+                      <span className="text-xs text-gray-600">{new Date(fb.created_at).toLocaleDateString('uz-UZ')}</span>
+                    </div>
+                    <div className="font-medium text-white text-sm">{fb.title}</div>
+                    <div className="text-gray-400 text-xs mt-1 whitespace-pre-wrap">{fb.message}</div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      await supabase.from('feedback').update({ status: fb.status==='new'?'seen':'new' }).eq('id', fb.id)
+                      setFeedbacks(prev => prev.map(f => f.id===fb.id ? {...f, status: f.status==='new'?'seen':'new'} : f))
+                    }}
+                    className="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition flex-shrink-0">
+                    {fb.status==='new' ? 'Ko\'rildi' : 'Yangilash'}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
