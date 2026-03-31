@@ -359,7 +359,7 @@ const EMP_FIELD_MAP: Record<string, string> = {
 }
 
 export default function KadrlarPage() {
-  const { activeOrg, hasAiAccess, openUpgradeModal, employees } = useDashboard()
+  const { activeOrg, hasAiAccess, isFree, openUpgradeModal, employees } = useDashboard()
   const [activeCat, setActiveCat] = useState<Category>('shartnoma')
   const [selected, setSelected] = useState<KadrFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
@@ -396,6 +396,7 @@ export default function KadrlarPage() {
     if (!currentFeature || !activeOrg) {
       setError(!activeOrg ? "Avval tashkilot tanlang!" : ""); return
     }
+    if (isFree) { openUpgradeModal(); return }
     if (currentFeature.useAI && !hasAiAccess()) { openUpgradeModal(); return }
     setLoading(true); setError(''); setResult(null)
 
@@ -498,15 +499,27 @@ export default function KadrlarPage() {
           </p>
         </div>
 
-        {!hasAiAccess() && (
+        {isFree && (
+          <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-white text-sm font-semibold mb-0.5">🔒 Obuna talab qilinadi</div>
+              <div className="text-gray-400 text-xs">Kadrlar hujjatlarini yaratish Standart yoki AI Pro tarifida ishlaydi</div>
+            </div>
+            <button onClick={openUpgradeModal}
+              className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+              Obuna olish →
+            </button>
+          </div>
+        )}
+        {!isFree && !hasAiAccess() && (
           <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-white text-sm font-semibold mb-0.5">✦ Pro versiyada ishlaydi</div>
-              <div className="text-gray-400 text-xs">AI asosidagi hujjatlar faqat Standart yoki AI Pro tarifida ishlaydi</div>
+              <div className="text-white text-sm font-semibold mb-0.5">✦ AI Pro versiyada ishlaydi</div>
+              <div className="text-gray-400 text-xs">Ba&apos;zi AI funksiyalar faqat AI Pro tarifida ishlaydi</div>
             </div>
             <button onClick={openUpgradeModal}
               className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-              Pro versiyani olish →
+              AI Pro olish →
             </button>
           </div>
         )}

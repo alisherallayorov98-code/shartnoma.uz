@@ -155,7 +155,7 @@ const FEATURES: FeatureConfig[] = [
 ]
 
 export default function BuxgalterPage() {
-  const { activeOrg, hasAiAccess, contracts, cps, openUpgradeModal } = useDashboard()
+  const { activeOrg, hasAiAccess, isFree, contracts, cps, openUpgradeModal } = useDashboard()
   const [selected, setSelected] = useState<BuxFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -232,6 +232,7 @@ export default function BuxgalterPage() {
   async function handleGenerate() {
     if (!currentFeature || currentFeature.isCustom) return
     if (!activeOrg) { setError("Avval tashkilot tanlang!"); return }
+    if (isFree) { openUpgradeModal(); return }
     if (!hasAiAccess()) { openUpgradeModal(); return }
 
     setLoading(true)
@@ -327,15 +328,27 @@ export default function BuxgalterPage() {
           )
         })()}
 
-        {!hasAiAccess() && (
+        {isFree && (
+          <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-white text-sm font-semibold mb-0.5">🔒 Obuna talab qilinadi</div>
+              <div className="text-gray-400 text-xs">Buxgalteriya hujjatlarini yaratish Standart yoki AI Pro tarifida ishlaydi</div>
+            </div>
+            <button onClick={openUpgradeModal}
+              className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+              Obuna olish →
+            </button>
+          </div>
+        )}
+        {!isFree && !hasAiAccess() && (
           <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-white text-sm font-semibold mb-0.5">✦ Pro versiyada ishlaydi</div>
-              <div className="text-gray-400 text-xs">AI hujjatlar faqat Standart yoki AI Pro tarifida. To&apos;lov grafigi va faktura tuzish — bepul.</div>
+              <div className="text-white text-sm font-semibold mb-0.5">✦ AI Pro versiyada ishlaydi</div>
+              <div className="text-gray-400 text-xs">Ba&apos;zi AI funksiyalar faqat AI Pro tarifida ishlaydi</div>
             </div>
             <button onClick={openUpgradeModal}
               className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-              Pro olish →
+              AI Pro olish →
             </button>
           </div>
         )}

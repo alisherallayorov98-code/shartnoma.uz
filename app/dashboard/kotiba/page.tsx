@@ -183,7 +183,7 @@ const FEATURES: FeatureConfig[] = [
 const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
 export default function KotibaPage() {
-  const { activeOrg, hasAiAccess, openUpgradeModal, cps } = useDashboard()
+  const { activeOrg, hasAiAccess, isFree, openUpgradeModal, cps } = useDashboard()
   const [selected, setSelected] = useState<KotibaFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [result, setResult] = useState<string | null>(null)
@@ -231,6 +231,7 @@ export default function KotibaPage() {
 
   async function handleGenerate() {
     if (!currentFeature) return
+    if (isFree) { openUpgradeModal(); return }
     if (!hasAiAccess()) { openUpgradeModal(); return }
     setLoading(true); setError(''); setResult(null)
     try {
@@ -275,16 +276,28 @@ export default function KotibaPage() {
               <p className="text-gray-500 text-sm">Rasmiy hujjatlarni AI yordamida bir zumda tayyorlang</p>
             </div>
           </div>
-          {!hasAiAccess() && (
+          {(isFree || !hasAiAccess()) && (
             <button onClick={openUpgradeModal}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-              ✦ AI Pro olish →
+              className={`text-white text-sm font-semibold px-4 py-2 rounded-lg transition ${isFree ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
+              {isFree ? '🔒 Obuna olish →' : '✦ AI Pro olish →'}
             </button>
           )}
         </div>
 
         {/* Pro banner */}
-        {!hasAiAccess() && (
+        {isFree && (
+          <div className="bg-orange-600/10 border border-orange-600/30 rounded-2xl p-4 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-white font-semibold text-sm mb-0.5">🔒 Obuna talab qilinadi</div>
+              <div className="text-gray-400 text-xs">Kotiba hujjatlarini yaratish Standart yoki AI Pro tarifida ishlaydi</div>
+            </div>
+            <button onClick={openUpgradeModal}
+              className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+              Obuna olish →
+            </button>
+          </div>
+        )}
+        {!isFree && !hasAiAccess() && (
           <div className="bg-blue-600/10 border border-blue-600/30 rounded-2xl p-4 flex items-center justify-between gap-3">
             <div>
               <div className="text-white font-semibold text-sm mb-0.5">✦ AI Pro tarifida ishlaydi</div>
@@ -292,7 +305,7 @@ export default function KotibaPage() {
             </div>
             <button onClick={openUpgradeModal}
               className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-              Pro versiyani olish →
+              AI Pro olish →
             </button>
           </div>
         )}
