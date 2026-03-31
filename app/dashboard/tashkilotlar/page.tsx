@@ -8,6 +8,7 @@ import { useDashboard } from '../context'
 import { Modal, ModalActions } from '../_components/Modal'
 import { useToast } from '@/lib/toast'
 import type { Org } from '@/lib/types'
+import { getBankByMfo } from '@/lib/bankMfo'
 
 const emptyOrg = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '' }
 const emptyBank = { bank_name: '', account_number: '', mfo: '', is_default: false }
@@ -507,7 +508,11 @@ export default function TashkilotlarPage() {
               </div>
               <div>
                 <label className={lbl}>MFO</label>
-                <input className={inp} placeholder="00873" maxLength={5} value={orgForm.mfo} onChange={e => setOrgForm({ ...orgForm, mfo: e.target.value })}/>
+                <input className={inp} placeholder="00873" maxLength={5} value={orgForm.mfo} onChange={e => {
+                  const mfo = e.target.value
+                  const bankName = mfo.length === 5 ? getBankByMfo(mfo) : null
+                  setOrgForm({ ...orgForm, mfo, ...(bankName ? { bank_name: bankName } : {}) })
+                }}/>
               </div>
             </div>
             <div>
