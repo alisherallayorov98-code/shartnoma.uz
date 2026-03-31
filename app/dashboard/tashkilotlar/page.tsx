@@ -108,18 +108,26 @@ export default function TashkilotlarPage() {
       const { error } = await supabase.from('organizations').update(orgForm).eq('id', editingOrg.id)
       if (error) { toast(`Xato: ${error.message}`, 'error'); setSaving(false); return }
     } else {
-      const { data: newOrg } = await supabase.from('organizations').insert({ ...orgForm, user_id: userId }).select().single()
-      if (newOrg) {
-        await supabase.from('subscriptions').insert({
-          organization_id: newOrg.id, user_id: userId,
-          plan: 'free', contracts_used: 0,
-          period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        })
-        // Add owner as member
-        await supabase.from('org_members').insert({
-          organization_id: newOrg.id, user_id: userId, role: 'owner', status: 'active'
-        })
+      const { data: newOrg, error: orgErr } = await supabase
+        .from('organizations')
+        .insert({ ...orgForm, user_id: userId })
+        .select()
+        .single()
+      if (orgErr || !newOrg) {
+        toast(`Tashkilot saqlashda xato: ${orgErr?.message || 'Noma\'lum xatolik'}`, 'error')
+        setSaving(false); return
       }
+      // Subscription yaratish
+      const { error: subErr } = await supabase.from('subscriptions').insert({
+        organization_id: newOrg.id, user_id: userId,
+        plan: 'free', contracts_used: 0,
+        period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      })
+      if (subErr) console.error('Subscription error:', subErr.message)
+      // Egani a'zo sifatida qo'shish (xato bo'lsa ham davom etadi)
+      await supabase.from('org_members').insert({
+        organization_id: newOrg.id, user_id: userId, role: 'owner', status: 'active'
+      })
     }
     setOrgModal(false); setEditingOrg(null); setOrgForm(emptyOrg); setSaving(false); reloadOrgs()
   }
