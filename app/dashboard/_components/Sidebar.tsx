@@ -211,11 +211,6 @@ export function DashboardSidebar() {
             {sidebarOpen && <span>Admin panel ↗</span>}
           </a>
         )}
-        <button onClick={() => setFeedbackOpen(true)}
-          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-gray-400 hover:bg-[#1F2937] hover:text-yellow-400 transition">
-          <span className="flex-shrink-0">💬</span>
-          {sidebarOpen && <span>Taklif / Xato bildirish</span>}
-        </button>
         <button onClick={logout}
           className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition">
           <span className="flex-shrink-0">🚪</span>
