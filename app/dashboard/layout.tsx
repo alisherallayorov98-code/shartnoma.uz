@@ -56,9 +56,9 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const { initialLoading, sidebarOpen, setSidebarOpen } = useDashboard()
 
   return (
-    <div className="min-h-screen bg-[#0B1220] flex text-white">
+    <div className="h-screen bg-[#0B1220] flex text-white overflow-hidden">
       <DashboardSidebar />
-      <div className="flex-1 min-w-0 overflow-auto min-h-screen">
+      <div className="flex-1 min-w-0 overflow-auto h-screen">
         {/* Mobile top bar */}
         <div className="sm:hidden flex items-center gap-3 px-4 h-14 border-b border-[#1E293B] bg-[#0F172A] sticky top-0 z-30">
           <button

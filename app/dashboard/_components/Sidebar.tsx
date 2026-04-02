@@ -87,7 +87,7 @@ export function DashboardSidebar() {
       ${sidebarOpen ? 'w-64 translate-x-0' : 'w-16 -translate-x-full sm:translate-x-0'}
       fixed sm:relative inset-y-0 left-0 z-50 sm:z-auto
       bg-[#0F172A] border-r border-[#1E293B] flex flex-col flex-shrink-0 transition-all duration-300
-      h-full sm:h-auto min-h-screen
+      h-full
     `}>
 
       {/* Logo + hamburger */}
