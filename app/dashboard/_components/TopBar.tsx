@@ -5,16 +5,42 @@ import { useDashboard } from '../context'
 import { useLang } from '@/lib/LanguageContext'
 import { LANG_LABELS, type Lang } from '@/lib/i18n'
 import { useTheme } from '@/lib/ThemeContext'
+import { supabase } from '@/lib/supabase'
+import { useToast } from '@/lib/toast'
 
 const LANG_CODES: Record<Lang, string> = { uz: 'UZ', oz: 'УЗ', ru: 'RU' }
 
 export function TopBar() {
-  const { userEmail, isAdmin } = useDashboard()
+  const { userEmail, isAdmin, userId, activeOrg } = useDashboard()
   const { lang, setLang } = useLang()
   const { theme, toggleTheme } = useTheme()
+  const { toast } = useToast()
   const [langOpen, setLangOpen] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [fbForm, setFbForm] = useState({ category: 'taklif', title: '', message: '' })
+  const [fbSaving, setFbSaving] = useState(false)
+
+  async function submitFeedback(e: React.FormEvent) {
+    e.preventDefault()
+    if (!fbForm.title.trim() || !fbForm.message.trim()) return
+    setFbSaving(true)
+    const { error } = await supabase.from('feedback').insert({
+      user_id: userId,
+      organization_id: activeOrg?.id || null,
+      user_email: userEmail,
+      category: fbForm.category,
+      title: fbForm.title.trim(),
+      message: fbForm.message.trim(),
+    })
+    setFbSaving(false)
+    if (error) { toast('Yuborishda xato: ' + error.message, 'error'); return }
+    toast('Fikr-mulohazangiz yuborildi. Rahmat!', 'success')
+    setFeedbackOpen(false)
+    setFbForm({ category: 'taklif', title: '', message: '' })
+  }
 
   return (
+    <>
     <div className="hidden sm:flex items-center justify-end gap-1 px-4 h-10 border-b border-[#1E293B] bg-[#0F172A] flex-shrink-0">
 
       {/* Language compact dropdown */}
@@ -44,6 +70,14 @@ export function TopBar() {
         )}
       </div>
 
+      {/* Feedback button */}
+      <button onClick={() => setFeedbackOpen(true)} title="Taklif / Xato bildirish"
+        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 hover:bg-[#1F2937] transition">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+      </button>
+
       {/* Theme toggle */}
       <button onClick={toggleTheme} title={theme === 'dark' ? 'Kunduzgi rejim' : 'Tungi rejim'}
         className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition">
@@ -67,5 +101,72 @@ export function TopBar() {
         {isAdmin && <span className="text-[10px] bg-red-900/50 text-red-400 px-1.5 py-0.5 rounded">Admin</span>}
       </div>
     </div>
+
+    {/* Feedback modal */}
+    {feedbackOpen && (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+        <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-md shadow-2xl">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B]">
+            <h2 className="text-base font-semibold text-white">💬 Taklif yoki xato bildirish</h2>
+            <button onClick={() => setFeedbackOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] text-xl">×</button>
+          </div>
+          <form onSubmit={submitFeedback} className="p-6 space-y-4">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Turi</label>
+              <div className="flex gap-2">
+                {[
+                  { value: 'taklif', label: '💡 Taklif' },
+                  { value: 'bug',    label: '🐛 Xato' },
+                  { value: 'savol',  label: '❓ Savol' },
+                  { value: 'boshqa', label: '📝 Boshqa' },
+                ].map(opt => (
+                  <button key={opt.value} type="button"
+                    onClick={() => setFbForm(f => ({ ...f, category: opt.value }))}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition border ${
+                      fbForm.category === opt.value
+                        ? 'bg-blue-600 border-blue-500 text-white'
+                        : 'bg-[#0F172A] border-[#1E293B] text-gray-400 hover:border-blue-600/50'
+                    }`}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Sarlavha *</label>
+              <input
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 placeholder-gray-500"
+                placeholder="Qisqacha ta'rif..."
+                required
+                value={fbForm.title}
+                onChange={e => setFbForm(f => ({ ...f, title: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Batafsil *</label>
+              <textarea
+                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 placeholder-gray-500 resize-none"
+                rows={4}
+                placeholder="Muammo yoki taklifingizni batafsil yozing..."
+                required
+                value={fbForm.message}
+                onChange={e => setFbForm(f => ({ ...f, message: e.target.value }))}
+              />
+            </div>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setFeedbackOpen(false)}
+                className="flex-1 py-2.5 rounded-lg text-sm text-gray-400 bg-[#1F2937] hover:bg-[#334155] transition">
+                Bekor qilish
+              </button>
+              <button type="submit" disabled={fbSaving}
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition">
+                {fbSaving ? 'Yuborilmoqda...' : 'Yuborish'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
