@@ -204,12 +204,6 @@ export function DashboardSidebar() {
 
       {/* User / Admin / Logout */}
       <div className="px-2 pb-2 pt-1 border-t border-[#1E293B] space-y-0.5">
-        {sidebarOpen && (
-          <div className="px-2.5 py-1.5 rounded-lg bg-[#1F2937] mb-1">
-            <div className="text-[10px] text-gray-500">{T(t.profile.account)}</div>
-            <div className="text-xs text-white truncate font-medium">{userEmail}</div>
-          </div>
-        )}
         {isAdmin && (
           <a href="/admin" target="_blank" rel="noopener noreferrer"
             className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-red-400 hover:bg-red-900/30 transition">
