@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { ReactNode } from 'react'
 import { DashboardProvider, useDashboard } from './context'
 import { DashboardSidebar } from './_components/Sidebar'
+import { TopBar } from './_components/TopBar'
 import ErrorBoundary from './_components/ErrorBoundary'
 import UpgradeModal from './_components/UpgradeModal'
 import { ToastProvider } from '@/lib/toast'
@@ -58,7 +59,8 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   return (
     <div className="h-screen bg-[#0B1220] flex text-white overflow-hidden">
       <DashboardSidebar />
-      <div className="flex-1 min-w-0 overflow-auto h-screen">
+      <div className="flex-1 min-w-0 flex flex-col h-screen">
+        <TopBar />
         {/* Mobile top bar */}
         <div className="sm:hidden flex items-center gap-3 px-4 h-14 border-b border-[#1E293B] bg-[#0F172A] sticky top-0 z-30">
           <button
@@ -72,7 +74,9 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">S</div>
           <span className="font-semibold text-sm">Shartnoma.uz</span>
         </div>
-        {initialLoading ? <LoadingSkeleton /> : <ErrorBoundary>{children}</ErrorBoundary>}
+        <div className="flex-1 overflow-auto">
+          {initialLoading ? <LoadingSkeleton /> : <ErrorBoundary>{children}</ErrorBoundary>}
+        </div>
         <UpgradeModal />
       </div>
     </div>
