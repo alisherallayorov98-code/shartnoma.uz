@@ -11,7 +11,7 @@ export function TopBar() {
   const { theme, toggleTheme } = useTheme()
 
   return (
-    <div className="hidden sm:flex items-center justify-end gap-2 px-6 h-12 border-b border-[#1E293B] bg-[#0F172A] flex-shrink-0">
+    <div className="hidden sm:flex items-center justify-end gap-2 px-4 h-10 border-b border-[#1E293B] bg-[#0F172A] flex-shrink-0">
       {/* Language */}
       <div className="flex gap-0.5">
         {(['uz', 'oz', 'ru'] as Lang[]).map(l => (

@@ -89,7 +89,7 @@ export function DashboardSidebar() {
     `}>
 
       {/* Logo + hamburger */}
-      <div className="h-16 flex items-center px-4 border-b border-[#1E293B] gap-3">
+      <div className="h-12 flex items-center px-3 border-b border-[#1E293B] gap-2">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-[#1F2937] transition flex-shrink-0"
@@ -105,10 +105,10 @@ export function DashboardSidebar() {
 
       {/* Org Switcher */}
       {sidebarOpen && orgs.length > 0 && (
-        <div className="px-3 pt-3 relative">
+        <div className="px-2 pt-2 relative">
           <button
             onClick={() => setOrgDropdown(!orgDropdown)}
-            className="w-full flex items-center gap-2 bg-[#1F2937] hover:bg-[#1F2937] border border-[#1E293B] rounded-lg px-3 py-2.5 transition text-left"
+            className="w-full flex items-center gap-2 bg-[#1F2937] hover:bg-[#1F2937] border border-[#1E293B] rounded-lg px-2.5 py-1.5 transition text-left"
           >
             <div className="w-7 h-7 bg-blue-900 rounded-md flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0">
               {activeOrg?.name[0]?.toUpperCase()}
@@ -150,8 +150,8 @@ export function DashboardSidebar() {
 
       {/* Quota bar + subscription info */}
       {sidebarOpen && quota && (
-        <div className="px-3 pt-3">
-          <div className="bg-[#1F2937] rounded-lg px-3 py-2.5">
+        <div className="px-2 pt-1.5">
+          <div className="bg-[#1F2937] rounded-lg px-2.5 py-1.5">
             <div className="flex justify-between text-xs mb-1.5">
               <span className="text-gray-400">Tarif: <span className="text-white font-medium">{quota.plan}</span></span>
               {quota.limit && <span className="text-gray-400">{quota.used}/{quota.limit}</span>}
@@ -183,15 +183,15 @@ export function DashboardSidebar() {
       )}
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-1 mt-2 overflow-y-auto overflow-x-hidden">
+      <nav className="flex-1 px-2 py-1.5 space-y-0.5 overflow-hidden">
         {NAV_ITEMS.map(item => (
           <Link key={item.key} href={item.href}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+            className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all ${
               isActive(item.href)
                 ? 'bg-blue-600 text-white shadow-lg'
                 : 'text-gray-400 hover:bg-[#1F2937] hover:text-white'
             }`}>
-            <span className="text-base flex-shrink-0">{item.icon}</span>
+            <span className="text-sm flex-shrink-0">{item.icon}</span>
             {sidebarOpen && <span className="flex-1 text-left font-medium">{T(item.label)}</span>}
             {sidebarOpen && item.key === 'contracts' && (
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive(item.href) ? 'bg-blue-500' : 'bg-[#1E293B] text-gray-400'}`}>
@@ -203,27 +203,27 @@ export function DashboardSidebar() {
       </nav>
 
       {/* User / Admin / Logout */}
-      <div className="p-3 border-t border-[#1E293B] space-y-1.5">
+      <div className="px-2 pb-2 pt-1 border-t border-[#1E293B] space-y-0.5">
         {sidebarOpen && (
-          <div className="px-3 py-2 rounded-lg bg-[#1F2937]">
-            <div className="text-xs text-gray-500">{T(t.profile.account)}</div>
-            <div className="text-sm text-white truncate font-medium mt-0.5">{userEmail}</div>
+          <div className="px-2.5 py-1.5 rounded-lg bg-[#1F2937] mb-1">
+            <div className="text-[10px] text-gray-500">{T(t.profile.account)}</div>
+            <div className="text-xs text-white truncate font-medium">{userEmail}</div>
           </div>
         )}
         {isAdmin && (
           <a href="/admin" target="_blank" rel="noopener noreferrer"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-900/30 transition">
+            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-red-400 hover:bg-red-900/30 transition">
             <span className="flex-shrink-0">⚙️</span>
             {sidebarOpen && <span>Admin panel ↗</span>}
           </a>
         )}
         <button onClick={() => setFeedbackOpen(true)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-[#1F2937] hover:text-yellow-400 transition">
+          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-gray-400 hover:bg-[#1F2937] hover:text-yellow-400 transition">
           <span className="flex-shrink-0">💬</span>
           {sidebarOpen && <span>Taklif / Xato bildirish</span>}
         </button>
         <button onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition">
+          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition">
           <span className="flex-shrink-0">🚪</span>
           {sidebarOpen && <span>{T(t.nav.logout)}</span>}
         </button>
