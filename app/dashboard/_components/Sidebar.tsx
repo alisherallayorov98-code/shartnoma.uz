@@ -189,7 +189,7 @@ export function DashboardSidebar() {
             className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all ${
               isActive(item.href)
                 ? 'bg-blue-600 text-white shadow-lg'
-                : 'text-gray-400 hover:bg-[#1F2937] hover:text-white'
+                : 'text-gray-200 hover:bg-[#1F2937] hover:text-white'
             }`}>
             <span className="text-sm flex-shrink-0">{item.icon}</span>
             {sidebarOpen && <span className="flex-1 text-left font-medium">{T(item.label)}</span>}
@@ -206,13 +206,13 @@ export function DashboardSidebar() {
       <div className="px-2 pb-2 pt-1 border-t border-[#1E293B] space-y-0.5">
         {isAdmin && (
           <a href="/admin" target="_blank" rel="noopener noreferrer"
-            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-red-400 hover:bg-red-900/30 transition">
+            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-red-300 hover:bg-red-900/30 transition">
             <span className="flex-shrink-0">⚙️</span>
             {sidebarOpen && <span>Admin panel ↗</span>}
           </a>
         )}
         <button onClick={logout}
-          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition">
+          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-gray-200 hover:bg-red-900/30 hover:text-red-400 transition">
           <span className="flex-shrink-0">🚪</span>
           {sidebarOpen && <span>{T(t.nav.logout)}</span>}
         </button>
