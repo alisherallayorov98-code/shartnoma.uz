@@ -57,7 +57,7 @@ export function DashboardSidebar() {
     <aside className={`
       ${sidebarOpen ? 'w-64 translate-x-0' : 'w-16 -translate-x-full sm:translate-x-0'}
       fixed sm:relative inset-y-0 left-0 z-50 sm:z-auto
-      bg-[#0F172A] border-r border-[#1E293B] flex flex-col flex-shrink-0 transition-all duration-300
+      bg-[#0A1628] border-r border-[#1E293B] flex flex-col flex-shrink-0 transition-all duration-300
       h-full
     `}>
 
@@ -162,7 +162,7 @@ export function DashboardSidebar() {
             className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all ${
               isActive(item.href)
                 ? 'bg-blue-600 text-white shadow-lg'
-                : 'text-gray-200 hover:bg-[#1F2937] hover:text-white'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'
             }`}>
             <span className="text-sm flex-shrink-0">{item.icon}</span>
             {sidebarOpen && <span className="flex-1 text-left font-medium">{T(item.label)}</span>}
@@ -179,13 +179,13 @@ export function DashboardSidebar() {
       <div className="px-2 pb-2 pt-1 border-t border-[#1E293B] space-y-0.5">
         {isAdmin && (
           <a href="/admin" target="_blank" rel="noopener noreferrer"
-            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-red-300 hover:bg-red-900/30 transition">
+            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-red-400 hover:bg-red-900/30 hover:text-red-300 transition">
             <span className="flex-shrink-0">⚙️</span>
             {sidebarOpen && <span>Admin panel ↗</span>}
           </a>
         )}
         <button onClick={logout}
-          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-gray-200 hover:bg-red-900/30 hover:text-red-400 transition">
+          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-white/80 hover:bg-red-900/30 hover:text-red-400 transition">
           <span className="flex-shrink-0">🚪</span>
           {sidebarOpen && <span>{T(t.nav.logout)}</span>}
         </button>
