@@ -204,54 +204,29 @@ export function DashboardSidebar() {
         ))}
       </nav>
 
-      {/* Language switcher + Theme toggle */}
-      {sidebarOpen && (
-        <div className="px-3 pb-1 space-y-1.5">
-          <div className="flex gap-1">
-            {(['uz', 'oz', 'ru'] as Lang[]).map(l => (
-              <button key={l} onClick={() => setLang(l)}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition ${lang === l ? 'bg-blue-600 text-white' : 'bg-[#1F2937] text-gray-400 hover:bg-[#111827]'}`}>
-                {LANG_LABELS[l]}
-              </button>
-            ))}
-          </div>
-          <button onClick={toggleTheme}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-[#1F2937] hover:bg-[#0F172A] transition text-xs text-gray-400 hover:text-white">
-            <span className="flex items-center gap-2">
-              {theme === 'dark' ? (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>
-                </svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/>
-                </svg>
-              )}
-              {theme === 'dark' ? 'Kunduzgi rejim' : 'Tungi rejim'}
-            </span>
-            <span className="text-gray-600 text-[10px]">{theme === 'dark' ? 'Hozir: Tun' : 'Hozir: Kun'}</span>
-          </button>
-        </div>
-      )}
-      {!sidebarOpen && (
-        <div className="px-2 pb-1">
+      {/* User / Admin / Logout */}
+      <div className="p-3 border-t border-[#1E293B] space-y-1.5">
+        {/* Language + Theme row */}
+        <div className="flex items-center gap-1">
+          {sidebarOpen && (['uz', 'oz', 'ru'] as Lang[]).map(l => (
+            <button key={l} onClick={() => setLang(l)}
+              className={`flex-1 py-1 rounded-md text-xs font-medium transition ${lang === l ? 'bg-blue-600 text-white' : 'bg-[#1F2937] text-gray-400 hover:bg-[#111827]'}`}>
+              {LANG_LABELS[l]}
+            </button>
+          ))}
           <button onClick={toggleTheme} title={theme === 'dark' ? 'Kunduzgi rejim' : 'Tungi rejim'}
-            className="w-full flex items-center justify-center py-2 rounded-lg bg-[#1F2937] hover:bg-[#0F172A] transition text-gray-400 hover:text-white">
+            className="flex items-center justify-center w-7 h-7 rounded-md bg-[#1F2937] hover:bg-[#111827] transition text-gray-400 hover:text-white flex-shrink-0">
             {theme === 'dark' ? (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>
               </svg>
             ) : (
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/>
               </svg>
             )}
           </button>
         </div>
-      )}
-
-      {/* User / Admin / Logout */}
-      <div className="p-3 border-t border-[#1E293B] space-y-2">
         {sidebarOpen && (
           <div className="px-3 py-2 rounded-lg bg-[#1F2937]">
             <div className="text-xs text-gray-500">{T(t.profile.account)}</div>
