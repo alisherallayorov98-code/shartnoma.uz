@@ -132,3 +132,82 @@ body {
 [data-theme="light"] aside [class*="bg-[#111827]"] { background-color: #1e3a8a !important; }
 [data-theme="light"] aside [class*="text-gray-200"] { color: #dbeafe !important; }
 [data-theme="light"] aside [class*="text-gray-300"] { color: #bfdbfe !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   LANDING PAGE LIGHT MODE  (.lp-light on root div)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Header */
+.lp-light header {
+  background-color: rgba(255,255,255,0.92) !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Background blobs — softer in light */
+.lp-light .fixed.inset-0 .bg-blue-600\/15   { opacity: 0.25; }
+.lp-light .fixed.inset-0 .bg-purple-600\/10 { opacity: 0.15; }
+.lp-light .fixed.inset-0 .bg-cyan-600\/8    { opacity: 0.10; }
+
+/* Hero gradient text → dark */
+.lp-light .bg-gradient-to-b.from-white { -webkit-text-fill-color: #0f172a !important; }
+.lp-light .bg-gradient-to-b.from-white.to-gray-300 { -webkit-text-fill-color: #0f172a !important; }
+.lp-light .bg-gradient-to-b.from-white.to-gray-400 { -webkit-text-fill-color: #0f172a !important; }
+
+/* Stats bar */
+.lp-light [class*="border-white\/10"] { border-color: #e2e8f0 !important; }
+.lp-light [class*="border-white\/5"]  { border-color: #f1f5f9 !important; }
+.lp-light [class*="border-white\/20"] { border-color: #cbd5e1 !important; }
+
+/* Text */
+.lp-light .text-gray-400 { color: #475569 !important; }
+.lp-light .text-gray-500 { color: #64748b !important; }
+.lp-light .text-gray-600 { color: #94a3b8 !important; }
+.lp-light .text-white    { color: #0f172a !important; }
+.lp-light .text-gray-300 { color: #334155 !important; }
+
+/* Cards / sections bg */
+.lp-light [class*="bg-white\/\[0.03\]"]  { background-color: #ffffff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.lp-light [class*="bg-white\/\[0.02\]"]  { background-color: #f8fafc !important; }
+.lp-light [class*="bg-white\/5"]          { background-color: #f1f5f9 !important; }
+.lp-light [class*="bg-white\/10"]         { background-color: #e2e8f0 !important; }
+.lp-light [class*="bg-gray-900\/60"]      { background-color: #ffffff !important; box-shadow: 0 4px 24px rgba(0,0,0,0.10); }
+.lp-light [class*="bg-gray-800\/60"]      { background-color: #f1f5f9 !important; }
+.lp-light [class*="bg-white\/\[0.015\]"]  { background-color: #f8fafc !important; }
+
+/* Section borders */
+.lp-light .border-y.border-white\/5 { border-color: #e2e8f0 !important; }
+.lp-light footer.border-t           { border-color: #e2e8f0 !important; }
+
+/* Pricing — highlight card */
+.lp-light [class*="from-blue-900\/30"] { background: linear-gradient(to bottom right, #eff6ff, #f0f9ff) !important; }
+.lp-light [class*="border-blue-500\/30"] { border-color: #93c5fd !important; }
+
+/* Demo preview — document lines */
+.lp-light .bg-gray-400 { background-color: #94a3b8 !important; }
+.lp-light .bg-gray-200 { background-color: #e2e8f0 !important; }
+.lp-light .bg-gray-300 { background-color: #cbd5e1 !important; }
+.lp-light .border-gray-200 { border-color: #e2e8f0 !important; }
+.lp-light .border-gray-400 { border-color: #94a3b8 !important; }
+.lp-light [class*="text-gray-900"] { color: #0f172a !important; }
+
+/* Buttons — secondary */
+.lp-light [class*="hover:bg-white\/10"]:hover { background-color: #f1f5f9 !important; }
+.lp-light [class*="hover:bg-white\/5"]:hover  { background-color: #f8fafc !important; }
+.lp-light [class*="hover:border-white\/25"]:hover { border-color: #94a3b8 !important; }
+
+/* Badge pills */
+.lp-light [class*="bg-gradient-to-r"][class*="from-blue-900\/40"] {
+  background: linear-gradient(to right, #eff6ff, #f0f9ff) !important;
+  border-color: #93c5fd !important;
+  color: #1d4ed8 !important;
+}
+.lp-light [class*="text-blue-300"] { color: #2563eb !important; }
+.lp-light [class*="text-emerald-400"] { color: #059669 !important; }
+.lp-light [class*="text-yellow-400"] { color: #d97706 !important; }
+
+/* Footer logo text */
+.lp-light footer .bg-gradient-to-r.from-white { -webkit-text-fill-color: #0f172a !important; }
+
+/* Nav links */
+.lp-light nav a { color: #475569 !important; }
+.lp-light nav a:hover { color: #0f172a !important; }

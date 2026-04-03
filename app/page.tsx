@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useLang } from '@/lib/LanguageContext'
 import { LANG_LABELS, type Lang } from '@/lib/i18n'
+import { useTheme } from '@/lib/ThemeContext'
 
 const LP: Record<Lang, {
   badge: string; h1a: string; h1b: string; h1c: string
@@ -220,10 +221,12 @@ const FEATURES_STYLES = [
 
 export default function Home() {
   const { lang, setLang } = useLang()
+  const { theme, toggleTheme } = useTheme()
   const l = LP[lang]
+  const isLight = theme === 'light'
 
   return (
-    <div className="min-h-screen bg-[#080810] text-white overflow-x-hidden">
+    <div className={`lp min-h-screen overflow-x-hidden ${isLight ? 'lp-light bg-[#f8fafc] text-gray-900' : 'bg-[#080810] text-white'}`}>
 
       {/* ── BACKGROUND ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -257,7 +260,15 @@ export default function Home() {
                 </button>
               ))}
             </div>
-            <Link href="/login" className="px-4 py-2 text-sm text-gray-400 hover:text-white transition hidden sm:block">
+            <button onClick={toggleTheme} title={isLight ? 'Tungi rejim' : 'Kunduzgi rejim'}
+              className={`w-8 h-8 flex items-center justify-center rounded-lg transition ${isLight ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}>
+              {isLight ? (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+              )}
+            </button>
+            <Link href="/login" className={`px-4 py-2 text-sm transition hidden sm:block ${isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-white'}`}>
               {l.login}
             </Link>
             <Link href="/signup"
