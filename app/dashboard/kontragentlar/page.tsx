@@ -10,6 +10,7 @@ import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import type { Counterparty } from '@/lib/types'
 import { getBankByMfo } from '@/lib/bankMfo'
+import { formatPhoneUz, filterDigits } from '@/lib/inputMasks'
 import CpDetailModal from './_components/CpDetailModal'
 
 const emptyCp = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', phone: '', qqsreg: '' }
@@ -325,7 +326,7 @@ export default function KontragentlarPage() {
               <div>
                 <label className={lbl}>STIR (INN)</label>
                 <div className="flex gap-2">
-                  <input className={inp} placeholder="123456789" maxLength={9} value={cpForm.inn} onChange={e => setCpForm({ ...cpForm, inn: e.target.value })}/>
+                  <input className={inp} placeholder="123456789" maxLength={9} value={cpForm.inn} onChange={e => setCpForm({ ...cpForm, inn: filterDigits(e.target.value, 9) })}/>
                   <button type="button" disabled={stirLoading || !cpForm.inn}
                     onClick={() => lookupStirCp(cpForm.inn)}
                     className="px-2.5 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600/30 text-blue-400 rounded-lg text-xs disabled:opacity-40 transition flex-shrink-0"
@@ -345,23 +346,23 @@ export default function KontragentlarPage() {
               </div>
               <div>
                 <label className={lbl}>Hisob raqami</label>
-                <input className={inp} placeholder="20208000000000000000" maxLength={20} value={cpForm.bank_account} onChange={e => setCpForm({ ...cpForm, bank_account: e.target.value })}/>
+                <input className={inp} placeholder="20208000000000000000" maxLength={20} value={cpForm.bank_account} onChange={e => setCpForm({ ...cpForm, bank_account: filterDigits(e.target.value, 20) })}/>
               </div>
               <div>
                 <label className={lbl}>MFO</label>
                 <input className={inp} placeholder="00873" maxLength={5} value={cpForm.mfo} onChange={e => {
-                  const mfo = e.target.value
+                  const mfo = filterDigits(e.target.value, 5)
                   const bankName = mfo.length === 5 ? getBankByMfo(mfo) : null
                   setCpForm({ ...cpForm, mfo, ...(bankName ? { bank_name: bankName } : {}) })
                 }}/>
               </div>
               <div>
                 <label className={lbl}>Telefon</label>
-                <input className={inp} placeholder="+998901234567" value={cpForm.phone} onChange={e => setCpForm({ ...cpForm, phone: e.target.value })}/>
+                <input className={inp} placeholder="+998 90 123-45-67" value={cpForm.phone} onChange={e => setCpForm({ ...cpForm, phone: formatPhoneUz(e.target.value) })}/>
               </div>
               <div>
                 <label className={lbl}>QQS ro'yxat raqami</label>
-                <input className={inp} placeholder="318060007067" value={cpForm.qqsreg} onChange={e => setCpForm({ ...cpForm, qqsreg: e.target.value })}/>
+                <input className={inp} placeholder="318060007067" value={cpForm.qqsreg} onChange={e => setCpForm({ ...cpForm, qqsreg: filterDigits(e.target.value) })}/>
               </div>
             </div>
             <div>

@@ -7,6 +7,7 @@ import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { useToast } from '@/lib/toast'
 import { getBankByMfo } from '@/lib/bankMfo'
+import { formatPhoneUz } from '@/lib/inputMasks'
 
 export default function ProfilPage() {
   const { lang } = useLang()
@@ -292,8 +293,8 @@ export default function ProfilPage() {
               </div>
               <div className="col-span-2">
                 <label className={lbl}>{T(t.profileTab.phone)}</label>
-                <input className={inp} placeholder="+998 90 123 45 67"
-                  value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })}/>
+                <input className={inp} placeholder="+998 90 123-45-67"
+                  value={profile.phone} onChange={e => setProfile({ ...profile, phone: formatPhoneUz(e.target.value) })}/>
               </div>
             </div>
             {profileMsg && (
@@ -548,7 +549,7 @@ export default function ProfilPage() {
                 </div>
                 <div>
                   <label className={lbl}>Telefon</label>
-                  <input className={inp} placeholder="+998901234567" value={orgExtForm.phone || ''} onChange={e => setOrgExtForm({ ...orgExtForm, phone: e.target.value })}/>
+                  <input className={inp} placeholder="+998 90 123-45-67" value={orgExtForm.phone || ''} onChange={e => setOrgExtForm({ ...orgExtForm, phone: formatPhoneUz(e.target.value) })}/>
                 </div>
               </div>
             </div>

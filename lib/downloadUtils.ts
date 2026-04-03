@@ -58,6 +58,18 @@ export function cyrillicToLatin(str: string): string {
   ).replace(/[^\x00-\xFF]/g, '?')  // qolgan noma'lum belgilar
 }
 
+// Fayl nomidan noto'g'ri belgilarni tozalash
+function sanitizeFilename(name: string): string {
+  return name
+    .replace(/№/g, 'N')
+    .replace(/[/\\:*?"<>|]/g, '_')
+    .replace(/[«»""'']/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    .trim() || 'hujjat'
+}
+
 // Tekst satri turini aniqlash
 type LineType = 'empty' | 'title' | 'section' | 'subsection' | 'bullet' | 'body'
 function classifyLine(line: string): LineType {
@@ -187,7 +199,7 @@ export async function downloadTextAsPDF(text: string, filename: string) {
     doc.text(`${p} / ${total}`, pageW - MR, pageH - 10, { align: 'right' })
   }
 
-  doc.save(`${filename}.pdf`)
+  doc.save(`${sanitizeFilename(filename)}.pdf`)
 }
 
 export async function downloadTextAsWord(text: string, filename: string) {
@@ -399,7 +411,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${filename}.docx`
+  a.download = `${sanitizeFilename(filename)}.docx`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -803,7 +815,7 @@ export async function downloadRekvizitlarWord(opts: {
 }) {
   const {
     Document, Packer, Paragraph, TextRun, AlignmentType, Footer,
-    PageNumber, Table, TableRow, TableCell, WidthType, BorderStyle,
+    Table, TableRow, TableCell, WidthType, BorderStyle,
   } = await import('docx')
 
   const F = 'Times New Roman'

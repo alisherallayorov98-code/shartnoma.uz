@@ -9,6 +9,7 @@ import type { ContractStructure } from '@/lib/contractStructures'
 import { getStructure, structureToText, numberToWords } from '@/lib/contractStructures'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
 import { getBankByMfo } from '@/lib/bankMfo'
+import { formatPhoneUz } from '@/lib/inputMasks'
 import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
 import { useToast } from '@/lib/toast'
 import CityPicker from './CityPicker'
@@ -1299,8 +1300,8 @@ export default function ContractModal({
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Telefon</label>
-                <input value={newCp.phone} onChange={e => setNewCp(p => ({ ...p, phone: e.target.value }))}
-                  placeholder="+998 90 123 45 67"
+                <input value={newCp.phone} onChange={e => setNewCp(p => ({ ...p, phone: formatPhoneUz(e.target.value) }))}
+                  placeholder="+998 90 123-45-67"
                   className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
               </div>
               <div>
