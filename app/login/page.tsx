@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, LANG_LABELS, type Lang } from '@/lib/i18n'
+import forge from 'node-forge'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -16,6 +17,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // E-IMZO state
+  const [eimzoFile, setEimzoFile] = useState<File | null>(null)
+  const [eimzoPass, setEimzoPass] = useState('')
+  const [eimzoLoading, setEimzoLoading] = useState(false)
+  const eimzoFileRef = useRef<HTMLInputElement>(null)
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -33,6 +40,69 @@ export default function LoginPage() {
       router.push('/dashboard')
     }
     setLoading(false)
+  }
+
+  async function handleEimzoLogin() {
+    if (!eimzoFile) { setError('E-IMZO fayl tanlanmagan'); return }
+    if (!eimzoPass) { setError('E-IMZO paroli kiritilmagan'); return }
+    setEimzoLoading(true)
+    setError('')
+    try {
+      // 1. Get challenge
+      const { id: challengeId, challenge } = await fetch('/api/auth/eimzo/challenge').then(r => r.json())
+
+      // 2. Parse .pfx
+      const arrayBuffer = await eimzoFile.arrayBuffer()
+      const pfxDer = forge.util.binary.raw.encode(new Uint8Array(arrayBuffer))
+      const pfxAsn1 = forge.asn1.fromDer(pfxDer)
+      let pfx: forge.pkcs12.Pkcs12Pfx
+      try {
+        pfx = forge.pkcs12.pkcs12FromAsn1(pfxAsn1, eimzoPass)
+      } catch {
+        setError('E-IMZO paroli noto\'g\'ri yoki fayl buzilgan')
+        setEimzoLoading(false)
+        return
+      }
+
+      // 3. Extract private key and certificate
+      const keyBags = pfx.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })
+      const certBags = pfx.getBags({ bagType: forge.pki.oids.certBag })
+      const privateKey = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0]?.key as forge.pki.rsa.PrivateKey
+      const certificate = certBags[forge.pki.oids.certBag]?.[0]?.cert
+
+      if (!privateKey || !certificate) {
+        setError('Kalit yoki sertifikat topilmadi')
+        setEimzoLoading(false)
+        return
+      }
+
+      // 4. Sign challenge
+      const md = forge.md.sha256.create()
+      md.update(challenge)
+      const signature = privateKey.sign(md)
+
+      // 5. Send to server
+      const certDer = forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).bytes()
+      const res = await fetch('/api/auth/eimzo/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          challengeId,
+          signatureB64: forge.util.encode64(signature),
+          certificateB64: forge.util.encode64(certDer),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'E-IMZO xatoligi'); setEimzoLoading(false); return }
+
+      // 6. Set Supabase session
+      await supabase.auth.setSession(data.session)
+      router.push('/dashboard')
+    } catch (e) {
+      console.error(e)
+      setError('E-IMZO orqali kirishda xatolik yuz berdi')
+    }
+    setEimzoLoading(false)
   }
 
   async function handleGoogleLogin() {
@@ -82,6 +152,46 @@ export default function LoginPage() {
               {error}
             </div>
           )}
+
+          {/* E-IMZO */}
+          <div className="mb-4 border border-gray-700 rounded-xl p-4 bg-gray-800/50">
+            <p className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+              <span>🔐</span> E-IMZO bilan kirish
+            </p>
+            <div className="space-y-3">
+              <div>
+                <input
+                  ref={eimzoFileRef}
+                  type="file"
+                  accept=".pfx,.p12"
+                  onChange={e => setEimzoFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => eimzoFileRef.current?.click()}
+                  className="w-full text-left bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg px-4 py-2.5 hover:border-blue-500 transition truncate"
+                >
+                  {eimzoFile ? eimzoFile.name : 'PFX fayl tanlang...'}
+                </button>
+              </div>
+              <input
+                type="password"
+                value={eimzoPass}
+                onChange={e => setEimzoPass(e.target.value)}
+                placeholder="E-IMZO paroli"
+                className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500"
+              />
+              <button
+                type="button"
+                onClick={handleEimzoLogin}
+                disabled={eimzoLoading || !eimzoFile}
+                className="w-full bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition"
+              >
+                {eimzoLoading ? 'Tekshirilmoqda...' : 'E-IMZO orqali kirish'}
+              </button>
+            </div>
+          </div>
 
           <button
             onClick={handleGoogleLogin}
