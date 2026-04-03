@@ -13,7 +13,13 @@ import { getBankByMfo } from '@/lib/bankMfo'
 import { formatPhoneUz, filterDigits } from '@/lib/inputMasks'
 import CpDetailModal from './_components/CpDetailModal'
 
-const emptyCp = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', phone: '', qqsreg: '' }
+const emptyCp = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', phone: '', qqsreg: '', oked: '', stir_status: '', stir_checked_at: '' }
+
+function cpCompleteness(cp: { name: string; inn: string; director_name: string; bank_name: string; bank_account: string; mfo: string; address: string; phone?: string; qqsreg?: string }) {
+  const checks = [cp.name, cp.inn, cp.director_name, cp.bank_name, cp.bank_account, cp.mfo, cp.address, cp.phone, cp.qqsreg]
+  const filled = checks.filter(Boolean).length
+  return { filled, total: checks.length, pct: Math.round(filled / checks.length * 100) }
+}
 
 const CSV_HEADERS = ['name', 'inn', 'director_name', 'bank_name', 'bank_account', 'mfo', 'address', 'phone', 'qqsreg']
 const CSV_LABELS  = ['Tashkilot nomi *', 'INN (9 raqam)', 'Rahbar F.I.O', 'Bank nomi', 'Hisob raqami (20 raqam)', 'MFO (5 raqam)', 'Manzil', 'Telefon', 'QQS raqami']
@@ -118,8 +124,12 @@ export default function KontragentlarPage() {
         director_name: co.director_name || prev.director_name,
         address: co.address || prev.address,
         qqsreg: co.qqsreg || prev.qqsreg,
+        oked: co.oked || prev.oked,
+        stir_status: co.status || 'unknown',
+        stir_checked_at: new Date().toISOString(),
       }))
-      toast('Ma\'lumotlar to\'ldirildi', 'success')
+      const statusMsg = co.status === 'active' ? ' ✓ Faol tashkilot' : co.status === 'inactive' ? ' ⚠ Faol emas!' : ''
+      toast('Ma\'lumotlar to\'ldirildi' + statusMsg, co.status === 'inactive' ? 'error' : 'success')
     } catch {
       toast('STIR so\'rovida xatolik', 'error')
     } finally {
@@ -267,7 +277,29 @@ export default function KontragentlarPage() {
                         <div className="w-8 h-8 bg-orange-900/60 rounded-lg flex items-center justify-center text-orange-300 font-bold text-sm flex-shrink-0">
                           {cp.name[0]?.toUpperCase()}
                         </div>
-                        <span className="font-medium text-white">{cp.name}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-white">{cp.name}</span>
+                            {cp.stir_status === 'active' && (
+                              <span className="text-[10px] bg-green-900/40 text-green-400 border border-green-700/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">✓ Faol</span>
+                            )}
+                            {cp.stir_status === 'inactive' && (
+                              <span className="text-[10px] bg-red-900/40 text-red-400 border border-red-700/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">⚠ Faol emas</span>
+                            )}
+                          </div>
+                          {cp.stir_checked_at && (() => {
+                            const { filled, total, pct } = cpCompleteness(cp)
+                            const days = Math.floor((Date.now() - new Date(cp.stir_checked_at).getTime()) / 86400000)
+                            return (
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <div className="w-16 h-1 bg-[#1E293B] rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full ${pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }}/>
+                                </div>
+                                <span className="text-[10px] text-gray-600">{filled}/{total} • {days === 0 ? 'bugun' : `${days}k`}</span>
+                              </div>
+                            )
+                          })()}
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-400 font-mono text-xs">{cp.inn || '—'}</td>
@@ -283,7 +315,7 @@ export default function KontragentlarPage() {
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
                         <button onClick={() => {
                           setEditingCp(cp)
-                          setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: cp.bank_name, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '' })
+                          setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: cp.bank_name, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '', oked: cp.oked || '', stir_status: cp.stir_status || '', stir_checked_at: cp.stir_checked_at || '' })
                           setModal(true)
                         }} className="p-1.5 bg-[#1F2937] hover:bg-blue-700 rounded text-xs text-gray-300" title="Tahrirlash">✎</button>
                         <button onClick={() => deleteCp(cp.id)}
@@ -308,7 +340,7 @@ export default function KontragentlarPage() {
           onClose={() => setCpDetail(null)}
           onEdit={cp => {
             setEditingCp(cp)
-            setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: cp.bank_name, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '' })
+            setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: cp.bank_name, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '', oked: cp.oked || '', stir_status: cp.stir_status || '', stir_checked_at: cp.stir_checked_at || '' })
             setCpDetail(null); setModal(true)
           }}
           onDelete={id => { setCpDetail(null); deleteCp(id) }}

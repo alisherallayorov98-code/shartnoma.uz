@@ -19,7 +19,9 @@ export type BankAccount = {
 export type Counterparty = {
   id: string; name: string; inn: string; director_name: string
   bank_name: string; bank_account: string; mfo: string; address: string
-  phone?: string; qqsreg?: string
+  phone?: string; qqsreg?: string; oked?: string
+  stir_status?: string       // 'active' | 'inactive' | 'unknown'
+  stir_checked_at?: string   // ISO timestamp
 }
 
 export type Employee = {

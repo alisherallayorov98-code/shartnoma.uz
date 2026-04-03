@@ -701,6 +701,27 @@ export default function ContractModal({
                   {selectedCp && (
                     <p className="text-xs text-gray-500 mt-1">INN: {selectedCp.inn} | Rahbar: {selectedCp.director_name}</p>
                   )}
+                  {selectedCp && (() => {
+                    if (selectedCp.stir_status === 'inactive') return (
+                      <div className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400 bg-red-900/20 border border-red-700/30 rounded-lg px-3 py-1.5">
+                        <span>⚠</span><span>Bu tashkilot Soliq ma&apos;lumotlarida <strong>faol emas</strong>. Shartnoma tuzishdan avval tekshiring.</span>
+                      </div>
+                    )
+                    if (selectedCp.stir_checked_at) {
+                      const days = Math.floor((Date.now() - new Date(selectedCp.stir_checked_at).getTime()) / 86400000)
+                      if (days > 30) return (
+                        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-700/30 rounded-lg px-3 py-1.5">
+                          <span>🕐</span><span>Bu kontragent <strong>{days} kun</strong> oldin tekshirilgan. Soliqdan yangilash tavsiya etiladi.</span>
+                        </div>
+                      )
+                    }
+                    if (!selectedCp.stir_checked_at && selectedCp.inn) return (
+                      <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-500 bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-1.5">
+                        <span>💡</span><span>Bu kontragent hali Soliq API orqali tekshirilmagan.</span>
+                      </div>
+                    )
+                    return null
+                  })()}
                 </div>
 
                 {/* Product name — only for oldi_sotdi and daval */}

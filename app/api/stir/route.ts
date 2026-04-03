@@ -29,6 +29,17 @@ function normalizeCompany(raw: Record<string, unknown>) {
   const director_name = [str(dir.lastName), str(dir.firstName), str(dir.middleName)]
     .filter(Boolean).join(' ')
 
+  // Tashkilot holati: faol / tugatilgan / muallaq
+  const rawStatus = str(co.statusOfActivity) || str(co.activityStatus) || str(co.state) || str(co.status)
+  const statusLower = rawStatus.toLowerCase()
+  const status =
+    statusLower.includes('faol') || statusLower.includes('activ') || statusLower === '1' ? 'active' :
+    statusLower.includes('tugatil') || statusLower.includes('likvid') || statusLower.includes('inactive') ? 'inactive' :
+    rawStatus ? 'unknown' : ''
+
+  const oked = str(co.oked) || str(co.industrialCode) || str(co.okedCode) || str(co.industryCode)
+  const reg_date = str(co.registrationDate) || str(co.regDate) || str(co.stateRegistrationDate)
+
   return {
     name:          str(co.shortName) || str(co.name),
     full_name:     str(co.name),
@@ -40,6 +51,9 @@ function normalizeCompany(raw: Record<string, unknown>) {
     mfo:           '',
     phone:         '',
     qqsreg:        str(co.vatNumber),
+    status,
+    oked,
+    reg_date,
   }
 }
 
