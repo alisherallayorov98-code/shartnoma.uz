@@ -1,12 +1,41 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, LANG_LABELS, type Lang } from '@/lib/i18n'
 import forge from 'node-forge'
+
+const EIMZO_LOCAL = 'http://127.0.0.1:64646'
+
+interface EimzoCert {
+  alias: string
+  subjectName: string
+  serialNumber: string
+  validTo: string
+  validFrom: string
+  CN?: string
+  O?: string
+  TIN?: string
+}
+
+function parseCertLabel(cert: EimzoCert): string {
+  // Extract CN or O from subjectName: "CN=NAME, TIN=123, ..."
+  const cn = cert.subjectName?.match(/CN=([^,]+)/)?.[1]?.trim()
+  const tin = cert.subjectName?.match(/(?:TIN|INN|UID)=([^,]+)/i)?.[1]?.trim()
+  const label = cn || cert.alias
+  return tin ? `${label} (${tin})` : label
+}
+
+function certExpiry(cert: EimzoCert): string {
+  if (!cert.validTo) return ''
+  try {
+    const d = new Date(cert.validTo)
+    return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth()+1).toString().padStart(2, '0')}.${d.getFullYear()}`
+  } catch { return cert.validTo }
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -18,11 +47,29 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // E-IMZO state
-  const [eimzoFile, setEimzoFile] = useState<File | null>(null)
-  const [eimzoPass, setEimzoPass] = useState('')
+  // E-IMZO desktop state
+  const [eimzoCerts, setEimzoCerts] = useState<EimzoCert[]>([])
+  const [selectedAlias, setSelectedAlias] = useState('')
   const [eimzoLoading, setEimzoLoading] = useState(false)
-  const eimzoFileRef = useRef<HTMLInputElement>(null)
+  const [desktopAvailable, setDesktopAvailable] = useState<boolean | null>(null)
+
+  // PFX fallback state
+  const [pfxMode, setPfxMode] = useState(false)
+  const [pfxFile, setPfxFile] = useState<File | null>(null)
+  const [pfxPass, setPfxPass] = useState('')
+  const pfxFileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    fetch(`${EIMZO_LOCAL}/e-imzo/api/v1/certificate/list`, { signal: AbortSignal.timeout(1500) })
+      .then(r => r.json())
+      .then(data => {
+        const certs: EimzoCert[] = data.alias || []
+        setEimzoCerts(certs)
+        if (certs.length > 0) setSelectedAlias(certs[0].alias)
+        setDesktopAvailable(true)
+      })
+      .catch(() => setDesktopAvailable(false))
+  }, [])
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -42,47 +89,85 @@ export default function LoginPage() {
     setLoading(false)
   }
 
-  async function handleEimzoLogin() {
-    if (!eimzoFile) { setError('E-IMZO fayl tanlanmagan'); return }
-    if (!eimzoPass) { setError('E-IMZO paroli kiritilmagan'); return }
+  async function handleGoogleLogin() {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/dashboard' }
+    })
+  }
+
+  async function finishEimzoLogin(pkcs7B64: string) {
+    const { id: challengeId, challenge } = await fetch('/api/auth/eimzo/challenge').then(r => r.json())
+    // For desktop mode, challenge is embedded in pkcs7
+    const res = await fetch('/api/auth/eimzo/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pkcs7B64, challengeId, challenge }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Xatolik')
+    await supabase.auth.setSession(data.session)
+    router.push('/dashboard')
+  }
+
+  async function handleDesktopLogin() {
+    if (!selectedAlias) { setError('Kalit tanlanmagan'); return }
     setEimzoLoading(true)
     setError('')
     try {
-      // 1. Get challenge
       const { id: challengeId, challenge } = await fetch('/api/auth/eimzo/challenge').then(r => r.json())
+      const signRes = await fetch(`${EIMZO_LOCAL}/e-imzo/api/v1/pkcs7/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alias: selectedAlias, content: btoa(challenge), detached: false }),
+      })
+      const signData = await signRes.json()
+      if (!signData.pkcs7_64) throw new Error(signData.message || 'Imzolashda xatolik')
 
-      // 2. Parse .pfx
-      const arrayBuffer = await eimzoFile.arrayBuffer()
+      const res = await fetch('/api/auth/eimzo/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pkcs7B64: signData.pkcs7_64, challengeId, challenge }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Server xatoligi')
+      await supabase.auth.setSession(data.session)
+      router.push('/dashboard')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'E-IMZO xatoligi')
+    }
+    setEimzoLoading(false)
+  }
+
+  async function handlePfxLogin() {
+    if (!pfxFile) { setError('E-IMZO fayl tanlanmagan'); return }
+    if (!pfxPass) { setError('E-IMZO paroli kiritilmagan'); return }
+    setEimzoLoading(true)
+    setError('')
+    try {
+      const { id: challengeId, challenge } = await fetch('/api/auth/eimzo/challenge').then(r => r.json())
+      const arrayBuffer = await pfxFile.arrayBuffer()
       const pfxDer = forge.util.binary.raw.encode(new Uint8Array(arrayBuffer))
       const pfxAsn1 = forge.asn1.fromDer(pfxDer)
       let pfx: forge.pkcs12.Pkcs12Pfx
       try {
-        pfx = forge.pkcs12.pkcs12FromAsn1(pfxAsn1, eimzoPass)
+        pfx = forge.pkcs12.pkcs12FromAsn1(pfxAsn1, pfxPass)
       } catch {
         setError('E-IMZO paroli noto\'g\'ri yoki fayl buzilgan')
         setEimzoLoading(false)
         return
       }
-
-      // 3. Extract private key and certificate
       const keyBags = pfx.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })
       const certBags = pfx.getBags({ bagType: forge.pki.oids.certBag })
       const privateKey = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag]?.[0]?.key as forge.pki.rsa.PrivateKey
       const certificate = certBags[forge.pki.oids.certBag]?.[0]?.cert
+      if (!privateKey || !certificate) { setError('Kalit yoki sertifikat topilmadi'); setEimzoLoading(false); return }
 
-      if (!privateKey || !certificate) {
-        setError('Kalit yoki sertifikat topilmadi')
-        setEimzoLoading(false)
-        return
-      }
-
-      // 4. Sign challenge
       const md = forge.md.sha256.create()
       md.update(challenge)
       const signature = privateKey.sign(md)
-
-      // 5. Send to server
       const certDer = forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).bytes()
+
       const res = await fetch('/api/auth/eimzo/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,31 +179,19 @@ export default function LoginPage() {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'E-IMZO xatoligi'); setEimzoLoading(false); return }
-
-      // 6. Set Supabase session
       await supabase.auth.setSession(data.session)
       router.push('/dashboard')
     } catch (e) {
       console.error(e)
-      setError('E-IMZO orqali kirishda xatolik yuz berdi')
+      setError('E-IMZO orqali kirishda xatolik')
     }
     setEimzoLoading(false)
-  }
-
-  async function handleGoogleLogin() {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/dashboard'
-      }
-    })
   }
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
 
-        {/* Bosh sahifa + Til tanlash */}
         <div className="flex items-center justify-between mb-4">
           <Link href="/" className="text-sm text-gray-400 hover:text-white transition flex items-center gap-1">
             ← Bosh sahifa
@@ -129,9 +202,7 @@ export default function LoginPage() {
                 key={l}
                 onClick={() => setLang(l)}
                 className={`px-3 py-1 text-xs rounded-lg transition ${
-                  lang === l
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800 text-gray-400 hover:text-white'
+                  lang === l ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
                 }`}
               >
                 {LANG_LABELS[l]}
@@ -154,43 +225,66 @@ export default function LoginPage() {
           )}
 
           {/* E-IMZO */}
-          <div className="mb-4 border border-gray-700 rounded-xl p-4 bg-gray-800/50">
+          <div className="mb-6 border border-gray-700 rounded-xl p-4 bg-gray-800/50">
             <p className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
-              <span>🔐</span> E-IMZO bilan kirish
+              🔐 E-IMZO bilan kirish
             </p>
-            <div className="space-y-3">
-              <div>
-                <input
-                  ref={eimzoFileRef}
-                  type="file"
-                  accept=".pfx,.p12"
-                  onChange={e => setEimzoFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                />
+
+            {desktopAvailable === null && (
+              <p className="text-xs text-gray-500 text-center py-2">E-IMZO tekshirilmoqda...</p>
+            )}
+
+            {desktopAvailable === true && !pfxMode && (
+              <div className="space-y-3">
+                <select
+                  value={selectedAlias}
+                  onChange={e => setSelectedAlias(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500"
+                >
+                  {eimzoCerts.map(cert => (
+                    <option key={cert.alias} value={cert.alias}>
+                      {parseCertLabel(cert)} — {certExpiry(cert)} gacha
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
-                  onClick={() => eimzoFileRef.current?.click()}
-                  className="w-full text-left bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg px-4 py-2.5 hover:border-blue-500 transition truncate"
+                  onClick={handleDesktopLogin}
+                  disabled={eimzoLoading || !selectedAlias}
+                  className="w-full bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition"
                 >
-                  {eimzoFile ? eimzoFile.name : 'PFX fayl tanlang...'}
+                  {eimzoLoading ? 'Imzolanmoqda...' : 'E-IMZO orqali kirish'}
+                </button>
+                <button type="button" onClick={() => setPfxMode(true)} className="text-xs text-gray-500 hover:text-gray-400 w-full text-center">
+                  PFX fayl orqali kirish
                 </button>
               </div>
-              <input
-                type="password"
-                value={eimzoPass}
-                onChange={e => setEimzoPass(e.target.value)}
-                placeholder="E-IMZO paroli"
-                className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500"
-              />
-              <button
-                type="button"
-                onClick={handleEimzoLogin}
-                disabled={eimzoLoading || !eimzoFile}
-                className="w-full bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition"
-              >
-                {eimzoLoading ? 'Tekshirilmoqda...' : 'E-IMZO orqali kirish'}
-              </button>
-            </div>
+            )}
+
+            {(desktopAvailable === false || pfxMode) && (
+              <div className="space-y-3">
+                {desktopAvailable === false && (
+                  <p className="text-xs text-yellow-600">E-IMZO ilovasi topilmadi — PFX fayl bilan kiring</p>
+                )}
+                <input ref={pfxFileRef} type="file" accept=".pfx,.p12" onChange={e => setPfxFile(e.target.files?.[0] || null)} className="hidden" />
+                <button type="button" onClick={() => pfxFileRef.current?.click()}
+                  className="w-full text-left bg-gray-700 border border-gray-600 text-gray-300 text-sm rounded-lg px-4 py-2.5 hover:border-blue-500 transition truncate">
+                  {pfxFile ? pfxFile.name : 'PFX fayl tanlang...'}
+                </button>
+                <input type="password" value={pfxPass} onChange={e => setPfxPass(e.target.value)}
+                  placeholder="E-IMZO paroli"
+                  className="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500" />
+                <button type="button" onClick={handlePfxLogin} disabled={eimzoLoading || !pfxFile}
+                  className="w-full bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition">
+                  {eimzoLoading ? 'Tekshirilmoqda...' : 'E-IMZO orqali kirish'}
+                </button>
+                {pfxMode && (
+                  <button type="button" onClick={() => setPfxMode(false)} className="text-xs text-gray-500 hover:text-gray-400 w-full text-center">
+                    ← Orqaga
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <button
@@ -215,31 +309,18 @@ export default function LoginPage() {
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
                 className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500"
-                placeholder="email@example.com"
-              />
+                placeholder="email@example.com" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">{T(t.login.password)}</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
                 className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500"
-                placeholder="••••••••"
-              />
+                placeholder="••••••••" />
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition"
-            >
+            <button type="submit" disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition">
               {loading ? T(t.btn.loading) : T(t.login.submit)}
             </button>
           </form>
