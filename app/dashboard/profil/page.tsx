@@ -37,6 +37,16 @@ export default function ProfilPage() {
   const [editFounderId, setEditFounderId] = useState<string | null>(null)
   const [editFounderData, setEditFounderData] = useState({ full_name: '', ulush: '' })
 
+  // Soliqdan yangilash modal state
+  type StirSyncResult =
+    | { status: 'ok'; founders: { full_name: string; ulush: number }[]; ustav_kapital: string }
+    | { status: 'not_ready' }
+    | { status: 'error'; message: string }
+  const [stirSyncOpen, setStirSyncOpen] = useState(false)
+  const [stirSyncLoading, setStirSyncLoading] = useState(false)
+  const [stirSyncResult, setStirSyncResult] = useState<StirSyncResult | null>(null)
+  const [stirSyncSaving, setStirSyncSaving] = useState(false)
+
   async function loadFounders() {
     if (!activeOrg) return
     setFoundersLoading(true)
@@ -49,6 +59,47 @@ export default function ProfilPage() {
     if (profileTab === 'founders') loadFounders()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileTab, activeOrg])
+
+  async function openStirSync() {
+    if (!activeOrg?.inn) { toast("Tashkilot STIR raqami kiritilmagan", 'error'); return }
+    setStirSyncOpen(true)
+    setStirSyncResult(null)
+    setStirSyncLoading(true)
+    try {
+      const res = await fetch(`/api/stir/founders?stir=${activeOrg.inn}`)
+      const data = await res.json()
+      if (data.notReady) {
+        setStirSyncResult({ status: 'not_ready' })
+      } else if (data.error) {
+        setStirSyncResult({ status: 'error', message: data.error })
+      } else {
+        setStirSyncResult({ status: 'ok', founders: data.founders || [], ustav_kapital: data.ustav_kapital || '' })
+      }
+    } catch {
+      setStirSyncResult({ status: 'error', message: "Serverga ulanib bo'lmadi" })
+    }
+    setStirSyncLoading(false)
+  }
+
+  async function acceptStirFounders() {
+    if (!activeOrg || stirSyncResult?.status !== 'ok') return
+    const apiFounders = stirSyncResult.founders
+    if (apiFounders.length === 0) return
+    setStirSyncSaving(true)
+    // Delete existing founders and insert API founders
+    await supabase.from('tasischilar').delete().eq('org_id', activeOrg.id)
+    const rows = apiFounders.map(f => ({ org_id: activeOrg.id, full_name: f.full_name, ulush: f.ulush }))
+    const { error } = await supabase.from('tasischilar').insert(rows)
+    if (error) { toast('Xatolik: ' + error.message, 'error'); setStirSyncSaving(false); return }
+    // Update ustav_kapital if returned
+    if (stirSyncResult.ustav_kapital) {
+      await supabase.from('organizations').update({ ustav_kapital: stirSyncResult.ustav_kapital }).eq('id', activeOrg.id)
+    }
+    setStirSyncSaving(false)
+    setStirSyncOpen(false)
+    toast("Ta'sischilar yangilandi!", 'success')
+    loadFounders()
+  }
 
   async function handleAddFounder(e: React.FormEvent) {
     e.preventDefault()
@@ -190,6 +241,7 @@ export default function ProfilPage() {
     subscription.plan === 'standard' ? '✦ Standart' : '⭐ Premium'
 
   return (
+    <>
     <div className="p-6 max-w-3xl mx-auto space-y-5">
       <h1 className="text-xl font-bold text-white">👤 Profil</h1>
 
@@ -419,7 +471,16 @@ export default function ProfilPage() {
             <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
               <div className="px-5 py-3 border-b border-[#1E293B] flex items-center justify-between">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ta'sischilar ro'yxati</h2>
-                <span className="text-xs text-gray-500">{activeOrg.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 hidden sm:block">{activeOrg.name}</span>
+                  <button type="button" onClick={openStirSync}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600/10 hover:bg-blue-600/20 border border-blue-600/30 text-blue-400 transition">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Soliqdan yangilash
+                  </button>
+                </div>
               </div>
               {foundersLoading ? (
                 <div className="p-8 text-center text-gray-500 text-sm">Yuklanmoqda...</div>
@@ -649,5 +710,103 @@ export default function ProfilPage() {
         )
       )}
     </div>
+
+    {/* ── Soliqdan yangilash modal ── */}
+
+    {stirSyncOpen && (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+        <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-lg shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B]">
+            <div>
+              <h2 className="text-base font-semibold text-white">🔄 Soliqdan yangilash</h2>
+              <p className="text-xs text-gray-500 mt-0.5">STIR: {activeOrg?.inn}</p>
+            </div>
+            <button onClick={() => setStirSyncOpen(false)}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] text-xl">×</button>
+          </div>
+
+          {/* Body */}
+          <div className="p-6">
+            {stirSyncLoading && (
+              <div className="flex flex-col items-center justify-center py-10 gap-3">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"/>
+                <p className="text-sm text-gray-400">Soliq API dan ma'lumot olinmoqda...</p>
+              </div>
+            )}
+
+            {!stirSyncLoading && stirSyncResult?.status === 'not_ready' && (
+              <div className="py-8 text-center space-y-3">
+                <div className="text-4xl">🔌</div>
+                <p className="text-white font-medium">Soliq API hali ulangani yo'q</p>
+                <p className="text-sm text-gray-400">Tez orada faollashtiriladi. Ulangandan so'ng ushbu tugma avtomatik ishlaydi.</p>
+              </div>
+            )}
+
+            {!stirSyncLoading && stirSyncResult?.status === 'error' && (
+              <div className="py-8 text-center space-y-3">
+                <div className="text-4xl">⚠️</div>
+                <p className="text-red-400 text-sm">{stirSyncResult.message}</p>
+              </div>
+            )}
+
+            {!stirSyncLoading && stirSyncResult?.status === 'ok' && (
+              <div className="space-y-4">
+                {stirSyncResult.founders.length === 0 ? (
+                  <div className="py-8 text-center space-y-2">
+                    <div className="text-3xl">📭</div>
+                    <p className="text-sm text-gray-400">Soliq ma'lumotlarida ta'sischilar topilmadi</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* API founders preview */}
+                    <div>
+                      <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Soliqdan kelgan ma'lumot</p>
+                      <div className="bg-[#0F172A] rounded-xl overflow-hidden border border-[#1E293B]">
+                        {stirSyncResult.founders.map((f, i) => (
+                          <div key={i} className={`flex items-center px-4 py-2.5 gap-3 ${i < stirSyncResult.founders.length - 1 ? 'border-b border-[#1E293B]' : ''}`}>
+                            <div className="w-6 h-6 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</div>
+                            <span className="flex-1 text-sm text-gray-200">{f.full_name}</span>
+                            <span className="text-sm font-bold text-white">{f.ulush}%</span>
+                            <div className="w-16 h-1.5 bg-[#1E293B] rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${f.ulush}%` }}/>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {stirSyncResult.ustav_kapital && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Ustav kapitali: <span className="text-gray-300 font-medium">{Number(stirSyncResult.ustav_kapital).toLocaleString()} so'm</span>
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Diff warning */}
+                    {founders.length > 0 && (
+                      <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-4 py-3 text-xs text-yellow-300">
+                        ⚠️ Hozirgi <strong>{founders.length} ta ta'sischi</strong> o'chiriladi va yuqoridagi <strong>{stirSyncResult.founders.length} ta yangi ma'lumot</strong> saqlanadi.
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-1">
+                      <button type="button" onClick={() => setStirSyncOpen(false)}
+                        className="flex-1 py-2.5 rounded-lg text-sm text-gray-400 bg-[#1F2937] hover:bg-[#334155] transition">
+                        Bekor qilish
+                      </button>
+                      <button type="button" onClick={acceptStirFounders} disabled={stirSyncSaving}
+                        className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition">
+                        {stirSyncSaving ? 'Saqlanmoqda...' : '✓ Qabul qilish va saqlash'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
