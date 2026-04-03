@@ -117,6 +117,7 @@ export default function KontragentlarPage() {
         name: co.name || prev.name,
         director_name: co.director_name || prev.director_name,
         address: co.address || prev.address,
+        qqsreg: co.qqsreg || prev.qqsreg,
       }))
       toast('Ma\'lumotlar to\'ldirildi', 'success')
     } catch {

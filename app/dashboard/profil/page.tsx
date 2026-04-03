@@ -155,6 +155,7 @@ export default function ProfilPage() {
     ustav_kapital: activeOrg?.ustav_kapital || '',
   }))
   const [orgExtSaving, setOrgExtSaving] = useState(false)
+  const [orgStirLoading, setOrgStirLoading] = useState(false)
 
   // Sync form when active org or profile changes (e.g. org switch)
   useEffect(() => {
@@ -222,6 +223,30 @@ export default function ProfilPage() {
     if (error) setPwdMsg(`${T(t.msg.errorPrefix)}: ${error.message}`)
     else { setPwdMsg(T(t.msg.pwdChanged)); setNewPassword(''); setConfirmPassword('') }
     setTimeout(() => setPwdMsg(''), 4000)
+  }
+
+  async function lookupStirOrg() {
+    const inn = orgExtForm.inn?.trim()
+    if (!inn || !/^\d{9}$/.test(inn)) { toast("STIR 9 raqamdan iborat bo'lishi kerak", 'error'); return }
+    setOrgStirLoading(true)
+    try {
+      const res = await fetch(`/api/stir?stir=${inn}`)
+      const data = await res.json()
+      if (!res.ok) { toast(data.error || "STIR ma'lumot topilmadi", 'error'); return }
+      const co = data.company
+      setOrgExtForm(prev => ({
+        ...prev,
+        name: co.name || prev.name,
+        director_name: co.director_name || prev.director_name,
+        address: co.address || prev.address,
+        qqsreg: co.qqsreg || prev.qqsreg,
+      }))
+      toast("Ma'lumotlar to'ldirildi", 'success')
+    } catch {
+      toast("STIR so'rovida xatolik", 'error')
+    } finally {
+      setOrgStirLoading(false)
+    }
   }
 
   async function saveOrgExt(e: React.FormEvent) {
@@ -594,7 +619,15 @@ export default function ProfilPage() {
                 </div>
                 <div>
                   <label className={lbl}>STIR (INN)</label>
-                  <input className={inp} placeholder="123456789" value={orgExtForm.inn || ''} onChange={e => setOrgExtForm({ ...orgExtForm, inn: e.target.value })}/>
+                  <div className="flex gap-2">
+                    <input className={inp} placeholder="123456789" maxLength={9} value={orgExtForm.inn || ''} onChange={e => setOrgExtForm({ ...orgExtForm, inn: e.target.value })}/>
+                    <button type="button" disabled={orgStirLoading || !orgExtForm.inn}
+                      onClick={lookupStirOrg}
+                      className="px-2.5 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600/30 text-blue-400 rounded-lg text-xs disabled:opacity-40 transition flex-shrink-0"
+                      title="Soliqdan ma'lumot olish">
+                      {orgStirLoading ? '...' : '🔍'}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className={lbl}>Direktor (F.I.Sh)</label>

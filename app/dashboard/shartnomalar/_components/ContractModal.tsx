@@ -199,6 +199,7 @@ export default function ContractModal({
   const [quickAddCp, setQuickAddCp] = useState(false)
   const [newCp, setNewCp] = useState({ name: '', inn: '', director_name: '', address: '', phone: '', bank_name: '', bank_account: '', mfo: '', qqsreg: '' })
   const [savingCp, setSavingCp] = useState(false)
+  const [cpStirLoading, setCpStirLoading] = useState(false)
   const cpDropRef = useRef<HTMLDivElement>(null)
 
   const isEdit = !!form.id
@@ -376,6 +377,30 @@ export default function ContractModal({
   }
 
   // ─── Quick add CP ─────────────────────────────────────────────────────────
+
+  async function lookupStirNewCp() {
+    const inn = newCp.inn.trim()
+    if (!inn || !/^\d{9}$/.test(inn)) { toast("STIR 9 raqamdan iborat bo'lishi kerak", 'error'); return }
+    setCpStirLoading(true)
+    try {
+      const res = await fetch(`/api/stir?stir=${inn}`)
+      const data = await res.json()
+      if (!res.ok) { toast(data.error || "STIR ma'lumot topilmadi", 'error'); return }
+      const co = data.company
+      setNewCp(p => ({
+        ...p,
+        name: co.name || p.name,
+        director_name: co.director_name || p.director_name,
+        address: co.address || p.address,
+        qqsreg: co.qqsreg || p.qqsreg,
+      }))
+      toast("Ma'lumotlar to'ldirildi", 'success')
+    } catch {
+      toast("STIR so'rovida xatolik", 'error')
+    } finally {
+      setCpStirLoading(false)
+    }
+  }
 
   async function handleQuickAddCp() {
     if (!newCp.name.trim()) { toast('Tashkilot nomi kiritilishi shart', 'error'); return }
@@ -1282,9 +1307,18 @@ export default function ContractModal({
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">INN</label>
-                <input value={newCp.inn} onChange={e => setNewCp(p => ({ ...p, inn: e.target.value }))}
-                  placeholder="123456789"
-                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+                <div className="flex gap-2">
+                  <input value={newCp.inn} onChange={e => setNewCp(p => ({ ...p, inn: e.target.value }))}
+                    placeholder="123456789" maxLength={9}
+                    className="flex-1 bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
+                  <button type="button" disabled={cpStirLoading || !newCp.inn}
+                    onClick={lookupStirNewCp}
+                    className="px-2.5 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600/30 text-blue-400 rounded-lg text-xs disabled:opacity-40 transition flex-shrink-0"
+                    title="Soliqdan ma'lumot olish">
+                    {cpStirLoading ? '...' : '🔍'}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">9 raqam kiriting va 🔍 bosing</p>
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Rahbar F.I.O</label>

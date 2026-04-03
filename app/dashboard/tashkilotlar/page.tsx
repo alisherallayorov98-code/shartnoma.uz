@@ -10,7 +10,7 @@ import { useToast } from '@/lib/toast'
 import type { Org } from '@/lib/types'
 import { getBankByMfo } from '@/lib/bankMfo'
 
-const emptyOrg = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '' }
+const emptyOrg = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', qqsreg: '' }
 const emptyBank = { bank_name: '', account_number: '', mfo: '', is_default: false }
 
 const validate = {
@@ -87,6 +87,7 @@ export default function TashkilotlarPage() {
           name: co.name || prev.name,
           director_name: co.director_name || prev.director_name,
           address: co.address || prev.address,
+          qqsreg: co.qqsreg || prev.qqsreg,
         }))
         toast('Ma\'lumotlar to\'ldirildi', 'success')
       }
@@ -262,7 +263,7 @@ export default function TashkilotlarPage() {
                 <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
                   {org.user_id === userId && (
                     <button
-                      onClick={() => { setEditingOrg(org); setOrgForm({ name: org.name, inn: org.inn || '', director_name: org.director_name || '', bank_name: org.bank_name || '', bank_account: org.bank_account || '', mfo: org.mfo || '', address: org.address || '' }); setOrgModal(true) }}
+                      onClick={() => { setEditingOrg(org); setOrgForm({ name: org.name, inn: org.inn || '', director_name: org.director_name || '', bank_name: org.bank_name || '', bank_account: org.bank_account || '', mfo: org.mfo || '', address: org.address || '', qqsreg: org.qqsreg || '' }); setOrgModal(true) }}
                       className="flex items-center gap-1.5 text-xs bg-[#1F2937] hover:bg-[#334155] border border-[#1E293B] text-gray-300 px-3 py-1.5 rounded-lg transition">
                       ✎ Tahrirlash
                     </button>
@@ -513,6 +514,10 @@ export default function TashkilotlarPage() {
                   const bankName = mfo.length === 5 ? getBankByMfo(mfo) : null
                   setOrgForm({ ...orgForm, mfo, ...(bankName ? { bank_name: bankName } : {}) })
                 }}/>
+              </div>
+              <div>
+                <label className={lbl}>QQS raqami</label>
+                <input className={inp} placeholder="318060007067" value={orgForm.qqsreg} onChange={e => setOrgForm({ ...orgForm, qqsreg: e.target.value })}/>
               </div>
             </div>
             <div>
