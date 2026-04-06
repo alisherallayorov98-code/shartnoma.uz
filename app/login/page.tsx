@@ -42,21 +42,24 @@ export default function LoginPage() {
   // ── Detect E-IMZO desktop client ────────────────────────────────────────────
   useEffect(() => {
     detectEimzo().then(async (conn) => {
+      console.log('[E-IMZO] detectEimzo result:', conn)
       if (conn) {
         setEimzoConn(conn)
         setDetectStatus('found')
         try {
           const certs = await listCertificates(conn)
+          console.log('[E-IMZO] certificates:', certs)
           setEimzoCerts(certs)
           if (certs.length > 0) setSelectedAlias(certs[0].alias)
-        } catch {
-          // Connected but can't list certs — still show as found
+        } catch (e) {
+          console.warn('[E-IMZO] listCertificates error:', e)
           setDetectStatus('found')
         }
       } else {
+        console.log('[E-IMZO] desktop client not detected')
         setDetectStatus('notfound')
       }
-    }).catch(() => setDetectStatus('notfound'))
+    }).catch((e) => { console.warn('[E-IMZO] detect error:', e); setDetectStatus('notfound') })
   }, [])
 
   // ── Email/password login ────────────────────────────────────────────────────
@@ -269,7 +272,7 @@ export default function LoginPage() {
                   <div className="flex items-center gap-2 text-xs text-green-400 bg-green-900/20 border border-green-800/30 rounded-lg px-3 py-2">
                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"/>
                     E-IMZO ilovasi topildi
-                    {eimzoConn?.type === 'ws' && <span className="text-green-600 ml-auto">WebSocket</span>}
+                    {eimzoConn && <span className="text-green-600 ml-auto text-[10px]">{eimzoConn.baseUrl}</span>}
                   </div>
 
                   {eimzoCerts.length > 0 ? (
