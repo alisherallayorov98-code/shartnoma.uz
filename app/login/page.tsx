@@ -212,7 +212,7 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-blue-400">Shartnoma.uz</Link>
+          <Link href="/" className="text-2xl font-bold text-blue-400">Kabinetim.uz</Link>
           <h1 className="text-2xl font-bold text-white mt-4">{T(t.login.title)}</h1>
           <p className="text-gray-400 mt-2">{T(t.login.subtitle)}</p>
         </div>

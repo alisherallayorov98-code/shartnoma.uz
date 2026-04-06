@@ -72,7 +72,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
             </svg>
           </button>
           <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">S</div>
-          <span className="font-semibold text-sm">Shartnoma.uz</span>
+          <span className="font-semibold text-sm">Kabinetim.uz</span>
         </div>
         <div className="flex-1 overflow-auto">
           {initialLoading ? <LoadingSkeleton /> : <ErrorBoundary>{children}</ErrorBoundary>}

@@ -40,7 +40,7 @@ const LP: Record<Lang, {
     freeNote: "Oyiga 5 ta hujjat bepul. Kredit karta kerak emas.",
     statsLabels: ["Hujjat turi", "Yaratish vaqti", "AI bo'lim", "Tashkilot boshqaruvi"],
     statsValues: ["30+", "< 2 min", "4", "Ko'p"],
-    featuresTag: "IMKONIYATLAR", featuresTitle: "Nima uchun Shartnoma.uz?",
+    featuresTag: "IMKONIYATLAR", featuresTitle: "Nima uchun Kabinetim.uz?",
     featuresSub: "Faqat shartnoma emas — butun tashkilot hujjat aylanmasi bitta tizimda",
     features: [
       { title: "AI Yordamchi", desc: "Hujjatni so'z bilan tasvirlab bering — AI o'zbek tilida professional hujjat yaratadi. Kadrlar, buxgalter, kotiba va yurist uchun." },
@@ -72,7 +72,7 @@ const LP: Record<Lang, {
     perMonth: "so'm / oyiga", tryIt: "Sinab ko'rish", forOrg: "Har bir tashkilot uchun", forCorp: "AI imkoniyatlari bilan",
     freePlan: "Bepul", stdPlan: "Standart", aiPlan: "AI Pro",
     popular: "🔥 Mashhur", premium: "⭐ Premium",
-    freeFeatures: ["Oyiga 5 ta hujjat", "8 tur shartnoma", "Word va PDF yuklab olish", "Kontragentlar bazasi", "Shartnoma.uz belgili PDF"],
+    freeFeatures: ["Oyiga 5 ta hujjat", "8 tur shartnoma", "Word va PDF yuklab olish", "Kontragentlar bazasi", "Kabinetim.uz belgili PDF"],
     stdFeatures: ["Cheksiz hujjatlar", "8 tur shartnoma", "Belgi va reklamasiz PDF/Word", "Imzo va muhr avtomatik", "Bir nechta bank hisob", "Ustunlik qo'llab-quvvatlash"],
     aiFeatures: ["Standart tarifning hammasi", "Kadrlar AI — 15+ hujjat turi", "Buxgalter AI — dalolatnoma, talabnoma", "Kotiba AI — buyruqlar, bayonnoma, xatlar", "Yurist AI — risk tahlili, tuzatish", "AI shartnoma tahlili", "Ustuvor qo'llab-quvvatlash"],
     startFree: "Bepul boshlash", start: "Boshlash →", signup: "Ro'yxatdan o'tish →",
@@ -92,7 +92,7 @@ const LP: Record<Lang, {
     freeNote: "Ойига 5 та ҳужжат бепул. Кредит карта керак эмас.",
     statsLabels: ["Ҳужжат тури", "Яратиш вақти", "AI бўлим", "Ташкилот бошқаруви"],
     statsValues: ["30+", "< 2 min", "4", "Кўп"],
-    featuresTag: "ИМКОНИЯТЛАР", featuresTitle: "Нима учун Shartnoma.uz?",
+    featuresTag: "ИМКОНИЯТЛАР", featuresTitle: "Нима учун Kabinetim.uz?",
     featuresSub: "Фақат шартнома эмас — бутун ташкилот ҳужжат айланмаси битта тизимда",
     features: [
       { title: "AI Ёрдамчи", desc: "Ҳужжатни сўз билан тасвирлаб беринг — AI ўзбек тилида профессионал ҳужжат яратади." },
@@ -124,7 +124,7 @@ const LP: Record<Lang, {
     perMonth: "so'm / oyiga", tryIt: "Синаб кўриш", forOrg: "Ҳар бир ташкилот учун", forCorp: "AI имкониятлари билан",
     freePlan: "Бепул", stdPlan: "Стандарт", aiPlan: "AI Pro",
     popular: "🔥 Машҳур", premium: "⭐ Premium",
-    freeFeatures: ["Ойига 5 та ҳужжат", "8 тур шартнома", "Word ва PDF юклаб олиш", "Контрагентлар базаси", "Shartnoma.uz белгили PDF"],
+    freeFeatures: ["Ойига 5 та ҳужжат", "8 тур шартнома", "Word ва PDF юклаб олиш", "Контрагентлар базаси", "Kabinetim.uz белгили PDF"],
     stdFeatures: ["Чексиз ҳужжатлар", "8 тур шартнома", "Белги ва рекламасиз PDF/Word", "Имзо ва муҳр автоматик", "Бир нечта банк ҳисоб", "Устунлик қўллаб-қувватлаш"],
     aiFeatures: ["Стандарт тарифнинг ҳаммаси", "Кадрлар AI — 15+ ҳужжат тури", "Бухгалтер AI — далолатнома, талабнома", "Котиба AI — буйруқлар, баённома, хатлар", "Юрист AI — хавф таҳлили, тузатиш", "AI шартнома таҳлили", "Устувор қўллаб-қувватлаш"],
     startFree: "Бепул бошлаш", start: "Бошлаш →", signup: "Рўйхатдан ўтиш →",
@@ -144,7 +144,7 @@ const LP: Record<Lang, {
     freeNote: "5 документов в месяц — бесплатно. Карта не нужна.",
     statsLabels: ["Типов документов", "Время создания", "AI-отделов", "Управление орг."],
     statsValues: ["30+", "< 2 мин", "4", "Несколько"],
-    featuresTag: "ВОЗМОЖНОСТИ", featuresTitle: "Почему Shartnoma.uz?",
+    featuresTag: "ВОЗМОЖНОСТИ", featuresTitle: "Почему Kabinetim.uz?",
     featuresSub: "Не только договоры — весь документооборот организации в одной системе",
     features: [
       { title: "AI Ассистент", desc: "Опишите документ словами — AI создаст профессиональный документ на узбекском языке." },
@@ -176,7 +176,7 @@ const LP: Record<Lang, {
     perMonth: "сум / в месяц", tryIt: "Для ознакомления", forOrg: "Для каждой организации", forCorp: "С AI возможностями",
     freePlan: "Бесплатно", stdPlan: "Стандарт", aiPlan: "AI Pro",
     popular: "🔥 Популярный", premium: "⭐ Premium",
-    freeFeatures: ["5 документов в месяц", "8 типов договоров", "Скачивание Word и PDF", "База контрагентов", "PDF с маркой Shartnoma.uz"],
+    freeFeatures: ["5 документов в месяц", "8 типов договоров", "Скачивание Word и PDF", "База контрагентов", "PDF с маркой Kabinetim.uz"],
     stdFeatures: ["Неограниченные документы", "8 типов договоров", "PDF/Word без рекламы", "Авт. подпись и печать", "Несколько банковских счетов", "Приоритетная поддержка"],
     aiFeatures: ["Всё из тарифа Стандарт", "Кадры AI — 15+ типов документов", "Бухгалтерия AI — акты, заявки", "Секретариат AI — приказы, протоколы", "Юрист AI — анализ рисков", "AI-анализ договора", "Приоритетная поддержка"],
     startFree: "Начать бесплатно", start: "Начать →", signup: "Зарегистрироваться →",
@@ -243,7 +243,7 @@ export default function Home() {
               S
             </div>
             <span className="text-xl font-black bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-              Shartnoma.uz
+              Kabinetim.uz
             </span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm text-gray-400">
@@ -321,7 +321,7 @@ export default function Home() {
               <div className="w-3 h-3 rounded-full bg-yellow-500/70"/>
               <div className="w-3 h-3 rounded-full bg-green-500/70"/>
               <div className="flex-1 bg-gray-800/60 rounded-full h-6 mx-6 flex items-center px-4">
-                <span className="text-gray-500 text-xs">shartnoma.uz/dashboard/kadrlar</span>
+                <span className="text-gray-500 text-xs">kabinetim.uz/dashboard/kadrlar</span>
               </div>
             </div>
             {/* Content */}
@@ -818,7 +818,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-5 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center font-black text-xs">S</div>
-            <span className="font-black bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Shartnoma.uz</span>
+            <span className="font-black bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Kabinetim.uz</span>
           </div>
           <div className="flex gap-8 text-sm text-gray-500">
             <a href="#features" className="hover:text-white transition">{l.footerLinks[0]}</a>
@@ -826,7 +826,7 @@ export default function Home() {
             <Link href="/login" className="hover:text-white transition">{l.footerLinks[2]}</Link>
             <Link href="/signup" className="hover:text-white transition">{l.footerLinks[3]}</Link>
           </div>
-          <p className="text-gray-600 text-sm">© 2026 Shartnoma.uz</p>
+          <p className="text-gray-600 text-sm">© 2026 Kabinetim.uz</p>
         </div>
       </footer>
     </div>

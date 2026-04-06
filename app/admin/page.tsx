@@ -312,7 +312,7 @@ export default function AdminPage() {
       <header className="bg-gray-900 border-b border-gray-800 px-6 h-14 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center font-bold text-xs">A</div>
-          <span className="font-bold text-sm">Shartnoma.uz</span>
+          <span className="font-bold text-sm">Kabinetim.uz</span>
           <span className="text-red-400 text-xs bg-red-900/30 px-2 py-0.5 rounded font-medium">ADMIN</span>
         </div>
         <div className="flex items-center gap-3">

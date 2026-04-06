@@ -73,7 +73,7 @@ export function DashboardSidebar() {
           </svg>
         </button>
         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-sm shadow-lg">S</div>
-        {sidebarOpen && <span className="text-lg font-bold">Shartnoma.uz</span>}
+        {sidebarOpen && <span className="text-lg font-bold">Kabinetim.uz</span>}
       </div>
 
       {/* Org Switcher */}

@@ -4,8 +4,8 @@ import { LanguageProvider } from "@/lib/LanguageContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
 
 export const metadata: Metadata = {
-  title: "Shartnoma.uz — Online shartnoma generator",
-  description: "O'zbekiston biznes uchun online shartnoma yaratish platformasi",
+  title: "Kabinetim.uz — Biznes hujjat boshqaruv tizimi",
+  description: "O'zbekiston biznes uchun hujjat boshqaruv platformasi. Shartnomalar, kadrlar, buxgalteriya, yurist — barchasi bitta joyda.",
 };
 
 export default function RootLayout({

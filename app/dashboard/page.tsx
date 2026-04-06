@@ -104,7 +104,7 @@ export default function DashboardOverviewPage() {
           <div>
             <h1 className="text-2xl font-bold text-white mb-2">Xush kelibsiz!</h1>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Shartnoma.uz dan foydalanish uchun avval tashkilotingizni qo&apos;shing.
+              Kabinetim.uz dan foydalanish uchun avval tashkilotingizni qo&apos;shing.
               Bu bir necha soniya vaqt oladi.
             </p>
           </div>
@@ -156,7 +156,7 @@ export default function DashboardOverviewPage() {
               {subscription?.period_end && new Date(subscription.period_end).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' })} — obuna muddatini uzaytirishni unutmang
             </div>
           </div>
-          <a href="mailto:info@shartnoma.uz?subject=Obunani uzaytirish"
+          <a href="mailto:info@kabinetim.uz?subject=Obunani uzaytirish"
             className={`shrink-0 text-xs font-semibold px-4 py-2 rounded-xl transition whitespace-nowrap ${
               subDaysLeft === 1
                 ? 'bg-red-600 hover:bg-red-500 text-white'
@@ -196,7 +196,7 @@ export default function DashboardOverviewPage() {
           <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, #3b82f6 0%, transparent 60%)' }}/>
           <div className="relative flex items-center justify-between flex-wrap gap-4">
             <div>
-              <div className="text-xs text-blue-400 mb-1 font-medium tracking-wide uppercase">Shartnoma.uz — Boshqaruv paneli</div>
+              <div className="text-xs text-blue-400 mb-1 font-medium tracking-wide uppercase">Kabinetim.uz — Boshqaruv paneli</div>
               <h1 className="text-xl font-bold text-white">{activeOrg?.name || '—'}</h1>
               <div className="text-sm text-gray-400 mt-0.5">INN: {activeOrg?.inn || '—'} · {activeOrg?.director_name || ''}</div>
             </div>

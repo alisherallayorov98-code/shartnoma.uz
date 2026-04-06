@@ -136,7 +136,7 @@ export default function SignupPage() {
         <div className="relative flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-white text-sm shadow-lg shadow-blue-900/40">S</div>
-            <span className="text-white font-bold text-lg tracking-tight">Shartnoma.uz</span>
+            <span className="text-white font-bold text-lg tracking-tight">Kabinetim.uz</span>
           </Link>
           <div className="flex gap-1">
             {(Object.keys(LANG_LABELS) as Lang[]).map(l => (
@@ -191,7 +191,7 @@ export default function SignupPage() {
         <div className="lg:hidden flex items-center justify-between px-5 pt-6 pb-2">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">S</div>
-            <span className="text-white font-semibold text-sm">Shartnoma.uz</span>
+            <span className="text-white font-semibold text-sm">Kabinetim.uz</span>
           </Link>
           <div className="flex gap-1">
             {(Object.keys(LANG_LABELS) as Lang[]).map(l => (

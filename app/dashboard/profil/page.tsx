@@ -457,7 +457,7 @@ export default function ProfilPage() {
                     Telegram
                     {isPaid && <span className="bg-white/20 text-xs px-1.5 py-0.5 rounded-full">Ustunlik</span>}
                   </a>
-                  <a href={`mailto:support@shartnoma.uz?subject=Murojaat [${userEmail}]&body=Muammo tavsifi:%0A%0A`}
+                  <a href={`mailto:support@kabinetim.uz?subject=Murojaat [${userEmail}]&body=Muammo tavsifi:%0A%0A`}
                     className="flex items-center gap-2 px-4 py-2.5 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 rounded-xl text-sm font-medium transition">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>

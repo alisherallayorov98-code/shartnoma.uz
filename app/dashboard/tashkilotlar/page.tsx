@@ -589,7 +589,7 @@ function RekvizitModal({ org, onClose }: { org: Org; onClose: () => void }) {
     '─'.repeat(40),
     ...rows.map(r => `${r.label.padEnd(24)}: ${r.value}`),
     '─'.repeat(40),
-    'shartnoma.uz orqali yaratildi',
+    'kabinetim.uz orqali yaratildi',
   ].join('\n')
 
   async function downloadJpeg() {
@@ -635,7 +635,7 @@ function RekvizitModal({ org, onClose }: { org: Org; onClose: () => void }) {
         y += 16
       })
       doc.setFontSize(8); doc.setTextColor(150, 150, 150)
-      doc.text('shartnoma.uz orqali yaratildi', 14, 285)
+      doc.text('kabinetim.uz orqali yaratildi', 14, 285)
       doc.save(`rekvizit-${org.name}.pdf`)
     } finally { setExporting(null) }
   }
@@ -672,7 +672,7 @@ function RekvizitModal({ org, onClose }: { org: Org; onClose: () => void }) {
         new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 60 }, children: [new TextRun({ text: 'REKVIZITLAR', bold: true, size: 32, font: F, color: '1E40AF' })] }),
         new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 320 }, children: [new TextRun({ text: org.name, bold: true, size: 26, font: F })] }),
         new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: dataRows }),
-        new Paragraph({ spacing: { before: 480 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'shartnoma.uz orqali yaratildi', size: 16, font: F, color: '9CA3AF' })] }),
+        new Paragraph({ spacing: { before: 480 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'kabinetim.uz orqali yaratildi', size: 16, font: F, color: '9CA3AF' })] }),
       ]}]})
 
       const blob = await Packer.toBlob(doc)
@@ -713,7 +713,7 @@ function RekvizitModal({ org, onClose }: { org: Org; onClose: () => void }) {
               ))}
             </div>
             <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid #f3f4f6', textAlign: 'center', color: '#9ca3af', fontSize: 11 }}>
-              shartnoma.uz
+              kabinetim.uz
             </div>
           </div>
         </div>
