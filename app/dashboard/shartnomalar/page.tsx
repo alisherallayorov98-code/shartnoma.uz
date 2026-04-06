@@ -350,7 +350,7 @@ export default function ShartnomalarPage() {
           saved_by: userId,
         })
       }
-      const { error: e } = await supabase.from('contracts').update(payload).eq('id', contractForm.id)
+      const { error: e } = await supabase.from('contracts').update(payload).eq('id', contractForm.id).eq('organization_id', activeOrg!.id)
       error = e
       if (!e) logAudit('update', 'contracts', contractForm.id, { contract_number: payload.contract_number, contract_type: payload.contract_type })
     } else {
@@ -372,13 +372,13 @@ export default function ShartnomalarPage() {
 
   // ── Update status ──────────────────────────────────────────────────────────
   async function updateStatus(id: string, status: string) {
-    const { error } = await supabase.from('contracts').update({ status }).eq('id', id)
+    const { error } = await supabase.from('contracts').update({ status }).eq('id', id).eq('organization_id', activeOrg!.id)
     if (error) { toast(`Xato: ${error.message}`, 'error'); return }
     setServerResults(null); reloadContracts()
   }
 
   async function toggleSigned(c: Contract, side: 'signed_us' | 'signed_cp') {
-    const { error } = await supabase.from('contracts').update({ [side]: !c[side] }).eq('id', c.id)
+    const { error } = await supabase.from('contracts').update({ [side]: !c[side] }).eq('id', c.id).eq('organization_id', activeOrg!.id)
     if (error) { toast(`Xato: ${error.message}`, 'error'); return }
     setServerResults(null); reloadContracts()
     // If both sides are now signed, send notification email
@@ -427,7 +427,7 @@ export default function ShartnomalarPage() {
   async function doDeleteContract(id: string) {
     const contract = contracts.find(c => c.id === id)
     await supabase.from('contract_versions').delete().eq('contract_id', id)
-    const { error } = await supabase.from('contracts').delete().eq('id', id)
+    const { error } = await supabase.from('contracts').delete().eq('id', id).eq('organization_id', activeOrg!.id)
     if (error) { toast(`Xato: ${error.message}`, 'error'); return }
     if (contract) logAudit('delete', 'contracts', id, { contract_number: contract.contract_number, contract_type: contract.contract_type })
     toast("Shartnoma o'chirildi", 'info')
@@ -683,7 +683,7 @@ export default function ShartnomalarPage() {
 
   async function bulkUpdateStatus(status: string) {
     await Promise.all([...selectedIds].map(id =>
-      supabase.from('contracts').update({ status }).eq('id', id)
+      supabase.from('contracts').update({ status }).eq('id', id).eq('organization_id', activeOrg!.id)
     ))
     setSelectedIds(new Set())
     setServerResults(null); reloadContracts()

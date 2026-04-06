@@ -61,6 +61,13 @@ export async function POST(req: NextRequest) {
   }
 
   if (method === 'PerformTransaction') {
+    // Idempotency: skip if already processed
+    const { data: existingPayment } = await db.from('payments')
+      .select('id').like('note', `%Payme txn ${params.id}%`).maybeSingle()
+    if (existingPayment) {
+      return ok(id, { transaction: params.id, perform_time: Date.now(), state: 2 })
+    }
+
     const periodEnd = new Date()
     periodEnd.setMonth(periodEnd.getMonth() + (planInfo?.months ?? 1))
 

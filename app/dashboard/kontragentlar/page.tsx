@@ -12,6 +12,7 @@ import type { Counterparty } from '@/lib/types'
 import { getBankByMfo } from '@/lib/bankMfo'
 import { formatPhoneUz, filterDigits } from '@/lib/inputMasks'
 import CpDetailModal from './_components/CpDetailModal'
+import { logAudit } from '@/lib/audit'
 
 const emptyCp = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', phone: '', qqsreg: '', oked: '', stir_status: '', stir_checked_at: '' }
 
@@ -50,7 +51,7 @@ function parseCsv(text: string): Record<string, string>[] {
 export default function KontragentlarPage() {
   const { lang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
-  const { cps, contracts, reloadCps } = useDashboard()
+  const { cps, contracts, reloadCps, activeOrg } = useDashboard()
   const { toast } = useToast()
 
   const [cpSearch, setCpSearch] = useState('')
@@ -99,11 +100,14 @@ export default function KontragentlarPage() {
     const { data: { session } } = await supabase.auth.getSession()
     let cpErr = null
     if (editingCp) {
-      const { error } = await supabase.from('counterparties').update(cpForm).eq('id', editingCp.id)
-      cpErr = error; setEditingCp(null)
-    } else {
-      const { error } = await supabase.from('counterparties').insert({ ...cpForm, user_id: session!.user.id })
+      const { error } = await supabase.from('counterparties').update(cpForm).eq('id', editingCp.id).eq('organization_id', activeOrg!.id)
       cpErr = error
+      if (!error) logAudit('update', 'counterparties', editingCp.id, { name: cpForm.name, inn: cpForm.inn })
+      setEditingCp(null)
+    } else {
+      const { data: inserted, error } = await supabase.from('counterparties').insert({ ...cpForm, user_id: session!.user.id, organization_id: activeOrg!.id }).select('id').single()
+      cpErr = error
+      if (!error && inserted) logAudit('create', 'counterparties', inserted.id, { name: cpForm.name, inn: cpForm.inn })
     }
     setSaving(false)
     if (cpErr) { toast(`${T(t.msg.errorPrefix)}: ${cpErr.message}`, 'error'); return }
@@ -142,8 +146,10 @@ export default function KontragentlarPage() {
   }
 
   async function doDeleteCp(id: string) {
-    const { error } = await supabase.from('counterparties').delete().eq('id', id)
+    const cp = cps.find(c => c.id === id)
+    const { error } = await supabase.from('counterparties').delete().eq('id', id).eq('organization_id', activeOrg!.id)
     if (error) { toast(`${T(t.msg.errorPrefix)}: ${error.message}`, 'error'); return }
+    if (cp) logAudit('delete', 'counterparties', id, { name: cp.name, inn: cp.inn })
     setCpDetail(null); reloadCps(); setEditingCp(null)
   }
 

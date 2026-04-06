@@ -7,6 +7,7 @@ import { Modal, ModalActions } from '../_components/Modal'
 import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import type { Employee } from '@/lib/types'
+import { logAudit } from '@/lib/audit'
 
 const emptyEmp = {
   ism: '', jshshir: '', passport: '', lavozim: '',
@@ -82,11 +83,13 @@ export default function XodimlarPage() {
     }
     let err = null
     if (editing) {
-      const { error } = await supabase.from('employees').update(payload).eq('id', editing.id)
+      const { error } = await supabase.from('employees').update(payload).eq('id', editing.id).eq('organization_id', activeOrg.id)
       err = error
+      if (!error) logAudit('update', 'employees', editing.id, { ism: payload.ism })
     } else {
-      const { error } = await supabase.from('employees').insert({ ...payload, organization_id: activeOrg.id })
+      const { data: inserted, error } = await supabase.from('employees').insert({ ...payload, organization_id: activeOrg.id }).select('id').single()
       err = error
+      if (!error && inserted) logAudit('create', 'employees', inserted.id, { ism: payload.ism })
     }
     setSaving(false)
     if (err) { toast('Xato: ' + err.message, 'error'); return }
@@ -96,8 +99,10 @@ export default function XodimlarPage() {
   }
 
   async function doDelete(id: string) {
-    const { error } = await supabase.from('employees').delete().eq('id', id)
+    const emp = employees.find(e => e.id === id)
+    const { error } = await supabase.from('employees').delete().eq('id', id).eq('organization_id', activeOrg!.id)
     if (error) { toast('Xato: ' + error.message, 'error'); return }
+    if (emp) logAudit('delete', 'employees', id, { ism: emp.ism })
     toast("Xodim o'chirildi", 'success')
     reloadEmployees()
   }
@@ -183,7 +188,7 @@ export default function XodimlarPage() {
                       </div>
                       <div>
                         <div className="font-medium text-white">{emp.ism}</div>
-                        {emp.jshshir && <div className="text-xs text-gray-500 font-mono">{emp.jshshir}</div>}
+                        {emp.jshshir && <div className="text-xs text-gray-500 font-mono">{emp.jshshir.slice(0, 4)}{'*'.repeat(Math.max(0, emp.jshshir.length - 6))}{emp.jshshir.slice(-2)}</div>}
                       </div>
                     </div>
                   </td>

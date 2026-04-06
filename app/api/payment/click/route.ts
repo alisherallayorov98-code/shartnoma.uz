@@ -71,6 +71,12 @@ export async function POST(req: NextRequest) {
 
   // Action 1: Complete — payment confirmed, activate subscription
   if (action === 1 && error === 0) {
+    // Idempotency: skip if this transaction was already processed
+    const { data: existingPayment } = await db.from('payments')
+      .select('id').like('note', `%Click txn ${click_trans_id}%`).maybeSingle()
+    if (existingPayment) {
+      return NextResponse.json({ click_trans_id, merchant_trans_id, merchant_confirm_id: click_trans_id, error: 0, error_note: 'Already processed' })
+    }
     const periodEnd = new Date()
     periodEnd.setMonth(periodEnd.getMonth() + planInfo.months)
 

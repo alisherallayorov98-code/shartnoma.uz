@@ -146,7 +146,8 @@ export default function YuristPage() {
       try {
         const fd = new FormData()
         fd.append('file', file)
-        const res = await fetch('/api/extract-text', { method: 'POST', body: fd })
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch('/api/extract-text', { method: 'POST', body: fd, headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {} })
         const data = await res.json()
         if (data.error) { setHubError(data.error); return }
         setFixContent(data.text)

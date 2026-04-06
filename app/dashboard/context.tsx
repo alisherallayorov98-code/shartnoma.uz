@@ -162,8 +162,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setDemoAccess(data || null)
   }, [])
 
-  const loadCps = useCallback(async () => {
-    const { data, error } = await supabase.from('counterparties').select('*').order('created_at', { ascending: false })
+  const loadCps = useCallback(async (orgId?: string) => {
+    const base = supabase.from('counterparties').select('*').order('created_at', { ascending: false })
+    const { data, error } = orgId ? await base.eq('organization_id', orgId) : await base
     if (error) { console.error('loadCps:', error.message); return }
     setCps(data || [])
   }, [])
@@ -215,7 +216,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         const [adminCheck] = await Promise.all([
           fetch('/api/admin', { method: 'HEAD', headers: { Authorization: `Bearer ${session.access_token}` } }),
           loadOrgs(),
-          loadCps(),
           loadProfile(session.user.id),
         ])
         setIsAdmin(adminCheck.ok)
@@ -236,6 +236,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     loadDemoAccess(activeOrg.id)
     loadContracts(activeOrg.id)
     loadEmployees(activeOrg.id)
+    loadCps(activeOrg.id)
 
     // Real-time: reload data when another tab/device changes them
     const contractsChannel = supabase
@@ -251,7 +252,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'counterparties',
         filter: `organization_id=eq.${activeOrg.id}`,
-      }, () => { loadCps() })
+      }, () => { loadCps(activeOrg.id) })
       .subscribe()
 
     const orgsChannel = supabase
@@ -317,8 +318,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [loadOrgs, activeOrg?.id])
 
   const reloadCps = useCallback(async () => {
-    await loadCps()
-  }, [loadCps])
+    if (activeOrg) await loadCps(activeOrg.id)
+  }, [loadCps, activeOrg])
 
   const reloadEmployees = useCallback(async () => {
     await loadEmployees(activeOrg?.id)
