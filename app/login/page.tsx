@@ -272,7 +272,7 @@ export default function LoginPage() {
                   <div className="flex items-center gap-2 text-xs text-green-400 bg-green-900/20 border border-green-800/30 rounded-lg px-3 py-2">
                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"/>
                     E-IMZO ilovasi topildi
-                    {eimzoConn && <span className="text-green-600 ml-auto text-[10px]">{eimzoConn.baseUrl}</span>}
+                    {eimzoConn && <span className="text-green-600 ml-auto text-[10px]">{eimzoConn.wsUrl}</span>}
                   </div>
 
                   {eimzoCerts.length > 0 ? (
