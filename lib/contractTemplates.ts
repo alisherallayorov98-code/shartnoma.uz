@@ -124,7 +124,14 @@ export const CONTRACT_TEMPLATES: Record<ContractType, string> = {
 
 XARIDOR:                                    SOTUVCHI:
 {{BUYURTMACHI}}                             {{IJROCHI}}
-INN: {{BUYURTMACHI_INN}}                   INN: {{IJROCHI_INN}}
+STIR: {{BUYURTMACHI_INN}}                  STIR: {{IJROCHI_INN}}
+Manzil: {{BUYURTMACHI_MANZIL}}            Manzil: {{IJROCHI_MANZIL}}
+Bank: {{BUYURTMACHI_BANK}}                Bank: {{IJROCHI_BANK}}
+H/R: {{BUYURTMACHI_HR}}                   H/R: {{IJROCHI_HR}}
+MFO: {{BUYURTMACHI_MFO}}                  MFO: {{IJROCHI_MFO}}
+OKED: {{BUYURTMACHI_OKED}}                OKED: {{IJROCHI_OKED}}
+QQS: {{BUYURTMACHI_QQS}}                  QQS: {{IJROCHI_QQS}}
+Tel: {{BUYURTMACHI_TEL}}                   Tel: {{IJROCHI_TEL}}
 Rahbar: {{BUYURTMACHI_RAHBAR}}             Rahbar: {{IJROCHI_RAHBAR}}
 
 ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
@@ -201,7 +208,14 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
 
 BUYURTMACHI:                                IJROCHI:
 {{BUYURTMACHI}}                             {{IJROCHI}}
-INN: {{BUYURTMACHI_INN}}                   INN: {{IJROCHI_INN}}
+STIR: {{BUYURTMACHI_INN}}                  STIR: {{IJROCHI_INN}}
+Manzil: {{BUYURTMACHI_MANZIL}}            Manzil: {{IJROCHI_MANZIL}}
+Bank: {{BUYURTMACHI_BANK}}                Bank: {{IJROCHI_BANK}}
+H/R: {{BUYURTMACHI_HR}}                   H/R: {{IJROCHI_HR}}
+MFO: {{BUYURTMACHI_MFO}}                  MFO: {{IJROCHI_MFO}}
+OKED: {{BUYURTMACHI_OKED}}                OKED: {{IJROCHI_OKED}}
+QQS: {{BUYURTMACHI_QQS}}                  QQS: {{IJROCHI_QQS}}
+Tel: {{BUYURTMACHI_TEL}}                   Tel: {{IJROCHI_TEL}}
 Rahbar: {{BUYURTMACHI_RAHBAR}}             Rahbar: {{IJROCHI_RAHBAR}}
 
 ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
@@ -266,7 +280,14 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
 
 IJARACHI:                                   IJARABERUVCHI:
 {{BUYURTMACHI}}                             {{IJROCHI}}
-INN: {{BUYURTMACHI_INN}}                   INN: {{IJROCHI_INN}}
+STIR: {{BUYURTMACHI_INN}}                  STIR: {{IJROCHI_INN}}
+Manzil: {{BUYURTMACHI_MANZIL}}            Manzil: {{IJROCHI_MANZIL}}
+Bank: {{BUYURTMACHI_BANK}}                Bank: {{IJROCHI_BANK}}
+H/R: {{BUYURTMACHI_HR}}                   H/R: {{IJROCHI_HR}}
+MFO: {{BUYURTMACHI_MFO}}                  MFO: {{IJROCHI_MFO}}
+OKED: {{BUYURTMACHI_OKED}}                OKED: {{IJROCHI_OKED}}
+QQS: {{BUYURTMACHI_QQS}}                  QQS: {{IJROCHI_QQS}}
+Tel: {{BUYURTMACHI_TEL}}                   Tel: {{IJROCHI_TEL}}
 Rahbar: {{BUYURTMACHI_RAHBAR}}             Rahbar: {{IJROCHI_RAHBAR}}
 
 ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
@@ -339,7 +360,14 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
 
 BUYURTMACHI:                                PUDRATCHI:
 {{BUYURTMACHI}}                             {{IJROCHI}}
-INN: {{BUYURTMACHI_INN}}                   INN: {{IJROCHI_INN}}
+STIR: {{BUYURTMACHI_INN}}                  STIR: {{IJROCHI_INN}}
+Manzil: {{BUYURTMACHI_MANZIL}}            Manzil: {{IJROCHI_MANZIL}}
+Bank: {{BUYURTMACHI_BANK}}                Bank: {{IJROCHI_BANK}}
+H/R: {{BUYURTMACHI_HR}}                   H/R: {{IJROCHI_HR}}
+MFO: {{BUYURTMACHI_MFO}}                  MFO: {{IJROCHI_MFO}}
+OKED: {{BUYURTMACHI_OKED}}                OKED: {{IJROCHI_OKED}}
+QQS: {{BUYURTMACHI_QQS}}                  QQS: {{IJROCHI_QQS}}
+Tel: {{BUYURTMACHI_TEL}}                   Tel: {{IJROCHI_TEL}}
 Rahbar: {{BUYURTMACHI_RAHBAR}}             Rahbar: {{IJROCHI_RAHBAR}}
 
 ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
@@ -381,7 +409,14 @@ o'rniga:
 
 1-TOMON:                                    2-TOMON:
 {{BUYURTMACHI}}                             {{IJROCHI}}
-INN: {{BUYURTMACHI_INN}}                   INN: {{IJROCHI_INN}}
+STIR: {{BUYURTMACHI_INN}}                  STIR: {{IJROCHI_INN}}
+Manzil: {{BUYURTMACHI_MANZIL}}            Manzil: {{IJROCHI_MANZIL}}
+Bank: {{BUYURTMACHI_BANK}}                Bank: {{IJROCHI_BANK}}
+H/R: {{BUYURTMACHI_HR}}                   H/R: {{IJROCHI_HR}}
+MFO: {{BUYURTMACHI_MFO}}                  MFO: {{IJROCHI_MFO}}
+OKED: {{BUYURTMACHI_OKED}}                OKED: {{IJROCHI_OKED}}
+QQS: {{BUYURTMACHI_QQS}}                  QQS: {{IJROCHI_QQS}}
+Tel: {{BUYURTMACHI_TEL}}                   Tel: {{IJROCHI_TEL}}
 Rahbar: {{BUYURTMACHI_RAHBAR}}             Rahbar: {{IJROCHI_RAHBAR}}
 
 ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
@@ -427,7 +462,14 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
 
 QARZ BERUVCHI:                              QARZ OLUVCHI:
 {{BUYURTMACHI}}                             {{IJROCHI}}
-INN: {{BUYURTMACHI_INN}}                   INN: {{IJROCHI_INN}}
+STIR: {{BUYURTMACHI_INN}}                  STIR: {{IJROCHI_INN}}
+Manzil: {{BUYURTMACHI_MANZIL}}            Manzil: {{IJROCHI_MANZIL}}
+Bank: {{BUYURTMACHI_BANK}}                Bank: {{IJROCHI_BANK}}
+H/R: {{BUYURTMACHI_HR}}                   H/R: {{IJROCHI_HR}}
+MFO: {{BUYURTMACHI_MFO}}                  MFO: {{IJROCHI_MFO}}
+OKED: {{BUYURTMACHI_OKED}}                OKED: {{IJROCHI_OKED}}
+QQS: {{BUYURTMACHI_QQS}}                  QQS: {{IJROCHI_QQS}}
+Tel: {{BUYURTMACHI_TEL}}                   Tel: {{IJROCHI_TEL}}
 Rahbar: {{BUYURTMACHI_RAHBAR}}             Rahbar: {{IJROCHI_RAHBAR}}
 
 ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
@@ -482,7 +524,14 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
 
 BUYURTMACHI:                                QAYTA ISHLOVCHI:
 {{BUYURTMACHI}}                             {{IJROCHI}}
-INN: {{BUYURTMACHI_INN}}                   INN: {{IJROCHI_INN}}
+STIR: {{BUYURTMACHI_INN}}                  STIR: {{IJROCHI_INN}}
+Manzil: {{BUYURTMACHI_MANZIL}}            Manzil: {{IJROCHI_MANZIL}}
+Bank: {{BUYURTMACHI_BANK}}                Bank: {{IJROCHI_BANK}}
+H/R: {{BUYURTMACHI_HR}}                   H/R: {{IJROCHI_HR}}
+MFO: {{BUYURTMACHI_MFO}}                  MFO: {{IJROCHI_MFO}}
+OKED: {{BUYURTMACHI_OKED}}                OKED: {{IJROCHI_OKED}}
+QQS: {{BUYURTMACHI_QQS}}                  QQS: {{IJROCHI_QQS}}
+Tel: {{BUYURTMACHI_TEL}}                   Tel: {{IJROCHI_TEL}}
 Rahbar: {{BUYURTMACHI_RAHBAR}}             Rahbar: {{IJROCHI_RAHBAR}}
 
 ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
@@ -594,7 +643,14 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
 
 1-TOMON:                                    2-TOMON:
 {{BUYURTMACHI}}                             {{IJROCHI}}
-INN: {{BUYURTMACHI_INN}}                   INN: {{IJROCHI_INN}}
+STIR: {{BUYURTMACHI_INN}}                  STIR: {{IJROCHI_INN}}
+Manzil: {{BUYURTMACHI_MANZIL}}            Manzil: {{IJROCHI_MANZIL}}
+Bank: {{BUYURTMACHI_BANK}}                Bank: {{IJROCHI_BANK}}
+H/R: {{BUYURTMACHI_HR}}                   H/R: {{IJROCHI_HR}}
+MFO: {{BUYURTMACHI_MFO}}                  MFO: {{IJROCHI_MFO}}
+OKED: {{BUYURTMACHI_OKED}}                OKED: {{IJROCHI_OKED}}
+QQS: {{BUYURTMACHI_QQS}}                  QQS: {{IJROCHI_QQS}}
+Tel: {{BUYURTMACHI_TEL}}                   Tel: {{IJROCHI_TEL}}
 Rahbar: {{BUYURTMACHI_RAHBAR}}             Rahbar: {{IJROCHI_RAHBAR}}
 
 ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}

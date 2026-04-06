@@ -6,6 +6,7 @@ import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 import HujjatResult from '../_components/HujjatResult'
+import { useToast } from '@/lib/toast'
 import {
   tplMehnatShartnoma, tplOrindoshlik, tplFuqaroviy, tplMaxfiylik,
   tplBuyruqQabul, tplBuyruqBoshtash, tplTatilBuyruq,
@@ -360,6 +361,7 @@ const EMP_FIELD_MAP: Record<string, string> = {
 
 export default function KadrlarPage() {
   const { activeOrg, hasAiAccess, isFree, openUpgradeModal, employees } = useDashboard()
+  const { toast } = useToast()
   const [activeCat, setActiveCat] = useState<Category>('shartnoma')
   const [selected, setSelected] = useState<KadrFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
@@ -371,6 +373,7 @@ export default function KadrlarPage() {
   const [savedKey, setSavedKey] = useState(0)
   const [empSearch, setEmpSearch] = useState('')
   const [empOpen, setEmpOpen] = useState(false)
+  const [jshshirLoading, setJshshirLoading] = useState(false)
 
   const currentFeature = FEATURES.find(f => f.key === selected)
 
@@ -389,6 +392,43 @@ export default function KadrlarPage() {
     setSelected(null)
     setResult(null)
     setError('')
+  }
+
+  // ── JSHSHIR lookup ───────���──────────────────────────────────────────────────
+  async function lookupJshshir(fieldKey: string) {
+    const jshshir = (formData[fieldKey] || '').trim()
+    if (!jshshir || !/^\d{14}$/.test(jshshir)) {
+      toast("JSHSHIR 14 raqamdan iborat bo'lishi kerak", 'error'); return
+    }
+    setJshshirLoading(true)
+    try {
+      const res = await fetch(`/api/jshshir?jshshir=${jshshir}`)
+      const data = await res.json()
+      if (!res.ok) { toast(data.error || "JSHSHIR bo'yicha ma'lumot topilmadi", 'error'); return }
+      const p = data.person
+      // JSHSHIR fieldiga qarab, tegishli ism fieldini aniqlaymiz
+      const nameField = fieldKey === 'beruvchi_jshshir' ? 'beruvchi_ism'
+        : fieldKey === 'oluvchi_jshshir' ? 'oluvchi_ism'
+        : fieldKey === 'ijrochi_jshshir' ? 'ijrochi_ism'
+        : 'xodim_ism'
+      const addrField = fieldKey === 'beruvchi_jshshir' ? 'beruvchi_manzil'
+        : fieldKey === 'oluvchi_jshshir' ? 'oluvchi_manzil'
+        : 'xodim_manzil'
+      const patch: Record<string, string> = {}
+      if (p.full_name) patch[nameField] = p.full_name
+      if (p.address) patch[addrField] = p.address
+      setFormData(prev => ({ ...prev, ...patch }))
+      const infoParts: string[] = []
+      if (p.full_name) infoParts.push(p.full_name)
+      if (p.status === 'active') infoParts.push('✓ Faol')
+      else if (p.status === 'inactive') infoParts.push('⚠ Faol emas')
+      if (p.address) infoParts.push(p.address)
+      toast(infoParts.length ? infoParts.join(' | ') : "Ma'lumotlar to'ldirildi", p.status === 'inactive' ? 'error' : 'success')
+    } catch {
+      toast("JSHSHIR so'rovida xatolik", 'error')
+    } finally {
+      setJshshirLoading(false)
+    }
   }
 
   // ── Generate ──────────────────────────────────────────────────────────────
@@ -684,6 +724,24 @@ export default function KadrlarPage() {
                         className={inp}>
                         {field.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
+                    ) : field.key.includes('jshshir') ? (
+                      <div className="flex gap-1.5">
+                        <input
+                          type="text"
+                          maxLength={14}
+                          value={formData[field.key] || ''}
+                          onChange={e => setFormData(prev => ({ ...prev, [field.key]: e.target.value.replace(/\D/g, '').slice(0, 14) }))}
+                          placeholder={field.placeholder}
+                          className={`${inp} flex-1`}
+                        />
+                        <button type="button" onClick={() => lookupJshshir(field.key)} disabled={jshshirLoading}
+                          className="shrink-0 bg-blue-600 hover:bg-blue-700 disabled:bg-[#1F2937] text-white px-3 rounded-lg transition text-sm"
+                          title="Soliq API orqali izlash">
+                          {jshshirLoading ? (
+                            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                          ) : '🔍'}
+                        </button>
+                      </div>
                     ) : (
                       <input
                         type={field.type || 'text'}

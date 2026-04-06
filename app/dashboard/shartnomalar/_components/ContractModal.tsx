@@ -197,7 +197,7 @@ export default function ContractModal({
   const [useTemplate, setUseTemplate] = useState(true)
   const [selectedTemplate, setSelectedTemplate] = useState<string>('auto')
   const [quickAddCp, setQuickAddCp] = useState(false)
-  const [newCp, setNewCp] = useState({ name: '', inn: '', director_name: '', address: '', phone: '', bank_name: '', bank_account: '', mfo: '', qqsreg: '' })
+  const [newCp, setNewCp] = useState({ name: '', inn: '', director_name: '', address: '', phone: '', bank_name: '', bank_account: '', mfo: '', qqsreg: '', oked: '' })
   const [savingCp, setSavingCp] = useState(false)
   const [cpStirLoading, setCpStirLoading] = useState(false)
   const cpDropRef = useRef<HTMLDivElement>(null)
@@ -393,6 +393,7 @@ export default function ContractModal({
         director_name: co.director_name || p.director_name,
         address: co.address || p.address,
         qqsreg: co.qqsreg || p.qqsreg,
+        oked: co.oked || p.oked,
       }))
       const infoParts: string[] = []
       if (co.status === 'active') infoParts.push('✓ Faol')
@@ -421,6 +422,7 @@ export default function ContractModal({
       bank_account: newCp.bank_account.trim(),
       mfo: newCp.mfo.trim(),
       qqsreg: newCp.qqsreg.trim(),
+      oked: newCp.oked.trim(),
       user_id: session!.user.id,
     }).select().single()
     setSavingCp(false)
@@ -430,7 +432,7 @@ export default function ContractModal({
       setForm(f => ({ ...f, counterparty_id: data.id }))
     }
     setQuickAddCp(false)
-    setNewCp({ name: '', inn: '', director_name: '', address: '', phone: '', bank_name: '', bank_account: '', mfo: '', qqsreg: '' })
+    setNewCp({ name: '', inn: '', director_name: '', address: '', phone: '', bank_name: '', bank_account: '', mfo: '', qqsreg: '', oked: '' })
     setCpDropOpen(false)
   }
 

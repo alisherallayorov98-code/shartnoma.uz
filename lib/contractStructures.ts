@@ -916,16 +916,28 @@ function buildSpecTable(items: SpecItemForText[], number: string, date: string, 
 
   if (org) {
     lines.push('SOTUVCHI: ' + org.name)
-    lines.push('INN: ' + (org.inn || '—') + '    MFO: ' + (org.mfo || '—'))
+    lines.push('STIR: ' + (org.inn || '—'))
+    lines.push('Manzil: ' + (org.address || '—'))
+    lines.push('Bank: ' + (org.bank_name || '—'))
     lines.push('H/r: ' + (org.bank_account || '—'))
+    lines.push('MFO: ' + (org.mfo || '—'))
+    lines.push('OKED: ' + (org.oked || '—'))
+    lines.push('QQS: ' + (org.qqsreg || '—'))
+    lines.push('Tel: ' + (org.phone || '—'))
     lines.push('Rahbar: ' + (org.director_name || '—'))
     lines.push('_________________ / ' + (org.director_name || '___') + '        M.O.')
   }
   lines.push('')
   if (cp) {
     lines.push('XARIDOR: ' + cp.name)
-    lines.push('INN: ' + (cp.inn || '—') + '    MFO: ' + (cp.mfo || '—'))
+    lines.push('STIR: ' + (cp.inn || '—'))
+    lines.push('Manzil: ' + (cp.address || '—'))
+    lines.push('Bank: ' + (cp.bank_name || '—'))
     lines.push('H/r: ' + (cp.bank_account || '—'))
+    lines.push('MFO: ' + (cp.mfo || '—'))
+    lines.push('OKED: ' + (cp.oked || '—'))
+    lines.push('QQS: ' + (cp.qqsreg || '—'))
+    lines.push('Tel: ' + (cp.phone || '—'))
     lines.push('Rahbar: ' + (cp.director_name || '—'))
     lines.push('_________________ / ' + (cp.director_name || '___') + '        M.O.')
   }
@@ -955,6 +967,33 @@ export function structureToText(
   // 1-ILOVA: spec items mavjud bo'lsa
   if (header.spec_items && header.spec_items.length > 0) {
     lines.push(buildSpecTable(header.spec_items, header.number, header.date, header.org, header.cp))
+  }
+
+  // ─── Tomonlarning rekvizitlari ─────────────────────────────────────────────
+  lines.push('')
+  lines.push('TOMONLARNING REKVIZITLARI')
+  lines.push('')
+
+  const org = header.org
+  const cp = header.cp
+
+  if (org || cp) {
+    const left = (s: string) => s.padEnd(45)
+
+    lines.push(left('BUYURTMACHI:') + 'IJROCHI:')
+    lines.push(left(org?.name || '___') + (cp?.name || '___'))
+    lines.push(left('STIR: ' + (org?.inn || '___')) + 'STIR: ' + (cp?.inn || '___'))
+    lines.push(left('Manzil: ' + (org?.address || '___')) + 'Manzil: ' + (cp?.address || '___'))
+    lines.push(left('Bank: ' + (org?.bank_name || '___')) + 'Bank: ' + (cp?.bank_name || '___'))
+    lines.push(left('H/R: ' + (org?.bank_account || '___')) + 'H/R: ' + (cp?.bank_account || '___'))
+    lines.push(left('MFO: ' + (org?.mfo || '___')) + 'MFO: ' + (cp?.mfo || '___'))
+    lines.push(left('OKED: ' + (org?.oked || '___')) + 'OKED: ' + (cp?.oked || '___'))
+    lines.push(left('QQS: ' + (org?.qqsreg || '___')) + 'QQS: ' + (cp?.qqsreg || '___'))
+    lines.push(left('Tel: ' + (org?.phone || '___')) + 'Tel: ' + (cp?.phone || '___'))
+    lines.push('')
+    lines.push(left('Rahbar: ' + (org?.director_name || '___')) + 'Rahbar: ' + (cp?.director_name || '___'))
+    lines.push('')
+    lines.push(left('_________________ M.O.') + '_________________ M.O.')
   }
 
   return lines.join('\n')

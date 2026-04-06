@@ -34,6 +34,7 @@ export default function XodimlarPage() {
   const [form, setForm] = useState({ ...emptyEmp })
   const [saving, setSaving] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [jshshirLoading, setJshshirLoading] = useState(false)
 
   const lbl = 'block text-xs text-gray-400 mb-1'
   const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
@@ -105,6 +106,34 @@ export default function XodimlarPage() {
     if (emp) logAudit('delete', 'employees', id, { ism: emp.ism })
     toast("Xodim o'chirildi", 'success')
     reloadEmployees()
+  }
+
+  async function lookupJshshir() {
+    const jshshir = form.jshshir.trim()
+    if (!jshshir || !/^\d{14}$/.test(jshshir)) {
+      toast("JSHSHIR 14 raqamdan iborat bo'lishi kerak", 'error'); return
+    }
+    setJshshirLoading(true)
+    try {
+      const res = await fetch(`/api/jshshir?jshshir=${jshshir}`)
+      const data = await res.json()
+      if (!res.ok) { toast(data.error || "JSHSHIR bo'yicha ma'lumot topilmadi", 'error'); return }
+      const p = data.person
+      setForm(prev => ({
+        ...prev,
+        ism: p.full_name || prev.ism,
+      }))
+      const infoParts: string[] = []
+      if (p.full_name) infoParts.push(p.full_name)
+      if (p.status === 'active') infoParts.push('✓ Faol')
+      else if (p.status === 'inactive') infoParts.push('⚠ Faol emas')
+      if (p.address) infoParts.push(p.address)
+      toast(infoParts.length ? infoParts.join(' | ') : "Ma'lumotlar to'ldirildi", p.status === 'inactive' ? 'error' : 'success')
+    } catch {
+      toast("JSHSHIR so'rovida xatolik", 'error')
+    } finally {
+      setJshshirLoading(false)
+    }
   }
 
   return (
@@ -235,8 +264,17 @@ export default function XodimlarPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={lbl}>JSHSHIR (14 raqam)</label>
-                <input className={inp} placeholder="12345678901234" maxLength={14}
-                  value={form.jshshir} onChange={e => setForm({ ...form, jshshir: e.target.value })}/>
+                <div className="flex gap-1.5">
+                  <input className={`${inp} flex-1`} placeholder="12345678901234" maxLength={14}
+                    value={form.jshshir} onChange={e => setForm({ ...form, jshshir: e.target.value.replace(/\D/g, '').slice(0, 14) })}/>
+                  <button type="button" onClick={lookupJshshir} disabled={jshshirLoading}
+                    className="shrink-0 bg-blue-600 hover:bg-blue-700 disabled:bg-[#1F2937] text-white px-3 rounded-lg transition text-sm"
+                    title="Soliq API orqali izlash">
+                    {jshshirLoading ? (
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    ) : '🔍'}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className={lbl}>Pasport seriya/raqam</label>

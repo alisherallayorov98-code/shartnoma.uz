@@ -6,8 +6,9 @@ export type PlaceholderData = {
   contract_date?: string
   city?: string
   amount?: number | string
-  organizations?: { name?: string; inn?: string; address?: string; director_name?: string } | null
-  counterparties?: { name?: string; inn?: string; address?: string; director_name?: string } | null
+  organizations?: { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string; qqsreg?: string; oked?: string; phone?: string } | null
+  counterparties?: { name?: string; inn?: string; address?: string; director_name?: string; bank_name?: string; bank_account?: string; mfo?: string; qqsreg?: string; oked?: string; phone?: string } | null
+  org_bank?: { bank_name?: string; account_number?: string; mfo?: string } | null
   ijara_manzil?: string
   ijara_maydon?: string
   oylik_tolov?: string
@@ -49,13 +50,28 @@ export function fillPlaceholders(content: string, c: PlaceholderData): string {
     '{{RAQAM}}':              c.contract_number || '',
     '{{SANA}}':               formatDateUz(c.contract_date),
     '{{SHAHAR}}':             c.city || 'Toshkent',
-    // Parties
-    '{{BUYURTMACHI}}':        c.organizations?.name || '___',
-    '{{BUYURTMACHI_INN}}':    c.organizations?.inn || '___',
-    '{{BUYURTMACHI_RAHBAR}}': c.organizations?.director_name || '___',
-    '{{IJROCHI}}':            c.counterparties?.name || '___',
-    '{{IJROCHI_INN}}':        c.counterparties?.inn || '___',
-    '{{IJROCHI_RAHBAR}}':     c.counterparties?.director_name || '___',
+    // Buyurtmachi (tashkilot)
+    '{{BUYURTMACHI}}':            c.organizations?.name || '___',
+    '{{BUYURTMACHI_INN}}':        c.organizations?.inn || '___',
+    '{{BUYURTMACHI_RAHBAR}}':     c.organizations?.director_name || '___',
+    '{{BUYURTMACHI_MANZIL}}':     c.organizations?.address || '___',
+    '{{BUYURTMACHI_BANK}}':       c.org_bank?.bank_name || c.organizations?.bank_name || '___',
+    '{{BUYURTMACHI_HR}}':         c.org_bank?.account_number || c.organizations?.bank_account || '___',
+    '{{BUYURTMACHI_MFO}}':        c.org_bank?.mfo || c.organizations?.mfo || '___',
+    '{{BUYURTMACHI_OKED}}':       c.organizations?.oked || '___',
+    '{{BUYURTMACHI_QQS}}':        c.organizations?.qqsreg || '___',
+    '{{BUYURTMACHI_TEL}}':        c.organizations?.phone || '___',
+    // Ijrochi (kontragent)
+    '{{IJROCHI}}':                c.counterparties?.name || '___',
+    '{{IJROCHI_INN}}':            c.counterparties?.inn || '___',
+    '{{IJROCHI_RAHBAR}}':         c.counterparties?.director_name || '___',
+    '{{IJROCHI_MANZIL}}':         c.counterparties?.address || '___',
+    '{{IJROCHI_BANK}}':           c.counterparties?.bank_name || '___',
+    '{{IJROCHI_HR}}':             c.counterparties?.bank_account || '___',
+    '{{IJROCHI_MFO}}':            c.counterparties?.mfo || '___',
+    '{{IJROCHI_OKED}}':           c.counterparties?.oked || '___',
+    '{{IJROCHI_QQS}}':            c.counterparties?.qqsreg || '___',
+    '{{IJROCHI_TEL}}':            c.counterparties?.phone || '___',
     // Amount
     '{{SUMMA}}':              amount.toLocaleString('uz-UZ'),
     '{{SUMMA_MATN}}':         amountText,

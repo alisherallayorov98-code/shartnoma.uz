@@ -88,7 +88,7 @@ export default function ShartnomalarPage() {
   const { toast } = useToast()
 
   const {
-    contracts, contractsTotal, orgs, cps, activeOrg, subscription, isFree,
+    contracts, contractsTotal, orgs, cps, activeOrg, subscription, isFree, bankAccounts,
     reloadContracts, loadMoreContracts, reloadCps, canCreateContract, openUpgradeModal, userId,
     hasAiAccess,
   } = useDashboard()
@@ -288,6 +288,7 @@ export default function ShartnomalarPage() {
       if (lang === 'oz') content = latinToCyrillic(content)
     } else {
       // Template-based content: fill all {{PLACEHOLDER}} variables now so DB stores clean text
+      const defaultBank = bankAccounts.find(b => b.is_default) || bankAccounts[0]
       content = fillPlaceholders(content, {
         ...contractForm,
         contract_number: contractForm.contract_number,
@@ -296,6 +297,7 @@ export default function ShartnomalarPage() {
         amount,
         organizations: org,
         counterparties: cp,
+        org_bank: defaultBank ? { bank_name: defaultBank.bank_name, account_number: defaultBank.account_number, mfo: defaultBank.mfo } : null,
       })
     }
 
