@@ -394,7 +394,12 @@ export default function ContractModal({
         address: co.address || p.address,
         qqsreg: co.qqsreg || p.qqsreg,
       }))
-      toast("Ma'lumotlar to'ldirildi", 'success')
+      const infoParts: string[] = []
+      if (co.status === 'active') infoParts.push('✓ Faol')
+      else if (co.status === 'inactive') infoParts.push('⚠ Faol emas!')
+      if (co.oked_name) infoParts.push(co.oked_name)
+      if (co.reg_date) infoParts.push(`Ro'yxatdan: ${co.reg_date}`)
+      toast(infoParts.length ? infoParts.join(' | ') : "Ma'lumotlar to'ldirildi", co.status === 'inactive' ? 'error' : 'success')
     } catch {
       toast("STIR so'rovida xatolik", 'error')
     } finally {

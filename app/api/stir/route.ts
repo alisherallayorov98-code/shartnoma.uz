@@ -3,57 +3,105 @@ import { NextRequest, NextResponse } from 'next/server'
 const SOLIQ_API_KEY = process.env.SOLIQ_API_KEY || ''
 const SOLIQ_API_URL = process.env.SOLIQ_API_URL || ''
 
-// Soliq API javob strukturasi:
-// { company: { tin, name, shortName, vatNumber, streetName, ... },
-//   companyBillingAddress: { region, district, streetName },
-//   director: { lastName, firstName, middleName } }
-function normalizeCompany(raw: Record<string, unknown>) {
-  const co  = (raw.company && typeof raw.company === 'object' ? raw.company : {}) as Record<string, unknown>
-  const dir = (raw.director && typeof raw.director === 'object' ? raw.director : {}) as Record<string, unknown>
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function normalizeCompany(raw: Record<string, any>) {
+  const co   = (raw.company && typeof raw.company === 'object' ? raw.company : {}) as Record<string, any>
+  const dir  = (raw.director && typeof raw.director === 'object' ? raw.director : {}) as Record<string, any>
+  const acct = (raw.accountant && typeof raw.accountant === 'object' ? raw.accountant : {}) as Record<string, any>
   const addr = (raw.companyBillingAddress && typeof raw.companyBillingAddress === 'object'
-    ? raw.companyBillingAddress : {}) as Record<string, unknown>
+    ? raw.companyBillingAddress : {}) as Record<string, any>
 
   const str = (v: unknown): string => (v != null && v !== '' ? String(v).trim() : '')
 
-  // To'liq manzil: shahar/viloyat + tuman + ko'cha
-  const region   = addr.region   as Record<string, unknown> | null
-  const district = addr.district as Record<string, unknown> | null
+  // ── Manzil ──
+  const region   = addr.region   as Record<string, any> | null
+  const district = addr.district as Record<string, any> | null
   const parts = [
-    str(region?.name_uz_latn   || region?.name),
+    str(region?.name_uz_latn || region?.name),
     str(district?.name_uz_latn || district?.name),
     str(addr.streetName || co.streetName),
   ].filter(Boolean)
   const address = parts.join(', ')
 
-  // Rahbar ismi
+  // ── Rahbar ──
   const director_name = [str(dir.lastName), str(dir.firstName), str(dir.middleName)]
     .filter(Boolean).join(' ')
 
-  // Tashkilot holati: faol / tugatilgan / muallaq
-  const rawStatus = str(co.statusOfActivity) || str(co.activityStatus) || str(co.state) || str(co.status)
-  const statusLower = rawStatus.toLowerCase()
-  const status =
-    statusLower.includes('faol') || statusLower.includes('activ') || statusLower === '1' ? 'active' :
-    statusLower.includes('tugatil') || statusLower.includes('likvid') || statusLower.includes('inactive') ? 'inactive' :
-    rawStatus ? 'unknown' : ''
+  // ── Bosh hisobchi ──
+  const accountant_name = [str(acct.lastName), str(acct.firstName), str(acct.middleName)]
+    .filter(Boolean).join(' ')
 
-  const oked = str(co.oked) || str(co.industrialCode) || str(co.okedCode) || str(co.industryCode)
-  const reg_date = str(co.registrationDate) || str(co.regDate) || str(co.stateRegistrationDate)
+  // ── Status (statusDetail.group dan) ──
+  const statusDetail = co.statusDetail as Record<string, any> | null
+  const statusGroup = str(statusDetail?.group).toUpperCase()
+  const status =
+    statusGroup === 'ACTIVE' ? 'active' :
+    statusGroup === 'INACTIVE' || statusGroup === 'LIQUIDATED' ? 'inactive' :
+    statusGroup ? 'unknown' : ''
+  const status_text = str(statusDetail?.name_uz_latn) || str(statusDetail?.name_ru)
+
+  // ── OKED ──
+  const oked = str(co.oked)
+  const okedDetail = co.okedDetail as Record<string, any> | null
+  const oked_name = str(okedDetail?.name_short_uz_latn) || str(okedDetail?.name)
+
+  // ── OPF (tashkilot shakli) ──
+  const opfDetail = co.opfDetail as Record<string, any> | null
+  const opf_name = str(opfDetail?.name_uz_latn) || str(opfDetail?.name_ru)
+
+  // ── Soliq rejimi ──
+  const taxMode = co.taxMode
+  const tax_mode = taxMode === 0 ? 'umumiy' : taxMode === 1 ? 'soddlashtirilgan' : taxMode === 2 ? 'yagona' : ''
+
+  // ── Biznes tuzilmasi ──
+  const bsDetail = co.businessStructureDetail as Record<string, any> | null
+  const business_structure = str(bsDetail?.name_uz_latn) || str(bsDetail?.name_ru)
+
+  // ── Xodimlar limiti ──
+  const employee_limit_small = okedDetail?.employee_limit_mf ?? null
+  const employee_limit_large = okedDetail?.employee_limit_lf ?? null
 
   return {
-    name:          str(co.shortName) || str(co.name),
-    full_name:     str(co.name),
-    inn:           str(co.tin),
+    // Asosiy
+    name:             str(co.shortName) || str(co.name),
+    full_name:        str(co.name),
+    inn:              str(co.tin),
     director_name,
+    accountant_name,
     address,
-    bank_name:     '',  // Bu API da bank ma'lumotlari yo'q
+    postcode:         str(addr.postcode),
+
+    // Bank (API bermaydi)
+    bank_name:     '',
     bank_account:  '',
     mfo:           '',
     phone:         '',
-    qqsreg:        str(co.vatNumber),
+
+    // Soliq
+    qqsreg:           str(co.vatNumber),
     status,
+    status_text,
     oked,
-    reg_date,
+    oked_name,
+    reg_date:         str(co.registrationDate),
+    reg_number:       str(co.registrationNumber),
+
+    // Tashkilot shakli
+    opf_name,
+    business_structure,
+    tax_mode,
+
+    // Moliya
+    ustav_capital:    co.businessFund ?? null,
+    taxpayer_type:    co.taxpayerType ?? null,
+
+    // Xodimlar limiti
+    employee_limit_small,
+    employee_limit_large,
+
+    // Klassifikatorlar
+    soato:            co.soato ?? null,
+    soogu:            str(co.soogu),
   }
 }
 
@@ -96,11 +144,7 @@ export async function GET(req: NextRequest) {
     const raw: Record<string, unknown> = await res.json()
     const company = normalizeCompany(raw)
 
-    if (!company.name) {
-      return NextResponse.json({ company, raw }, { status: 200 })
-    }
-
-    return NextResponse.json({ company, raw })
+    return NextResponse.json({ company })
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Noma'lum xatolik"

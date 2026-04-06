@@ -241,7 +241,12 @@ export default function ProfilPage() {
         address: co.address || prev.address,
         qqsreg: co.qqsreg || prev.qqsreg,
       }))
-      toast("Ma'lumotlar to'ldirildi", 'success')
+      const infoParts: string[] = ['Ma\'lumotlar to\'ldirildi']
+      if (co.status === 'active') infoParts.push('✓ Faol')
+      else if (co.status === 'inactive') infoParts.push('⚠ Faol emas!')
+      if (co.oked_name) infoParts.push(co.oked_name)
+      if (co.ustav_capital) infoParts.push(`Ustav kapitali: ${Number(co.ustav_capital).toLocaleString()} so'm`)
+      toast(infoParts.join(' | '), 'success')
     } catch {
       toast("STIR so'rovida xatolik", 'error')
     } finally {

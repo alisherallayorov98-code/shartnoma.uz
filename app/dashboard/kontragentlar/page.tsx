@@ -132,8 +132,16 @@ export default function KontragentlarPage() {
         stir_status: co.status || 'unknown',
         stir_checked_at: new Date().toISOString(),
       }))
-      const statusMsg = co.status === 'active' ? ' ✓ Faol tashkilot' : co.status === 'inactive' ? ' ⚠ Faol emas!' : ''
-      toast('Ma\'lumotlar to\'ldirildi' + statusMsg, co.status === 'inactive' ? 'error' : 'success')
+      // Batafsil xabar
+      const infoParts: string[] = []
+      if (co.status === 'active') infoParts.push('✓ Faol')
+      else if (co.status === 'inactive') infoParts.push('⚠ Faol emas!')
+      if (co.oked_name) infoParts.push(co.oked_name)
+      if (co.opf_name) infoParts.push(co.opf_name)
+      if (co.reg_date) infoParts.push(`Ro'yxatdan: ${co.reg_date}`)
+      if (co.ustav_capital) infoParts.push(`Ustav kapitali: ${Number(co.ustav_capital).toLocaleString()} so'm`)
+      if (co.accountant_name && co.accountant_name !== co.director_name) infoParts.push(`Hisobchi: ${co.accountant_name}`)
+      toast(infoParts.length ? infoParts.join(' | ') : 'Ma\'lumotlar to\'ldirildi', co.status === 'inactive' ? 'error' : 'success')
     } catch {
       toast('STIR so\'rovida xatolik', 'error')
     } finally {

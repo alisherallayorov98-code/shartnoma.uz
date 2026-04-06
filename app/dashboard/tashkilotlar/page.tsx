@@ -89,7 +89,13 @@ export default function TashkilotlarPage() {
           address: co.address || prev.address,
           qqsreg: co.qqsreg || prev.qqsreg,
         }))
-        toast('Ma\'lumotlar to\'ldirildi', 'success')
+        const infoParts: string[] = ['Ma\'lumotlar to\'ldirildi']
+        if (co.status === 'active') infoParts.push('✓ Faol')
+        else if (co.status === 'inactive') infoParts.push('⚠ Faol emas!')
+        if (co.oked_name) infoParts.push(co.oked_name)
+        if (co.reg_date) infoParts.push(`Ro'yxatdan: ${co.reg_date}`)
+        if (co.ustav_capital) infoParts.push(`Ustav kapitali: ${Number(co.ustav_capital).toLocaleString()} so'm`)
+        toast(infoParts.join(' | '), co.status === 'inactive' ? 'error' : 'success')
       }
     } catch {
       toast('STIR so\'rovida xatolik', 'error')
