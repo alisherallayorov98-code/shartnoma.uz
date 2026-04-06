@@ -1,12 +1,16 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, LANG_LABELS, type Lang } from '@/lib/i18n'
 import forge from 'node-forge'
+import {
+  initEimzo, listCertificates, signPkcs7, isConnected,
+  parseCertLabel, certExpiry, type EimzoCert,
+} from '@/lib/eimzo-client'
 
 type LoginTab = 'eimzo' | 'email'
 
@@ -21,11 +25,38 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // E-IMZO PFX state
+  // E-IMZO desktop (CAPIWS)
+  const [desktopStatus, setDesktopStatus] = useState<'checking' | 'connected' | 'failed'>('checking')
+  const [certs, setCerts] = useState<EimzoCert[]>([])
+  const [selectedCert, setSelectedCert] = useState('')
+  const [eimzoLoading, setEimzoLoading] = useState(false)
+
+  // PFX fallback
+  const [pfxMode, setPfxMode] = useState(false)
   const [pfxFile, setPfxFile] = useState<File | null>(null)
   const [pfxPass, setPfxPass] = useState('')
-  const [eimzoLoading, setEimzoLoading] = useState(false)
   const pfxFileRef = useRef<HTMLInputElement>(null)
+
+  // ── Detect E-IMZO desktop (CAPIWS) ─────────────────────────────────────────
+  useEffect(() => {
+    initEimzo().then(async (connected) => {
+      if (connected) {
+        setDesktopStatus('connected')
+        try {
+          const certList = await listCertificates()
+          console.log('[E-IMZO] certificates:', certList)
+          setCerts(certList)
+          if (certList.length > 0) {
+            setSelectedCert(certList[0].alias || certList[0].serialNumber || '0')
+          }
+        } catch (e) {
+          console.warn('[E-IMZO] list certs error:', e)
+        }
+      } else {
+        setDesktopStatus('failed')
+      }
+    }).catch(() => setDesktopStatus('failed'))
+  }, [])
 
   // ── Email/password login ────────────────────────────────────────────────────
   async function handleEmailLogin(e: React.FormEvent) {
@@ -58,7 +89,43 @@ export default function LoginPage() {
     })
   }
 
-  // ── E-IMZO PFX login ──────────────────────────────────────────────────────
+  // ── Finish E-IMZO login (common for desktop and PFX) ──────────────────────
+  async function finishLogin(body: Record<string, string>) {
+    const res = await fetch('/api/auth/eimzo/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'E-IMZO xatoligi')
+
+    const { error: sessionError } = await supabase.auth.setSession(data.session)
+    if (sessionError) throw new Error('Sessiya xatosi: ' + sessionError.message)
+    router.push('/dashboard')
+  }
+
+  // ── Desktop (CAPIWS) login ─────────────────────────────────────────────────
+  async function handleDesktopLogin() {
+    if (!isConnected() || !selectedCert) { setError('Kalit tanlanmagan'); return }
+    setEimzoLoading(true)
+    setError('')
+    try {
+      // 1. Get challenge
+      const { id: challengeId, challenge } = await fetch('/api/auth/eimzo/challenge').then(r => r.json())
+
+      // 2. Sign via CAPIWS
+      const pkcs7B64 = await signPkcs7(selectedCert, btoa(challenge))
+      if (!pkcs7B64) throw new Error("Imzolashda xatolik")
+
+      // 3. Verify on server
+      await finishLogin({ pkcs7B64, challengeId, challenge })
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e))
+    }
+    setEimzoLoading(false)
+  }
+
+  // ── PFX file login ─────────────────────────────────────────────────────────
   async function handlePfxLogin() {
     if (!pfxFile) { setError('E-IMZO fayl tanlanmagan'); return }
     if (!pfxPass) { setError('E-IMZO paroli kiritilmagan'); return }
@@ -66,10 +133,9 @@ export default function LoginPage() {
     setError('')
     try {
       // 1. Get challenge
-      const challengeRes = await fetch('/api/auth/eimzo/challenge')
-      const { id: challengeId, challenge } = await challengeRes.json()
+      const { id: challengeId, challenge } = await fetch('/api/auth/eimzo/challenge').then(r => r.json())
 
-      // 2. Read PFX and extract key + certificate
+      // 2. Read PFX
       const arrayBuffer = await pfxFile.arrayBuffer()
       const pfxDer = forge.util.binary.raw.encode(new Uint8Array(arrayBuffer))
       const pfxAsn1 = forge.asn1.fromDer(pfxDer)
@@ -92,10 +158,6 @@ export default function LoginPage() {
         return
       }
 
-      // Show cert info
-      const cn = certificate.subject.getField('CN')
-      console.log('[E-IMZO] Certificate CN:', cn?.value)
-
       // 3. Sign challenge
       const md = forge.md.sha256.create()
       md.update(challenge)
@@ -103,22 +165,11 @@ export default function LoginPage() {
       const certDer = forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).bytes()
 
       // 4. Verify on server
-      const res = await fetch('/api/auth/eimzo/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          challengeId,
-          signatureB64: forge.util.encode64(signature),
-          certificateB64: forge.util.encode64(certDer),
-        }),
+      await finishLogin({
+        challengeId,
+        signatureB64: forge.util.encode64(signature),
+        certificateB64: forge.util.encode64(certDer),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'E-IMZO xatoligi')
-
-      // 5. Set session and redirect
-      const { error: sessionError } = await supabase.auth.setSession(data.session)
-      if (sessionError) throw new Error('Sessiya o\'rnatishda xato: ' + sessionError.message)
-      router.push('/dashboard')
     } catch (e) {
       console.error('[E-IMZO]', e)
       setError(e instanceof Error ? e.message : 'E-IMZO orqali kirishda xatolik')
@@ -184,55 +235,119 @@ export default function LoginPage() {
           {/* ═══════════════════ E-IMZO Tab ═══════════════════ */}
           {tab === 'eimzo' && (
             <div className="space-y-4">
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">E-IMZO kalit fayli (.pfx)</label>
-                  <input ref={pfxFileRef} type="file" accept=".pfx,.p12"
-                    onChange={e => { setPfxFile(e.target.files?.[0] || null); setError('') }} className="hidden" />
-                  <button type="button" onClick={() => pfxFileRef.current?.click()}
-                    className={`w-full text-left bg-gray-800 border text-sm rounded-lg px-4 py-3 transition truncate ${
-                      pfxFile ? 'border-green-600 text-green-400' : 'border-gray-700 text-gray-400 hover:border-green-500'
-                    }`}>
-                    {pfxFile ? (
-                      <span>✓ {pfxFile.name}</span>
-                    ) : (
-                      <span>📁 Faylni tanlash uchun bosing...</span>
-                    )}
-                  </button>
+
+              {/* Desktop CAPIWS mode */}
+              {desktopStatus === 'checking' && !pfxMode && (
+                <div className="text-center py-4">
+                  <svg className="animate-spin w-6 h-6 mx-auto text-green-400 mb-2" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  <p className="text-sm text-gray-400">E-IMZO ilovasi tekshirilmoqda...</p>
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">E-IMZO paroli</label>
-                  <input type="password" value={pfxPass} onChange={e => setPfxPass(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-green-500"
-                    onKeyDown={e => e.key === 'Enter' && pfxFile && pfxPass && handlePfxLogin()}
-                  />
-                </div>
-
-                <button type="button" onClick={handlePfxLogin}
-                  disabled={eimzoLoading || !pfxFile || !pfxPass}
-                  className="w-full flex items-center justify-center gap-2 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-medium py-3 rounded-lg transition">
-                  {eimzoLoading ? (
-                    <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Tekshirilmoqda...</>
-                  ) : '🔐 E-IMZO orqali kirish'}
-                </button>
-              </div>
-
-              {/* Instructions */}
-              <div className="border-t border-gray-800 pt-3">
-                <details className="text-xs text-gray-500">
-                  <summary className="cursor-pointer hover:text-gray-400">PFX faylni qayerdan olish mumkin?</summary>
-                  <div className="mt-2 space-y-1.5 pl-3 border-l-2 border-gray-800">
-                    <p>1. E-IMZO dasturini kompyuteringizda oching</p>
-                    <p>2. Kalitlar ro&apos;yxatidan kerakli kalitni tanlang</p>
-                    <p>3. &quot;Eksport&quot; yoki &quot;Saqlash&quot; tugmasini bosing</p>
-                    <p>4. PFX (.pfx yoki .p12) formatda saqlang</p>
-                    <p>5. Saqlangan faylni shu yerga yuklang</p>
-                    <p className="text-yellow-600 mt-2">⚠ PFX fayl va parolni boshqalarga bermang</p>
+              {desktopStatus === 'connected' && !pfxMode && (
+                <>
+                  <div className="flex items-center gap-2 text-xs text-green-400 bg-green-900/20 border border-green-800/30 rounded-lg px-3 py-2">
+                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"/>
+                    E-IMZO ilovasi topildi
                   </div>
-                </details>
-              </div>
+
+                  {certs.length > 0 ? (
+                    <>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Kalitni tanlang</label>
+                        <select value={selectedCert} onChange={e => setSelectedCert(e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-green-500">
+                          {certs.map((cert, i) => (
+                            <option key={cert.alias || cert.serialNumber || i} value={cert.alias || cert.serialNumber || String(i)}>
+                              {parseCertLabel(cert)} — {certExpiry(cert)} gacha
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <button type="button" onClick={handleDesktopLogin}
+                        disabled={eimzoLoading || !selectedCert}
+                        className="w-full flex items-center justify-center gap-2 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-medium py-3 rounded-lg transition">
+                        {eimzoLoading ? (
+                          <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Imzolanmoqda...</>
+                        ) : '🔐 E-IMZO orqali kirish'}
+                      </button>
+                    </>
+                  ) : (
+                    <p className="text-sm text-yellow-500 text-center py-2">Kalitlar topilmadi</p>
+                  )}
+
+                  <button type="button" onClick={() => setPfxMode(true)}
+                    className="text-xs text-gray-500 hover:text-gray-400 w-full text-center">
+                    PFX fayl orqali kirish →
+                  </button>
+                </>
+              )}
+
+              {/* PFX mode (fallback or manual) */}
+              {(desktopStatus === 'failed' || pfxMode) && (
+                <>
+                  {desktopStatus === 'failed' && !pfxMode && (
+                    <div className="flex items-center gap-2 text-xs text-yellow-500 bg-yellow-900/20 border border-yellow-800/30 rounded-lg px-3 py-2">
+                      <span className="w-2 h-2 bg-yellow-400 rounded-full"/>
+                      E-IMZO ilovasi topilmadi — PFX fayl bilan kiring
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">E-IMZO kalit fayli (.pfx)</label>
+                      <input ref={pfxFileRef} type="file" accept=".pfx,.p12"
+                        onChange={e => { setPfxFile(e.target.files?.[0] || null); setError('') }} className="hidden" />
+                      <button type="button" onClick={() => pfxFileRef.current?.click()}
+                        className={`w-full text-left bg-gray-800 border text-sm rounded-lg px-4 py-3 transition truncate ${
+                          pfxFile ? 'border-green-600 text-green-400' : 'border-gray-700 text-gray-400 hover:border-green-500'
+                        }`}>
+                        {pfxFile ? `✓ ${pfxFile.name}` : '📁 Faylni tanlash uchun bosing...'}
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">E-IMZO paroli</label>
+                      <input type="password" value={pfxPass} onChange={e => setPfxPass(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-green-500"
+                        onKeyDown={e => e.key === 'Enter' && pfxFile && pfxPass && handlePfxLogin()}
+                      />
+                    </div>
+
+                    <button type="button" onClick={handlePfxLogin}
+                      disabled={eimzoLoading || !pfxFile || !pfxPass}
+                      className="w-full flex items-center justify-center gap-2 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-medium py-3 rounded-lg transition">
+                      {eimzoLoading ? (
+                        <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Tekshirilmoqda...</>
+                      ) : '🔐 E-IMZO orqali kirish'}
+                    </button>
+
+                    {pfxMode && (
+                      <button type="button" onClick={() => setPfxMode(false)}
+                        className="text-xs text-gray-500 hover:text-gray-400 w-full text-center">
+                        ← Orqaga
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="border-t border-gray-800 pt-3">
+                    <details className="text-xs text-gray-500">
+                      <summary className="cursor-pointer hover:text-gray-400">PFX faylni qayerdan olish mumkin?</summary>
+                      <div className="mt-2 space-y-1.5 pl-3 border-l-2 border-gray-800">
+                        <p>1. E-IMZO dasturini kompyuteringizda oching</p>
+                        <p>2. Kalitlar ro&apos;yxatidan kerakli kalitni tanlang</p>
+                        <p>3. &quot;Eksport&quot; tugmasini bosing</p>
+                        <p>4. PFX (.pfx) formatda saqlang</p>
+                        <p className="text-yellow-600 mt-2">⚠ PFX fayl va parolni boshqalarga bermang</p>
+                      </div>
+                    </details>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
