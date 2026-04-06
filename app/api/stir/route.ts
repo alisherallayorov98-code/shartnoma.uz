@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ company, raw }, { status: 200 })
     }
 
-    return NextResponse.json({ company })
+    return NextResponse.json({ company, raw })
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Noma'lum xatolik"
