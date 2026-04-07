@@ -144,5 +144,80 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // ── SYSTEM SETTINGS ──
+  if (action === 'get_settings') {
+    const { data } = await adminDb.from('system_settings').select('key, value')
+    const settings: Record<string, string> = {}
+    for (const row of (data || [])) settings[row.key] = row.value
+    return NextResponse.json({ settings })
+  }
+
+  if (action === 'save_setting') {
+    const { key, value } = body
+    await adminDb.from('system_settings')
+      .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+    return NextResponse.json({ ok: true })
+  }
+
+  // ── SYSTEM TEMPLATES ──
+  if (action === 'get_system_templates') {
+    const { data } = await adminDb.from('system_templates')
+      .select('id, type, language, name, content, updated_at')
+      .order('type')
+    return NextResponse.json({ templates: data || [] })
+  }
+
+  if (action === 'save_template') {
+    const { type, language, name, content } = body
+    const { error } = await adminDb.from('system_templates')
+      .upsert({ type, language, name, content, updated_at: new Date().toISOString() }, { onConflict: 'type,language' })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
+  if (action === 'delete_template') {
+    await adminDb.from('system_templates').delete().eq('id', body.id)
+    return NextResponse.json({ ok: true })
+  }
+
+  // ── SITE CONTENT ──
+  if (action === 'get_site_content') {
+    const { data } = await adminDb.from('site_content')
+      .select('id, key, label, type, value, file_url, updated_at')
+      .order('key')
+    return NextResponse.json({ content: data || [] })
+  }
+
+  if (action === 'save_content') {
+    const { key, label, type, value, file_url } = body
+    const { error } = await adminDb.from('site_content')
+      .upsert({ key, label, type, value: value || '', file_url: file_url || null, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
+  if (action === 'delete_content') {
+    await adminDb.from('site_content').delete().eq('id', body.id)
+    return NextResponse.json({ ok: true })
+  }
+
+  // ── ALL CONTRACTS (monitoring) ──
+  if (action === 'get_all_contracts') {
+    const { data } = await adminDb.from('contracts')
+      .select('id, contract_number, contract_type, status, amount, contract_date, created_at, organization_id, organizations(name, inn)')
+      .order('created_at', { ascending: false })
+      .limit(500)
+    return NextResponse.json({ contracts: data || [] })
+  }
+
+  // ── USER TEMPLATES (custom_templates) ──
+  if (action === 'get_user_templates') {
+    const { data } = await adminDb.from('custom_templates')
+      .select('id, organization_id, type, name, description, content, organizations(name)')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    return NextResponse.json({ templates: data || [] })
+  }
+
   return NextResponse.json({ error: 'Noma\'lum action' }, { status: 400 })
 }

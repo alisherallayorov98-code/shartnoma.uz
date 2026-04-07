@@ -36,7 +36,7 @@ export default function AdminPage() {
   const router = useRouter()
   const tokenRef = useRef<string>('')
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'clients'|'payments'|'demo'|'new'|'feedback'>('clients')
+  const [tab, setTab] = useState<'clients'|'payments'|'demo'|'new'|'feedback'|'templates'|'content'|'contracts'|'settings'>('clients')
   const [clients, setClients] = useState<Client[]>([])
   const [demos, setDemos] = useState<DemoRow[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
@@ -69,6 +69,34 @@ export default function AdminPage() {
 
   // New users filter
   const [newDaysFilter, setNewDaysFilter] = useState(7)
+
+  // Templates
+  const [sysTemplates, setSysTemplates] = useState<{id:string;type:string;language:string;name:string;content:string;updated_at:string}[]>([])
+  const [tplType, setTplType] = useState('oldi_sotdi')
+  const [tplLang, setTplLang] = useState('uz')
+  const [tplName, setTplName] = useState('')
+  const [tplContent, setTplContent] = useState('')
+  const [tplSaving, setTplSaving] = useState(false)
+
+  // Content
+  const [siteContent, setSiteContent] = useState<{id:string;key:string;label:string;type:string;value:string;file_url:string|null;updated_at:string}[]>([])
+  const [contentSaving, setContentSaving] = useState('')
+  const [contentUploading, setContentUploading] = useState('')
+
+  // All contracts
+  const [allContracts, setAllContracts] = useState<{id:string;contract_number:string;contract_type:string;status:string;amount:number;contract_date:string;created_at:string;organization_id:string;organizations:{name:string;inn:string}}[]>([])
+  const [contractSearch, setContractSearch] = useState('')
+  const [contractStatusFilter, setContractStatusFilter] = useState('all')
+
+  // Settings
+  const [settings, setSettings] = useState<Record<string,string>>({})
+  const [settingsSaving, setSettingsSaving] = useState(false)
+
+  // New content modal
+  const [addContentModal, setAddContentModal] = useState(false)
+  const [newContentForm, setNewContentForm] = useState({ key:'', label:'', type:'text', value:'' })
+  // Content text edit drafts (key -> draft value)
+  const [contentDrafts, setContentDrafts] = useState<Record<string,string>>({})
 
   useEffect(() => { checkAdmin() }, [])
 
@@ -134,6 +162,99 @@ export default function AdminPage() {
       .order('created_at', { ascending: false })
       .limit(200)
     setFeedbacks(fbData || [])
+  }
+
+  async function loadTemplates() {
+    const data = await apiPost({ action: 'get_system_templates' })
+    if (data?.templates) setSysTemplates(data.templates)
+  }
+
+  async function loadSiteContent() {
+    const data = await apiPost({ action: 'get_site_content' })
+    if (data?.content) setSiteContent(data.content)
+  }
+
+  async function loadAllContracts() {
+    const data = await apiPost({ action: 'get_all_contracts' })
+    if (data?.contracts) setAllContracts(data.contracts)
+  }
+
+  async function loadSettings() {
+    const data = await apiPost({ action: 'get_settings' })
+    if (data?.settings) setSettings(data.settings)
+  }
+
+  async function saveTemplate(e: React.FormEvent) {
+    e.preventDefault()
+    if (!tplName || !tplContent) return
+    setTplSaving(true)
+    await apiPost({ action: 'save_template', type: tplType, language: tplLang, name: tplName, content: tplContent })
+    notify('✓ Shablon saqlandi')
+    setTplSaving(false)
+    loadTemplates()
+  }
+
+  function loadTemplateForEdit(type: string, lang: string) {
+    const found = sysTemplates.find(t => t.type === type && t.language === lang)
+    if (found) { setTplName(found.name); setTplContent(found.content) }
+    else { setTplName(''); setTplContent('') }
+  }
+
+  async function deleteTemplate(id: string) {
+    if (!confirm('O\'chirishni tasdiqlaysizmi?')) return
+    await apiPost({ action: 'delete_template', id })
+    notify('✓ Shablon o\'chirildi')
+    loadTemplates()
+  }
+
+  async function saveContentItem(key: string, label: string, type: string, value: string, file_url?: string) {
+    setContentSaving(key)
+    await apiPost({ action: 'save_content', key, label, type, value, file_url })
+    notify('✓ Saqlandi')
+    setContentSaving('')
+    loadSiteContent()
+  }
+
+  async function uploadMediaFile(key: string, label: string, type: string, file: File) {
+    setContentUploading(key)
+    const ext = file.name.split('.').pop()
+    const path = `media/${key}-${Date.now()}.${ext}`
+    const { data: upData, error } = await supabase.storage.from('media').upload(path, file, { upsert: true })
+    if (error) { notify('Yuklash xatosi: ' + error.message, false); setContentUploading(''); return }
+    const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(upData.path)
+    await saveContentItem(key, label, type, publicUrl, publicUrl)
+    setContentUploading('')
+  }
+
+  async function deleteContentItem(id: string) {
+    if (!confirm('O\'chirishni tasdiqlaysizmi?')) return
+    await apiPost({ action: 'delete_content', id })
+    notify('✓ O\'chirildi')
+    loadSiteContent()
+  }
+
+  async function addNewContent(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newContentForm.key || !newContentForm.label) return
+    await apiPost({ action: 'save_content', key: newContentForm.key, label: newContentForm.label, type: newContentForm.type, value: newContentForm.value, file_url: null })
+    notify('✓ Kontent qo\'shildi')
+    setAddContentModal(false)
+    setNewContentForm({ key: '', label: '', type: 'text', value: '' })
+    loadSiteContent()
+  }
+
+  async function saveSetting(key: string, value: string) {
+    await apiPost({ action: 'save_setting', key, value })
+    setSettings(prev => ({ ...prev, [key]: value }))
+    notify('✓ Saqlandi')
+  }
+
+  async function saveAllSettings(e: React.FormEvent) {
+    e.preventDefault()
+    setSettingsSaving(true)
+    await Promise.all(Object.entries(settings).map(([k, v]) => apiPost({ action: 'save_setting', key: k, value: v })))
+    notify('✓ Barcha sozlamalar saqlandi')
+    setSettingsSaving(false)
   }
 
   async function loadDemos() {
@@ -400,32 +521,49 @@ export default function AdminPage() {
         )}
 
         {/* Tabs */}
-        <div className="flex items-center justify-between border-b border-gray-800">
-          <div className="flex gap-1">
-            {[
-              { key:'clients', label:`Mijozlar (${clients.length})` },
-              { key:'payments', label:`To'lovlar (${payments.length})` },
-              { key:'demo', label:`Demo (${demos.filter(d=>d.is_active).length})` },
-              { key:'new', label:`Yangi (${filteredNewUsers.length})` },
-              { key:'feedback', label:`Takliflar (${feedbacks.filter(f=>f.status==='new').length})` },
-            ].map(t=>(
-              <button key={t.key} onClick={()=>setTab(t.key as any)}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${tab===t.key?'border-blue-500 text-white':'border-transparent text-gray-500 hover:text-white'}`}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-2 mb-px">
-            {tab==='demo' && (
-              <button onClick={()=>setAddDemoModal(true)} className="text-sm bg-orange-600 hover:bg-orange-500 text-white px-4 py-1.5 rounded-lg transition font-medium">
-                + Demo berish
-              </button>
-            )}
-            {tab==='payments' && (
-              <button onClick={()=>setAddPaymentModal(true)} className="text-sm bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg transition font-medium">
-                + To'lov qo'shish
-              </button>
-            )}
+        <div className="border-b border-gray-800">
+          <div className="flex items-end justify-between">
+            <div className="flex gap-1 flex-wrap">
+              {[
+                { key:'clients', label:`Mijozlar (${clients.length})` },
+                { key:'payments', label:`To'lovlar (${payments.length})` },
+                { key:'demo', label:`Demo (${demos.filter(d=>d.is_active).length})` },
+                { key:'new', label:`Yangi (${filteredNewUsers.length})` },
+                { key:'feedback', label:`Takliflar (${feedbacks.filter(f=>f.status==='new').length})` },
+                { key:'contracts', label:'Shartnomalar' },
+                { key:'templates', label:'Shablonlar' },
+                { key:'content', label:'Kontent' },
+                { key:'settings', label:'Sozlamalar' },
+              ].map(t=>(
+                <button key={t.key} onClick={()=>{
+                  setTab(t.key as any)
+                  if(t.key==='templates' && sysTemplates.length===0) loadTemplates()
+                  if(t.key==='content' && siteContent.length===0) loadSiteContent()
+                  if(t.key==='contracts' && allContracts.length===0) loadAllContracts()
+                  if(t.key==='settings' && Object.keys(settings).length===0) loadSettings()
+                }}
+                  className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${tab===t.key?'border-blue-500 text-white':'border-transparent text-gray-500 hover:text-white'}`}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 pb-px">
+              {tab==='demo' && (
+                <button onClick={()=>setAddDemoModal(true)} className="text-sm bg-orange-600 hover:bg-orange-500 text-white px-4 py-1.5 rounded-lg transition font-medium">
+                  + Demo berish
+                </button>
+              )}
+              {tab==='payments' && (
+                <button onClick={()=>setAddPaymentModal(true)} className="text-sm bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg transition font-medium">
+                  + To'lov qo'shish
+                </button>
+              )}
+              {tab==='content' && (
+                <button onClick={()=>setAddContentModal(true)} className="text-sm bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg transition font-medium">
+                  + Kontent qo'shish
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -703,6 +841,313 @@ export default function AdminPage() {
             ))}
           </div>
         )}
+
+        {/* ── ALL CONTRACTS ── */}
+        {tab==='contracts' && (() => {
+          const CONTRACT_TYPES_MAP: Record<string,string> = {
+            oldi_sotdi:'Oldi-sotdi', xizmat:'Xizmat', ijara:'Ijara', pudrat:'Pudrat',
+            qoshimcha:"Qo'shimcha", moliyaviy:'Moliyaviy', daval:'Daval', agentlik:'Agentlik',
+            transport:'Transport', lizing:'Lizing', xalqaro:'Xalqaro', boshqa:'Boshqa',
+          }
+          const STATUS_COLORS: Record<string,string> = {
+            active:'bg-emerald-900 text-emerald-300', draft:'bg-gray-700 text-gray-400',
+            completed:'bg-blue-900 text-blue-300', cancelled:'bg-red-900 text-red-300',
+          }
+          const STATUS_LABELS: Record<string,string> = {
+            active:'Faol', draft:'Qoralama', completed:'Bajarildi', cancelled:'Bekor',
+          }
+          const filtered2 = allContracts.filter(c => {
+            const q = contractSearch.toLowerCase()
+            const ms = !contractSearch || c.contract_number?.toLowerCase().includes(q) || (c.organizations as any)?.name?.toLowerCase().includes(q)
+            const mst = contractStatusFilter === 'all' || c.status === contractStatusFilter
+            return ms && mst
+          })
+          return (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <button onClick={loadAllContracts} className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition">
+                  🔄 Yangilash
+                </button>
+                <input value={contractSearch} onChange={e=>setContractSearch(e.target.value)}
+                  placeholder="Raqam yoki tashkilot nomi..."
+                  className="flex-1 max-w-xs bg-gray-900 border border-gray-800 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"/>
+                <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1">
+                  {[{k:'all',l:'Hammasi'},{k:'active',l:'Faol'},{k:'draft',l:'Qoralama'},{k:'completed',l:'Bajarildi'},{k:'cancelled',l:'Bekor'}].map(f=>(
+                    <button key={f.k} onClick={()=>setContractStatusFilter(f.k)}
+                      className={`px-3 py-1 rounded text-xs font-medium transition ${contractStatusFilter===f.k?'bg-blue-600 text-white':'text-gray-400 hover:text-white'}`}>
+                      {f.l}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs text-gray-500 ml-auto">{filtered2.length} ta</span>
+              </div>
+              <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-800 bg-gray-800/60">
+                      {['RAQAM','TASHKILOT','TUR','HOLAT','SUMMA','SANA'].map(h=>(
+                        <th key={h} className="text-left text-xs font-medium text-gray-400 px-4 py-3">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/60">
+                    {filtered2.length===0 && <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-500 text-sm">Topilmadi</td></tr>}
+                    {filtered2.map(c=>(
+                      <tr key={c.id} className="hover:bg-gray-800/30 transition">
+                        <td className="px-4 py-3 text-sm font-mono text-gray-300">{c.contract_number||'—'}</td>
+                        <td className="px-4 py-3">
+                          <div className="text-sm text-white">{(c.organizations as any)?.name||'—'}</div>
+                          <div className="text-xs text-gray-500 font-mono">{(c.organizations as any)?.inn}</div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-400">{CONTRACT_TYPES_MAP[c.contract_type]||c.contract_type}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[c.status]||'bg-gray-700 text-gray-400'}`}>
+                            {STATUS_LABELS[c.status]||c.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-yellow-400">{c.amount?Number(c.amount).toLocaleString('uz-UZ')+' so\'m':'—'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{new Date(c.created_at).toLocaleDateString('uz-UZ')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ── TEMPLATES ── */}
+        {tab==='templates' && (() => {
+          const CONTRACT_TYPES = [
+            { value:'oldi_sotdi', label:"Oldi-sotdi" }, { value:'xizmat', label:"Xizmat" },
+            { value:'ijara', label:"Ijara" }, { value:'pudrat', label:"Pudrat" },
+            { value:'qoshimcha', label:"Qo'shimcha" }, { value:'moliyaviy', label:"Moliyaviy" },
+            { value:'daval', label:"Daval" }, { value:'agentlik', label:"Agentlik" },
+            { value:'transport', label:"Transport" }, { value:'lizing', label:"Lizing" },
+            { value:'xalqaro', label:"Xalqaro" }, { value:'boshqa', label:"Boshqa" },
+          ]
+          const LANGS = [{v:'uz',l:"O'zbek (kirill)"},{v:'oz',l:"O'zbek (lotin)"},{v:'ru',l:"Rus"}]
+          return (
+            <div className="grid grid-cols-3 gap-5">
+              {/* Left: list */}
+              <div className="col-span-1 space-y-2">
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Saqlangan shablonlar ({sysTemplates.length})</div>
+                {sysTemplates.length===0 && <div className="text-sm text-gray-600 py-4">Hali shablon yo'q. O'ngdan yozing va saqlang.</div>}
+                {sysTemplates.map(t=>(
+                  <div key={t.id} className="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-white truncate">{t.name}</div>
+                      <div className="text-xs text-gray-500">{t.type} · {t.language}</div>
+                      <div className="text-xs text-gray-700">{new Date(t.updated_at).toLocaleDateString('uz-UZ')}</div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={()=>{setTplType(t.type);setTplLang(t.language);setTplName(t.name);setTplContent(t.content)}}
+                        className="text-xs bg-blue-900/40 hover:bg-blue-800 text-blue-300 px-2 py-1 rounded transition">✏️</button>
+                      <button onClick={()=>deleteTemplate(t.id)}
+                        className="text-xs bg-red-900/30 hover:bg-red-800 text-red-400 px-2 py-1 rounded transition">🗑</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Right: editor */}
+              <div className="col-span-2">
+                <form onSubmit={saveTemplate} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+                  <div className="text-sm font-semibold text-white mb-1">Yangi / mavjud shablon tahriri</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={lbl}>Shartnoma turi</label>
+                      <select value={tplType} onChange={e=>{setTplType(e.target.value);loadTemplateForEdit(e.target.value,tplLang)}}
+                        className={inp}>
+                        {CONTRACT_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={lbl}>Tili</label>
+                      <select value={tplLang} onChange={e=>{setTplLang(e.target.value);loadTemplateForEdit(tplType,e.target.value)}}
+                        className={inp}>
+                        {LANGS.map(l=><option key={l.v} value={l.v}>{l.l}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={lbl}>Shablon nomi</label>
+                    <input className={inp} value={tplName} onChange={e=>setTplName(e.target.value)}
+                      placeholder="Masalan: Standart xizmat ko'rsatish shartnomasi" required/>
+                  </div>
+                  <div>
+                    <label className={lbl}>Kontent (matn yoki HTML/placeholderlar bilan)</label>
+                    <div className="text-xs text-gray-600 mb-1">Placeholder misollari: {'{{seller_name}}'}, {'{{buyer_name}}'}, {'{{contract_date}}'}, {'{{amount}}'}</div>
+                    <textarea className={inp + ' min-h-[400px] resize-y font-mono text-xs'} value={tplContent}
+                      onChange={e=>setTplContent(e.target.value)}
+                      placeholder="Shartnoma matnini shu yerga yozing..." required/>
+                  </div>
+                  <div className="flex gap-3">
+                    <button type="button" onClick={()=>{setTplName('');setTplContent('')}}
+                      className="border border-gray-700 text-gray-400 px-4 py-2 rounded-lg text-sm hover:bg-gray-800 transition">Tozalash</button>
+                    <button type="submit" disabled={tplSaving}
+                      className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2 rounded-lg text-sm font-semibold transition">
+                      {tplSaving ? 'Saqlanmoqda...' : '💾 Saqlash'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ── SITE CONTENT ── */}
+        {tab==='content' && (
+          <div className="space-y-3">
+            {siteContent.length===0 && <div className="text-center py-10 text-gray-500 text-sm">Yuklanmoqda...</div>}
+            <div className="grid grid-cols-1 gap-4">
+              {siteContent.map(item=>(
+                <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-white">{item.label}</div>
+                      <div className="text-xs text-gray-500 font-mono">{item.key}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        item.type==='image'?'bg-purple-900 text-purple-300':
+                        item.type==='video'?'bg-red-900 text-red-300':'bg-gray-700 text-gray-400'
+                      }`}>{item.type==='image'?'🖼 Rasm':item.type==='video'?'🎬 Video':'📝 Matn'}</span>
+                      <button onClick={()=>deleteContentItem(item.id)}
+                        className="text-xs text-red-500 hover:text-red-400 transition">🗑</button>
+                    </div>
+                  </div>
+
+                  {item.type==='text' && (() => {
+                    const val = contentDrafts[item.key] !== undefined ? contentDrafts[item.key] : item.value
+                    const isLong = (item.value||'').length > 100
+                    return (
+                      <div className="flex gap-2">
+                        {isLong
+                          ? <textarea className={inp + ' flex-1 min-h-[80px] resize-none'} value={val} onChange={e=>setContentDrafts(prev=>({...prev,[item.key]:e.target.value}))}/>
+                          : <input className={inp + ' flex-1'} value={val} onChange={e=>setContentDrafts(prev=>({...prev,[item.key]:e.target.value}))}/>
+                        }
+                        <button onClick={()=>saveContentItem(item.key, item.label, item.type, val)}
+                          disabled={contentSaving===item.key}
+                          className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm transition shrink-0">
+                          {contentSaving===item.key ? '...' : '💾'}
+                        </button>
+                      </div>
+                    )
+                  })()}
+
+                  {(item.type==='image'||item.type==='video') && (
+                    <div className="space-y-3">
+                      {item.file_url && (
+                        <div>
+                          {item.type==='image'
+                            ? <img src={item.file_url} alt={item.label} className="max-h-40 rounded-lg border border-gray-700 object-cover"/>
+                            : <video src={item.file_url} controls className="max-h-40 rounded-lg border border-gray-700 w-full"/>
+                          }
+                          <div className="text-xs text-gray-600 mt-1 truncate">{item.file_url}</div>
+                        </div>
+                      )}
+                      <div className="flex gap-3 items-center">
+                        <label className="flex-1 cursor-pointer">
+                          <div className="bg-gray-800 hover:bg-gray-700 border border-dashed border-gray-600 hover:border-blue-500 rounded-lg px-4 py-3 text-center text-sm text-gray-400 hover:text-white transition">
+                            {contentUploading===item.key ? '⏳ Yuklanmoqda...' : `📁 ${item.type==='image'?'Rasm':'Video'} yuklash`}
+                          </div>
+                          <input type="file" className="hidden"
+                            accept={item.type==='image'?'image/*':'video/*'}
+                            onChange={async e=>{
+                              const file = e.target.files?.[0]
+                              if(file) await uploadMediaFile(item.key, item.label, item.type, file)
+                              e.target.value=''
+                            }}
+                          />
+                        </label>
+                        <div className="text-xs text-gray-600">yoki URL:</div>
+                        <input className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                          placeholder="https://..."
+                          defaultValue={item.file_url||''}
+                          onBlur={e=>{if(e.target.value!==item.file_url) saveContentItem(item.key,item.label,item.type,e.target.value,e.target.value)}}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── SETTINGS ── */}
+        {tab==='settings' && (
+          <form onSubmit={saveAllSettings} className="space-y-5 max-w-2xl">
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+              <div className="text-sm font-semibold text-white border-b border-gray-800 pb-3">📊 Shartnoma limitlari</div>
+              {[
+                { key:'free_contract_limit', label:"Bepul tarif limiti", hint:"Standart: 5" },
+                { key:'standard_contract_limit', label:"Standart tarif limiti", hint:"Standart: cheksiz (999999)" },
+                { key:'ai_pro_contract_limit', label:"AI Pro tarif limiti", hint:"Standart: cheksiz (999999)" },
+              ].map(s=>(
+                <div key={s.key}>
+                  <label className={lbl}>{s.label} <span className="text-gray-600">({s.hint})</span></label>
+                  <input type="number" className={inp} value={settings[s.key]||''}
+                    onChange={e=>setSettings(prev=>({...prev,[s.key]:e.target.value}))}/>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+              <div className="text-sm font-semibold text-white border-b border-gray-800 pb-3">💰 Narxlar</div>
+              {[
+                { key:'standard_price', label:"Standart tarif narxi (so'm/oy)" },
+                { key:'ai_pro_price', label:"AI Pro tarif narxi (so'm/oy)" },
+              ].map(s=>(
+                <div key={s.key}>
+                  <label className={lbl}>{s.label}</label>
+                  <input type="number" className={inp} value={settings[s.key]||''}
+                    onChange={e=>setSettings(prev=>({...prev,[s.key]:e.target.value}))}/>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+              <div className="text-sm font-semibold text-white border-b border-gray-800 pb-3">📢 E'lon (foydalanuvchilarga ko'rinadigan xabar)</div>
+              <div>
+                <label className={lbl}>E'lon matni (bo'sh qoldirilsa ko'rinmaydi)</label>
+                <textarea className={inp + ' min-h-[80px] resize-none'} value={settings['announcement']||''}
+                  onChange={e=>setSettings(prev=>({...prev,announcement:e.target.value}))}
+                  placeholder="Masalan: Tizim 25-aprel 02:00-04:00 oralig'ida texnik ishlar sababli ishlamaydi"/>
+              </div>
+              <div>
+                <label className={lbl}>E'lon rangi</label>
+                <div className="flex gap-2">
+                  {[{v:'blue',l:'Ko\'k',c:'bg-blue-600'},{v:'yellow',l:'Sariq',c:'bg-yellow-600'},{v:'red',l:'Qizil',c:'bg-red-600'},{v:'green',l:'Yashil',c:'bg-emerald-600'}].map(c=>(
+                    <button key={c.v} type="button" onClick={()=>setSettings(prev=>({...prev,announcement_color:c.v}))}
+                      className={`${c.c} text-white text-xs px-3 py-1.5 rounded-lg transition ${settings['announcement_color']===c.v?'ring-2 ring-white/50':'opacity-60 hover:opacity-100'}`}>
+                      {c.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+              <div className="text-sm font-semibold text-white border-b border-gray-800 pb-3">🔧 Texnik holat</div>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div className={`relative w-11 h-6 rounded-full transition-colors ${settings['maintenance_mode']==='true'?'bg-red-600':'bg-gray-700'}`}
+                  onClick={()=>setSettings(prev=>({...prev,maintenance_mode:prev.maintenance_mode==='true'?'false':'true'}))}>
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${settings['maintenance_mode']==='true'?'left-6':'left-1'}`}/>
+                </div>
+                <div>
+                  <div className="text-sm text-white">Texnik ishlar rejimi (Maintenance Mode)</div>
+                  <div className="text-xs text-gray-500">Yoqilsa, saytga kirish cheklanadi</div>
+                </div>
+              </label>
+            </div>
+
+            <button type="submit" disabled={settingsSaving}
+              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-3 rounded-xl font-semibold transition">
+              {settingsSaving ? 'Saqlanmoqda...' : '💾 Barcha sozlamalarni saqlash'}
+            </button>
+          </form>
+        )}
       </div>
 
       {/* ── EDIT SUB MODAL ── */}
@@ -840,6 +1285,51 @@ export default function AdminPage() {
                   className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-semibold transition">
                   {paySaving?'Saqlanmoqda...':'Saqlash + Obuna faollashtir'}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD CONTENT MODAL ── */}
+      {addContentModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-800">
+              <div className="font-semibold">+ Yangi kontent qo'shish</div>
+              <button onClick={()=>setAddContentModal(false)} className="text-gray-400 hover:text-white w-8 h-8 flex items-center justify-center hover:bg-gray-800 rounded-lg text-lg">×</button>
+            </div>
+            <form onSubmit={addNewContent} className="p-6 space-y-4">
+              <div>
+                <label className={lbl}>Kalit (slug)</label>
+                <input className={inp} value={newContentForm.key} onChange={e=>setNewContentForm({...newContentForm,key:e.target.value.replace(/\s/g,'_')})}
+                  placeholder="masalan: promo_banner" required/>
+              </div>
+              <div>
+                <label className={lbl}>Nom (admin uchun)</label>
+                <input className={inp} value={newContentForm.label} onChange={e=>setNewContentForm({...newContentForm,label:e.target.value})}
+                  placeholder="masalan: Promo banner rasmi" required/>
+              </div>
+              <div>
+                <label className={lbl}>Turi</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[{v:'text',l:'📝 Matn'},{v:'image',l:'🖼 Rasm'},{v:'video',l:'🎬 Video'}].map(t=>(
+                    <button key={t.v} type="button" onClick={()=>setNewContentForm({...newContentForm,type:t.v})}
+                      className={`py-2 rounded-lg text-sm transition border ${newContentForm.type===t.v?'bg-blue-700 border-blue-500 text-white':'bg-gray-800 border-gray-700 text-gray-400'}`}>
+                      {t.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {newContentForm.type==='text' && (
+                <div>
+                  <label className={lbl}>Boshlang'ich qiymat</label>
+                  <input className={inp} value={newContentForm.value} onChange={e=>setNewContentForm({...newContentForm,value:e.target.value})} placeholder="..."/>
+                </div>
+              )}
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={()=>setAddContentModal(false)} className="flex-1 border border-gray-700 text-gray-300 py-2.5 rounded-lg text-sm hover:bg-gray-800 transition">Bekor</button>
+                <button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-lg text-sm font-semibold transition">Qo'shish</button>
               </div>
             </form>
           </div>
