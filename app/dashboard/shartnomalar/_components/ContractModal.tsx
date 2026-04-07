@@ -183,19 +183,19 @@ function BirlikPicker({ value, onChange }: { value: string; onChange: (v: string
 
 // ─── Contract type list ───────────────────────────────────────────────────────
 
-const CONTRACT_TYPES = [
-  { key: 'oldi_sotdi', icon: '🛒' },
-  { key: 'xizmat',     icon: '🔧' },
-  { key: 'ijara',      icon: '🏠' },
-  { key: 'pudrat',     icon: '🏗️' },
-  { key: 'moliyaviy',  icon: '💰' },
-  { key: 'daval',      icon: '🔄' },
-  { key: 'xalqaro',   icon: '🌐' },
-  { key: 'agentlik',  icon: '🤝' },
-  { key: 'transport', icon: '🚚' },
-  { key: 'lizing',    icon: '🏭' },
-  { key: 'qoshimcha', icon: '📎' },
-  { key: 'boshqa',    icon: '📄' },
+const CONTRACT_TYPES: { key: string; color: string }[] = [
+  { key: 'oldi_sotdi', color: '#3B82F6' },
+  { key: 'xizmat',     color: '#10B981' },
+  { key: 'ijara',      color: '#F59E0B' },
+  { key: 'pudrat',     color: '#F97316' },
+  { key: 'moliyaviy',  color: '#8B5CF6' },
+  { key: 'daval',      color: '#06B6D4' },
+  { key: 'xalqaro',   color: '#6366F1' },
+  { key: 'agentlik',  color: '#EC4899' },
+  { key: 'transport', color: '#14B8A6' },
+  { key: 'lizing',    color: '#64748B' },
+  { key: 'qoshimcha', color: '#6B7280' },
+  { key: 'boshqa',    color: '#4B5563' },
 ]
 
 // ─── Main Modal Component ─────────────────────────────────────────────────────
@@ -532,40 +532,59 @@ export default function ContractModal({
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
+  const selectedTypeMeta = CONTRACT_TYPES.find(c => c.key === form.contract_type)
+
   return (
     <>
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className={`bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-h-[95vh] flex flex-col shadow-2xl ${step === 4 ? 'max-w-6xl' : 'max-w-3xl'}`}>
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
+      <div className={`bg-[#0F172A] border border-[#1E293B] rounded-xl w-full max-h-[95vh] flex flex-col shadow-2xl ${step === 4 ? 'max-w-6xl' : 'max-w-2xl'}`}>
 
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-[#1E293B] flex-shrink-0">
-          <div>
-            <h2 className="text-base font-semibold text-white">
-              {isEdit ? T(t.modal.editContract) : T(t.modal.newContract)}
-            </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type] || form.contract_type}
-            </p>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#1E293B] flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: selectedTypeMeta?.color || '#3B82F6' }}/>
+            <div>
+              <h2 className="text-sm font-semibold text-white leading-tight">
+                {isEdit ? T(t.modal.editContract) : T(t.modal.newContract)}
+              </h2>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                {(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type] || form.contract_type}
+              </p>
+            </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition text-xl">×</button>
+          <button onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-[#1E293B] transition text-base leading-none">
+            ×
+          </button>
         </div>
 
-        {/* Step tabs */}
-        <div className="flex border-b border-[#1E293B] flex-shrink-0">
-          {steps.map((s, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => { if (i + 1 === 3) initStructureEdit(); setStep(i + 1) }}
-              className={`flex-1 py-2.5 text-xs font-medium transition ${
-                step === i + 1
-                  ? 'text-blue-400 border-b-2 border-blue-500'
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
+        {/* Step indicator */}
+        <div className="px-5 py-3 border-b border-[#1E293B] flex-shrink-0">
+          <div className="flex items-center">
+            {steps.map((s, i) => (
+              <div key={i} className="flex items-center flex-1 last:flex-none">
+                <button type="button"
+                  onClick={() => { if (i + 1 === 3) initStructureEdit(); setStep(i + 1) }}
+                  className="flex items-center gap-2 group">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold transition flex-shrink-0 ${
+                    step === i + 1
+                      ? 'bg-blue-600 text-white'
+                      : step > i + 1
+                        ? 'bg-[#1E293B] text-blue-400'
+                        : 'bg-[#1E293B] text-gray-500'
+                  }`}>
+                    {step > i + 1
+                      ? <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>
+                      : i + 1}
+                  </div>
+                  <span className={`text-[11px] font-medium hidden sm:block ${step === i + 1 ? 'text-white' : step > i + 1 ? 'text-gray-400' : 'text-gray-600'}`}>{s}</span>
+                </button>
+                {i < steps.length - 1 && (
+                  <div className={`flex-1 h-px mx-2 ${step > i + 1 ? 'bg-blue-600/40' : 'bg-[#1E293B]'}`}/>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Body */}
@@ -611,22 +630,26 @@ export default function ContractModal({
                 {/* Contract type */}
                 <div>
                   <label className={lbl}>{T(t.modal.contractType)}</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {CONTRACT_TYPES.map(ct => (
-                      <button
-                        key={ct.key}
-                        type="button"
-                        onClick={() => setForm(f => ({ ...f, contract_type: ct.key }))}
-                        className={`flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium border transition ${
-                          form.contract_type === ct.key
-                            ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                            : 'border-[#1E293B] text-gray-400 hover:border-blue-600/50 hover:text-gray-200'
-                        }`}
-                      >
-                        <span>{ct.icon}</span>
-                        <span className="truncate">{(CONTRACT_TYPE_NAMES as Record<string, string>)[ct.key]}</span>
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {CONTRACT_TYPES.map(ct => {
+                      const active = form.contract_type === ct.key
+                      return (
+                        <button key={ct.key} type="button"
+                          onClick={() => setForm(f => ({ ...f, contract_type: ct.key }))}
+                          className={`relative flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition overflow-hidden ${
+                            active
+                              ? 'border-transparent text-white bg-[#1E293B]'
+                              : 'border-[#1E293B] text-gray-400 hover:text-gray-200 hover:bg-[#1E293B]/50'
+                          }`}
+                          style={active ? { boxShadow: `inset 0 0 0 1px ${ct.color}30` } : {}}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition"
+                            style={{ backgroundColor: active ? ct.color : '#4B5563' }}/>
+                          <span className="truncate leading-tight">{(CONTRACT_TYPE_NAMES as Record<string, string>)[ct.key]}</span>
+                          {active && <span className="absolute left-0 top-0 bottom-0 w-[2px] rounded-l-lg" style={{ backgroundColor: ct.color }}/>}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -658,13 +681,16 @@ export default function ContractModal({
                     )}
                   </div>
                   {form.amount && parseFloat(form.amount) > 0 ? (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-[11px] text-gray-500 mt-1">
                       {form.contract_type === 'xalqaro'
                         ? `${parseFloat(form.amount).toLocaleString()} ${form.valyuta || 'USD'}`
                         : `${numberToWords(parseFloat(form.amount), 'uz')} so'm`}
                     </p>
                   ) : (
-                    <p className="text-xs text-yellow-600 mt-1">⚠ Summa kiritilmagan</p>
+                    <p className="text-[11px] text-amber-500/80 mt-1 flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-amber-500 inline-block"/>
+                      Summa kiritilmagan
+                    </p>
                   )}
                 </div>
 
@@ -683,7 +709,10 @@ export default function ContractModal({
                     ))}
                   </select>
                   {selectedOrg && (
-                    <p className="text-xs text-gray-500 mt-1">INN: {selectedOrg.inn} | Rahbar: {selectedOrg.director_name}</p>
+                    <p className="text-[11px] text-gray-600 mt-1">
+                      {selectedOrg.inn && <span className="mr-2">INN: <span className="text-gray-400">{selectedOrg.inn}</span></span>}
+                      {selectedOrg.director_name && <span>Rahbar: <span className="text-gray-400">{selectedOrg.director_name}</span></span>}
+                    </p>
                   )}
                 </div>
 
@@ -738,7 +767,10 @@ export default function ContractModal({
                     )}
                   </div>
                   {selectedCp && (
-                    <p className="text-xs text-gray-500 mt-1">INN: {selectedCp.inn} | Rahbar: {selectedCp.director_name}</p>
+                    <p className="text-[11px] text-gray-600 mt-1">
+                      {selectedCp.inn && <span className="mr-2">INN: <span className="text-gray-400">{selectedCp.inn}</span></span>}
+                      {selectedCp.director_name && <span>Rahbar: <span className="text-gray-400">{selectedCp.director_name}</span></span>}
+                    </p>
                   )}
                   {selectedCp && (() => {
                     if (selectedCp.stir_status === 'inactive') return (
@@ -1303,43 +1335,36 @@ export default function ContractModal({
             )}
           </div>
 
-          {/* Footer actions */}
-          <div className="px-6 py-4 border-t border-[#1E293B] flex-shrink-0">
+          {/* Footer */}
+          <div className="px-5 py-3 border-t border-[#1E293B] flex-shrink-0 bg-[#0B1220]/60">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex gap-2">
+              <div>
                 {step > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setStep(s => s - 1)}
-                    className="px-4 py-2 text-sm bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 rounded-lg transition"
-                  >
-                    ← {T(t.btn.prev)}
+                  <button type="button" onClick={() => setStep(s => s - 1)}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs text-gray-400 hover:text-gray-200 bg-[#1E293B] hover:bg-[#273549] rounded-lg transition border border-[#273549]">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+                    {T(t.btn.prev)}
                   </button>
                 )}
               </div>
-              <div className="flex gap-2 items-center">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 text-sm bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 rounded-lg transition"
-                >
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={onClose}
+                  className="px-3 py-2 text-xs text-gray-500 hover:text-gray-300 transition rounded-lg hover:bg-[#1E293B]">
                   {T(t.btn.cancel)}
                 </button>
                 {step < 4 ? (
-                  <button
-                    type="button"
+                  <button type="button"
                     onClick={() => { if (step === 1 && !validateStep1()) return; if (step === 2) goToStep3(); else setStep(s => s + 1) }}
-                    className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
-                  >
-                    {T(t.btn.next)} →
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition">
+                    {T(t.btn.next)}
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
                   </button>
                 ) : (
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="px-5 py-2 text-sm bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-lg font-semibold transition"
-                  >
-                    {saving ? T(t.btn.saving) : T(t.btn.save)}
+                  <button type="submit" disabled={saving}
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition">
+                    {saving
+                      ? <><svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>{T(t.btn.saving)}</>
+                      : <>{T(t.btn.save)}<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg></>}
                   </button>
                 )}
               </div>
