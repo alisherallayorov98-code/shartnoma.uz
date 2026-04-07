@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -109,6 +109,7 @@ export default function ShartnomalarPage() {
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
 
   const searchParams = useSearchParams()
+  const router = useRouter()
   const { toast } = useToast()
 
   const {
@@ -160,17 +161,8 @@ export default function ShartnomalarPage() {
     if (searchParams.get('from_tpl') !== '1') return
     const raw = localStorage.getItem('tpl_to_contract')
     if (!raw || !activeOrg) return
-    try {
-      const { type, content } = JSON.parse(raw) as { type: string; content: string }
-      localStorage.removeItem('tpl_to_contract')
-      if (!canCreateContract()) { openUpgradeModal(); return }
-      const form = makeEmptyForm(activeOrg.id, orgCityDefault(activeOrg))
-      form.contract_number = autoContractNum()
-      form.contract_type = type || 'oldi_sotdi'
-      form.content = content || ''
-      setContractForm(form)
-      setModal('contract')
-    } catch { /* ignore */ }
+    if (!canCreateContract()) { openUpgradeModal(); return }
+    router.push('/dashboard/shartnomalar/yangi?from_tpl=1')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, activeOrg])
 
@@ -235,10 +227,7 @@ export default function ShartnomalarPage() {
   function openNewContract() {
     if (!canCreateContract()) { openUpgradeModal(); return }
     if (!activeOrg) { toast(T(t.msg.noOrgs), 'error'); return }
-    const form = makeEmptyForm(activeOrg.id, orgCityDefault(activeOrg))
-    form.contract_number = autoContractNum()
-    setContractForm(form)
-    setModal('contract')
+    router.push('/dashboard/shartnomalar/yangi')
   }
 
   // ── Save contract ──────────────────────────────────────────────────────────
