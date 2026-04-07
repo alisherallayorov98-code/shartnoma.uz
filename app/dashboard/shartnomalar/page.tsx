@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
@@ -10,20 +10,25 @@ import type { Contract } from '@/lib/types'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
 import { getStructure, structureToText, numberToWords, formatDateUz } from '@/lib/contractStructures'
 import { type AppTemplate } from '@/lib/defaultTemplates'
-import ContractModal, { type ContractForm } from './_components/ContractModal'
-import ViewContractModal from './_components/ViewContractModal'
-import AiModal from './_components/AiModal'
-import { cyrillicToLatin } from '@/lib/downloadUtils'
+import dynamic from 'next/dynamic'
+import type { ContractForm } from './_components/ContractModal'
+const ContractModal  = dynamic(() => import('./_components/ContractModal'),  { ssr: false })
+const ViewContractModal = dynamic(() => import('./_components/ViewContractModal'), { ssr: false })
+const AiModal        = dynamic(() => import('./_components/AiModal'),        { ssr: false })
 import { latinToCyrillic } from '@/lib/scriptNorm'
 import { fillPlaceholders } from '@/lib/contractUtils'
-
 import { generateContractDOCX } from '@/lib/export/contractDocx'
-import { fetchAi } from '@/lib/fetchAi'
 import { logAudit } from '@/lib/audit'
 import { FaTelegram, FaFilePdf } from 'react-icons/fa'
 import { useToast } from '@/lib/toast'
 import ConfirmModal from '../_components/ConfirmModal'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
+import { useContractSearch } from './hooks/useContractSearch'
+import { useContractAi } from './hooks/useContractAi'
+import {
+  updateContractStatus, toggleContractSigned, notifyBothSigned,
+  deleteContractById, shareByTelegram, exportContractsCSV,
+} from './services/contractService'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -119,9 +124,7 @@ export default function ShartnomalarPage() {
   } = useDashboard()
 
   // ── State ──────────────────────────────────────────────────────────────────
-  const [search, setSearch] = useState('')
-  const [serverResults, setServerResults] = useState<Contract[] | null>(null)
-  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { search, setSearch, serverResults, setServerResults } = useContractSearch()
   const [statusFilter, setStatusFilter] = useState('all')
   const [modal, setModal] = useState<null | 'contract' | 'viewContract'>(null)
   const [contractForm, setContractForm] = useState<ContractForm>(makeEmptyForm(activeOrg?.id || '', orgCityDefault(activeOrg)))
@@ -140,16 +143,19 @@ export default function ShartnomalarPage() {
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
-  // AI state
-  const [aiContract, setAiContract] = useState<Contract | null>(null)
-  const [aiResult, setAiResult] = useState<unknown>(null)
-  const [aiError, setAiError] = useState('')
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiTab, setAiTab] = useState<'tahlil' | 'grammatika'>('tahlil')
-  const [aiModal, setAiModal] = useState(false)
-  const [fixLoading, setFixLoading] = useState(false)
-  const [fixResult, setFixResult] = useState<{ shartnoma_yangi: string; o_zgartirishlar: string[] } | null>(null)
-  const [fixSaving, setFixSaving] = useState(false)
+  // AI state — useContractAi hook orqali boshqariladi
+  const {
+    aiContract, aiResult, aiError, aiLoading,
+    aiTab, setAiTab,
+    aiModal, setAiModal,
+    fixLoading, fixResult, setFixResult,
+    fixSaving,
+    runAiAnalysis, fixContract, saveFixedContract,
+  } = useContractAi({
+    lang,
+    openUpgradeModal,
+    onSaved: () => { setServerResults(null); reloadContracts() },
+  })
 
   // ── Load custom templates ──────────────────────────────────────────────────
   useEffect(() => {
@@ -165,29 +171,6 @@ export default function ShartnomalarPage() {
     router.push('/dashboard/shartnomalar/yangi?from_tpl=1')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, activeOrg])
-
-  // ── Server-side search (debounced + AbortController) ─────────────────────
-  useEffect(() => {
-    if (searchDebounce.current) clearTimeout(searchDebounce.current)
-    if (search.length < 3) { setServerResults(null); return }
-    const controller = new AbortController()
-    searchDebounce.current = setTimeout(async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(search)}`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          signal: controller.signal,
-        })
-        if (!res.ok) { setServerResults(null); return }
-        const json = await res.json()
-        setServerResults(json.results ?? null)
-      } catch (e) {
-        if ((e as Error).name !== 'AbortError') setServerResults(null)
-      }
-    }, 400)
-    return () => { controller.abort(); if (searchDebounce.current) clearTimeout(searchDebounce.current) }
-  }, [search])  
 
   async function loadCustomTemplates(orgId: string) {
     const { data } = await supabase
@@ -231,8 +214,7 @@ export default function ShartnomalarPage() {
   }
 
   // ── Save contract ──────────────────────────────────────────────────────────
-  async function saveContract(e: React.FormEvent, contentOverride?: string) {
-    e.preventDefault()
+  async function saveContract(contentOverride?: string) {
     if (!contractForm.organization_id) { toast(T(t.msg.selectOrg), 'error'); return }
     if (!contractForm.contract_number.trim()) { toast("Shartnoma raqami kiritilishi shart", 'error'); return }
 
@@ -387,29 +369,18 @@ export default function ShartnomalarPage() {
 
   // ── Update status ──────────────────────────────────────────────────────────
   async function updateStatus(id: string, status: string) {
-    const { error } = await supabase.from('contracts').update({ status }).eq('id', id).eq('organization_id', activeOrg!.id)
-    if (error) { toast(`Xato: ${error.message}`, 'error'); return }
+    const err = await updateContractStatus(id, status, activeOrg!.id)
+    if (err) { toast(`Xato: ${err}`, 'error'); return }
     setServerResults(null); reloadContracts()
   }
 
-  async function toggleSigned(c: Contract, side: 'signed_us' | 'signed_cp') {
-    const { error } = await supabase.from('contracts').update({ [side]: !c[side] }).eq('id', c.id).eq('organization_id', activeOrg!.id)
-    if (error) { toast(`Xato: ${error.message}`, 'error'); return }
+  const toggleSigned = useCallback(async (c: Contract, side: 'signed_us' | 'signed_cp') => {
+    const { error, bothSigned } = await toggleContractSigned(c, side, activeOrg!.id)
+    if (error) { toast(`Xato: ${error}`, 'error'); return }
     setServerResults(null); reloadContracts()
-    // If both sides are now signed, send notification email
-    const newUs = side === 'signed_us' ? !c.signed_us : c.signed_us
-    const newCp = side === 'signed_cp' ? !c.signed_cp : c.signed_cp
-    if (newUs && newCp) {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        fetch('/api/notify/signed', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-          body: JSON.stringify({ contractId: c.id }),
-        }).catch(() => {})
-      }
-    }
-  }
+    if (bothSigned) notifyBothSigned(c.id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOrg?.id])
 
   // ── Edit contract ──────────────────────────────────────────────────────────
   function openEditContract(c: Contract) {
@@ -441,10 +412,8 @@ export default function ShartnomalarPage() {
 
   async function doDeleteContract(id: string) {
     const contract = contracts.find(c => c.id === id)
-    await supabase.from('contract_versions').delete().eq('contract_id', id)
-    const { error } = await supabase.from('contracts').delete().eq('id', id).eq('organization_id', activeOrg!.id)
-    if (error) { toast(`Xato: ${error.message}`, 'error'); return }
-    if (contract) logAudit('delete', 'contracts', id, { contract_number: contract.contract_number, contract_type: contract.contract_type })
+    const err = await deleteContractById(id, activeOrg!.id, contract?.contract_number, contract?.contract_type)
+    if (err) { toast(`Xato: ${err}`, 'error'); return }
     toast("Shartnoma o'chirildi", 'info')
     setServerResults(null); reloadContracts()
   }
@@ -472,198 +441,43 @@ export default function ShartnomalarPage() {
     setModal('contract')
   }
 
-  // ── Email yuborish ─────────────────────────────────────────────────────────
-  function sendByEmail(c: Contract) {
-    const typeName = (CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type
-    const subject = encodeURIComponent(`Shartnoma: ${typeName} No ${c.contract_number}`)
-    const body = encodeURIComponent(
-      `Hurmatli ${c.counterparties?.director_name || 'hamkor'},\n\n` +
-      `Sizga quyidagi shartnomani ko'rib chiqishni taklif qilamiz:\n\n` +
-      `Shartnoma turi: ${typeName}\n` +
-      `Raqam: ${c.contract_number}\n` +
-      `Sana: ${c.contract_date}\n` +
-      `Summa: ${Number(c.amount || 0).toLocaleString()} so'm\n\n` +
-      `Yuboruvchi: ${c.organizations?.name || ''}\n` +
-      `Direktor: ${c.organizations?.director_name || ''}\n\n` +
-      `Shartnomani imzolash uchun biz bilan bog'laning.`
-    )
-    window.open(`mailto:?subject=${subject}&body=${body}`)
-  }
+  // ── Excel (CSV) export — contractService.ts ga ko'chirildi ──────────────────
 
-
-  // ── Excel (CSV) export ─────────────────────────────────────────────────────
-  function exportToCSV(list: Contract[]) {
-    const CONTRACT_TYPE_NAMES_LOCAL: Record<string, string> = {
-      oldi_sotdi: 'Oldi-sotdi', xizmat: "Xizmat ko'rsatish", ijara: 'Ijara',
-      pudrat: 'Pudrat', qoshimcha: "Qo'shimcha", moliyaviy: 'Moliyaviy yordam',
-      daval: 'Daval', xalqaro: 'Xalqaro', agentlik: 'Agentlik',
-      transport: 'Transport', lizing: 'Lizing', boshqa: 'Boshqa',
-    }
-    const headers = ['Raqam', 'Sana', 'Tur', 'Holat', 'Summa', 'Kontragent', 'Tashkilot', 'Shahar']
-    const rows = list.map(c => [
-      c.contract_number,
-      c.contract_date,
-      CONTRACT_TYPE_NAMES_LOCAL[c.contract_type] || c.contract_type,
-      c.status,
-      c.amount?.toLocaleString() || '0',
-      c.counterparties?.name || '',
-      c.organizations?.name || '',
-      c.city || '',
-    ])
-    const bom = '\uFEFF'
-    const csv = bom + [headers, ...rows].map(row => row.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = 'shartnomalar.csv'
-    a.click(); URL.revokeObjectURL(url)
-  }
-
-
-  // ── Telegram orqali yuborish ────────────────────────────────────────────────
-  async function sendByTelegram(c: Contract) {
+  // ── Telegram orqali yuborish — contractService.ts ga ko'chirildi ─────────────
+  const sendByTelegram = useCallback(async (c: Contract) => {
     toast('Word fayl tayyorlanmoqda...', 'info')
-    try {
-      const blob = await generateContractDOCX(c, true) as Blob
-      if (!blob) return
-
-      const fileName = `contract-shares/${c.id}-${Date.now()}.docx`
-      const { error: uploadError } = await supabase.storage
-        .from('contract-shares')
-        .upload(fileName, blob, {
-          contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          upsert: true,
-        })
-
-      if (uploadError) {
-        // Fallback: faylni yuklab ol, foydalanuvchi qo'lda yuborsin
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a'); a.href = url
-        a.download = `shartnoma-${c.contract_number || 'yangi'}.docx`; a.click()
-        URL.revokeObjectURL(url)
-        toast("Word fayl yuklab olindi. Telegramda hamkorga yuboring.", 'info')
-        window.open('tg://', '_blank')
-        return
-      }
-
-      const { data: signedData } = await supabase.storage
-        .from('contract-shares')
-        .createSignedUrl(fileName, 7 * 24 * 3600)
-
-      if (!signedData?.signedUrl) {
-        toast('URL olishda xato', 'error'); return
-      }
-
-      const typeName = (CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type
-      const text = [
-        `📄 Shartnoma: ${typeName}`,
-        `№ ${c.contract_number}`,
-        `Tashkilot: ${c.organizations?.name || ''}`,
-        `Kontragent: ${c.counterparties?.name || ''}`,
-        `Summa: ${Number(c.amount || 0).toLocaleString()} so'm`,
-        `\nWord faylni yuklab oling:`,
-      ].join('\n')
-
-      window.open(
-        `tg://msg_url?url=${encodeURIComponent(signedData.signedUrl)}&text=${encodeURIComponent(text)}`,
-        '_blank'
-      )
-    } catch {
-      toast('Xato yuz berdi', 'error')
-    }
-  }
-
-  // ── AI analysis ────────────────────────────────────────────────────────────
-  async function runAiAnalysis(c: Contract, type: 'tahlil' | 'grammatika') {
-    setAiContract(c)
-    setAiTab(type)
-    setAiResult(null)
-    setAiError('')
-    setFixResult(null)
-    setAiLoading(true)
-    setAiModal(true)
-    try {
-      const res = await fetchAi({
-        type: type === 'tahlil' ? 'analysis' : 'grammar',
-        content: c.content || '',
-        contract_type: c.contract_type,
-        contract_number: c.contract_number,
-      })
-      const data = await res.json()
-      if (data.error === 'premium_required') { setAiModal(false); openUpgradeModal(); return }
-      if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
-      setAiResult(data.result ?? null)
-    } catch (err) {
-      setAiError(err instanceof Error ? err.message : 'Xatolik yuz berdi')
-    } finally {
-      setAiLoading(false)
-    }
-  }
-
-  // ── Fix contract via AI ─────────────────────────────────────────────────────
-  async function fixContract() {
-    if (!aiContract) return
-    setFixLoading(true)
-    setFixResult(null)
-    try {
-      const res = await fetchAi({
-        type: 'fix',
-        content: aiContract.content || '',
-        analysis: aiResult,
-        lang,
-      })
-      const data = await res.json()
-      if (data.error === 'premium_required') { setAiModal(false); openUpgradeModal(); return }
-      if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
-      const r = data.result as { shartnoma_yangi?: string; o_zgartirishlar?: string[] }
-      if (!r?.shartnoma_yangi) throw new Error("AI bo'sh natija qaytardi")
-      setFixResult({
-        shartnoma_yangi: r.shartnoma_yangi,
-        o_zgartirishlar: r.o_zgartirishlar || [],
-      })
-    } catch (err) {
-      toast(err instanceof Error ? err.message : 'Xatolik yuz berdi', 'error')
-    } finally {
-      setFixLoading(false)
-    }
-  }
-
-  async function saveFixedContract() {
-    if (!aiContract || !fixResult) return
-    setFixSaving(true)
-    const { error } = await supabase
-      .from('contracts')
-      .update({ content: fixResult.shartnoma_yangi })
-      .eq('id', aiContract.id)
-    setFixSaving(false)
-    if (error) { toast(`Saqlashda xato: ${error.message}`, 'error'); return }
-    logAudit('update', 'contracts', aiContract.id, { action: 'ai_fix', changes_count: fixResult.o_zgartirishlar.length })
-    toast("Shartnoma muvaffaqiyatli yangilandi", 'success')
-    setServerResults(null); reloadContracts()
-    setAiModal(false)
-    setFixResult(null)
-  }
+    const result = await shareByTelegram(c)
+    if (result === 'fallback') toast("Word fayl yuklab olindi. Telegramda hamkorga yuboring.", 'info')
+    else if (result === 'error') toast('Xato yuz berdi', 'error')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Filtered contracts ─────────────────────────────────────────────────────
-  const orgContracts = contracts.filter(c =>
-    !activeOrg || c.organization_id === activeOrg.id
+  const orgContracts = useMemo(
+    () => contracts.filter(c => !activeOrg || c.organization_id === activeOrg.id),
+    [contracts, activeOrg]
   )
 
-  const years = Array.from(new Set(
-    orgContracts.map(c => c.contract_date?.slice(0, 4)).filter(Boolean)
-  )).sort((a, b) => Number(b) - Number(a)) as string[]
+  const years = useMemo(
+    () => Array.from(new Set(
+      orgContracts.map(c => c.contract_date?.slice(0, 4)).filter(Boolean)
+    )).sort((a, b) => Number(b) - Number(a)) as string[],
+    [orgContracts]
+  )
 
-  const searchBase = serverResults !== null ? serverResults : orgContracts
-  const filtered = searchBase.filter(c => {
-    const matchSearch = serverResults !== null || !search ||
-      c.contract_number?.toLowerCase().includes(search.toLowerCase()) ||
-      c.organizations?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      c.counterparties?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      (c.product_name || '').toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === 'all' || c.status === statusFilter
-    const matchYear = yearFilter === 'all' || c.contract_date?.startsWith(yearFilter)
-    return matchSearch && matchStatus && matchYear
-  })
+  const filtered = useMemo(() => {
+    const base = serverResults !== null ? serverResults : orgContracts
+    return base.filter(c => {
+      const matchSearch = serverResults !== null || !search ||
+        c.contract_number?.toLowerCase().includes(search.toLowerCase()) ||
+        c.organizations?.name?.toLowerCase().includes(search.toLowerCase()) ||
+        c.counterparties?.name?.toLowerCase().includes(search.toLowerCase()) ||
+        (c.product_name || '').toLowerCase().includes(search.toLowerCase())
+      const matchStatus = statusFilter === 'all' || c.status === statusFilter
+      const matchYear = yearFilter === 'all' || c.contract_date?.startsWith(yearFilter)
+      return matchSearch && matchStatus && matchYear
+    })
+  }, [orgContracts, serverResults, search, statusFilter, yearFilter])
 
   // ── Sort ───────────────────────────────────────────────────────────────────
   function toggleSort(col: 'number' | 'date' | 'amount') {
@@ -671,7 +485,7 @@ export default function ShartnomalarPage() {
     else { setSortCol(col); setSortDir('desc') }
   }
 
-  const sorted = [...filtered].sort((a, b) => {
+  const sorted = useMemo(() => [...filtered].sort((a, b) => {
     if (!sortCol) return 0
     let va: string | number = '', vb: string | number = ''
     if (sortCol === 'number') { va = a.contract_number || ''; vb = b.contract_number || '' }
@@ -680,7 +494,7 @@ export default function ShartnomalarPage() {
     if (va < vb) return sortDir === 'asc' ? -1 : 1
     if (va > vb) return sortDir === 'asc' ? 1 : -1
     return 0
-  })
+  }), [filtered, sortCol, sortDir])
 
   // ── Bulk selection ─────────────────────────────────────────────────────────
   function toggleSelect(id: string) {
@@ -722,7 +536,7 @@ export default function ShartnomalarPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => exportToCSV(sorted)}
+            onClick={() => exportContractsCSV(sorted)}
             title="Excel (CSV) yuklab olish"
             className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
           >
@@ -1076,7 +890,6 @@ export default function ShartnomalarPage() {
           onRunAiAnalysis={runAiAnalysis}
           onToggleSigned={toggleSigned}
           isPremium={hasAiAccess()}
-          lang={lang}
         />
       )}
 
@@ -1096,7 +909,6 @@ export default function ShartnomalarPage() {
           fixSaving={fixSaving}
           onFix={fixContract}
           onSaveFixed={saveFixedContract}
-          lang={lang}
         />
       )}
 

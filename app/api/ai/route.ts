@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
+import { cleanAiText } from '@/lib/export/aiTextProcessor'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -1649,6 +1650,23 @@ ${jOnly}
 
     const raw = (message.content[0] as { type: string; text: string }).text.trim()
     const result = extractJSON(raw)
+    // Post-process: clean markdown/whitespace artifacts from document text fields
+    if (result && typeof result === 'object') {
+      const DOC_FIELDS = [
+        'shartnoma', 'shartnoma_yangi', 'tuzatilgan_shartnoma', 'tarjima', 'band',
+        'bayonnoma', 'xat', 'taklifnoma', 'hisobot', 'eslatma', 'murojaatnoma',
+        'tushuntirish', 'ishonchnoma', 'dalolatnoma', 'akt_sverki',
+        'jarima_hisobi', 'xarajat_hisobot', 'tolov_grafigi', 'schet_faktura',
+        'talabnoma', 'kafolat_xat', 'tabriklash_xat', 'rekvizitlar_xat',
+        'mehnat_shartnoma',
+      ]
+      const r = result as Record<string, unknown>
+      for (const field of DOC_FIELDS) {
+        if (typeof r[field] === 'string') {
+          r[field] = cleanAiText(r[field] as string)
+        }
+      }
+    }
     return NextResponse.json({ result })
 
   } catch (err) {

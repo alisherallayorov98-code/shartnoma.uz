@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import type { Org, Counterparty, Contract } from '@/lib/types'
+import { buildFakturaXlsx } from '@/lib/export/excelTemplates'
 
 type Props = { org: Org | null; cps: Counterparty[]; contracts?: Contract[] }
 type QqsFoiz = '0' | '12' | '15' | 'siz'
@@ -173,77 +174,22 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
   async function downloadExcel() {
     setXlsxLoading(true)
     try {
-      const XLSX = await import('xlsx')
-      const wb = XLSX.utils.book_new()
-
-      // Header info rows
-      const headerRows = [
-        [`SCHYOT-FAKTURA № ${fakRaqam || '___'}`],
-        [`Sana: ${sana}`],
-        shartnoma ? [`Shartnoma: ${shartnoma}`] : [],
-        [],
-        ['SOTUVCHI:', org?.name || '___', '', 'XARIDOR:', xaridor || '___'],
-        ['INN:', org?.inn || '___', '', 'INN:', xaridorInn || '___'],
-        ['Bank:', org?.bank_name || '___', '', '', ''],
-        ['H/R:', org?.bank_account || '___', '', '', ''],
-        ['MFO:', org?.mfo || '___', '', '', ''],
-        [],
-      ]
-
-      // Table header
-      const tableHeader = ['№', 'Mahsulot/xizmat nomi', 'Birlik', 'Miqdor', 'Narxi (so\'m)', 'Jami QQSsiz', 'QQS %', 'QQS (so\'m)', 'Jami (so\'m)']
-
-      // Table data rows
-      const dataRows = items.map((it, i) => {
-        const c = calcItem(it)
-        return [
-          i + 1,
-          it.nomi || '',
-          it.birlik,
-          parseFloat(it.miqdori) || 0,
-          parseFloat(it.narxi.replace(/[\s,]/g, '')) || 0,
-          c.sozsiz,
-          it.qqs === 'siz' ? 'QQSsiz' : `${it.qqs}%`,
-          c.qqs,
-          c.gross,
-        ]
+      await buildFakturaXlsx({
+        fakRaqam, sana, shartnoma: shartnoma || undefined, org,
+        xaridor, xaridorInn,
+        items: items.map(it => {
+          const c = calcItem(it)
+          return {
+            nomi: it.nomi || '',
+            birlik: it.birlik,
+            miqdori: parseFloat(it.miqdori) || 0,
+            narxi: parseFloat(it.narxi.replace(/[\s,]/g, '')) || 0,
+            sozsiz: c.sozsiz, qqs: c.qqs, gross: c.gross,
+            qqsFoiz: it.qqs === 'siz' ? 'QQSsiz' : `${it.qqs}%`,
+          }
+        }),
+        totalSozsiz, totalQqs, totalGross,
       })
-
-      // Totals row
-      const totalsRow = ['', 'JAMI', '', '', '', totalSozsiz, '', totalQqs, totalGross]
-
-      // Footer rows
-      const footerRows = [
-        [],
-        [`Jami QQSsiz: ${fmt(totalSozsiz)} so'm`],
-        [`QQS: ${fmt(totalQqs)} so'm`],
-        [`JAMI TO'LASH: ${fmt(totalGross)} so'm`],
-        [],
-        [`To'lov maqsadi: Schyot-faktura № ${fakRaqam || '___'} ga asosan to'lov`],
-        [`Bank: ${org?.bank_name || '___'}  H/R: ${org?.bank_account || '___'}  MFO: ${org?.mfo || '___'}`],
-        [],
-        [`Sotuvchi rahbari: _________________ / ${org?.director_name || '___'}    M.O.   Sana: ${sana}`],
-        ['Bosh buxgalter:   _________________ / ___'],
-      ]
-
-      const allRows = [
-        ...headerRows,
-        tableHeader,
-        ...dataRows,
-        totalsRow,
-        ...footerRows,
-      ]
-
-      const ws = XLSX.utils.aoa_to_sheet(allRows)
-
-      // Column widths
-      ws['!cols'] = [
-        { wch: 4 }, { wch: 35 }, { wch: 10 }, { wch: 8 },
-        { wch: 16 }, { wch: 16 }, { wch: 8 }, { wch: 14 }, { wch: 16 },
-      ]
-
-      XLSX.utils.book_append_sheet(wb, ws, 'Faktura')
-      XLSX.writeFile(wb, `faktura_${fakRaqam || sana}.xlsx`)
     } finally { setXlsxLoading(false) }
   }
 

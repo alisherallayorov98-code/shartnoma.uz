@@ -1,6 +1,7 @@
 'use client'
 
-import { t, tr, type Lang } from '@/lib/i18n'
+import { t } from '@/lib/i18n'
+import { useT } from '@/lib/useT'
 import type { Contract } from '@/lib/types'
 
 type FixResult = { shartnoma_yangi: string; o_zgartirishlar: string[] }
@@ -19,7 +20,6 @@ interface AiModalProps {
   fixSaving: boolean
   onFix: () => void
   onSaveFixed: () => void
-  lang: Lang
 }
 
 type AnalysisResult = {
@@ -233,9 +233,8 @@ export default function AiModal({
   aiContract, aiLoading, aiError, aiResult,
   aiTab, onTabChange, onClose, onRunAiAnalysis,
   fixLoading, fixResult, fixSaving, onFix, onSaveFixed,
-  lang,
 }: AiModalProps) {
-  const T = (obj: Record<Lang, string>) => tr(obj, lang)
+  const T = useT()
 
   function renderResult() {
     if (!aiResult || typeof aiResult !== 'object') return null

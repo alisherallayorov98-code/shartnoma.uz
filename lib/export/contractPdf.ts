@@ -3,6 +3,7 @@ import { formatDateUz } from '@/lib/contractStructures'
 import { fillPlaceholders } from '@/lib/contractUtils'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
 import type { Contract } from '@/lib/types'
+import { PDF_MARGINS, PDF_SIZE, COLORS } from './documentStyles'
 
 export async function generateContractPDF(c: Contract): Promise<void> {
   const { default: jsPDF } = await import('jspdf')
@@ -10,29 +11,29 @@ export async function generateContractPDF(c: Contract): Promise<void> {
 
   const pageWidth  = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
-  const ML = 25, MR = 20, MT = 20, MB = 30
+  const ML = PDF_MARGINS.left, MR = PDF_MARGINS.right, MT = PDF_MARGINS.top, MB = PDF_MARGINS.bottom
   const contentWidth = pageWidth - ML - MR
   let y = MT
 
   // ─ Header ─
   const orgName = cyrillicToLatin(c.organizations?.name || 'Tashkilot')
-  doc.setFontSize(9)
-  doc.setTextColor(120, 120, 120)
+  doc.setFontSize(PDF_SIZE.small)
+  doc.setTextColor(...COLORS.pdf.lightGray)
   const orgNameLines = doc.splitTextToSize(orgName, contentWidth) as string[]
   for (const ln of orgNameLines) { doc.text(ln, ML, y); y += 5 }
 
-  doc.setFontSize(14)
+  doc.setFontSize(PDF_SIZE.title)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(20, 20, 20)
+  doc.setTextColor(...COLORS.pdf.black)
   const typeName = cyrillicToLatin((CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type)
   doc.text(typeName.toUpperCase(), pageWidth / 2, y, { align: 'center' })
   y += 7
-  doc.setFontSize(11)
+  doc.setFontSize(PDF_SIZE.heading)
   doc.setFont('helvetica', 'normal')
   doc.text(`No ${c.contract_number}`, pageWidth / 2, y, { align: 'center' })
   y += 5
-  doc.setFontSize(9.5)
-  doc.setTextColor(80, 80, 80)
+  doc.setFontSize(PDF_SIZE.section)
+  doc.setTextColor(...COLORS.pdf.gray)
   const dateStr = cyrillicToLatin(`${c.city || 'Toshkent'} shahri,  ${formatDateUz(c.contract_date)}`)
   doc.text(dateStr, pageWidth / 2, y, { align: 'center' })
   y += 6
@@ -63,10 +64,10 @@ export async function generateContractPDF(c: Contract): Promise<void> {
         const idx = rem.indexOf(h.val)
         if (idx !== -1 && (!best || idx < best.idx)) best = { idx, len: h.val.length, r: h.r, g: h.g, b: h.b }
       }
-      if (!best) { doc.setTextColor(30, 30, 30); doc.text(rem, cx, lineY); break }
+      if (!best) { doc.setTextColor(...COLORS.pdf.darkGray); doc.text(rem, cx, lineY); break }
       if (best.idx > 0) {
         const before = rem.slice(0, best.idx)
-        doc.setTextColor(30, 30, 30); doc.text(before, cx, lineY)
+        doc.setTextColor(...COLORS.pdf.darkGray); doc.text(before, cx, lineY)
         cx += doc.getTextWidth(before)
       }
       const hl = rem.slice(best.idx, best.idx + best.len)
@@ -76,7 +77,7 @@ export async function generateContractPDF(c: Contract): Promise<void> {
       cx += doc.getTextWidth(hl)
       rem = rem.slice(best.idx + best.len)
     }
-    doc.setTextColor(30, 30, 30)
+    doc.setTextColor(...COLORS.pdf.darkGray)
   }
 
   const filledContent = fillPlaceholders(c.content || '', c)
@@ -98,16 +99,16 @@ export async function generateContractPDF(c: Contract): Promise<void> {
     if (isSection || isLabel) {
       y += 2
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(9.5)
-      doc.setTextColor(10, 10, 10)
+      doc.setFontSize(PDF_SIZE.section)
+      doc.setTextColor(...COLORS.pdf.black)
       const wrapped = doc.splitTextToSize(trimmed, contentWidth)
       for (const wl of wrapped) { guardY(6); doc.text(wl, ML, y); y += 5.5 }
       y += 0.5
       doc.setFont('helvetica', 'normal')
     } else {
       doc.setFont('helvetica', 'normal')
-      doc.setFontSize(9.5)
-      doc.setTextColor(30, 30, 30)
+      doc.setFontSize(PDF_SIZE.section)
+      doc.setTextColor(...COLORS.pdf.darkGray)
       const prevRaw = li > 0 ? rawLines[li - 1] : ''
       const indent = !prevRaw.trim() ? 8 : 0
       const firstPart = doc.splitTextToSize(trimmed, contentWidth - indent)
@@ -126,8 +127,8 @@ export async function generateContractPDF(c: Contract): Promise<void> {
   if (c.spec_items && c.spec_items.length > 0) {
     if (y > pageHeight - 60) { doc.addPage(); y = MT }
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    doc.setTextColor(20, 20, 20)
+    doc.setFontSize(PDF_SIZE.heading)
+    doc.setTextColor(...COLORS.pdf.black)
     doc.text('SPESIFIKATSIYA', ML, y)
     y += 6
 
@@ -136,11 +137,11 @@ export async function generateContractPDF(c: Contract): Promise<void> {
     const rowH = 6.5
 
     doc.setFont('helvetica', 'bold')
-    doc.setFillColor(40, 50, 80)
+    doc.setFillColor(...COLORS.pdf.tableHeader)
     doc.setDrawColor(150, 150, 180)
     let cx = ML
-    doc.setFontSize(7.5)
-    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(PDF_SIZE.tableHdr)
+    doc.setTextColor(...COLORS.pdf.white)
     cols.forEach((col, i) => {
       doc.rect(cx, y, colW[i], rowH, 'FD')
       doc.text(col, cx + 1.5, y + 4.5)
@@ -149,14 +150,14 @@ export async function generateContractPDF(c: Contract): Promise<void> {
     y += rowH
 
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    doc.setTextColor(20, 20, 20)
+    doc.setFontSize(PDF_SIZE.tableRow)
+    doc.setTextColor(...COLORS.pdf.black)
     let total = 0
     c.spec_items.forEach((item, idx) => {
       if (y > pageHeight - MB - 10) { doc.addPage(); y = MT }
       cx = ML
       if (idx % 2 === 0) {
-        doc.setFillColor(248, 249, 255)
+        doc.setFillColor(...COLORS.pdf.tableStripe)
         doc.rect(ML, y, colW.reduce((a, b) => a + b, 0), rowH, 'F')
       }
       const rowData = [
@@ -179,10 +180,10 @@ export async function generateContractPDF(c: Contract): Promise<void> {
       y += rowH
     })
 
-    doc.setFillColor(230, 240, 255)
+    doc.setFillColor(...COLORS.pdf.tableTotal)
     doc.rect(ML, y, colW.reduce((a, b) => a + b, 0), rowH, 'F')
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8.5)
+    doc.setFontSize(PDF_SIZE.small)
     const jamiX = ML + colW[0] + colW[1] + colW[2] + colW[3] + colW[4]
     doc.text("Jami:", jamiX + 1, y + 4.5)
     doc.text(total.toLocaleString() + " so'm", jamiX + colW[5] + 1, y + 4.5)
@@ -193,8 +194,8 @@ export async function generateContractPDF(c: Contract): Promise<void> {
   // ─ Imzolar ─
   if (y > pageHeight - 60) { doc.addPage(); y = MT }
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
-  doc.setTextColor(40, 40, 40)
+  doc.setFontSize(PDF_SIZE.section)
+  doc.setTextColor(...COLORS.pdf.darkGray)
   doc.text('TOMONLARNING IMZOLARI', pageWidth / 2, y, { align: 'center' })
   y += 8
 
@@ -207,12 +208,12 @@ export async function generateContractPDF(c: Contract): Promise<void> {
   const sigCpDir   = cyrillicToLatin(c.counterparties?.director_name || '___')
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
+  doc.setFontSize(PDF_SIZE.section)
   doc.text('BUYURTMACHI:', leftX, y)
   doc.text('IJROCHI:', rightX, y)
   y += 5
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8)
+  doc.setFontSize(PDF_SIZE.tableRow)
   const orgNameShort = doc.splitTextToSize(sigOrgName, 80) as string[]
   const cpNameShort  = doc.splitTextToSize(sigCpName, 80) as string[]
   doc.text(orgNameShort[0], leftX, y)
@@ -221,16 +222,16 @@ export async function generateContractPDF(c: Contract): Promise<void> {
 
   if (y > pageHeight - MB - 25) { doc.addPage(); y = MT }
   y += 22
-  doc.setDrawColor(80, 80, 80)
+  doc.setDrawColor(...COLORS.pdf.gray)
   doc.line(leftX, y, leftX + 70, y)
   doc.line(rightX, y, rightX + 70, y)
   y += 4
-  doc.setFontSize(8)
-  doc.setTextColor(40, 40, 40)
+  doc.setFontSize(PDF_SIZE.tableRow)
+  doc.setTextColor(...COLORS.pdf.darkGray)
   doc.text(`/ ${sigOrgDir}`, leftX, y)
   doc.text(`/ ${sigCpDir}`, rightX, y)
   y += 5
-  doc.setTextColor(100, 100, 100)
+  doc.setTextColor(...COLORS.pdf.gray)
   doc.text('M.O.', leftX + 30, y)
   doc.text('M.O.', rightX + 30, y)
 
@@ -238,8 +239,8 @@ export async function generateContractPDF(c: Contract): Promise<void> {
   const totalPages = (doc.internal as unknown as { getNumberOfPages(): number }).getNumberOfPages()
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i)
-    doc.setFontSize(7)
-    doc.setTextColor(150, 150, 150)
+    doc.setFontSize(PDF_SIZE.footer)
+    doc.setTextColor(...COLORS.pdf.lightGray)
     doc.text('Shartnoma.uz', pageWidth / 2, pageHeight - 10, { align: 'center' })
     doc.text(`${i} / ${totalPages}`, pageWidth - MR, pageHeight - 10, { align: 'right' })
   }

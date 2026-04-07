@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/LanguageContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
+import { I18nProvider } from "@/lib/i18nProvider";
 
 export const metadata: Metadata = {
   title: "Kabinetim.uz — Biznes hujjat boshqaruv tizimi",
@@ -17,7 +18,9 @@ export default function RootLayout({
     <html lang="uz" data-theme="dark">
       <body className="antialiased">
         <ThemeProvider>
-          <LanguageProvider>{children}</LanguageProvider>
+          <LanguageProvider>
+            <I18nProvider>{children}</I18nProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

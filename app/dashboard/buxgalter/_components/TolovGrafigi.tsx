@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import type { Org, Counterparty } from '@/lib/types'
+import { buildTolovGrafigiXlsx } from '@/lib/export/excelTemplates'
 
 type Props = { org: Org | null; cps: Counterparty[] }
 type TolovTuri = 'foizsiz' | 'teng' | 'kamayuvchi'
@@ -81,6 +82,7 @@ export default function TolovGrafigi({ org, cps }: Props) {
   const [cpSearch, setCpSearch] = useState('')
   const [cpOpen, setCpOpen] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [xlsLoading, setXlsLoading] = useState(false)
   const cpRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -227,6 +229,23 @@ export default function TolovGrafigi({ org, cps }: Props) {
       a.href = url; a.download = `tolov_grafigi_${shartnoma || Date.now()}.docx`; a.click()
       URL.revokeObjectURL(url)
     } finally { setDownloading(false) }
+  }
+
+  async function downloadExcel() {
+    if (!rows.length) return
+    setXlsLoading(true)
+    try {
+      const P = parseFloat(jamiSumma.replace(/[\s,]/g, '')) || 0
+      const r = tolovTuri !== 'foizsiz' ? (parseFloat(yillikFoiz) || 0) / 100 / 12 : 0
+      await buildTolovGrafigiXlsx({
+        tashkilot: org?.name || '___',
+        kontragent: kontragent || '___',
+        shartnoma: shartnoma || '___',
+        summa: P, foiz: r,
+        sana: boshSana || new Date().toISOString().split('T')[0],
+        rows,
+      })
+    } finally { setXlsLoading(false) }
   }
 
   const filtered = cps.filter(c => c.name.toLowerCase().includes(cpSearch.toLowerCase())).slice(0, 8)
@@ -414,10 +433,16 @@ export default function TolovGrafigi({ org, cps }: Props) {
             </table>
           </div>
 
-          <button onClick={downloadWord} disabled={downloading}
-            className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:bg-[#1E293B] disabled:text-gray-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
-            {downloading ? '⏳ Yuklanmoqda...' : '📄 Word (.docx) yuklab olish'}
-          </button>
+          <div className="flex gap-3">
+            <button onClick={downloadWord} disabled={downloading}
+              className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:bg-[#1E293B] disabled:text-gray-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+              {downloading ? '⏳ Yuklanmoqda...' : '📄 Word (.docx)'}
+            </button>
+            <button onClick={downloadExcel} disabled={xlsLoading || !rows.length}
+              className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-[#1E293B] disabled:text-gray-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition">
+              {xlsLoading ? '⏳ Yuklanmoqda...' : '📊 Excel (.xlsx)'}
+            </button>
+          </div>
         </div>
       )}
     </div>

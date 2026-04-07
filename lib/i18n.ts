@@ -528,3 +528,4 @@ export const t = {
 export function tr<T extends Record<Lang, string>>(obj: T, lang: Lang): string {
   return obj[lang] ?? obj['uz']
 }
+

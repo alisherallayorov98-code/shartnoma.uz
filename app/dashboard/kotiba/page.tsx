@@ -5,11 +5,12 @@ import { useDashboard } from '../context'
 import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
 import { downloadRasmiyXatWord, downloadFirmenniyBlank } from '@/lib/downloadUtils'
+import dynamic from 'next/dynamic'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 import HujjatResult from '../_components/HujjatResult'
-import BayonnomaMaker from './_components/BayonnomaMaker'
-import BuyruqMaker from './_components/BuyruqMaker'
-import RekvizitlarViewer from './_components/RekvizitlarViewer'
+const BayonnomaMaker   = dynamic(() => import('./_components/BayonnomaMaker'),   { ssr: false })
+const BuyruqMaker      = dynamic(() => import('./_components/BuyruqMaker'),      { ssr: false })
+const RekvizitlarViewer = dynamic(() => import('./_components/RekvizitlarViewer'), { ssr: false })
 
 type KotibaFeature =
   | 'bayonnoma' | 'rasmiy_xat' | 'taklifnoma'

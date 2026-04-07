@@ -94,7 +94,7 @@ interface ContractModalProps {
   cps: Counterparty[]
   form: ContractForm
   setForm: React.Dispatch<React.SetStateAction<ContractForm>>
-  onSave: (e: React.FormEvent, contentOverride?: string) => Promise<void>
+  onSave: (contentOverride?: string) => Promise<void>
   onClose: () => void
   saving: boolean
   customTemplates: AppTemplate[]
@@ -499,9 +499,9 @@ export default function ContractModal({
         cp,
         spec_items: form.spec_items.length > 0 ? form.spec_items : undefined,
       })
-      onSave(e, text)
+      onSave(text)
     } else {
-      onSave(e)
+      onSave()
     }
   }
 

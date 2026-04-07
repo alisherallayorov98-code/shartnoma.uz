@@ -4,11 +4,12 @@ import { useState, useRef, useEffect } from 'react'
 import { useDashboard } from '../context'
 import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
+import dynamic from 'next/dynamic'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
 import HujjatResult from '../_components/HujjatResult'
-import TolovGrafigi from './_components/TolovGrafigi'
-import FakturaBuilder from './_components/FakturaBuilder'
-import AktSverki from './_components/AktSverki'
+const TolovGrafigi   = dynamic(() => import('./_components/TolovGrafigi'),   { ssr: false })
+const FakturaBuilder = dynamic(() => import('./_components/FakturaBuilder'), { ssr: false })
+const AktSverki      = dynamic(() => import('./_components/AktSverki'),      { ssr: false })
 
 type BuxFeature =
   | 'dalolatnoma' | 'talabnoma' | 'debitor_undirish'

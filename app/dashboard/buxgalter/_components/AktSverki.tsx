@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import type { Org, Counterparty, Contract } from '@/lib/types'
+import { buildAktSverkiXlsx } from '@/lib/export/excelTemplates'
 
 type Props = { org: Org | null; cps: Counterparty[]; contracts?: Contract[] }
 
@@ -41,6 +42,7 @@ export default function AktSverki({ org, cps, contracts = [] }: Props) {
   const [rows, setRows] = useState<Row[]>([emptyRow()])
   const [aktRaqam, setAktRaqam] = useState('')
   const [downloading, setDownloading] = useState(false)
+  const [xlsLoading, setXlsLoading] = useState(false)
 
   const [cpSearch, setCpSearch] = useState('')
   const [cpOpen, setCpOpen] = useState(false)
@@ -202,6 +204,32 @@ export default function AktSverki({ org, cps, contracts = [] }: Props) {
     } finally { setDownloading(false) }
   }
 
+  async function downloadExcel() {
+    setXlsLoading(true)
+    try {
+      const davr = davrBosh && davrOxir ? `${davrBosh} – ${davrOxir}` : (davrBosh || davrOxir || '___')
+      await buildAktSverkiXlsx({
+        tashkilot: org?.name || '___',
+        tashkilotInn: org?.inn,
+        direkto: org?.director_name,
+        kontragent: kontragent || '___',
+        shartnoma: shartnoma || undefined,
+        davr,
+        rows: rowsWithBalance.map(r => ({
+          sana: r.sana,
+          hujjat: `${HUJJAT_LABELS[r.hujjat_turi]}${r.hujjat_raqam ? ' №' + r.hujjat_raqam : ''}`,
+          debet: num(r.debet),
+          kredit: num(r.kredit),
+          qoldiq: r.balance,
+        })),
+        boshQoldiq: bq,
+        debetJami: totalDebet,
+        kreditJami: totalKredit,
+        yakunQoldiq,
+      })
+    } finally { setXlsLoading(false) }
+  }
+
   const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-600 placeholder-gray-500'
   const inpSm = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-600 placeholder-gray-500'
 
@@ -346,10 +374,16 @@ export default function AktSverki({ org, cps, contracts = [] }: Props) {
         </div>
       </div>
 
-      <button onClick={downloadWord} disabled={downloading}
-        className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:bg-[#1E293B] disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
-        {downloading ? '⏳ Yuklanmoqda...' : '📄 Word (.docx) yuklab olish'}
-      </button>
+      <div className="flex gap-3">
+        <button onClick={downloadWord} disabled={downloading}
+          className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:bg-[#1E293B] disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
+          {downloading ? '⏳ Yuklanmoqda...' : '📄 Word (.docx)'}
+        </button>
+        <button onClick={downloadExcel} disabled={xlsLoading}
+          className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 disabled:bg-[#1E293B] disabled:text-gray-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition">
+          {xlsLoading ? '⏳ Yuklanmoqda...' : '📊 Excel (.xlsx)'}
+        </button>
+      </div>
     </div>
   )
 }

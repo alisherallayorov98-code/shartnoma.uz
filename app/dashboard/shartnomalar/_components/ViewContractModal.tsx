@@ -1,6 +1,7 @@
 'use client'
 
-import { tr, type Lang } from '@/lib/i18n'
+import { type Lang } from '@/lib/i18n'
+import { useT } from '@/lib/useT'
 import type { Contract } from '@/lib/types'
 import { fillPlaceholders } from '@/lib/contractUtils'
 import { numberToWords } from '@/lib/contractStructures'
@@ -30,15 +31,14 @@ interface ViewContractModalProps {
   onRunAiAnalysis: (c: Contract, type: 'tahlil' | 'grammatika') => void
   onToggleSigned: (c: Contract, side: 'signed_us' | 'signed_cp') => void
   isPremium: boolean
-  lang: Lang
 }
 
 export default function ViewContractModal({
   viewContract, onClose,
   onGenerateDOCX, onGeneratePDF, onSendByTelegram, onRunAiAnalysis,
-  onToggleSigned, isPremium, lang,
+  onToggleSigned, isPremium,
 }: ViewContractModalProps) {
-  const T = (obj: Record<Lang, string>) => tr(obj, lang)
+  const T = useT()
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">

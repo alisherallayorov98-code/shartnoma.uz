@@ -3,6 +3,7 @@ import { fillPlaceholders } from '@/lib/contractUtils'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
 import type { Contract } from '@/lib/types'
 import type { ITableCellBorders } from 'docx'
+import { FONT_MAIN, DOCX_SIZE, DOCX_MARGINS, COLORS, DOCX_LINE_SPACING, DOCX_BORDER } from './documentStyles'
 
 export async function generateContractDOCX(c: Contract, returnBlob = false): Promise<Blob | void> {
   const {
@@ -13,11 +14,11 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
   type Align = typeof AlignmentType[keyof typeof AlignmentType]
 
   const typeName = (CONTRACT_TYPE_NAMES as Record<string, string>)[c.contract_type] || c.contract_type
-  const F = 'Times New Roman'
+  const F = FONT_MAIN
 
-  const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+  const noBorder = { style: BorderStyle.NONE, size: 0, color: COLORS.docx.white }
   const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder }
-  const thinBorder = { style: BorderStyle.SINGLE, size: 6, color: '888888' }
+  const thinBorder = { style: BorderStyle.SINGLE, size: DOCX_BORDER.thinSize, color: DOCX_BORDER.thinColor }
   const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder }
 
   function lineKind(line: string): 'empty' | 'main' | 'sub' | 'sub_label' | 'label' | 'bullet' | 'body' {
@@ -31,7 +32,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
   }
 
   function richRuns(text: string, baseBold = false) {
-    const base = { font: F, size: 24, color: '000000', italics: false, underline: { type: UnderlineType.NONE } }
+    const base = { font: F, size: DOCX_SIZE.section, color: COLORS.docx.black, italics: false, underline: { type: UnderlineType.NONE } }
     const pat = /(\d{1,3}(?:\s\d{3})+(?:\s*\([^)]+\))?|\d+[,.]?\d*\s*%|\d+\s*\([^)]+\))/g
     const runs = []
     let last = 0, m: RegExpExecArray | null
@@ -71,7 +72,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
       margins: { top: 40, bottom: 40, left: 150, right: 150 },
       children: [new Paragraph({
         alignment: isHeading ? AlignmentType.CENTER : AlignmentType.JUSTIFIED,
-        spacing: { after: 0, line: 240 },
+        spacing: { after: 0, line: DOCX_LINE_SPACING.single },
         children: isHeading
           ? [new TextRun({ text, bold: true, size: 21, font: F, color: '1F3864' })]
           : richRuns(text),
@@ -136,7 +137,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
         if (kind === 'sub') return new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
           indent: { left: 0, firstLine: 0 },
-          spacing: { before: 0, after: 10, line: 240 },
+          spacing: { before: 0, after: 10, line: DOCX_LINE_SPACING.single },
           children: richRuns(t),
         })
         if (kind === 'label') return new Paragraph({
@@ -148,7 +149,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
           return new Paragraph({
             alignment: AlignmentType.JUSTIFIED,
             indent: { left: 360, hanging: 180 },
-            spacing: { after: 10, line: 240 },
+            spacing: { after: 10, line: DOCX_LINE_SPACING.single },
             children: richRuns(`– ${bt}`),
           })
         }
@@ -157,7 +158,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
         return new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
           indent: isStart ? { firstLine: 360 } : {},
-          spacing: { after: 10, line: 240 },
+          spacing: { after: 10, line: DOCX_LINE_SPACING.single },
           children: richRuns(t),
         })
       })
@@ -357,7 +358,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
 
   const doc = new Document({
     sections: [{
-      properties: { page: { margin: { top: 1134, bottom: 1134, left: 567, right: 851 } } },
+      properties: { page: { margin: { top: DOCX_MARGINS.top, bottom: DOCX_MARGINS.bottom, left: DOCX_MARGINS.left, right: DOCX_MARGINS.right } } },
       footers: { default: footer },
       children: [
         new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [new TextRun({ text: typeName.toUpperCase(), bold: true, size: 32, font: F })] }),
