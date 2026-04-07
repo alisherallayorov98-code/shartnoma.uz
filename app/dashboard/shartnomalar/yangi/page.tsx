@@ -17,6 +17,7 @@ import { latinToCyrillic } from '@/lib/scriptNorm'
 import { logAudit } from '@/lib/audit'
 import { useToast } from '@/lib/toast'
 import CityPicker from '../_components/CityPicker'
+import { BirlikPicker } from '../../_components/BirlikPicker'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -71,63 +72,6 @@ const CONTRACT_TYPES = [
   { key: 'qoshimcha', color: '#6B7280' },  { key: 'boshqa', color: '#4B5563' },
 ]
 
-// ─── Birlik Picker ────────────────────────────────────────────────────────────
-
-const BIRLIKLAR = [
-  'dona', 'kg', 'g', 'tonna', 'litr', 'ml', 'm', 'sm', 'mm',
-  'm²', 'm³', 'km', 'juft', "to'plam", 'quti', 'paket', 'sumka',
-  'metr', 'pogon metr', 'soat', 'kun', 'oy', 'yil', 'ish', 'xizmat',
-]
-
-function BirlikPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-  const filtered = BIRLIKLAR.filter(b => b.toLowerCase().includes(search.toLowerCase()))
-  return (
-    <div className="relative" ref={ref}>
-      <button type="button" onClick={() => setOpen(o => !o)}
-        className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded px-2 py-1.5 text-xs text-left flex items-center justify-between">
-        <span>{value || 'dona'}</span>
-        <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl w-40 max-h-48 flex flex-col">
-          <div className="p-1.5 border-b border-[#1E293B]">
-            <input autoFocus value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Qidirish..." className="w-full bg-[#0F172A] text-gray-200 text-xs px-2 py-1 rounded focus:outline-none border border-[#1E293B] placeholder-gray-500"/>
-          </div>
-          <div className="overflow-y-auto flex-1">
-            {filtered.map(b => (
-              <button key={b} type="button" onClick={() => { onChange(b); setOpen(false); setSearch('') }}
-                className={`w-full text-left px-2 py-1 text-xs hover:bg-[#1F2937] ${value === b ? 'text-blue-400' : 'text-gray-200'}`}>
-                {b}
-              </button>
-            ))}
-            {filtered.length === 0 && <div className="px-2 py-2 text-xs text-gray-500">Topilmadi</div>}
-          </div>
-          {search && !BIRLIKLAR.includes(search) && (
-            <div className="p-1.5 border-t border-[#1E293B]">
-              <button type="button" onClick={() => { onChange(search); setOpen(false); setSearch('') }}
-                className="w-full text-left text-xs text-blue-400 hover:text-blue-300 px-1">
-                + "{search}" qo&apos;shish
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 

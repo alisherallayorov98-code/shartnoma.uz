@@ -10,6 +10,7 @@ import { useDashboard } from '../../context'
 import { useToast } from '@/lib/toast'
 import type { SpecItem, Specification } from '@/lib/types'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
+import { BirlikPicker } from '../../_components/BirlikPicker'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -268,10 +269,7 @@ export default function YangiSpesifikatsiyaPage() {
                           onChange={e => updateItem(i, 'nomi', e.target.value)}/>
                       </td>
                       <td className="px-2 py-2">
-                        <input
-                          className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-blue-600 text-xs text-center"
-                          value={item.birlik}
-                          onChange={e => updateItem(i, 'birlik', e.target.value)}/>
+                        <BirlikPicker value={item.birlik} onChange={v => updateItem(i, 'birlik', v)}/>
                       </td>
                       <td className="px-2 py-2">
                         <input type="number"
