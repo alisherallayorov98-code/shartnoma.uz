@@ -199,6 +199,10 @@ export default function ContractModal({
   const [quickAddCp, setQuickAddCp] = useState(false)
   const [newCp, setNewCp] = useState({ name: '', inn: '', director_name: '', address: '', phone: '', bank_name: '', bank_account: '', mfo: '', qqsreg: '', oked: '' })
   const [savingCp, setSavingCp] = useState(false)
+  const [localCps, setLocalCps] = useState<Counterparty[]>(cps)
+
+  // cps prop yangilanganda localCps ni ham yangilash
+  useEffect(() => { setLocalCps(cps) }, [cps])
   const [cpStirLoading, setCpStirLoading] = useState(false)
   const cpDropRef = useRef<HTMLDivElement>(null)
 
@@ -428,6 +432,7 @@ export default function ContractModal({
     setSavingCp(false)
     if (error) { toast('Xato: ' + error.message, 'error'); return }
     if (data) {
+      setLocalCps(prev => [...prev, data as Counterparty])
       onCpAdded?.(data)
       setForm(f => ({ ...f, counterparty_id: data.id }))
     }
@@ -476,8 +481,8 @@ export default function ContractModal({
   // ─── Selected org/cp ──────────────────────────────────────────────────────
 
   const selectedOrg = orgs.find(o => o.id === form.organization_id)
-  const selectedCp = cps.find(c => c.id === form.counterparty_id)
-  const filteredCps = cps.filter(cp =>
+  const selectedCp = localCps.find(c => c.id === form.counterparty_id)
+  const filteredCps = localCps.filter(cp =>
     cp.name.toLowerCase().includes(cpSearch.toLowerCase()) ||
     (cp.inn || '').includes(cpSearch)
   )
