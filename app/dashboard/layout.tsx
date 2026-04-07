@@ -1,8 +1,6 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { ReactNode } from 'react'
+import { ReactNode, Suspense } from 'react'
 import { DashboardProvider, useDashboard } from './context'
 import { DashboardSidebar } from './_components/Sidebar'
 import { TopBar } from './_components/TopBar'
@@ -75,7 +73,11 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           <span className="font-semibold text-sm">Kabinetim.uz</span>
         </div>
         <div className="flex-1 overflow-auto">
-          {initialLoading ? <LoadingSkeleton /> : <ErrorBoundary>{children}</ErrorBoundary>}
+          {initialLoading ? <LoadingSkeleton /> : (
+            <Suspense fallback={<LoadingSkeleton />}>
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </Suspense>
+          )}
         </div>
         <UpgradeModal />
       </div>

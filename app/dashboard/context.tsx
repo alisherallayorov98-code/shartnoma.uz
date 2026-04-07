@@ -162,9 +162,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setDemoAccess(data || null)
   }, [])
 
-  const loadCps = useCallback(async (orgId?: string) => {
-    const base = supabase.from('counterparties').select('*').order('created_at', { ascending: false })
-    const { data, error } = orgId ? await base.eq('organization_id', orgId) : await base
+  const loadCps = useCallback(async () => {
+    const { data, error } = await supabase.from('counterparties').select('*').order('created_at', { ascending: false })
     if (error) { console.error('loadCps:', error.message); return }
     setCps(data || [])
   }, [])
@@ -236,7 +235,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     loadDemoAccess(activeOrg.id)
     loadContracts(activeOrg.id)
     loadEmployees(activeOrg.id)
-    loadCps(activeOrg.id)
+    loadCps()
 
     // Real-time: reload data when another tab/device changes them
     const contractsChannel = supabase
@@ -251,8 +250,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .channel(`counterparties:${activeOrg.id}`)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'counterparties',
-        filter: `organization_id=eq.${activeOrg.id}`,
-      }, () => { loadCps(activeOrg.id) })
+      }, () => { loadCps() })
       .subscribe()
 
     const orgsChannel = supabase
@@ -318,8 +316,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [loadOrgs, activeOrg?.id])
 
   const reloadCps = useCallback(async () => {
-    if (activeOrg) await loadCps(activeOrg.id)
-  }, [loadCps, activeOrg])
+    await loadCps()
+  }, [loadCps])
 
   const reloadEmployees = useCallback(async () => {
     await loadEmployees(activeOrg?.id)

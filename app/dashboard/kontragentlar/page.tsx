@@ -100,12 +100,12 @@ export default function KontragentlarPage() {
     const { data: { session } } = await supabase.auth.getSession()
     let cpErr = null
     if (editingCp) {
-      const { error } = await supabase.from('counterparties').update(cpForm).eq('id', editingCp.id).eq('organization_id', activeOrg!.id)
+      const { error } = await supabase.from('counterparties').update(cpForm).eq('id', editingCp.id)
       cpErr = error
       if (!error) logAudit('update', 'counterparties', editingCp.id, { name: cpForm.name, inn: cpForm.inn })
       setEditingCp(null)
     } else {
-      const { data: inserted, error } = await supabase.from('counterparties').insert({ ...cpForm, user_id: session!.user.id, organization_id: activeOrg!.id }).select('id').single()
+      const { data: inserted, error } = await supabase.from('counterparties').insert({ ...cpForm, user_id: session!.user.id }).select('id').single()
       cpErr = error
       if (!error && inserted) logAudit('create', 'counterparties', inserted.id, { name: cpForm.name, inn: cpForm.inn })
     }
