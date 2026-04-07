@@ -14,7 +14,7 @@ export default function ProfilPage() {
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { userEmail, orgs, activeOrg, cps, contracts, subscription, profile: ctxProfile, reloadOrgs, logout, userId } = useDashboard()
 
-  const [profileTab, setProfileTab] = useState<'account' | 'company' | 'founders'>('account')
+  const [profileTab, setProfileTab] = useState<'account' | 'company' | 'soliq' | 'founders'>('account')
 
   // Profile state
   const [profile, setProfile] = useState(() => ({ ...ctxProfile }))
@@ -131,6 +131,69 @@ export default function ProfilPage() {
     if (error) return
     setFounders(f => f.map(x => x.id === id ? { ...x, full_name: editFounderData.full_name.trim(), ulush } : x))
     setEditFounderId(null)
+  }
+
+  // Soliq sync state
+  const [soliqSyncing, setSoliqSyncing] = useState(false)
+
+  async function syncAllSoliqData() {
+    if (!activeOrg?.inn) { toast("Tashkilot STIR raqami kiritilmagan", 'error'); return }
+    setSoliqSyncing(true)
+    try {
+      // 1. Korxona ma'lumotlari
+      const compRes = await fetch(`/api/stir?stir=${activeOrg.inn}`)
+      const compData = await compRes.json()
+      if (!compRes.ok) { toast(compData.error || "Soliq API xatoligi", 'error'); setSoliqSyncing(false); return }
+      const co = compData.company
+
+      const updateData: Record<string, unknown> = {
+        soliq_synced_at: new Date().toISOString(),
+        full_name:         co.full_name         || null,
+        status:            co.status            || null,
+        status_text:       co.status_text       || null,
+        oked_name:         co.oked_name         || null,
+        reg_date:          co.reg_date          || null,
+        reg_number:        co.reg_number        || null,
+        opf_name:          co.opf_name          || null,
+        business_structure: co.business_structure || null,
+        tax_mode:          co.tax_mode          || null,
+        taxpayer_type:     co.taxpayer_type     ?? null,
+        soato:             co.soato             || null,
+        soogu:             co.soogu             || null,
+        postcode:          co.postcode          || null,
+        // To'ldiruvchi fieldlar (faqat bo'sh bo'lsa to'ldiriladi)
+        ...(co.name         && !activeOrg.name         ? { name:            co.name }         : {}),
+        ...(co.director_name && !activeOrg.director_name ? { director_name: co.director_name } : {}),
+        ...(co.address       && !activeOrg.address       ? { address:        co.address }       : {}),
+        ...(co.qqsreg        && !activeOrg.qqsreg        ? { qqsreg:         co.qqsreg }        : {}),
+        ...(co.oked          && !activeOrg.oked          ? { oked:           co.oked }          : {}),
+        ...(co.accountant_name && !activeOrg.chief_accountant ? { chief_accountant: co.accountant_name } : {}),
+        ...(co.ustav_capital && !activeOrg.ustav_kapital ? { ustav_kapital:  String(co.ustav_capital) } : {}),
+      }
+      await supabase.from('organizations').update(updateData).eq('id', activeOrg.id)
+
+      // 2. Ta'sischilar
+      const foundRes = await fetch(`/api/stir/founders?stir=${activeOrg.inn}`)
+      const foundData = await foundRes.json()
+      if (foundData.founders?.length > 0) {
+        await supabase.from('tasischilar').delete().eq('org_id', activeOrg.id)
+        await supabase.from('tasischilar').insert(
+          foundData.founders.map((f: { full_name: string; ulush: number }) => ({
+            org_id: activeOrg.id, full_name: f.full_name, ulush: f.ulush,
+          }))
+        )
+        if (foundData.ustav_kapital) {
+          await supabase.from('organizations').update({ ustav_kapital: foundData.ustav_kapital }).eq('id', activeOrg.id)
+        }
+      }
+
+      await reloadOrgs()
+      toast("Soliq ma'lumotlari yangilandi!", 'success')
+    } catch {
+      toast("Xatolik yuz berdi", 'error')
+    } finally {
+      setSoliqSyncing(false)
+    }
   }
 
   // Org ext form state
@@ -278,12 +341,13 @@ export default function ProfilPage() {
       {/* Tab switcher */}
       <div className="flex gap-1 bg-[#111827] border border-[#1E293B] rounded-xl p-1 w-fit">
         {[
-          { key: 'account', label: T(t.profileTab.accountTab) },
-          { key: 'company', label: T(t.profileTab.companyTab) },
+          { key: 'account',  label: T(t.profileTab.accountTab) },
+          { key: 'company',  label: T(t.profileTab.companyTab) },
+          { key: 'soliq',    label: '🏛 Soliq' },
           { key: 'founders', label: "Ta'sischilar" },
         ].map(pt => (
           <button key={pt.key} type="button"
-            onClick={() => setProfileTab(pt.key as 'account' | 'company' | 'founders')}
+            onClick={() => setProfileTab(pt.key as 'account' | 'company' | 'soliq' | 'founders')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${profileTab === pt.key ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}>
             {pt.label}
           </button>
@@ -598,6 +662,161 @@ export default function ProfilPage() {
 
             <div className="bg-[#111827] border border-[#1E293B] rounded-xl px-5 py-3 text-xs text-gray-500">
               💡 Bu ma'lumotlar Kotiba AI → Yig'ilish bayonnomasi yaratishda ta'sischilarni va ularning ulushlarini avtomatik taqsimlash uchun ishlatiladi.
+            </div>
+          </div>
+        ) : (
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-8 text-center text-gray-500">
+            <p className="text-sm">Tashkilot tanlanmagan</p>
+          </div>
+        )
+      )}
+
+      {/* ── SOLIQ tab ── */}
+      {profileTab === 'soliq' && (
+        activeOrg ? (
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="bg-[#111827] border border-[#1E293B] rounded-2xl px-5 py-4 flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-white">Soliq API ma'lumotlari</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {activeOrg.soliq_synced_at
+                    ? `Oxirgi yangilanish: ${new Date(activeOrg.soliq_synced_at).toLocaleString('uz-UZ')}`
+                    : 'Hali sinxronlashtirilmagan'}
+                </div>
+              </div>
+              <button type="button" onClick={syncAllSoliqData} disabled={soliqSyncing || !activeOrg.inn}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white transition">
+                {soliqSyncing ? (
+                  <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"/>Yuklanmoqda...</>
+                ) : (
+                  <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Soliqdan yangilash</>
+                )}
+              </button>
+            </div>
+
+            {!activeOrg.inn && (
+              <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-5 py-4 text-sm text-yellow-300">
+                ⚠️ STIR raqami kiritilmagan. Korxona ma'lumotlari tabida STIR ni kiriting.
+              </div>
+            )}
+
+            {/* Status banner */}
+            {activeOrg.status && (
+              <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border text-sm font-medium ${
+                activeOrg.status === 'active'
+                  ? 'bg-emerald-900/20 border-emerald-700/30 text-emerald-300'
+                  : 'bg-red-900/20 border-red-700/30 text-red-300'
+              }`}>
+                <span>{activeOrg.status === 'active' ? '✓ Faol' : '✗ Faol emas'}</span>
+                {activeOrg.status_text && <span className="text-xs opacity-70">{activeOrg.status_text}</span>}
+              </div>
+            )}
+
+            {(() => {
+              const row = (label: string, value: string | null | undefined) =>
+                value ? (
+                  <div className="flex items-start gap-3 py-2.5 border-b border-[#1E293B] last:border-0">
+                    <span className="text-xs text-gray-500 w-44 flex-shrink-0 mt-0.5">{label}</span>
+                    <span className="text-sm text-gray-200 flex-1">{value}</span>
+                  </div>
+                ) : null
+
+              const taxModeLabel = (v?: string | null) =>
+                v === 'umumiy' ? 'Umumiy soliq rejimi'
+                : v === 'soddlashtirilgan' ? 'Soddlashtirilgan soliq rejimi'
+                : v === 'yagona' ? 'Yagona soliq to\'lovi'
+                : v || null
+
+              return (
+                <>
+                  {/* Asosiy */}
+                  <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
+                    <div className="px-5 py-3 border-b border-[#1E293B]">
+                      <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Asosiy ma'lumotlar</h2>
+                    </div>
+                    <div className="px-5">
+                      {row("To'liq nomi", activeOrg.full_name || activeOrg.name)}
+                      {row("Qisqa nomi", activeOrg.name)}
+                      {row("STIR (INN)", activeOrg.inn)}
+                      {row("(TXSh) Tashkiliy-huquqiy shakl", activeOrg.opf_name)}
+                      {row("Mulk shakli (MSht)", activeOrg.business_structure)}
+                      {row("Soliq to'lovchi turi", activeOrg.taxpayer_type != null ? String(activeOrg.taxpayer_type) : null)}
+                      {!activeOrg.full_name && !activeOrg.opf_name && (
+                        <div className="py-4 text-center text-xs text-gray-600">Ma'lumot yo'q — Soliqdan yangilang</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Ro'yxatga olish */}
+                  <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
+                    <div className="px-5 py-3 border-b border-[#1E293B]">
+                      <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ro'yxatga olish</h2>
+                    </div>
+                    <div className="px-5">
+                      {row("Ro'yxatga olingan sana", activeOrg.reg_date)}
+                      {row("Ro'yxatga olish raqami", activeOrg.reg_number)}
+                      {!activeOrg.reg_date && <div className="py-4 text-center text-xs text-gray-600">Ma'lumot yo'q</div>}
+                    </div>
+                  </div>
+
+                  {/* Soliq */}
+                  <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
+                    <div className="px-5 py-3 border-b border-[#1E293B]">
+                      <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Soliq</h2>
+                    </div>
+                    <div className="px-5">
+                      {row("Soliq rejimi", taxModeLabel(activeOrg.tax_mode))}
+                      {row("QQS sertifikati raqami", activeOrg.qqsreg)}
+                      {row("IFUT (OKED) kodi", activeOrg.oked)}
+                      {row("IFUT faoliyat turi", activeOrg.oked_name)}
+                      {row("MXBT (SOATO)", activeOrg.soato)}
+                      {!activeOrg.tax_mode && !activeOrg.oked && <div className="py-4 text-center text-xs text-gray-600">Ma'lumot yo'q</div>}
+                    </div>
+                  </div>
+
+                  {/* Manzil */}
+                  <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
+                    <div className="px-5 py-3 border-b border-[#1E293B]">
+                      <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Manzil</h2>
+                    </div>
+                    <div className="px-5">
+                      {row("Yuridik manzil", activeOrg.address)}
+                      {row("Pochta indeksi", activeOrg.postcode)}
+                      {!activeOrg.address && <div className="py-4 text-center text-xs text-gray-600">Ma'lumot yo'q</div>}
+                    </div>
+                  </div>
+
+                  {/* Rahbariyat */}
+                  <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
+                    <div className="px-5 py-3 border-b border-[#1E293B]">
+                      <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rahbariyat</h2>
+                    </div>
+                    <div className="px-5">
+                      {row("Rahbar F.I.Sh.", activeOrg.director_name)}
+                      {row("Bosh hisobchi", activeOrg.chief_accountant)}
+                      {!activeOrg.director_name && <div className="py-4 text-center text-xs text-gray-600">Ma'lumot yo'q</div>}
+                    </div>
+                  </div>
+
+                  {/* Moliya */}
+                  <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
+                    <div className="px-5 py-3 border-b border-[#1E293B]">
+                      <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Moliya</h2>
+                    </div>
+                    <div className="px-5">
+                      {row("Ustav kapitali (so'm)", activeOrg.ustav_kapital
+                        ? Number(activeOrg.ustav_kapital).toLocaleString('uz-UZ')
+                        : null)}
+                      {!activeOrg.ustav_kapital && <div className="py-4 text-center text-xs text-gray-600">Ma'lumot yo'q</div>}
+                    </div>
+                  </div>
+                </>
+              )
+            })()}
+
+            <div className="bg-[#111827] border border-[#1E293B] rounded-xl px-5 py-3 text-xs text-gray-500">
+              💡 Bu ma'lumotlar faqat o'qish uchun. O'zgartirish uchun "Soliqdan yangilash" tugmasini bosing. Soliq API dan kelgan ma'lumotlar butun tizim bo'ylab shartnomalar va hujjatlarda avtomatik ishlatiladi.
             </div>
           </div>
         ) : (

@@ -9,6 +9,21 @@ export type Org = {
   director_pinfl?: string; chief_accountant?: string
   sender_pinfl?: string; sender_name?: string
   ustav_kapital?: string
+  // Soliq API ma'lumotlari (avtomatik to'ldiriladi)
+  soliq_synced_at?: string
+  full_name?: string
+  status?: string
+  status_text?: string
+  oked_name?: string
+  reg_date?: string
+  reg_number?: string
+  opf_name?: string
+  business_structure?: string
+  tax_mode?: string
+  taxpayer_type?: number | null
+  soato?: string
+  soogu?: string
+  postcode?: string
 }
 
 export type BankAccount = {

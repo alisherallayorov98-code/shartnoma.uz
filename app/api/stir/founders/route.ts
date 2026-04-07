@@ -46,11 +46,13 @@ function extractFounders(raw: Record<string, unknown>): StirFounder[] | null {
 function extractUstavKapital(raw: Record<string, unknown>): string {
   const co = (raw.company ?? {}) as Record<string, unknown>
   const val =
+    co.businessFund ??
     co.authorizedCapital ??
     co.ustavCapital ??
     co.charterCapital ??
     raw.authorizedCapital ??
-    raw.ustavCapital
+    raw.ustavCapital ??
+    raw.businessFund
   return val != null ? String(val) : ''
 }
 
@@ -86,6 +88,20 @@ export async function GET(req: NextRequest) {
     const raw: Record<string, unknown> = await res.json()
     const founders = extractFounders(raw)
     const ustav_kapital = extractUstavKapital(raw)
+
+    // Debug: raw keys ko'rish uchun ?debug=true
+    if (req.nextUrl.searchParams.get('debug') === 'true') {
+      const co = (raw.company ?? {}) as Record<string, unknown>
+      return NextResponse.json({
+        founders,
+        ustav_kapital,
+        _debug: {
+          raw_keys: Object.keys(raw),
+          company_keys: Object.keys(co),
+          raw,
+        },
+      })
+    }
 
     return NextResponse.json({ founders, ustav_kapital })
   } catch (err) {

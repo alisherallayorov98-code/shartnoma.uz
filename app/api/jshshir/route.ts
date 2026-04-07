@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const SOLIQ_API_KEY = process.env.SOLIQ_API_KEY || ''
-const SOLIQ_API_URL = process.env.SOLIQ_API_URL || ''
+const SOLIQ_JSHSHIR_URL = process.env.SOLIQ_JSHSHIR_URL || ''
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function normalizePerson(raw: Record<string, any>) {
@@ -58,11 +58,11 @@ export async function GET(req: NextRequest) {
   if (!/^\d{14}$/.test(jshshir)) {
     return NextResponse.json({ error: "JSHSHIR 14 raqamdan iborat bo'lishi kerak" }, { status: 400 })
   }
-  if (!SOLIQ_API_KEY || !SOLIQ_API_URL) {
+  if (!SOLIQ_API_KEY || !SOLIQ_JSHSHIR_URL) {
     return NextResponse.json({ error: "Soliq API sozlanmagan" }, { status: 500 })
   }
 
-  const url = SOLIQ_API_URL.replace('%s', jshshir) + '?type=full'
+  const url = SOLIQ_JSHSHIR_URL.replace('%s', jshshir) + '?type=full'
 
   try {
     const res = await fetch(url, {

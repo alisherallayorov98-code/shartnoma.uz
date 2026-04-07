@@ -43,6 +43,8 @@ export default function TashkilotlarPage() {
 
   // STIR lookup
   const [stirLoading, setStirLoading] = useState(false)
+  const [soliqVerified, setSoliqVerified] = useState(false)
+  const [soliqExtraData, setSoliqExtraData] = useState<Record<string, unknown> | null>(null)
 
   // Stamp/Signature upload
   const [stampUploading, setStampUploading] = useState(false)
@@ -84,13 +86,15 @@ export default function TashkilotlarPage() {
       if (target === 'org') {
         setOrgForm(prev => ({
           ...prev,
-          name: co.name || prev.name,
-          director_name: co.director_name || prev.director_name,
-          address: co.address || prev.address,
-          qqsreg: co.qqsreg || prev.qqsreg,
-          oked: co.oked || prev.oked,
+          name:           co.name           || prev.name,
+          director_name:  co.director_name  || prev.director_name,
+          address:        co.address        || prev.address,
+          qqsreg:         co.qqsreg         || prev.qqsreg,
+          oked:           co.oked           || prev.oked,
         }))
-        const infoParts: string[] = ['Ma\'lumotlar to\'ldirildi']
+        setSoliqExtraData(co)
+        setSoliqVerified(true)
+        const infoParts: string[] = ['Soliq ma\'lumotlari olindi']
         if (co.status === 'active') infoParts.push('✓ Faol')
         else if (co.status === 'inactive') infoParts.push('⚠ Faol emas!')
         if (co.oked_name) infoParts.push(co.oked_name)
@@ -112,14 +116,36 @@ export default function TashkilotlarPage() {
     if (!validate.inn(orgForm.inn)) { toast(T(t.msg.innInvalid), 'error'); setSaving(false); return }
     if (!validate.mfo(orgForm.mfo)) { toast(T(t.msg.mfoInvalid), 'error'); setSaving(false); return }
     if (!validate.account(orgForm.bank_account)) { toast(T(t.msg.accountInvalid), 'error'); setSaving(false); return }
+    if (!editingOrg && orgForm.inn && !soliqVerified) {
+      toast("Davom etish uchun avval \"Soliqdan tekshirish\" tugmasini bosing", 'error'); setSaving(false); return
+    }
 
     if (editingOrg) {
       const { error } = await supabase.from('organizations').update(orgForm).eq('id', editingOrg.id)
       if (error) { toast(`Xato: ${error.message}`, 'error'); setSaving(false); return }
     } else {
+      const co = soliqExtraData || {}
       const { data: newOrg, error: orgErr } = await supabase
         .from('organizations')
-        .insert({ ...orgForm, user_id: userId })
+        .insert({
+          ...orgForm, user_id: userId,
+          soliq_synced_at:    soliqVerified ? new Date().toISOString() : null,
+          full_name:          (co.full_name         as string) || null,
+          status:             (co.status            as string) || null,
+          status_text:        (co.status_text       as string) || null,
+          oked_name:          (co.oked_name         as string) || null,
+          reg_date:           (co.reg_date          as string) || null,
+          reg_number:         (co.reg_number        as string) || null,
+          opf_name:           (co.opf_name          as string) || null,
+          business_structure: (co.business_structure as string) || null,
+          tax_mode:           (co.tax_mode          as string) || null,
+          taxpayer_type:      (co.taxpayer_type     as number) ?? null,
+          soato:              (co.soato             as string) || null,
+          soogu:              (co.soogu             as string) || null,
+          postcode:           (co.postcode          as string) || null,
+          ustav_kapital:      co.ustav_capital ? String(co.ustav_capital) : null,
+          chief_accountant:   (co.accountant_name   as string) || null,
+        })
         .select()
         .single()
       if (orgErr || !newOrg) {
@@ -233,7 +259,7 @@ export default function TashkilotlarPage() {
           <h1 className="text-xl font-bold text-white">🏢 {T(t.orgs.title)}</h1>
           <p className="text-gray-500 text-sm mt-0.5">{orgs.length} ta tashkilot</p>
         </div>
-        <button onClick={() => { setEditingOrg(null); setOrgForm(emptyOrg); setOrgModal(true) }}
+        <button onClick={() => { setEditingOrg(null); setOrgForm(emptyOrg); setSoliqVerified(false); setSoliqExtraData(null); setOrgModal(true) }}
           className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
           + {T(t.orgs.new)}
         </button>
@@ -270,7 +296,7 @@ export default function TashkilotlarPage() {
                 <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
                   {org.user_id === userId && (
                     <button
-                      onClick={() => { setEditingOrg(org); setOrgForm({ name: org.name, inn: org.inn || '', director_name: org.director_name || '', bank_name: org.bank_name || '', bank_account: org.bank_account || '', mfo: org.mfo || '', address: org.address || '', qqsreg: org.qqsreg || '', oked: org.oked || '' }); setOrgModal(true) }}
+                      onClick={() => { setEditingOrg(org); setOrgForm({ name: org.name, inn: org.inn || '', director_name: org.director_name || '', bank_name: org.bank_name || '', bank_account: org.bank_account || '', mfo: org.mfo || '', address: org.address || '', qqsreg: org.qqsreg || '', oked: org.oked || '' }); setSoliqVerified(true); setSoliqExtraData(null); setOrgModal(true) }}
                       className="flex items-center gap-1.5 text-xs bg-[#1F2937] hover:bg-[#334155] border border-[#1E293B] text-gray-300 px-3 py-1.5 rounded-lg transition">
                       ✎ Tahrirlash
                     </button>
@@ -490,17 +516,27 @@ export default function TashkilotlarPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={lbl}>STIR (INN)</label>
+                <label className={lbl}>STIR (INN) *</label>
                 <div className="flex gap-2">
-                  <input className={inp} placeholder="123456789" maxLength={9} value={orgForm.inn} onChange={e => setOrgForm({ ...orgForm, inn: e.target.value })}/>
-                  <button type="button" disabled={stirLoading || !orgForm.inn}
+                  <input className={`${inp} ${soliqVerified ? 'border-emerald-600/50' : ''}`}
+                    placeholder="123456789" maxLength={9} value={orgForm.inn}
+                    onChange={e => { setOrgForm({ ...orgForm, inn: e.target.value }); setSoliqVerified(false); setSoliqExtraData(null) }}/>
+                  <button type="button" disabled={stirLoading || !orgForm.inn || !/^\d{9}$/.test(orgForm.inn)}
                     onClick={() => lookupStir(orgForm.inn, 'org')}
-                    className="px-2.5 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600/30 text-blue-400 rounded-lg text-xs disabled:opacity-40 transition flex-shrink-0 whitespace-nowrap"
-                    title="Soliqdan ma'lumot olish">
-                    {stirLoading ? '...' : '🔍'}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium disabled:opacity-40 transition flex-shrink-0 whitespace-nowrap border ${
+                      soliqVerified
+                        ? 'bg-emerald-600/20 border-emerald-600/40 text-emerald-400'
+                        : 'bg-blue-600/20 hover:bg-blue-600/40 border-blue-600/30 text-blue-400'
+                    }`}>
+                    {stirLoading ? '...' : soliqVerified ? '✓ Tekshirildi' : 'Soliqdan tekshirish'}
                   </button>
                 </div>
-                <p className="text-xs text-gray-600 mt-1">9 raqam kiriting va 🔍 bosing</p>
+                {!editingOrg && orgForm.inn && !soliqVerified && /^\d{9}$/.test(orgForm.inn) && (
+                  <p className="text-xs text-yellow-400 mt-1">⚠ Saqlash uchun "Soliqdan tekshirish" tugmasini bosing</p>
+                )}
+                {soliqVerified && (
+                  <p className="text-xs text-emerald-400 mt-1">✓ Soliq ma'lumotlari olindi va saqlanishga tayyor</p>
+                )}
               </div>
               <div>
                 <label className={lbl}>Direktor F.I.Sh</label>
