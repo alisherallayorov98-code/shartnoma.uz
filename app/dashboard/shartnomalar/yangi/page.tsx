@@ -413,8 +413,7 @@ export default function YangiShartnoma() {
 
   // ── Save ──────────────────────────────────────────────────────────────────────
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSave() {
     if (!form.organization_id) { toast(T(t.msg.selectOrg), 'error'); return }
     if (!form.contract_number.trim()) { toast("Shartnoma raqami kiritilishi shart", 'error'); return }
     setSaving(true)
@@ -501,6 +500,45 @@ export default function YangiShartnoma() {
     router.push('/dashboard/shartnomalar')
   }
 
+  // ── Preview ───────────────────────────────────────────────────────────────────
+
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewContent, setPreviewContent] = useState('')
+
+  function buildPreviewContent(): string {
+    const org = orgs.find(o => o.id === form.organization_id)
+    const cp = localCps.find(c => c.id === form.counterparty_id)
+    const amount = parseFloat(form.amount) || 0
+    if (form.content) return form.content
+    const extra: Record<string, string> = {}
+    if (form.product_name) extra.TOVAR_NOMI = form.product_name
+    extra.YETKAZISH_MUDDAT = form.yetkazish_muddat || '20 (yigirma) ish kuni'
+    extra.QOLDIQ_QIYMAT = '___'
+    if (form.xizmat_tavsif) extra.AGENT_VAZIFA = form.xizmat_tavsif
+    if (form.yetkazish_joy) extra.AGENT_HUDUD = form.yetkazish_joy
+    if (form.qarz_foiz) extra.AGENT_FOZ = form.qarz_foiz
+    const structure = editStructure && structureUserEdited
+      ? editStructure
+      : getStructure(form.contract_type, {
+          contract_number: form.contract_number, contract_date: form.contract_date,
+          city: form.city, org_name: org?.name || '', org_inn: org?.inn || '',
+          org_director: org?.director_name || '', cp_name: cp?.name || '',
+          cp_inn: cp?.inn || '', cp_director: cp?.director_name || '',
+          amount, amount_text: amount > 0 ? numberToWords(amount, 'uz') + " so'm" : '___', extra,
+        })
+    return structureToText(structure, {
+      type_name: (CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type] || form.contract_type,
+      number: form.contract_number, date: form.contract_date, city: form.city, org, cp,
+      contract_type: form.contract_type,
+      spec_items: form.spec_items.length > 0 ? form.spec_items : undefined,
+    })
+  }
+
+  function openPreview() {
+    setPreviewContent(buildPreviewContent())
+    setPreviewOpen(true)
+  }
+
   // ── Computed ──────────────────────────────────────────────────────────────────
 
   const selectedOrg = orgs.find(o => o.id === form.organization_id)
@@ -569,86 +607,64 @@ export default function YangiShartnoma() {
       </div>
 
       {/* ── Main Content ── */}
-      <form onSubmit={handleSave}>
+      <div>
         <div className="px-5 py-5">
 
-          {/* ══ STEP 1 ══ */}
+          {/* ══ STEP 1 — Didox uslubida ══ */}
           {step === 1 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
 
-              {/* Left column: Core info */}
-              <div className="space-y-5">
-                <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
-                  <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Asosiy ma&apos;lumotlar</h2>
-                  <div className="space-y-4">
-
-                    {/* Number + Date */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className={lbl}>Shartnoma raqami <span className="text-red-400">*</span></label>
-                        <input value={form.contract_number} onChange={e => setForm(f => ({ ...f, contract_number: e.target.value }))}
-                          className={inp} placeholder="2024/001" required />
-                      </div>
-                      <div>
-                        <label className={lbl}>Sana</label>
-                        <input type="date" value={form.contract_date} onChange={e => setForm(f => ({ ...f, contract_date: e.target.value }))}
-                          className={inp} required />
-                      </div>
-                    </div>
-
-                    {/* City */}
-                    <div>
-                      <label className={lbl}>Tuzilgan joy</label>
-                      <CityPicker value={form.city} onChange={v => setForm(f => ({ ...f, city: v }))} />
-                    </div>
-
-                    {/* Amount */}
-                    <div>
-                      <label className={lbl}>Shartnoma summasi (so&apos;m)</label>
-                      <div className="flex gap-2">
-                        <input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                          className={inp + ' flex-1'} placeholder="0" min="0" />
-                        {form.contract_type === 'xalqaro' && (
-                          <select value={form.valyuta || 'USD'} onChange={e => setForm(f => ({ ...f, valyuta: e.target.value }))}
-                            className="bg-[#0B1220] border border-[#1E293B] text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none min-w-[90px]">
-                            <option value="USD">USD</option><option value="EUR">EUR</option>
-                            <option value="CNY">CNY</option><option value="RUB">RUB</option>
-                            <option value="GBP">GBP</option><option value="UZS">UZS</option>
-                          </select>
-                        )}
-                      </div>
-                      {form.amount && parseFloat(form.amount) > 0 ? (
-                        <p className="text-[11px] text-gray-500 mt-1.5">
-                          {form.contract_type === 'xalqaro'
-                            ? `${parseFloat(form.amount).toLocaleString()} ${form.valyuta || 'USD'}`
-                            : `${numberToWords(parseFloat(form.amount), 'uz')} so'm`}
-                        </p>
-                      ) : (
-                        <p className="text-[11px] text-amber-500/80 mt-1.5 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block flex-shrink-0"/>
-                          Summa kiritilmagan
-                        </p>
+              {/* ── Top: Basic contract info ── */}
+              <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  <div>
+                    <label className={lbl}>Shartnoma raqami <span className="text-red-400">*</span></label>
+                    <input value={form.contract_number} onChange={e => setForm(f => ({ ...f, contract_number: e.target.value }))}
+                      className={inp} placeholder="2024/001" />
+                  </div>
+                  <div>
+                    <label className={lbl}>Tuzilish sanasi</label>
+                    <input type="date" value={form.contract_date} onChange={e => setForm(f => ({ ...f, contract_date: e.target.value }))} className={inp} />
+                  </div>
+                  <div>
+                    <label className={lbl}>Tuzilgan joy</label>
+                    <CityPicker value={form.city} onChange={v => setForm(f => ({ ...f, city: v }))} />
+                  </div>
+                  <div>
+                    <label className={lbl}>Shartnoma summasi</label>
+                    <div className="flex gap-2">
+                      <input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                        className={inp + ' flex-1'} placeholder="0" min="0" />
+                      {form.contract_type === 'xalqaro' && (
+                        <select value={form.valyuta || 'USD'} onChange={e => setForm(f => ({ ...f, valyuta: e.target.value }))}
+                          className="bg-[#0F172A] border border-[#1E293B] text-white text-sm rounded-lg px-2 focus:outline-none min-w-[70px]">
+                          <option value="USD">USD</option><option value="EUR">EUR</option>
+                          <option value="CNY">CNY</option><option value="RUB">RUB</option>
+                          <option value="UZS">UZS</option>
+                        </select>
                       )}
                     </div>
+                    {form.amount && parseFloat(form.amount) > 0 && (
+                      <p className="text-[10px] text-gray-500 mt-1 truncate">{numberToWords(parseFloat(form.amount), 'uz')} so&apos;m</p>
+                    )}
                   </div>
                 </div>
 
-                {/* Contract type */}
-                <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
-                  <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Shartnoma turi</h2>
-                  <div className="grid grid-cols-3 gap-1.5">
+                {/* Contract type - compact row */}
+                <div className="border-t border-[#1E293B] pt-3">
+                  <label className={lbl + ' mb-2'}>Shartnoma turi</label>
+                  <div className="flex flex-wrap gap-1.5">
                     {CONTRACT_TYPES.map(ct => {
                       const active = form.contract_type === ct.key
                       return (
                         <button key={ct.key} type="button"
                           onClick={() => setForm(f => ({ ...f, contract_type: ct.key }))}
-                          className={`relative flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition overflow-hidden ${
-                            active ? 'border-transparent text-white bg-[#1E293B]' : 'border-[#1E293B] text-gray-400 hover:text-gray-200 hover:bg-[#1E293B]/50'
+                          className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                            active ? 'text-white bg-[#1E293B] border-transparent' : 'border-[#1E293B] text-gray-400 hover:text-gray-200 hover:bg-[#1E293B]/40'
                           }`}
-                          style={active ? { boxShadow: `inset 0 0 0 1px ${ct.color}30` } : {}}>
+                          style={active ? { boxShadow: `inset 0 0 0 1px ${ct.color}40`, borderLeft: `2px solid ${ct.color}` } : {}}>
                           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: active ? ct.color : '#4B5563' }}/>
-                          <span className="truncate leading-tight">{(CONTRACT_TYPE_NAMES as Record<string, string>)[ct.key]}</span>
-                          {active && <span className="absolute left-0 top-0 bottom-0 w-[2px] rounded-l-lg" style={{ backgroundColor: ct.color }}/>}
+                          {(CONTRACT_TYPE_NAMES as Record<string, string>)[ct.key]}
                         </button>
                       )
                     })}
@@ -656,133 +672,160 @@ export default function YangiShartnoma() {
                 </div>
               </div>
 
-              {/* Right column: Parties + template */}
-              <div className="space-y-5">
-                <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
-                  <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Tashkilot va kontragent</h2>
-                  <div className="space-y-4">
+              {/* ── Two columns: Org | CP (Didox uslubida) ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-                    {/* Organization */}
-                    <div>
-                      <label className={lbl}>Sizning tashkilotingiz <span className="text-red-400">*</span></label>
-                      <select value={form.organization_id} onChange={e => setForm(f => ({ ...f, organization_id: e.target.value }))}
-                        className={inp} required>
-                        <option value="">Tashkilotni tanlang</option>
-                        {orgs.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}
-                      </select>
-                      {selectedOrg && (
-                        <div className="mt-2 flex items-start gap-2 text-[11px] text-gray-500 bg-[#0B1220] rounded-lg px-3 py-2 border border-[#1E293B]">
-                          <div>
-                            {selectedOrg.inn && <span className="mr-3">INN: <span className="text-gray-400">{selectedOrg.inn}</span></span>}
-                            {selectedOrg.director_name && <span>Rahbar: <span className="text-gray-400">{selectedOrg.director_name}</span></span>}
-                          </div>
+                {/* Left: Org rekvizitlar */}
+                <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-[#1E293B] flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Sizning ma&apos;lumotlaringiz</h3>
+                    <select value={form.organization_id} onChange={e => setForm(f => ({ ...f, organization_id: e.target.value }))}
+                      className="bg-[#0F172A] border border-[#1E293B] text-gray-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-600 max-w-[180px]">
+                      <option value="">Tanlang...</option>
+                      {orgs.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}
+                    </select>
+                  </div>
+                  {selectedOrg ? (
+                    <div className="p-4 space-y-0 divide-y divide-[#1E293B]">
+                      {[
+                        ['STIR/ЖШШИР', selectedOrg.inn],
+                        ['Nomi', selectedOrg.name],
+                        ['Rahbar (FIO)', selectedOrg.director_name],
+                        ['MFO', selectedOrg.mfo],
+                        ['Bank nomi', selectedOrg.bank_name],
+                        ['Hisob raqami', selectedOrg.bank_account],
+                        ['OKED', selectedOrg.oked],
+                        ['Manzil', selectedOrg.address],
+                        ['Telefon', selectedOrg.phone],
+                      ].map(([label, val]) => (
+                        <div key={label} className="flex items-baseline gap-2 py-2">
+                          <span className="text-[11px] text-gray-500 w-28 flex-shrink-0">{label}</span>
+                          <span className="text-xs text-gray-200 flex-1 break-words">{val || <span className="text-gray-600 italic">—</span>}</span>
                         </div>
-                      )}
+                      ))}
                     </div>
+                  ) : (
+                    <div className="p-8 text-center text-gray-500 text-sm">
+                      Tashkilotni tanlang
+                    </div>
+                  )}
+                </div>
 
-                    {/* Counterparty */}
-                    <div>
-                      <label className={lbl}>Kontragent (ikkinchi tomon) <span className="text-red-400">*</span></label>
-                      <div className="relative" ref={cpDropRef}>
-                        <div className={`${inp} cursor-pointer flex items-center justify-between`}
+                {/* Right: CP rekvizitlar */}
+                <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-[#1E293B] flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex-shrink-0">Kontragent ma&apos;lumotlari</h3>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="relative flex-1 min-w-0" ref={cpDropRef}>
+                        <div className="bg-[#0F172A] border border-[#1E293B] text-gray-200 text-xs rounded-lg px-2 py-1.5 cursor-pointer flex items-center justify-between gap-1 hover:border-blue-600/50 transition"
                           onClick={() => setCpDropOpen(o => !o)}>
-                          <span className={selectedCp ? 'text-white' : 'text-gray-500'}>
-                            {selectedCp ? selectedCp.name : 'Kontragentni tanlang'}
-                          </span>
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
+                          <span className={`truncate ${selectedCp ? 'text-gray-200' : 'text-gray-500'}`}>{selectedCp ? selectedCp.name : 'Tanlang...'}</span>
+                          <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
                         </div>
                         {cpDropOpen && (
-                          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#111827] border border-[#1E293B] rounded-xl shadow-2xl max-h-64 flex flex-col">
+                          <div className="absolute z-50 top-full right-0 mt-1 w-64 bg-[#111827] border border-[#1E293B] rounded-xl shadow-2xl max-h-60 flex flex-col">
                             <div className="p-2 border-b border-[#1E293B]">
-                              <input autoFocus value={cpSearch} onChange={e => setCpSearch(e.target.value)}
-                                placeholder="Qidirish..."
-                                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-500"/>
+                              <input autoFocus value={cpSearch} onChange={e => setCpSearch(e.target.value)} placeholder="Qidirish..."
+                                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 text-xs px-2 py-1.5 rounded-lg focus:outline-none placeholder-gray-500"/>
                             </div>
                             <div className="overflow-y-auto flex-1">
                               {filteredCps.map(cp => (
                                 <button key={cp.id} type="button"
                                   onClick={() => { setForm(f => ({ ...f, counterparty_id: cp.id })); setCpDropOpen(false); setCpSearch('') }}
-                                  className={`w-full text-left px-3 py-2.5 text-sm hover:bg-[#1F2937] transition ${form.counterparty_id === cp.id ? 'text-blue-400 bg-[#0F172A]' : 'text-gray-200'}`}>
+                                  className={`w-full text-left px-3 py-2 text-xs hover:bg-[#1F2937] transition ${form.counterparty_id === cp.id ? 'text-blue-400' : 'text-gray-200'}`}>
                                   <div className="font-medium">{cp.name}</div>
-                                  {cp.inn && <div className="text-xs text-gray-500">INN: {cp.inn}</div>}
+                                  {cp.inn && <div className="text-gray-500">INN: {cp.inn}</div>}
                                 </button>
                               ))}
-                              {filteredCps.length === 0 && <div className="px-3 py-2 text-sm text-gray-500">Topilmadi</div>}
+                              {filteredCps.length === 0 && <div className="px-3 py-2 text-xs text-gray-500">Topilmadi</div>}
                             </div>
                             <div className="p-2 border-t border-[#1E293B]">
                               <button type="button" onClick={() => { setCpDropOpen(false); setQuickAddCp(true) }}
-                                className="w-full text-xs text-blue-400 hover:text-blue-300 text-left px-1 py-1">
-                                + Yangi kontragent qo&apos;shish
+                                className="w-full text-xs text-blue-400 hover:text-blue-300 text-left px-1">
+                                + Yangi kontragent
                               </button>
                             </div>
                           </div>
                         )}
                       </div>
-                      {selectedCp && (
-                        <div className="mt-2 flex items-start gap-2 text-[11px] text-gray-500 bg-[#0B1220] rounded-lg px-3 py-2 border border-[#1E293B]">
-                          {selectedCp.inn && <span className="mr-3">INN: <span className="text-gray-400">{selectedCp.inn}</span></span>}
-                          {selectedCp.director_name && <span>Rahbar: <span className="text-gray-400">{selectedCp.director_name}</span></span>}
-                        </div>
-                      )}
-                      {selectedCp?.stir_status === 'inactive' && (
-                        <div className="mt-2 flex items-center gap-1.5 text-xs text-red-400 bg-red-900/20 border border-red-700/30 rounded-lg px-3 py-2">
-                          <span>⚠</span><span>Bu tashkilot Soliq ma&apos;lumotlarida <strong>faol emas</strong>.</span>
-                        </div>
-                      )}
+                      <button type="button" onClick={() => { setCpDropOpen(false); setQuickAddCp(true) }}
+                        title="Yangi kontragent qo'shish"
+                        className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition text-sm font-bold">
+                        +
+                      </button>
                     </div>
-
-                    {/* Product name */}
-                    {(form.contract_type === 'oldi_sotdi' || form.contract_type === 'daval') && (
-                      <div>
-                        <label className={lbl}>Mahsulot nomi</label>
-                        <input value={form.product_name} onChange={e => setForm(f => ({ ...f, product_name: e.target.value }))}
-                          className={inp} placeholder="Tovar yoki xizmat nomi" />
-                      </div>
-                    )}
                   </div>
+                  {selectedCp ? (
+                    <div className="p-4 space-y-0 divide-y divide-[#1E293B]">
+                      {selectedCp.stir_status === 'inactive' && (
+                        <div className="flex items-center gap-1.5 text-xs text-red-400 bg-red-900/20 border border-red-700/30 rounded-lg px-3 py-2 mb-2">
+                          <span>⚠</span><span>Bu tashkilot Soliq&apos;da <strong>faol emas</strong></span>
+                        </div>
+                      )}
+                      {[
+                        ['STIR/ЖШШИР', selectedCp.inn],
+                        ['Nomi', selectedCp.name],
+                        ['Rahbar (FIO)', selectedCp.director_name],
+                        ['MFO', selectedCp.mfo],
+                        ['Bank nomi', selectedCp.bank_name],
+                        ['Hisob raqami', selectedCp.bank_account],
+                        ['OKED', selectedCp.oked],
+                        ['Manzil', selectedCp.address],
+                        ['Telefon', selectedCp.phone],
+                      ].map(([label, val]) => (
+                        <div key={label} className="flex items-baseline gap-2 py-2">
+                          <span className="text-[11px] text-gray-500 w-28 flex-shrink-0">{label}</span>
+                          <span className="text-xs text-gray-200 flex-1 break-words">{val || <span className="text-gray-600 italic">—</span>}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-gray-500 text-sm">
+                      Kontragentni tanlang yoki yangi qo&apos;shing
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                {/* Template selection */}
-                <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Shablon</h2>
+              {/* ── Bottom: Product name + Shablon ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {(form.contract_type === 'oldi_sotdi' || form.contract_type === 'daval') && (
+                  <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4">
+                    <label className={lbl}>Mahsulot / xizmat nomi</label>
+                    <input value={form.product_name} onChange={e => setForm(f => ({ ...f, product_name: e.target.value }))}
+                      className={inp} placeholder="Tovar yoki xizmat nomi" />
+                  </div>
+                )}
+                <div className={`bg-[#111827] border border-[#1E293B] rounded-xl p-4 ${!(form.contract_type === 'oldi_sotdi' || form.contract_type === 'daval') ? 'lg:col-span-2' : ''}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className={lbl + ' mb-0'}>Shablon</label>
                     <div className="flex rounded-lg overflow-hidden border border-[#1E293B]">
                       <button type="button" onClick={() => setUseTemplate(true)}
-                        className={`px-3 py-1 text-xs transition ${useTemplate ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}>
-                        Shablon
-                      </button>
+                        className={`px-3 py-1 text-xs transition ${useTemplate ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}>Shablon</button>
                       <button type="button" onClick={() => setUseTemplate(false)}
-                        className={`px-3 py-1 text-xs transition ${!useTemplate ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}>
-                        Qo&apos;lda
-                      </button>
+                        className={`px-3 py-1 text-xs transition ${!useTemplate ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}>Qo&apos;lda</button>
                     </div>
                   </div>
                   {useTemplate ? (
-                    <div className="space-y-1.5">
+                    <div className="flex flex-wrap gap-2">
                       <button type="button" onClick={() => setSelectedTemplate('auto')}
-                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm border transition ${
-                          selectedTemplate === 'auto' ? 'border-blue-500 bg-blue-600/10 text-blue-400' : 'border-[#1E293B] text-gray-300 hover:border-blue-600/50'
-                        }`}>
-                        Avtomatik shablon ({(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]})
+                        className={`px-3 py-2 rounded-lg text-xs border transition ${selectedTemplate === 'auto' ? 'border-blue-500 bg-blue-600/10 text-blue-400' : 'border-[#1E293B] text-gray-300 hover:border-blue-600/50'}`}>
+                        Avtomatik ({(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]})
                       </button>
                       {allTemplates.map(tpl => (
                         <button key={tpl.id} type="button" onClick={() => { setSelectedTemplate(tpl.id); setForm(f => ({ ...f, content: tpl.content })) }}
-                          className={`w-full text-left px-3 py-2.5 rounded-lg text-sm border transition ${
-                            selectedTemplate === tpl.id ? 'border-blue-500 bg-blue-600/10 text-blue-400' : 'border-[#1E293B] text-gray-300 hover:border-blue-600/50'
-                          }`}>
-                          <div className="font-medium">{tpl.icon} {tpl.name}</div>
-                          {tpl.description && <div className="text-xs text-gray-500 mt-0.5">{tpl.description}</div>}
+                          className={`px-3 py-2 rounded-lg text-xs border transition ${selectedTemplate === tpl.id ? 'border-blue-500 bg-blue-600/10 text-blue-400' : 'border-[#1E293B] text-gray-300 hover:border-blue-600/50'}`}>
+                          {tpl.icon} {tpl.name}
                         </button>
                       ))}
                     </div>
                   ) : (
                     <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                      className={inp} rows={6} placeholder="Shartnoma matnini bu yerga kiriting..." />
+                      className={inp} rows={5} placeholder="Shartnoma matnini bu yerga kiriting..." />
                   )}
                 </div>
               </div>
+
             </div>
           )}
 
@@ -960,7 +1003,7 @@ export default function YangiShartnoma() {
 
           {/* ══ STEP 3: Sections editor ══ */}
           {step === 3 && (
-            <div className="max-w-2xl mx-auto space-y-4">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-white">Bo&apos;limlar tahriri</h2>
@@ -982,10 +1025,10 @@ export default function YangiShartnoma() {
                   </div>
                   {bolim.bandlar.map((band, bdi) => (
                     <div key={bdi} className="flex gap-2">
-                      <span className="text-xs text-gray-500 pt-2 min-w-[30px]">{bi + 1}.{bdi + 1}</span>
+                      <span className="text-xs text-gray-500 pt-2.5 min-w-[36px] flex-shrink-0 font-mono">{bi + 1}.{bdi + 1}</span>
                       <textarea value={band.matn} onChange={e => updateBand(bi, bdi, e.target.value)}
-                        className="flex-1 bg-[#0B1220] border border-[#1E293B] text-gray-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600 resize-none"
-                        rows={2} placeholder="Band matni..."/>
+                        className="flex-1 bg-[#0F172A] border border-[#1E293B] text-gray-200 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-600 resize-y leading-relaxed"
+                        rows={3} placeholder="Band matni..."/>
                       <button type="button" onClick={() => removeBand(bi, bdi)} className="w-6 h-6 mt-1 flex-shrink-0 flex items-center justify-center rounded text-gray-500 hover:text-red-400">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                       </button>
@@ -1144,17 +1187,24 @@ export default function YangiShartnoma() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
                 </button>
               ) : (
-                <button type="submit" disabled={saving}
-                  className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition">
-                  {saving
-                    ? <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Saqlanmoqda...</>
-                    : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>Saqlash</>}
-                </button>
+                <>
+                  <button type="button" onClick={openPreview}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-[#1E293B] hover:bg-[#273549] text-gray-300 hover:text-white rounded-lg transition border border-[#273549]">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    Ko&apos;rish
+                  </button>
+                  <button type="button" disabled={saving} onClick={handleSave}
+                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition">
+                    {saving
+                      ? <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Saqlanmoqda...</>
+                      : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>Saqlash</>}
+                  </button>
+                </>
               )}
             </div>
           </div>
         </div>
-      </form>
+      </div>
 
       {/* ── New CP Modal ── */}
       {quickAddCp && (
@@ -1228,6 +1278,147 @@ export default function YangiShartnoma() {
                 className="px-5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 text-sm py-2.5 rounded-lg transition">
                 Bekor
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Preview Modal ── */}
+      {previewOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+          <div className="bg-white w-full max-w-4xl max-h-[95vh] flex flex-col rounded-xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-3 bg-gray-100 border-b border-gray-200 flex-shrink-0">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800">
+                  {(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]} — Ko&apos;rinish
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">No {form.contract_number} · {form.contract_date}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => window.print()}
+                  className="px-3 py-1.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
+                  Chop etish
+                </button>
+                <button type="button" onClick={() => setPreviewOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition text-xl">
+                  ×
+                </button>
+              </div>
+            </div>
+            {/* Document body */}
+            <div className="overflow-y-auto flex-1 bg-white">
+              <div className="max-w-[210mm] mx-auto px-[20mm] py-[15mm]" style={{ fontFamily: 'Times New Roman, serif', fontSize: '12pt', lineHeight: '1.6', color: '#000' }}>
+                {/* Header row */}
+                <div className="flex justify-between mb-6 text-sm">
+                  <div>
+                    <div className="font-semibold">{form.city}</div>
+                    <div className="text-[10px] text-gray-500">(shartnoma tuzish joyi)</div>
+                  </div>
+                  <div className="text-right">
+                    <div>{form.contract_date}</div>
+                    <div className="text-[10px] text-gray-500">(shartnoma tuzish sanasi)</div>
+                  </div>
+                </div>
+                {/* Content */}
+                <pre className="whitespace-pre-wrap font-serif text-sm leading-relaxed text-black">
+                  {previewContent}
+                </pre>
+                {/* Spec items */}
+                {form.spec_items.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-semibold text-sm mb-3 text-center">Spesifikatsiya (1-ilova)</h4>
+                    <table className="w-full border-collapse text-xs border border-gray-400">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border border-gray-400 px-2 py-1 text-center">№</th>
+                          <th className="border border-gray-400 px-2 py-1 text-left">Nomi</th>
+                          <th className="border border-gray-400 px-2 py-1 text-center">O&apos;lchov</th>
+                          <th className="border border-gray-400 px-2 py-1 text-right">Miqdor</th>
+                          <th className="border border-gray-400 px-2 py-1 text-right">Narxi</th>
+                          <th className="border border-gray-400 px-2 py-1 text-center">QQS</th>
+                          <th className="border border-gray-400 px-2 py-1 text-right">QQS summasi</th>
+                          <th className="border border-gray-400 px-2 py-1 text-right">Jami</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {form.spec_items.map((it, i) => (
+                          <tr key={i}>
+                            <td className="border border-gray-400 px-2 py-1 text-center">{i + 1}</td>
+                            <td className="border border-gray-400 px-2 py-1">{it.nomi}</td>
+                            <td className="border border-gray-400 px-2 py-1 text-center">{it.birlik}</td>
+                            <td className="border border-gray-400 px-2 py-1 text-right">{it.miqdori}</td>
+                            <td className="border border-gray-400 px-2 py-1 text-right">{it.narxi?.toLocaleString()}</td>
+                            <td className="border border-gray-400 px-2 py-1 text-center">{it.qqs_foiz === 'siz' ? 'QQSsiz' : it.qqs_foiz + '%'}</td>
+                            <td className="border border-gray-400 px-2 py-1 text-right">{it.qqs_summa?.toLocaleString()}</td>
+                            <td className="border border-gray-400 px-2 py-1 text-right font-semibold">{it.summa?.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                        <tr className="bg-gray-50 font-semibold">
+                          <td colSpan={7} className="border border-gray-400 px-2 py-1.5 text-right">Jami:</td>
+                          <td className="border border-gray-400 px-2 py-1.5 text-right">
+                            {form.spec_items.reduce((s, i) => s + i.summa, 0).toLocaleString()} so&apos;m
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {/* Rekvizitlar */}
+                {(selectedOrg || selectedCp) && (
+                  <div className="mt-8 pt-4 border-t border-gray-300">
+                    <h4 className="font-semibold text-sm mb-4 text-center uppercase tracking-wide">Tomonlarning yuridik manzillari va rekvizitlari</h4>
+                    <div className="grid grid-cols-2 gap-8 text-xs">
+                      <div>
+                        <div className="font-semibold mb-2 text-sm">Ijrochi</div>
+                        {selectedOrg && [
+                          ['Nomi:', selectedOrg.name],
+                          ['Manzil:', selectedOrg.address],
+                          ['Telefon:', selectedOrg.phone],
+                          ['STIR:', selectedOrg.inn],
+                          ['OKED:', selectedOrg.oked],
+                          ['X/R:', selectedOrg.bank_account],
+                          ['Bank:', selectedOrg.bank_name],
+                          ['MFO:', selectedOrg.mfo],
+                        ].map(([l, v]) => v ? (
+                          <div key={l} className="flex gap-1 mb-0.5">
+                            <span className="font-medium w-16 flex-shrink-0">{l}</span>
+                            <span>{v}</span>
+                          </div>
+                        ) : null)}
+                        <div className="mt-6 pt-4 border-t border-gray-300">
+                          <div className="font-medium mb-1">Rahbar: {selectedOrg?.director_name}</div>
+                          <div className="border-b border-black w-40 mt-8 mb-1"/>
+                          <div className="text-[10px] text-gray-500">Imzo / M.O.</div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold mb-2 text-sm">Buyurtmachi</div>
+                        {selectedCp && [
+                          ['Nomi:', selectedCp.name],
+                          ['Manzil:', selectedCp.address],
+                          ['Telefon:', selectedCp.phone],
+                          ['STIR:', selectedCp.inn],
+                          ['OKED:', selectedCp.oked],
+                          ['X/R:', selectedCp.bank_account],
+                          ['Bank:', selectedCp.bank_name],
+                          ['MFO:', selectedCp.mfo],
+                        ].map(([l, v]) => v ? (
+                          <div key={l} className="flex gap-1 mb-0.5">
+                            <span className="font-medium w-16 flex-shrink-0">{l}</span>
+                            <span>{v}</span>
+                          </div>
+                        ) : null)}
+                        <div className="mt-6 pt-4 border-t border-gray-300">
+                          <div className="font-medium mb-1">Rahbar: {selectedCp?.director_name}</div>
+                          <div className="border-b border-black w-40 mt-8 mb-1"/>
+                          <div className="text-[10px] text-gray-500">Imzo / M.O.</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
