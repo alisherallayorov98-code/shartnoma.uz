@@ -46,7 +46,7 @@ export const CONTRACT_TEMPLATES: Record<ContractType, string> = {
   oldi_sotdi: `OLDI-SOTDI SHARTNOMASI
 № {{RAQAM}}
 
-{{SHAHAR}} shahri                                    "{{SANA}}"
+{{SHAHAR}}                                           "{{SANA}}"
 
 {{BUYURTMACHI}}, keyingi o'rinlarda "Xaridor" deb yuritiladi, {{BUYURTMACHI_RAHBAR}} nomidan, bir tomondan, va {{IJROCHI}}, keyingi o'rinlarda "Sotuvchi" deb yuritiladi, {{IJROCHI_RAHBAR}} nomidan, ikkinchi tomondan, quyidagilar haqida ushbu shartnomani tuzdilar:
 
@@ -141,7 +141,7 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
   xizmat: `XIZMAT KO'RSATISH SHARTNOMASI
 № {{RAQAM}}
 
-{{SHAHAR}} shahri                                    "{{SANA}}"
+{{SHAHAR}}                                           "{{SANA}}"
 
 {{BUYURTMACHI}}, keyingi o'rinlarda "Buyurtmachi" deb yuritiladi, {{BUYURTMACHI_RAHBAR}} nomidan, bir tomondan, va {{IJROCHI}}, keyingi o'rinlarda "Ijrochi" deb yuritiladi, {{IJROCHI_RAHBAR}} nomidan, ikkinchi tomondan, quyidagilar haqida ushbu shartnomani tuzdilar:
 
@@ -225,7 +225,7 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
   ijara: `IJARA SHARTNOMASI
 № {{RAQAM}}
 
-{{SHAHAR}} shahri                                    "{{SANA}}"
+{{SHAHAR}}                                           "{{SANA}}"
 
 {{BUYURTMACHI}}, keyingi o'rinlarda "Ijarachi" deb yuritiladi, {{BUYURTMACHI_RAHBAR}} nomidan, bir tomondan, va {{IJROCHI}}, keyingi o'rinlarda "Ijaraberuvchi" deb yuritiladi, {{IJROCHI_RAHBAR}} nomidan, ikkinchi tomondan, quyidagilar haqida ushbu shartnomani tuzdilar:
 
@@ -297,7 +297,7 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
   pudrat: `PUDRAT SHARTNOMASI
 № {{RAQAM}}
 
-{{SHAHAR}} shahri                                    "{{SANA}}"
+{{SHAHAR}}                                           "{{SANA}}"
 
 {{BUYURTMACHI}}, keyingi o'rinlarda "Buyurtmachi" deb yuritiladi, {{BUYURTMACHI_RAHBAR}} nomidan, bir tomondan, va {{IJROCHI}}, keyingi o'rinlarda "Pudratchi" deb yuritiladi, {{IJROCHI_RAHBAR}} nomidan, ikkinchi tomondan, quyidagilar haqida ushbu shartnomani tuzdilar:
 
@@ -377,7 +377,7 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
   qoshimcha: `QO'SHIMCHA SHARTNOMA
 № {{RAQAM}}
 
-{{SHAHAR}} shahri                                    "{{SANA}}"
+{{SHAHAR}}                                           "{{SANA}}"
 
 {{BUYURTMACHI}}, keyingi o'rinlarda "1-tomon" deb yuritiladi, {{BUYURTMACHI_RAHBAR}} nomidan, bir tomondan, va {{IJROCHI}}, keyingi o'rinlarda "2-tomon" deb yuritiladi, {{IJROCHI_RAHBAR}} nomidan, ikkinchi tomondan, asosiy shartnomaga qo'shimcha sifatida quyidagilarni kelishib oldilar:
 
@@ -426,7 +426,7 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
   moliyaviy: `MOLIYAVIY YORDAM SHARTNOMASI
 № {{RAQAM}}
 
-{{SHAHAR}} shahri                                    "{{SANA}}"
+{{SHAHAR}}                                           "{{SANA}}"
 
 {{BUYURTMACHI}}, keyingi o'rinlarda "Qarz beruvchi" deb yuritiladi, {{BUYURTMACHI_RAHBAR}} nomidan, bir tomondan, va {{IJROCHI}}, keyingi o'rinlarda "Qarz oluvchi" deb yuritiladi, {{IJROCHI_RAHBAR}} nomidan, ikkinchi tomondan, quyidagilar haqida ushbu shartnomani tuzdilar:
 
@@ -479,7 +479,7 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
   daval: `DAVAL SHARTNOMASI
 № {{RAQAM}}
 
-{{SHAHAR}} shahri                                    "{{SANA}}"
+{{SHAHAR}}                                           "{{SANA}}"
 
 {{BUYURTMACHI}}, keyingi o'rinlarda "Buyurtmachi" deb yuritiladi, {{BUYURTMACHI_RAHBAR}} nomidan, bir tomondan, va {{IJROCHI}}, keyingi o'rinlarda "Qayta ishlovchi" deb yuritiladi, {{IJROCHI_RAHBAR}} nomidan, ikkinchi tomondan, quyidagilar haqida ushbu shartnomani tuzdilar:
 
@@ -605,7 +605,7 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
   boshqa: `SHARTNOMA
 № {{RAQAM}}
 
-{{SHAHAR}} shahri                                    "{{SANA}}"
+{{SHAHAR}}                                           "{{SANA}}"
 
 {{BUYURTMACHI}}, keyingi o'rinlarda "1-tomon" deb yuritiladi, {{BUYURTMACHI_RAHBAR}} nomidan, bir tomondan, va {{IJROCHI}}, keyingi o'rinlarda "2-tomon" deb yuritiladi, {{IJROCHI_RAHBAR}} nomidan, ikkinchi tomondan, quyidagilar haqida ushbu shartnomani tuzdilar:
 
@@ -688,6 +688,12 @@ export function numberToWords(num: number): string {
   return parts.join(' ') || 'nol'
 }
 
+function cityLabel(city: string): string {
+  if (!city) return 'Toshkent shahri'
+  if (city.endsWith(' tumani') || city.endsWith(' shahri') || city.endsWith(' shahristoni')) return city
+  return `${city} shahri`
+}
+
 // Shablonni to'ldirish
 export function fillTemplate(
   template: string,
@@ -710,7 +716,7 @@ export function fillTemplate(
   return template
     .replace(/{{RAQAM}}/g, data.contract_number || '___')
     .replace(/{{SANA}}/g, data.contract_date || '___')
-    .replace(/{{SHAHAR}}/g, data.city || 'Toshkent')
+    .replace(/{{SHAHAR}}/g, cityLabel(data.city || 'Toshkent'))
     .replace(/{{BUYURTMACHI}}/g, data.org_name || '_________________')
     .replace(/{{BUYURTMACHI_INN}}/g, data.org_inn || '___')
     .replace(/{{BUYURTMACHI_RAHBAR}}/g, data.org_director || '___')

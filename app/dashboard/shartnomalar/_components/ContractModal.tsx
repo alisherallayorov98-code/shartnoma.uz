@@ -14,6 +14,22 @@ import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
 import { useToast } from '@/lib/toast'
 import CityPicker from './CityPicker'
 
+function orgCityDefault(org: { viloyat?: string; tuman?: string } | null | undefined): string {
+  if (!org) return 'Toshkent shahri'
+  if (org.tuman?.trim()) return org.tuman.trim()
+  const v = org.viloyat?.trim() || ''
+  const MAP: Record<string, string> = {
+    'Toshkent shahri': 'Toshkent shahri', 'Toshkent viloyati': 'Toshkent shahri',
+    'Samarqand': 'Samarqand shahri', 'Buxoro': 'Buxoro shahri',
+    "Farg'ona": "Farg'ona shahri", 'Andijon': 'Andijon shahri',
+    'Namangan': 'Namangan shahri', 'Qashqadaryo': 'Qarshi shahri',
+    'Surxondaryo': 'Termiz shahri', 'Navoiy': 'Navoiy shahri',
+    'Jizzax': 'Jizzax shahri', 'Sirdaryo': 'Guliston shahri',
+    'Xorazm': 'Urganch shahri', "Qoraqalpog'iston": 'Nukus shahri',
+  }
+  return MAP[v] || 'Toshkent shahri'
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type SpecItem = {
@@ -207,6 +223,17 @@ export default function ContractModal({
   const cpDropRef = useRef<HTMLDivElement>(null)
 
   const isEdit = !!form.id
+
+  // Tashkilot o'zgarganda shahni avtomatik to'ldirish (yangi shartnoma uchun)
+  useEffect(() => {
+    if (isEdit) return
+    const org = orgs.find(o => o.id === form.organization_id)
+    if (org) {
+      const city = orgCityDefault(org)
+      setForm(f => ({ ...f, city }))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.organization_id])
 
   const lbl = 'block text-xs text-gray-400 mb-1'
   const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'

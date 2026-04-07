@@ -2,6 +2,13 @@ export type Band = { matn: string }
 export type Bolim = { sarlavha: string; bandlar: Band[] }
 export type ContractStructure = { bolimlar: Bolim[] }
 
+// "Toshkent" → "Toshkent shahri", "Paxtachi tumani" → o'zgarishsiz
+function cityLabel(city: string): string {
+  if (!city) return 'Toshkent shahri'
+  if (city.endsWith(' tumani') || city.endsWith(' shahri') || city.endsWith(' shahristoni')) return city
+  return `${city} shahri`
+}
+
 // Shablonni to'ldirish uchun ma'lumotlar
 export type TemplateData = {
   contract_number: string
@@ -38,7 +45,7 @@ function fill(text: string, d: Partial<TemplateData>): string {
   let result = text
     .replace(/\[RAQAM\]/g, d.contract_number || '___')
     .replace(/\[SANA\]/g, formatDateUz(d.contract_date))
-    .replace(/\[SHAHAR\]/g, d.city || 'Toshkent')
+    .replace(/\[SHAHAR\]/g, cityLabel(d.city || 'Toshkent'))
     .replace(/\[YIL_OXIRI\]/g, yearEnd(d.contract_date))
     .replace(/\[BUYURTMACHI\]/g, d.org_name || '_________________')
     .replace(/\[BUYURTMACHI_INN\]/g, d.org_inn || '___')
@@ -216,7 +223,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "NIZOLARNI HAL ETISH", bandlar: [
-      { matn: "Shartnomadan kelib chiqadigan va muzokaralar yo'li bilan 15 (o'n besh) kun ichida ixtiyoriy tartibda hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga ko'rib chiqish uchun topshiriladi." },
+      { matn: "Shartnomadan kelib chiqadigan va muzokaralar yo'li bilan 15 (o'n besh) kun ichida ixtiyoriy tartibda hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] iqtisodiy sudiga ko'rib chiqish uchun topshiriladi." },
       { matn: "Shartnoma bo'yicha barcha pretenziyalar yozma shaklda taqdim etilishi va pretenziya olingan kundan boshlab 15 (o'n besh) ish kuni ichida Tomonlar tomonidan ko'rib chiqilishi kerak. Pretenziyaga javob berilmagan taqdirda u rad etilgan hisoblanadi." },
       { matn: "Tovar yetkazib berilgandan so'ng Sotuvchi hisobida avans qoldiq qolsa: agar qoldiq 100 000 (yuz ming) so'mdan kam bo'lsa va Shartnoma majburiyatlari to'liq bajarilganidan keyin 60 (oltmish) kalendar kuni ichida Xaridor tomonidan qaytarish to'g'risida yozma talab kelmasa, qoldiq Sotuvchi tomonidan hadya sifatida qabul qilinadi; agar qoldiq 100 000 (yuz ming) so'mdan ko'p bo'lsa, Sotuvchi uni yozma talabga qadar, lekin 3 (uch) yildan ko'p bo'lmagan muddatda saqlaydi, muddat o'tgandan so'ng qoldiq Sotuvchining daromadi hisoblanadi." },
     ]},
@@ -294,7 +301,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "NIZOLARNI HAL ETISH", bandlar: [
-      { matn: "Shartnomadan kelib chiqadigan va muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi. Shartnoma bo'yicha pretenziyalar yozma shaklda taqdim etilishi va 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak." },
+      { matn: "Shartnomadan kelib chiqadigan va muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] iqtisodiy sudiga topshiriladi. Shartnoma bo'yicha pretenziyalar yozma shaklda taqdim etilishi va 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak." },
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
@@ -356,7 +363,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "NIZOLARNI HAL ETISH", bandlar: [
-      { matn: "Shartnomadan kelib chiqadigan va muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi. Shartnoma bo'yicha pretenziyalar yozma shaklda taqdim etilishi va 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak." },
+      { matn: "Shartnomadan kelib chiqadigan va muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] iqtisodiy sudiga topshiriladi. Shartnoma bo'yicha pretenziyalar yozma shaklda taqdim etilishi va 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak." },
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
@@ -427,7 +434,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "NIZOLARNI HAL ETISH", bandlar: [
-      { matn: "Shartnomadan kelib chiqadigan va muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilishi va 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak." },
+      { matn: "Shartnomadan kelib chiqadigan va muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilishi va 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak." },
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
@@ -478,7 +485,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "NIZOLARNI HAL ETISH", bandlar: [
-      { matn: "Shartnomadan kelib chiqadigan nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi; hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilishi va 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak." },
+      { matn: "Shartnomadan kelib chiqadigan nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi; hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilishi va 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak." },
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
@@ -532,7 +539,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
 
     { sarlavha: "FORS-MAJOR VA NIZOLARNI HAL ETISH", bandlar: [
       { matn: "Tomonlar o'z nazoratlaridan tashqarida bo'lgan fors-major holatlari oqibatida majburiyatlarini bajara olmaslik uchun javobgarlikdan ozod etiladi. Ta'sirlangan tomon 5 (besh) kalendar kuni ichida yozma xabar berishi shart. Fors-major holatlari 2 (ikki) oydan ortiq davom etsa, Tomonlar xom ashyoni qaytarish va hisob-kitob qilish shartlari to'g'risida muzokaralar olib borishlari shart." },
-      { matn: "Shartnomadan kelib chiqadigan nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi; hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi. Shartnomada tartibga solinmagan masalalar O'zbekiston Respublikasining amaldagi qonunchiligi bilan tartibga solinadi." },
+      { matn: "Shartnomadan kelib chiqadigan nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi; hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] iqtisodiy sudiga topshiriladi. Shartnomada tartibga solinmagan masalalar O'zbekiston Respublikasining amaldagi qonunchiligi bilan tartibga solinadi." },
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI", bandlar: [
@@ -670,7 +677,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "NIZOLARNI HAL ETISH", bandlar: [
-      { matn: `Shartnomadan kelib chiqadigan barcha nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi. Kelishuv bo'lmagan taqdirda nizo O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilib, 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak.` },
+      { matn: `Shartnomadan kelib chiqadigan barcha nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi. Kelishuv bo'lmagan taqdirda nizo O'zbekiston Respublikasi [SHAHAR] iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilib, 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak.` },
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
@@ -714,7 +721,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "NIZOLARNI HAL ETISH", bandlar: [
-      { matn: `Shartnomadan kelib chiqadigan barcha nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi. Kelishuv bo'lmagan taqdirda nizo O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilib, 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak.` },
+      { matn: `Shartnomadan kelib chiqadigan barcha nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi. Kelishuv bo'lmagan taqdirda nizo O'zbekiston Respublikasi [SHAHAR] iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilib, 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak.` },
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
@@ -757,7 +764,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
 
     { sarlavha: "TOMONLARNING JAVOBGARLIGI VA NIZOLARNI HAL ETISH", bandlar: [
       { matn: `Lizingberuvchi Lizing ob'ektini o'z vaqtida yetkazib bermagan taqdirda Lizingoluvchi kechiktirilgan har bir kun uchun lizing ob'ekti qiymatining 0,05 foizi miqdorida penya talab qilish huquqiga ega.` },
-      { matn: `Shartnomadan kelib chiqadigan barcha nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi. Kelishuv bo'lmagan taqdirda nizo O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi.` },
+      { matn: `Shartnomadan kelib chiqadigan barcha nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi. Kelishuv bo'lmagan taqdirda nizo O'zbekiston Respublikasi [SHAHAR] iqtisodiy sudiga topshiriladi.` },
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI", bandlar: [
@@ -800,7 +807,7 @@ const STRUCTURES: Record<string, (d: Partial<TemplateData>) => ContractStructure
     ]},
 
     { sarlavha: "NIZOLARNI HAL ETISH", bandlar: [
-      { matn: "Shartnomadan kelib chiqadigan nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi; hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] shahri iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilishi va 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak." },
+      { matn: "Shartnomadan kelib chiqadigan nizolar muzokaralar yo'li bilan 15 (o'n besh) ish kuni ichida hal etiladi; hal etilmagan nizolar O'zbekiston Respublikasi [SHAHAR] iqtisodiy sudiga topshiriladi. Pretenziyalar yozma shaklda taqdim etilishi va 15 (o'n besh) ish kuni ichida ko'rib chiqilishi kerak." },
     ]},
 
     { sarlavha: "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI", bandlar: [
@@ -952,7 +959,7 @@ export function structureToText(
   lines.push(header.type_name.toUpperCase())
   lines.push(`№ ${header.number}`)
   lines.push('')
-  lines.push(`${header.city} shahri${' '.repeat(40)}${formatDateUz(header.date)}`)
+  lines.push(`${cityLabel(header.city)}${' '.repeat(40)}${formatDateUz(header.date)}`)
   lines.push('')
 
   structure.bolimlar.forEach((bolim, bi) => {

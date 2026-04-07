@@ -59,7 +59,31 @@ const TYPE_COLORS: Record<string, string> = {
 
 // ─── Empty form factory ───────────────────────────────────────────────────────
 
-function makeEmptyForm(orgId: string): ContractForm {
+// Viloyat nomidan shahar labelini chiqarish
+function orgCityDefault(org: { viloyat?: string; tuman?: string } | null | undefined): string {
+  if (!org) return 'Toshkent shahri'
+  if (org.tuman?.trim()) return org.tuman.trim()
+  const v = org.viloyat?.trim() || ''
+  const MAP: Record<string, string> = {
+    'Toshkent shahri': 'Toshkent shahri',
+    'Toshkent viloyati': 'Toshkent shahri',
+    'Samarqand': 'Samarqand shahri',
+    'Buxoro': 'Buxoro shahri',
+    "Farg'ona": "Farg'ona shahri",
+    'Andijon': 'Andijon shahri',
+    'Namangan': 'Namangan shahri',
+    'Qashqadaryo': 'Qarshi shahri',
+    'Surxondaryo': 'Termiz shahri',
+    'Navoiy': 'Navoiy shahri',
+    'Jizzax': 'Jizzax shahri',
+    'Sirdaryo': 'Guliston shahri',
+    'Xorazm': 'Urganch shahri',
+    "Qoraqalpog'iston": 'Nukus shahri',
+  }
+  return MAP[v] || 'Toshkent shahri'
+}
+
+function makeEmptyForm(orgId: string, orgCity?: string): ContractForm {
   return {
     id: '',
     contract_number: '',
@@ -70,7 +94,7 @@ function makeEmptyForm(orgId: string): ContractForm {
     counterparty_id: '',
     status: 'active',
     content: '',
-    city: 'Toshkent',
+    city: orgCity || 'Toshkent shahri',
     product_name: '',
     spec_items: [],
     qqs_enabled: false,
@@ -99,7 +123,7 @@ export default function ShartnomalarPage() {
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [statusFilter, setStatusFilter] = useState('all')
   const [modal, setModal] = useState<null | 'contract' | 'viewContract'>(null)
-  const [contractForm, setContractForm] = useState<ContractForm>(makeEmptyForm(activeOrg?.id || ''))
+  const [contractForm, setContractForm] = useState<ContractForm>(makeEmptyForm(activeOrg?.id || '', orgCityDefault(activeOrg)))
   const [viewContract, setViewContract] = useState<Contract | null>(null)
   const [saving, setSaving] = useState(false)
   const [customTemplates, setCustomTemplates] = useState<AppTemplate[]>([])
@@ -140,7 +164,7 @@ export default function ShartnomalarPage() {
       const { type, content } = JSON.parse(raw) as { type: string; content: string }
       localStorage.removeItem('tpl_to_contract')
       if (!canCreateContract()) { openUpgradeModal(); return }
-      const form = makeEmptyForm(activeOrg.id)
+      const form = makeEmptyForm(activeOrg.id, orgCityDefault(activeOrg))
       form.contract_number = autoContractNum()
       form.contract_type = type || 'oldi_sotdi'
       form.content = content || ''
@@ -211,7 +235,7 @@ export default function ShartnomalarPage() {
   function openNewContract() {
     if (!canCreateContract()) { openUpgradeModal(); return }
     if (!activeOrg) { toast(T(t.msg.noOrgs), 'error'); return }
-    const form = makeEmptyForm(activeOrg.id)
+    const form = makeEmptyForm(activeOrg.id, orgCityDefault(activeOrg))
     form.contract_number = autoContractNum()
     setContractForm(form)
     setModal('contract')
