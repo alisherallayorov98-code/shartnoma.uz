@@ -608,6 +608,11 @@ export default function ProfilPage() {
                           <div className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</div>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm text-gray-200 font-medium truncate">{f.full_name}</div>
+                            {activeOrg?.ustav_kapital && (
+                              <div className="text-xs text-gray-500 mt-0.5">
+                                {Math.round(f.ulush / 100 * parseFloat(activeOrg.ustav_kapital)).toLocaleString()} so'm
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="text-right">
@@ -1021,16 +1026,23 @@ export default function ProfilPage() {
                     <div>
                       <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wider">Soliqdan kelgan ma'lumot</p>
                       <div className="bg-[#0F172A] rounded-xl overflow-hidden border border-[#1E293B]">
-                        {stirSyncResult.founders.map((f, i) => (
-                          <div key={i} className={`flex items-center px-4 py-2.5 gap-3 ${i < stirSyncResult.founders.length - 1 ? 'border-b border-[#1E293B]' : ''}`}>
-                            <div className="w-6 h-6 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</div>
-                            <span className="flex-1 text-sm text-gray-200">{f.full_name}</span>
-                            <span className="text-sm font-bold text-white">{f.ulush}%</span>
-                            <div className="w-16 h-1.5 bg-[#1E293B] rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${f.ulush}%` }}/>
+                        {stirSyncResult.founders.map((f, i) => {
+                          const kapital = parseFloat(stirSyncResult.ustav_kapital?.replace(/\s/g, '') || '0')
+                          const summa = kapital > 0 ? Math.round(f.ulush / 100 * kapital) : 0
+                          return (
+                            <div key={i} className={`flex items-center px-4 py-2.5 gap-3 ${i < stirSyncResult.founders.length - 1 ? 'border-b border-[#1E293B]' : ''}`}>
+                              <div className="w-6 h-6 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm text-gray-200">{f.full_name}</div>
+                                {summa > 0 && <div className="text-xs text-gray-500">{summa.toLocaleString()} so'm</div>}
+                              </div>
+                              <span className="text-sm font-bold text-white">{f.ulush}%</span>
+                              <div className="w-16 h-1.5 bg-[#1E293B] rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${f.ulush}%` }}/>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                       {stirSyncResult.ustav_kapital && (
                         <p className="text-xs text-gray-500 mt-2">
