@@ -208,86 +208,84 @@ export async function downloadTextAsWord(text: string, filename: string) {
     Table, TableRow, TableCell, WidthType, BorderStyle,
   } = await import('docx')
 
-  const F = 'Times New Roman'
-  const NB = { style: BorderStyle.NIL, size: 0, color: 'auto' } as const
-  const noBorders = { top: NB, bottom: NB, left: NB, right: NB }
+  const F   = 'Times New Roman'
+  const NB  = { style: BorderStyle.NIL, size: 0, color: 'auto' } as const
+  const NBS = { top: NB, bottom: NB, left: NB, right: NB, insideH: NB, insideV: NB }
 
-  type LineKind = 'empty' | 'separator' | 'title' | 'main' | 'sub' | 'label' | 'bullet' | 'twocol' | 'body'
+  // ── Satr turini aniqlash ──────────────────────────────────────────────────
+  type LineKind = 'empty' | 'separator' | 'title' | 'subtitle' | 'main' | 'sub' | 'label' | 'bullet' | 'twocol' | 'body'
 
   function detectKind(line: string): LineKind {
     const t = line.trim()
     if (!t) return 'empty'
-    // Decorator lines: ════, ────, ═══, === etc.
     if (/^[═─=\-]{3,}$/.test(t)) return 'separator'
-    // Signature lines: only underscores and spaces  ← MUST be before twocol
-    if (/^_+(\s+_+)*$/.test(t)) return 'body'
-    // Two-column line: non-whitespace, 5+ spaces gap, non-whitespace
-    // Excluded: numbered lists, pure underscore/dash lines
-    if (
-      /\S[ \t]{5,}\S/.test(line) &&
-      !/^\d+\.\s/.test(t) &&
-      !/^[_\-\s]+$/.test(t)
-    ) return 'twocol'
-    // Main numbered section: "1. TEXT" but not "1.1."
+
+    // Pastki chiziqli satrlar (JSHSHIR:____, pasport: AA____) — body
+    if (/_/.test(t)) return 'body'
+
+    // Ikki ustunli satr: "Toshkent shahri          07.04.2026"
+    if (/\S[ \t]{5,}\S/.test(line) && !/^\d+\.\s/.test(t)) return 'twocol'
+
+    // Asosiy raqamlangan bo'lim: "1. SARLAVHA"
     if (/^(\d+\.\s+\S|§\s*\d)/.test(t) && !/^\d+\.\d/.test(t)) return 'main'
-    // Subsection: "1.1.", "1.2.3"
+    // Pastki band: "1.1.", "2.3.4"
     if (/^\d+\.\d+/.test(t)) return 'sub'
-    // Title: short, starts uppercase, ≥65% uppercase letters
-    if (t.length <= 80 && /^[A-ZА-ЯЁЎҚҒҲ]/.test(t)) {
-      const letters = t.replace(/\s+/g, '').replace(/[^a-zA-ZА-ЯЁа-яёЎҚҒҲўқғҳ]/g, '')
-      const uppers = t.replace(/[^A-ZА-ЯЁЎҚҒҲ]/g, '')
-      if (letters.length >= 4 && uppers.length / letters.length >= 0.65) return 'title'
+
+    // Sarlavha: qisqa, 60% dan ko'p katta harf, pastki chiziq yo'q
+    if (t.length <= 90 && /^[A-ZА-ЯЁЎҚҒҲ"]/.test(t)) {
+      const letters = t.replace(/[^a-zA-ZА-ЯЁа-яёЎҚҒҲўқғҳ]/g, '')
+      const uppers  = t.replace(/[^A-ZА-ЯЁЎҚҒҲ]/g, '')
+      if (letters.length >= 3 && uppers.length / Math.max(letters.length, 1) >= 0.60) {
+        // Agar tirnoq ichida yoki qavsda bo'lsa — subtitle
+        if (/^\(/.test(t)) return 'subtitle'
+        return 'title'
+      }
     }
-    // Label: "ISH BERUVCHI:", "XODIM:" etc. (standalone label on own line)
-    if (/^[A-ZА-ЯЁЎҚҒҲ][A-ZА-ЯЁЎҚҒҲ\s]{1,25}:\s*$/.test(t)) return 'label'
+
+    // Subtitle: "(belgilanmagan muddatli)" kabi qavs ichidagi qo'shimcha sarlavha
+    if (/^\(.*\)$/.test(t)) return 'subtitle'
+
+    // Label: "ISH BERUVCHI:\n" yoki "XODIM:\n" (faqat ikki nuqta bilan tugasa)
+    if (/^[A-ZА-ЯЁЎҚҒҲ][A-ZА-ЯЁЎҚҒҲ\s']{1,30}:\s*$/.test(t)) return 'label'
+
     // Bullet
     if (/^[-–•]\s/.test(t)) return 'bullet'
     return 'body'
   }
 
-  // Split a two-column line into [left, right]
+  // Ikki ustunli satrni ajratish
   function splitTwoCol(line: string): [string, string] {
     const m = line.match(/^(.+?)[ \t]{5,}(.+)$/)
-    if (m) return [m[1].trim(), m[2].trim()]
-    return [line.trim(), '']
+    return m ? [m[1].trim(), m[2].trim()] : [line.trim(), '']
   }
 
-  // Build blocks: group consecutive twocol lines into table blocks
-  type ParaBlock = { type: 'para'; line: string; bi: number }
-  type TableBlock = { type: 'table'; rows: [string, string][] }
-  type Block = ParaBlock | TableBlock
+  // Bloklarga ajratish: ketma-ket twocol → table
+  type Block =
+    | { type: 'para'; line: string }
+    | { type: 'table'; rows: [string, string][] }
 
   const rawLines = text.split('\n')
   const blocks: Block[] = []
   let li = 0
   while (li < rawLines.length) {
-    const k = detectKind(rawLines[li])
-    if (k === 'twocol') {
+    if (detectKind(rawLines[li]) === 'twocol') {
       const rows: [string, string][] = []
       while (li < rawLines.length) {
-        const kk = detectKind(rawLines[li])
-        if (kk === 'twocol') { rows.push(splitTwoCol(rawLines[li])); li++ }
-        else if (kk === 'empty' && li + 1 < rawLines.length && detectKind(rawLines[li + 1]) === 'twocol') { li++ } // skip blank between twocol rows
+        const k = detectKind(rawLines[li])
+        if (k === 'twocol') { rows.push(splitTwoCol(rawLines[li])); li++ }
+        else if (k === 'empty' && li + 1 < rawLines.length && detectKind(rawLines[li + 1]) === 'twocol') { li++ }
         else break
       }
-      if (rows.length > 0) blocks.push({ type: 'table', rows })
+      if (rows.length) blocks.push({ type: 'table', rows })
     } else {
-      blocks.push({ type: 'para', line: rawLines[li], bi: blocks.length })
+      blocks.push({ type: 'para', line: rawLines[li] })
       li++
     }
   }
 
-  // Helper: make a no-border table cell with one paragraph
-  function makeCell(txt: string, bold = false, align = AlignmentType.LEFT) {
-    return new TableCell({
-      width: { size: 50, type: WidthType.PERCENTAGE },
-      borders: noBorders,
-      children: [new Paragraph({
-        alignment: align,
-        spacing: { after: 30 },
-        children: [new TextRun({ text: txt, bold, size: 24, font: F, color: '000000' })],
-      })],
-    })
+  // Yordamchi: kataklarsiz jadval katagi
+  function makeCell(paragraphs: InstanceType<typeof Paragraph>[], pct = 50) {
+    return new TableCell({ width: { size: pct, type: WidthType.PERCENTAGE }, borders: NBS, children: paragraphs })
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -296,98 +294,131 @@ export async function downloadTextAsWord(text: string, filename: string) {
   for (let bi = 0; bi < blocks.length; bi++) {
     const block = blocks[bi]
 
-    // ── Table block (two-column rekvizitlar) ────────────────────────────────
+    // ── Ikki ustunli jadval (shahar/sana, rekvizitlar) ─────────────────────
     if (block.type === 'table') {
-      children.push(new Paragraph({ text: '', spacing: { before: 80, after: 0 } }))
+      children.push(new Paragraph({ text: '', spacing: { before: 60, after: 0 } }))
       children.push(new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
-        borders: noBorders,
-        rows: block.rows.map(([l, r]) => {
-          const isHeader = /^[A-ZА-ЯЁЎҚҒҲ\s]{3,}:?\s*$/.test(l.trim())
-          return new TableRow({
-            children: [makeCell(l, isHeader), makeCell(r, isHeader)],
-          })
-        }),
+        borders: NBS,
+        rows: block.rows.map(([l, r]) => new TableRow({
+          children: [
+            makeCell([new Paragraph({
+              spacing: { after: 40, line: 276 },
+              children: [new TextRun({ text: l, size: 24, font: F, color: '000000' })],
+            })], 50),
+            makeCell([new Paragraph({
+              alignment: AlignmentType.RIGHT,
+              spacing: { after: 40, line: 276 },
+              children: [new TextRun({ text: r, size: 24, font: F, color: '000000' })],
+            })], 50),
+          ],
+        })),
       }))
-      children.push(new Paragraph({ text: '', spacing: { before: 0, after: 60 } }))
+      children.push(new Paragraph({ text: '', spacing: { before: 0, after: 80 } }))
       continue
     }
 
-    // ── Paragraph block ──────────────────────────────────────────────────────
     const { line } = block
-    const t = line.trim()
+    const t    = line.trim()
     const kind = detectKind(line)
 
-    if (kind === 'empty' || kind === 'separator') {
-      children.push(new Paragraph({ text: '', spacing: { after: kind === 'separator' ? 40 : 20 } }))
+    // ── Bo'sh / ajratuvchi ─────────────────────────────────────────────────
+    if (kind === 'empty') {
+      children.push(new Paragraph({ text: '', spacing: { after: 60 } }))
       continue
     }
+    if (kind === 'separator') continue   // dekorativ chiziq — e'tiborsiz
 
+    // ── Sarlavha ───────────────────────────────────────────────────────────
     if (kind === 'title') {
       children.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: bi > 0 ? 160 : 0, after: 100 },
-        children: [new TextRun({ text: t, bold: true, underline: {}, size: 28, font: F, color: '000000' })],
+        spacing: { before: bi > 0 ? 200 : 0, after: 60 },
+        children: [new TextRun({
+          text: t, bold: true, underline: { type: 'single', color: '000000' },
+          size: 28, font: F, color: '000000',
+        })],
       }))
       continue
     }
 
+    // ── Qo'shimcha sarlavha (qavs ichida) ─────────────────────────────────
+    if (kind === 'subtitle') {
+      children.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 40, after: 120 },
+        children: [new TextRun({ text: t, size: 24, font: F, color: '444444', italics: true })],
+      }))
+      continue
+    }
+
+    // ── Asosiy bo'lim: "1. SHARTNOMA PREDMETI" ────────────────────────────
     if (kind === 'main') {
       children.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 200, after: 80 },
+        spacing: { before: 240, after: 100 },
         children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       }))
       continue
     }
 
+    // ── Pastki band: "1.1. Matn" ──────────────────────────────────────────
     if (kind === 'sub') {
       children.push(new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { before: 80, after: 40 },
+        spacing: { before: 60, after: 40, line: 276 },
         children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       }))
       continue
     }
 
+    // ── Mustaqil label: "ISH BERUVCHI:" ───────────────────────────────────
     if (kind === 'label') {
       children.push(new Paragraph({
-        spacing: { before: 160, after: 60 },
+        spacing: { before: 200, after: 60 },
         children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       }))
       continue
     }
 
+    // ── Ro'yxat bandi ─────────────────────────────────────────────────────
     if (kind === 'bullet') {
       const bt = t.replace(/^[-–•]\s*/, '')
       children.push(new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        indent: { left: 360, hanging: 200 },
-        spacing: { after: 40 },
+        indent: { left: 360, hanging: 240 },
+        spacing: { after: 40, line: 276 },
         children: [new TextRun({ text: `– ${bt}`, size: 24, font: F, color: '000000' })],
       }))
       continue
     }
 
-    // body — determine paragraph start for first-line indent
+    // ── Oddiy matn ────────────────────────────────────────────────────────
     const prevBlock = bi > 0 ? blocks[bi - 1] : null
     let prevKind: LineKind | 'table' = 'empty'
     if (prevBlock?.type === 'para') prevKind = detectKind(prevBlock.line)
     else if (prevBlock?.type === 'table') prevKind = 'table'
-    const isParaStart = prevKind === 'empty' || prevKind === 'separator' || prevKind === 'table'
-      || prevKind === 'title' || prevKind === 'main' || prevKind === 'sub' || prevKind === 'label'
+    const isParaStart = ['empty', 'separator', 'table', 'title', 'subtitle', 'main', 'sub', 'label'].includes(prevKind)
+
     children.push(new Paragraph({
       alignment: AlignmentType.JUSTIFIED,
-      indent: isParaStart ? { firstLine: 360 } : {},
-      spacing: { after: 40, line: 276 },
+      indent: isParaStart ? { firstLine: 426 } : {},   // 7.5mm birinchi satr
+      spacing: { after: 40, line: 276 },               // 1.15 qator oralig'i
       children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
     }))
   }
 
   const doc = new Document({
+    styles: {
+      default: {
+        document: {
+          run: { font: F, size: 24, color: '000000' },
+          paragraph: { spacing: { line: 276, after: 40 } },
+        },
+      },
+    },
     sections: [{
       properties: {
-        // Standard Uzbek legal doc margins: left 3cm, right 1.5cm, top/bottom 2cm
         page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } },
       },
       footers: {
@@ -395,10 +426,10 @@ export async function downloadTextAsWord(text: string, filename: string) {
           children: [new Paragraph({
             alignment: AlignmentType.CENTER,
             children: [
-              new TextRun({ text: 'Shartnoma.uz  |  bet ', size: 18, font: F, color: '999999' }),
-              new TextRun({ children: [PageNumber.CURRENT], size: 18, font: F, color: '999999' }),
-              new TextRun({ text: ' / ', size: 18, font: F, color: '999999' }),
-              new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: F, color: '999999' }),
+              new TextRun({ text: 'Kabinetim.uz  |  ', size: 18, font: F, color: 'AAAAAA' }),
+              new TextRun({ children: [PageNumber.CURRENT], size: 18, font: F, color: 'AAAAAA' }),
+              new TextRun({ text: ' / ', size: 18, font: F, color: 'AAAAAA' }),
+              new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: F, color: 'AAAAAA' }),
             ],
           })],
         }),
@@ -408,9 +439,9 @@ export async function downloadTextAsWord(text: string, filename: string) {
   })
 
   const blob = await Packer.toBlob(doc)
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
   a.download = `${sanitizeFilename(filename)}.docx`
   a.click()
   URL.revokeObjectURL(url)
