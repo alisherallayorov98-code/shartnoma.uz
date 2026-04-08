@@ -107,38 +107,43 @@ export default function TolovGrafigi({ org, cps }: Props) {
     if (!rows.length) return
     setDownloading(true)
     try {
-      const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, BorderStyle, AlignmentType, WidthType } = await import('docx')
+      const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, BorderStyle, AlignmentType, WidthType, Footer, PageNumber } = await import('docx')
+      const F   = 'Times New Roman'
+      const NB  = { style: BorderStyle.NIL,    size: 0, color: 'auto'   } as const
+      const BD  = { style: BorderStyle.SINGLE, size: 4, color: '999999' } as const
+      const noBord  = { top: NB, bottom: NB, left: NB, right: NB, insideH: NB, insideV: NB }
+      const noBordC = { top: NB, bottom: NB, left: NB, right: NB }
+      const allBord = { top: BD, bottom: BD, left: BD, right: BD }
+
       const P = parseFloat(jamiSumma.replace(/[\s,]/g, '')) || 0
       const grace = parseInt(imtiyozDavri) || 0
       const hasInterest = tolovTuri !== 'foizsiz' && parseFloat(yillikFoiz) > 0
-      const nb = { style: BorderStyle.NIL, size: 0, color: 'auto' as const }
-      const tableNoBorders = { top: nb, bottom: nb, left: nb, right: nb, insideH: nb, insideV: nb }
-      const cellBorder = { style: BorderStyle.SINGLE, size: 4, color: '999999' as const }
-      const rowBorders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder }
+      const hasGrace = grace > 0 && hasInterest
+
+      const p20 = (txt: string, bold = false) => new Paragraph({
+        spacing: { after: 40, line: 276 },
+        children: [new TextRun({ text: txt, bold, size: 22, font: F, color: '000000' })],
+      })
 
       function hCell(text: string) {
-        return new TableCell({ borders: rowBorders, shading: { fill: 'F0F0F0' },
-          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text, bold: true, size: 18 })] })] })
+        return new TableCell({ borders: allBord, shading: { fill: '1F3864' },
+          children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 },
+            children: [new TextRun({ text, bold: true, size: 18, font: F, color: 'FFFFFF' })] })] })
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      function dCell(text: string, align: any = AlignmentType.CENTER, shade?: string) {
-        return new TableCell({
-          borders: rowBorders,
-          ...(shade ? { shading: { fill: shade } } : {}),
-          children: [new Paragraph({ alignment: align, children: [new TextRun({ text, size: 18 })] })],
-        })
+      function dCell(text: string, align = AlignmentType.CENTER, shade?: string) {
+        return new TableCell({ borders: allBord, ...(shade ? { shading: { fill: shade } } : {}),
+          children: [new Paragraph({ alignment: align, spacing: { after: 40 },
+            children: [new TextRun({ text, size: 19, font: F, color: '000000' })] })] })
       }
 
-      const hasGrace = grace > 0 && hasInterest
       const headers = hasInterest
-        ? ['№', 'Sana', "Asosiy qarz (so'm)", "Foiz (so'm)", "Jami to'lov (so'm)", "Qoldiq (so'm)", ...(hasGrace ? ['Izoh'] : [])]
-        : ['№', 'Sana', "To'lov summasi (so'm)", "Qoldiq (so'm)"]
+        ? ['№', 'Sana', "Asosiy qarz", "Foiz", "Jami to'lov", "Qoldiq", ...(hasGrace ? ['Izoh'] : [])]
+        : ['№', 'Sana', "To'lov summasi", "Qoldiq"]
 
       const tableRows = [
         new TableRow({ children: headers.map(h => hCell(h)) }),
         ...rows.map(row => {
-          const isGrace = !!row.izoh
-          const shade = isGrace ? 'FFF8E1' : undefined
+          const shade = row.izoh ? 'FFF8E1' : undefined
           return new TableRow({ children: hasInterest
             ? [
                 dCell(String(row.num), AlignmentType.CENTER, shade),
@@ -159,17 +164,21 @@ export default function TolovGrafigi({ org, cps }: Props) {
         }),
         new TableRow({ children: hasInterest
           ? [
-              new TableCell({ borders: rowBorders, columnSpan: 2, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'JAMI', bold: true, size: 18 })] })] }),
-              dCell(fmt(rows.reduce((s, r) => s + r.asosiy, 0)), AlignmentType.RIGHT),
-              dCell(fmt(rows.reduce((s, r) => s + r.foiz, 0)), AlignmentType.RIGHT),
-              dCell(fmt(rows.reduce((s, r) => s + r.jami, 0)), AlignmentType.RIGHT),
-              dCell('0'),
-              ...(hasGrace ? [dCell('')] : []),
+              new TableCell({ borders: allBord, columnSpan: 2, shading: { fill: 'F0F4FF' },
+                children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 },
+                  children: [new TextRun({ text: 'JAMI', bold: true, size: 20, font: F })] })] }),
+              dCell(fmt(rows.reduce((s, r) => s + r.asosiy, 0)), AlignmentType.RIGHT, 'F0F4FF'),
+              dCell(fmt(rows.reduce((s, r) => s + r.foiz, 0)), AlignmentType.RIGHT, 'F0F4FF'),
+              dCell(fmt(rows.reduce((s, r) => s + r.jami, 0)), AlignmentType.RIGHT, 'F0F4FF'),
+              dCell('0', AlignmentType.RIGHT, 'F0F4FF'),
+              ...(hasGrace ? [dCell('', AlignmentType.CENTER, 'F0F4FF')] : []),
             ]
           : [
-              new TableCell({ borders: rowBorders, columnSpan: 2, children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'JAMI', bold: true, size: 18 })] })] }),
-              dCell(fmt(P), AlignmentType.RIGHT),
-              dCell('0'),
+              new TableCell({ borders: allBord, columnSpan: 2, shading: { fill: 'F0F4FF' },
+                children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 },
+                  children: [new TextRun({ text: 'JAMI', bold: true, size: 20, font: F })] })] }),
+              dCell(fmt(P), AlignmentType.RIGHT, 'F0F4FF'),
+              dCell('0', AlignmentType.RIGHT, 'F0F4FF'),
             ]
         }),
       ]
@@ -181,41 +190,63 @@ export default function TolovGrafigi({ org, cps }: Props) {
       }
 
       const doc = new Document({
+        styles: { default: { document: { run: { font: F, size: 22 }, paragraph: { spacing: { line: 276, after: 60 } } } } },
         sections: [{
+          properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+          footers: {
+            default: new Footer({
+              children: [new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: 'Kabinetim.uz  |  ', size: 18, font: F, color: 'AAAAAA' }),
+                  new TextRun({ children: [PageNumber.CURRENT], size: 18, font: F, color: 'AAAAAA' }),
+                  new TextRun({ text: ' / ', size: 18, font: F, color: 'AAAAAA' }),
+                  new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: F, color: 'AAAAAA' }),
+                ],
+              })],
+            }),
+          },
           children: [
-            new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "TO'LOV GRAFIGI", bold: true, size: 28 })] }),
-            new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: shartnoma ? `${shartnoma} raqamli shartnomaga ilova` : '', size: 20 })] }),
-            new Paragraph({ children: [] }),
-            new Paragraph({ children: [new TextRun({ text: `Tashkilot: ${org?.name || '___'}  (INN: ${org?.inn || '___'})`, size: 20 })] }),
-            new Paragraph({ children: [new TextRun({ text: `Kontragent: ${kontragent || '___'}`, size: 20 })] }),
-            new Paragraph({ children: [new TextRun({ text: `Jami summa: ${fmt(P)} so'm`, size: 20 })] }),
-            new Paragraph({ children: [new TextRun({ text: `To'lov turi: ${turLabels[tolovTuri]}`, size: 20 })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 },
+              children: [new TextRun({ text: "TO'LOV GRAFIGI", bold: true, underline: { type: 'single' }, size: 28, font: F, color: '000000' })] }),
+            ...(shartnoma ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 },
+              children: [new TextRun({ text: `${shartnoma} raqamli shartnomaga ilova`, size: 22, font: F, color: '444444', italics: true })] })] : [
+              new Paragraph({ text: '', spacing: { after: 100 } })
+            ]),
+
+            p20(`Tashkilot: ${org?.name || '___'}  (INN: ${org?.inn || '___'})`),
+            p20(`Kontragent: ${kontragent || '___'}`),
+            p20(`Jami summa: ${fmt(P)} so'm`),
+            p20(`To'lov turi: ${turLabels[tolovTuri]}`),
             ...(hasGrace ? [
-              new Paragraph({ children: [new TextRun({ text: `Imtiyoz davri: ${grace} oy (faqat foiz to'lanadi)`, size: 20 })] }),
-              ...(imtiyozFoiz.trim() ? [new Paragraph({ children: [new TextRun({ text: `Imtiyoz davri foizi: ${imtiyozFoiz}% yillik`, size: 20 })] })] : []),
+              p20(`Imtiyoz davri: ${grace} oy`),
+              ...(imtiyozFoiz.trim() ? [p20(`Imtiyoz davri foizi: ${imtiyozFoiz}% yillik`)] : []),
             ] : []),
-            new Paragraph({ children: [new TextRun({ text: `Birinchi to'lov: ${boshSana}`, size: 20 })] }),
-            new Paragraph({ children: [new TextRun({ text: `Jami to'lovlar soni: ${rows.length} oy`, size: 20 })] }),
-            new Paragraph({ children: [] }),
+            p20(`Birinchi to'lov: ${boshSana}`),
+            p20(`Jami to'lovlar soni: ${rows.length} oy`),
+            new Paragraph({ text: '', spacing: { after: 60 } }),
+
             new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: tableRows }),
-            new Paragraph({ children: [] }),
-            new Paragraph({ children: [new TextRun({ text: "Shartlar:", bold: true, size: 20 })] }),
-            new Paragraph({ children: [new TextRun({ text: "– To'lov usuli: bank o'tkazmasi", size: 20 })] }),
-            new Paragraph({ children: [new TextRun({ text: "– Kechiktirilgan to'lov uchun kuniga 0.1% jarima belgilanadi", size: 20 })] }),
-            ...(hasGrace ? [new Paragraph({ children: [new TextRun({ text: `– Imtiyoz davri (${grace} oy): faqat foiz to'lanadi, asosiy qarz to'lanmaydi`, size: 20 })] })] : []),
-            new Paragraph({ children: [] }),
+
+            new Paragraph({ text: '', spacing: { before: 120, after: 40 } }),
+            p20('Shartlar:', true),
+            p20("– To'lov usuli: bank o'tkazmasi"),
+            p20("– Kechiktirilgan to'lov uchun kuniga 0.1% jarima belgilanadi"),
+            ...(hasGrace ? [p20(`– Imtiyoz davri (${grace} oy): faqat foiz to'lanadi`)] : []),
+
+            new Paragraph({ text: '', spacing: { before: 160, after: 40 } }),
             new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE }, borders: tableNoBorders,
+              width: { size: 100, type: WidthType.PERCENTAGE }, borders: noBord,
               rows: [new TableRow({ children: [
-                new TableCell({ borders: { top: nb, bottom: nb, left: nb, right: nb }, children: [
-                  new Paragraph({ children: [new TextRun({ text: `${org?.name || '___'} rahbari:`, size: 20 })] }),
-                  new Paragraph({ children: [new TextRun({ text: "_________________________ / " + (org?.director_name || '___'), size: 20 })] }),
-                  new Paragraph({ children: [new TextRun({ text: "M.O.   Sana: _______________", size: 20 })] }),
+                new TableCell({ borders: noBordC, children: [
+                  p20(`${org?.name || '___'} rahbari:`),
+                  p20(`_________________________ / ${org?.director_name || '___'}`),
+                  p20('M.O.   Sana: _______________'),
                 ] }),
-                new TableCell({ borders: { top: nb, bottom: nb, left: nb, right: nb }, children: [
-                  new Paragraph({ children: [new TextRun({ text: `${kontragent || '___'} rahbari:`, size: 20 })] }),
-                  new Paragraph({ children: [new TextRun({ text: "_________________________", size: 20 })] }),
-                  new Paragraph({ children: [new TextRun({ text: "M.O.   Sana: _______________", size: 20 })] }),
+                new TableCell({ borders: noBordC, children: [
+                  p20(`${kontragent || '___'} rahbari:`),
+                  p20('_________________________'),
+                  p20('M.O.   Sana: _______________'),
                 ] }),
               ] })],
             }),

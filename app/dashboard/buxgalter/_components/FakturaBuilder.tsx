@@ -68,104 +68,170 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
   async function downloadWord() {
     setDownloading(true)
     try {
-      const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, BorderStyle, AlignmentType, WidthType } = await import('docx')
-      const cellB = { style: BorderStyle.SINGLE, size: 4, color: '999999' as const }
-      // Cell-level borders: top/bottom/left/right only
-      const brd = { top: cellB, bottom: cellB, left: cellB, right: cellB }
-      const nb = { style: BorderStyle.NIL, size: 0, color: 'auto' as const }
-      // Table-level borders include insideH/insideV; cell-level: top/bottom/left/right only
-      const nbrd = { top: nb, bottom: nb, left: nb, right: nb, insideH: nb, insideV: nb }
-      const nbrdCell = { top: nb, bottom: nb, left: nb, right: nb }
+      const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, BorderStyle, AlignmentType, WidthType, Footer, PageNumber } = await import('docx')
+      const F   = 'Times New Roman'
+      const NB  = { style: BorderStyle.NIL,    size: 0, color: 'auto'   } as const
+      const BD  = { style: BorderStyle.SINGLE, size: 4, color: '999999' } as const
+      const BDH = { style: BorderStyle.SINGLE, size: 6, color: '444444' } as const
+      const noBord  = { top: NB,  bottom: NB,  left: NB,  right: NB,  insideH: NB,  insideV: NB }
+      const noBordC = { top: NB,  bottom: NB,  left: NB,  right: NB }
+      const allBord = { top: BD,  bottom: BD,  left: BD,  right: BD }
+
+      const p = (txt: string, opts: {bold?:boolean; size?:number; align?: typeof AlignmentType[keyof typeof AlignmentType]; before?:number; after?:number} = {}) =>
+        new Paragraph({
+          alignment: opts.align ?? AlignmentType.LEFT,
+          spacing: { before: opts.before ?? 0, after: opts.after ?? 60, line: 276 },
+          children: [new TextRun({ text: txt, bold: opts.bold, size: opts.size ?? 22, font: F, color: '000000' })],
+        })
+
       function hCell(text: string, span = 1) {
-        return new TableCell({ borders: brd, columnSpan: span, shading: { fill: 'F0F0F0' },
-          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text, bold: true, size: 18 })] })] })
+        return new TableCell({
+          borders: allBord, columnSpan: span,
+          shading: { fill: '1F3864' },
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 40 },
+            children: [new TextRun({ text, bold: true, size: 18, font: F, color: 'FFFFFF' })],
+          })],
+        })
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      function dCell(text: string, align: any = AlignmentType.RIGHT) {
-        return new TableCell({ borders: brd,
-          children: [new Paragraph({ alignment: align, children: [new TextRun({ text, size: 18 })] })] })
+      function dCell(text: string, align = AlignmentType.RIGHT, bold = false) {
+        return new TableCell({
+          borders: allBord,
+          children: [new Paragraph({
+            alignment: align,
+            spacing: { after: 40 },
+            children: [new TextRun({ text, bold, size: 20, font: F, color: '000000' })],
+          })],
+        })
+      }
+      function rekvCell(children: InstanceType<typeof Paragraph>[]) {
+        return new TableCell({ borders: noBordC, children })
       }
 
       const doc = new Document({
+        styles: { default: { document: { run: { font: F, size: 22 }, paragraph: { spacing: { line: 276, after: 60 } } } } },
         sections: [{
-          children: [
-            new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `SCHYOT-FAKTURA № ${fakRaqam || '___'}`, bold: true, size: 28 })] }),
-            new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Sana: ${sana}`, size: 22 })] }),
-            ...(shartnoma ? [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Shartnoma: ${shartnoma}`, size: 20 })] })] : []),
-            new Paragraph({ children: [] }),
-            // Tomonlar table
-            new Table({
-              width: { size: 100, type: WidthType.PERCENTAGE }, borders: nbrd,
-              rows: [
-                new TableRow({ children: [
-                  new TableCell({ borders: nbrdCell, children: [
-                    new Paragraph({ children: [new TextRun({ text: 'SOTUVCHI:', bold: true, size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: org?.name || '___', size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: `INN: ${org?.inn || '___'}`, size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: `Bank: ${org?.bank_name || '___'}`, size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: `H/R: ${org?.bank_account || '___'}`, size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: `MFO: ${org?.mfo || '___'}`, size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: `Rahbar: _____ / ${org?.director_name || '___'}`, size: 20 })] }),
-                  ] }),
-                  new TableCell({ borders: nbrdCell, children: [
-                    new Paragraph({ children: [new TextRun({ text: 'XARIDOR:', bold: true, size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: xaridor || '___', size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: `INN: ${xaridorInn || '___'}`, size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: `Bank: ${xaridorBank || '___'}`, size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: `MFO: ${xaridorMfo || '___'}`, size: 20 })] }),
-                    new Paragraph({ children: [new TextRun({ text: `Rahbar: _________________________`, size: 20 })] }),
-                  ] }),
-                ] }),
-              ],
+          properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+          footers: {
+            default: new Footer({
+              children: [new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  new TextRun({ text: 'Kabinetim.uz  |  ', size: 18, font: F, color: 'AAAAAA' }),
+                  new TextRun({ children: [PageNumber.CURRENT], size: 18, font: F, color: 'AAAAAA' }),
+                  new TextRun({ text: ' / ', size: 18, font: F, color: 'AAAAAA' }),
+                  new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: F, color: 'AAAAAA' }),
+                ],
+              })],
             }),
-            new Paragraph({ children: [] }),
-            // Items table
+          },
+          children: [
+            // Sarlavha
+            p(`SCHYOT-FAKTURA № ${fakRaqam || '___'}`, { bold: true, size: 28, align: AlignmentType.CENTER, after: 40 }),
+            p(`Sana: ${sana}`, { size: 22, align: AlignmentType.CENTER, after: shartnoma ? 40 : 120 }),
+            ...(shartnoma ? [p(`Shartnoma: ${shartnoma}`, { size: 20, align: AlignmentType.CENTER, after: 120 })] : []),
+
+            // Tomonlar
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE }, borders: noBord,
+              rows: [new TableRow({ children: [
+                rekvCell([
+                  p('SOTUVCHI:', { bold: true, size: 20, after: 30 }),
+                  p(org?.name || '___', { size: 20, after: 20 }),
+                  p(`INN: ${org?.inn || '___'}`, { size: 18, after: 20 }),
+                  p(`Bank: ${org?.bank_name || '___'}`, { size: 18, after: 20 }),
+                  p(`H/R: ${org?.bank_account || '___'}`, { size: 18, after: 20 }),
+                  p(`MFO: ${org?.mfo || '___'}`, { size: 18, after: 20 }),
+                  p(`Rahbar: _____ / ${org?.director_name || '___'}`, { size: 18, after: 0 }),
+                ]),
+                rekvCell([
+                  p('XARIDOR:', { bold: true, size: 20, after: 30 }),
+                  p(xaridor || '___', { size: 20, after: 20 }),
+                  p(`INN: ${xaridorInn || '___'}`, { size: 18, after: 20 }),
+                  p(`Bank: ${xaridorBank || '___'}`, { size: 18, after: 20 }),
+                  p(`MFO: ${xaridorMfo || '___'}`, { size: 18, after: 20 }),
+                  p('Rahbar: _________________________', { size: 18, after: 0 }),
+                ]),
+              ] })],
+            }),
+
+            // Gorizontal ajratuvchi
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE }, borders: noBord,
+              rows: [new TableRow({ children: [new TableCell({
+                borders: { top: NB, left: NB, right: NB, bottom: BDH },
+                children: [new Paragraph({ text: '', spacing: { before: 80, after: 80 } })],
+              })] })],
+            }),
+
+            // Mahsulotlar jadvali
             new Table({
               width: { size: 100, type: WidthType.PERCENTAGE },
               rows: [
                 new TableRow({ children: [
-                  hCell('№'), hCell("Mahsulot/xizmat nomi"), hCell("Birlik"), hCell("Miqdor"),
-                  hCell("Narxi (so'm)"), hCell("Jami (so'm)"), hCell("QQS %"), hCell("QQS (so'm)"), hCell("Jami QQS bilan")
+                  hCell('№'), hCell("Nomi"), hCell("Birlik"), hCell("Miqdor"),
+                  hCell("Narxi"), hCell("Jami"), hCell("QQS%"), hCell("QQS"), hCell("Jami QQS bilan"),
                 ] }),
                 ...items.map((it, i) => {
                   const c = calcItem(it)
                   return new TableRow({ children: [
-                    dCell(String(i + 1)),
+                    dCell(String(i + 1), AlignmentType.CENTER),
                     dCell(it.nomi || '___', AlignmentType.LEFT),
-                    dCell(it.birlik),
-                    dCell(it.miqdori),
+                    dCell(it.birlik, AlignmentType.CENTER),
+                    dCell(it.miqdori, AlignmentType.CENTER),
                     dCell(fmt(parseFloat(it.narxi.replace(/[\s,]/g,''))||0)),
                     dCell(fmt(c.sozsiz)),
-                    dCell(it.qqs === 'siz' ? 'QQSsiz' : `${it.qqs}%`),
+                    dCell(it.qqs === 'siz' ? 'QQSsiz' : `${it.qqs}%`, AlignmentType.CENTER),
                     dCell(fmt(c.qqs)),
                     dCell(fmt(c.gross)),
                   ] })
                 }),
                 new TableRow({ children: [
-                  new TableCell({ borders: brd, columnSpan: 5, children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'JAMI:', bold: true, size: 18 })] })] }),
-                  dCell(fmt(totalSozsiz)),
-                  dCell(''),
-                  dCell(fmt(totalQqs)),
-                  dCell(fmt(totalGross)),
+                  new TableCell({ borders: allBord, columnSpan: 5, shading: { fill: 'F5F5F5' },
+                    children: [new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 40 },
+                      children: [new TextRun({ text: 'JAMI:', bold: true, size: 20, font: F })] })] }),
+                  dCell(fmt(totalSozsiz), AlignmentType.RIGHT, true),
+                  dCell('', AlignmentType.CENTER),
+                  dCell(fmt(totalQqs), AlignmentType.RIGHT, true),
+                  dCell(fmt(totalGross), AlignmentType.RIGHT, true),
                 ] }),
               ],
             }),
-            new Paragraph({ children: [] }),
-            new Paragraph({ children: [new TextRun({ text: `Jami QQSsiz: ${fmt(totalSozsiz)} so'm`, size: 20 })] }),
-            new Paragraph({ children: [new TextRun({ text: `QQS: ${fmt(totalQqs)} so'm`, size: 20 })] }),
-            new Paragraph({ children: [new TextRun({ text: `JAMI TO'LASH: ${fmt(totalGross)} so'm`, bold: true, size: 22 })] }),
-            new Paragraph({ children: [] }),
-            new Paragraph({ children: [new TextRun({ text: `To'lov maqsadi: Schyot-faktura № ${fakRaqam || '___'} ga asosan to'lov`, size: 20 })] }),
-            new Paragraph({ children: [new TextRun({ text: `Bank: ${org?.bank_name || '___'}  H/R: ${org?.bank_account || '___'}  MFO: ${org?.mfo || '___'}`, size: 20 })] }),
-            new Paragraph({ children: [] }),
-            new Paragraph({ children: [new TextRun({ text: `Sotuvchi rahbari: _________________ / ${org?.director_name || '___'}    M.O.   Sana: ${sana}`, size: 20 })] }),
-            new Paragraph({ children: [new TextRun({ text: 'Bosh buxgalter:   _________________ / ___', size: 20 })] }),
+
+            // Yig'indi
+            p('', { after: 80 }),
+            p(`Jami QQSsiz: ${fmt(totalSozsiz)} so'm`, { size: 20 }),
+            p(`QQS summasi: ${fmt(totalQqs)} so'm`, { size: 20 }),
+            p(`JAMI TO'LASH: ${fmt(totalGross)} so'm`, { bold: true, size: 24, after: 120 }),
+            p(`To'lov maqsadi: Schyot-faktura № ${fakRaqam || '___'} ga asosan`, { size: 20 }),
+            p(`Bank: ${org?.bank_name || '___'}   H/R: ${org?.bank_account || '___'}   MFO: ${org?.mfo || '___'}`, { size: 18, after: 160 }),
+
+            // Imzo
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE }, borders: noBord,
+              rows: [new TableRow({ children: [
+                rekvCell([
+                  p('Sotuvchi rahbari:', { size: 20, after: 20 }),
+                  p(`_________________ / ${org?.director_name || '___'}`, { size: 20, after: 20 }),
+                  p('M.O.', { size: 20, after: 0 }),
+                ]),
+                rekvCell([
+                  p('Bosh buxgalter:', { size: 20, after: 20 }),
+                  p('_________________ / ___', { size: 20, after: 0 }),
+                ]),
+                rekvCell([
+                  p(`Sana: ${sana}`, { size: 20, after: 0 }),
+                ]),
+              ] })],
+            }),
           ],
         }],
       })
+
       const buf = await Packer.toBlob(doc)
       const url = URL.createObjectURL(buf)
-      const a = document.createElement('a')
+      const a   = document.createElement('a')
       a.href = url; a.download = `faktura_${fakRaqam || sana}.docx`; a.click()
       URL.revokeObjectURL(url)
     } finally { setDownloading(false) }

@@ -411,49 +411,117 @@ ${sep}
 // ─── Word export ─────────────────────────────────────────────────────────────
 
 async function downloadAsWord(text: string, orgName: string, raqam: string) {
-  const { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, BorderStyle } = await import('docx')
-  const F = 'Times New Roman'
-  const lines = text.split('\n')
+  const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, Footer, PageNumber } = await import('docx')
+  const F  = 'Times New Roman'
+  const NB = { style: BorderStyle.NIL, size: 0, color: 'auto' } as const
 
-  const paras = lines.map(line => {
-    const trimmed = line.trim()
-    const isSep = /^━+$/.test(trimmed)
-    const isCenter = /^[IVX]+\.|^BAYONNOMA$|^YIG'ILISH|^QAROR QILINDI|^OVOZ BERISH|^M\.O\.$/.test(trimmed)
-    const isBold = /^[IVX]+\. |^QAROR QILINDI|^OVOZ BERISH/.test(trimmed)
+  const children = text.split('\n').map(line => {
+    const t = line.trim()
 
-    if (isSep) return new Paragraph({
-      border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '444444' } },
-      children: [],
-    })
+    // Ajratuvchi chiziq: ━━━ yoki ---
+    if (/^[━─=\-]{3,}$/.test(t)) {
+      return new Paragraph({
+        spacing: { before: 80, after: 80 },
+        border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '888888' } },
+        children: [],
+      })
+    }
 
+    // Bo'sh satr
+    if (!t) return new Paragraph({ text: '', spacing: { after: 60 } })
+
+    // Asosiy sarlavha: BAYONNOMA, YIG'ILISH BAYONNOMASI
+    if (/^(BAYONNOMA|YIG['']ILISH|MEETING MINUTES)/i.test(t)) {
+      return new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 120, after: 80 },
+        children: [new TextRun({ text: t, bold: true, underline: { type: 'single' }, size: 28, font: F, color: '000000' })],
+      })
+    }
+
+    // Rim raqamli bo'lim: "I. ESHITILDI:", "II. QAROR QILINDI:"
+    if (/^[IVX]+[\.\)]\s/.test(t)) {
+      return new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 200, after: 80 },
+        children: [new TextRun({ text: t, bold: true, underline: { type: 'single' }, size: 24, font: F, color: '000000' })],
+      })
+    }
+
+    // QAROR QILINDI, OVOZ BERISH, ISHTIROKCHILAR ro'yxati sarlavhasi
+    if (/^(QAROR QILINDI|OVOZ BERISH|ISHTIROKCHILAR|KUN TARTIBI|M\.O\.)/.test(t)) {
+      return new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 160, after: 60 },
+        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+      })
+    }
+
+    // Raqamlangan band: "1.", "2." (bitta raqam)
+    if (/^\d+\.\s/.test(t) && !/^\d+\.\d/.test(t)) {
+      return new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        indent: { left: 360, hanging: 360 },
+        spacing: { after: 60, line: 276 },
+        children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
+      })
+    }
+
+    // Bullet / dash ro'yxat
+    if (/^[-–•]\s/.test(t)) {
+      return new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        indent: { left: 360, hanging: 240 },
+        spacing: { after: 40, line: 276 },
+        children: [new TextRun({ text: `– ${t.replace(/^[-–•]\s*/, '')}`, size: 24, font: F, color: '000000' })],
+      })
+    }
+
+    // Imzo satri: "Rais: ____________"
+    if (/_/.test(t)) {
+      return new Paragraph({
+        spacing: { after: 60, line: 276 },
+        children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
+      })
+    }
+
+    // Oddiy matn
     return new Paragraph({
-      alignment: isCenter ? AlignmentType.CENTER : AlignmentType.BOTH,
-      spacing: { after: 80, before: 0 },
-      children: [new TextRun({
-        text: trimmed,
-        bold: isBold || trimmed === 'BAYONNOMA',
-        underline: /^[IVX]+\. /.test(trimmed) ? {} : undefined,
-        size: 24,
-        font: F,
-      })],
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { after: 60, line: 276 },
+      children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
     })
   })
 
   const doc = new Document({
-    sections: [{
-      properties: {
-        page: {
-          margin: { top: 1134, bottom: 1134, left: 1701, right: 850 },
-        },
+    styles: {
+      default: {
+        document: { run: { font: F, size: 24 }, paragraph: { spacing: { line: 276, after: 60 } } },
       },
-      children: paras,
+    },
+    sections: [{
+      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+      footers: {
+        default: new Footer({
+          children: [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({ text: 'Kabinetim.uz  |  ', size: 18, font: F, color: 'AAAAAA' }),
+              new TextRun({ children: [PageNumber.CURRENT], size: 18, font: F, color: 'AAAAAA' }),
+              new TextRun({ text: ' / ', size: 18, font: F, color: 'AAAAAA' }),
+              new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: F, color: 'AAAAAA' }),
+            ],
+          })],
+        }),
+      },
+      children,
     }],
   })
 
   const blob = await Packer.toBlob(doc)
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
   a.download = `Bayonnoma_${raqam || '1'}_${orgName}.docx`
   a.click()
   URL.revokeObjectURL(url)
