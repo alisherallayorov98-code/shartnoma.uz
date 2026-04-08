@@ -112,7 +112,7 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
       const doc = new Document({
         styles: { default: { document: { run: { font: F, size: 22 }, paragraph: { spacing: { line: 276, after: 60 } } } } },
         sections: [{
-          properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+          properties: { page: { margin: { top: 1134, bottom: 1134, left: 851, right: 851 } } },
           footers: {
             default: new Footer({
               children: [new Paragraph({

@@ -419,7 +419,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
     },
     sections: [{
       properties: {
-        page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } },
+        page: { margin: { top: 1134, bottom: 1134, left: 851, right: 851 } },
       },
       footers: {
         default: new Footer({
@@ -592,7 +592,7 @@ export async function downloadRasmiyXatWord(opts: {
 
   const doc = new Document({
     sections: [{
-      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+      properties: { page: { margin: { top: 1134, bottom: 1134, left: 851, right: 851 } } },
       footers: {
         default: new Footer({
           children: [new Paragraph({
@@ -923,7 +923,7 @@ export async function downloadRekvizitlarWord(opts: {
 
   const doc = new Document({
     sections: [{
-      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+      properties: { page: { margin: { top: 1134, bottom: 1134, left: 851, right: 851 } } },
       footers: {
         default: new Footer({
           children: [new Paragraph({

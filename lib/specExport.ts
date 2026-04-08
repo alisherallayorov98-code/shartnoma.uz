@@ -168,7 +168,7 @@ export async function generateSpecWord(
       },
     },
     sections: [{
-      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+      properties: { page: { margin: { top: 1134, bottom: 1134, left: 851, right: 851 } } },
       footers: { default: footer },
       children: [
         ...(contract ? [

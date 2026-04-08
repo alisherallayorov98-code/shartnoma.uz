@@ -36,7 +36,7 @@ export const PDF_SIZE = {
 export const DOCX_MARGINS = {
   top:    1134, // 2 sm
   bottom: 1134, // 2 sm
-  left:   1701, // 3 sm (chapdan)
+  left:    851, // 1.5 sm (chapdan)
   right:   851, // 1.5 sm
 } as const
 
@@ -44,7 +44,7 @@ export const DOCX_MARGINS = {
 export const PDF_MARGINS = {
   top:    20, // 2 sm
   bottom: 20, // 2 sm
-  left:   30, // 3 sm
+  left:   15, // 1.5 sm
   right:  15, // 1.5 sm
 } as const
 

@@ -500,7 +500,7 @@ async function downloadAsWord(text: string, orgName: string, raqam: string) {
       },
     },
     sections: [{
-      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
+      properties: { page: { margin: { top: 1134, bottom: 1134, left: 851, right: 851 } } },
       footers: {
         default: new Footer({
           children: [new Paragraph({
