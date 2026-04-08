@@ -303,12 +303,12 @@ export async function downloadTextAsWord(text: string, filename: string) {
         rows: block.rows.map(([l, r]) => new TableRow({
           children: [
             makeCell([new Paragraph({
-              spacing: { after: 40, line: 276 },
+              spacing: { after: 0, line: 240 },
               children: [new TextRun({ text: l, size: 24, font: F, color: '000000' })],
             })], 50),
             makeCell([new Paragraph({
               alignment: AlignmentType.RIGHT,
-              spacing: { after: 40, line: 276 },
+              spacing: { after: 0, line: 240 },
               children: [new TextRun({ text: r, size: 24, font: F, color: '000000' })],
             })], 50),
           ],
@@ -324,7 +324,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
 
     // ── Bo'sh / ajratuvchi ─────────────────────────────────────────────────
     if (kind === 'empty') {
-      children.push(new Paragraph({ text: '', spacing: { after: 60 } }))
+      children.push(new Paragraph({ text: '', spacing: { after: 0 } }))
       continue
     }
     if (kind === 'separator') continue   // dekorativ chiziq — e'tiborsiz
@@ -333,7 +333,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
     if (kind === 'title') {
       children.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: bi > 0 ? 200 : 0, after: 60 },
+        spacing: { before: bi > 0 ? 120 : 0, after: 40 },
         children: [new TextRun({
           text: t, bold: true, underline: { type: 'single', color: '000000' },
           size: 28, font: F, color: '000000',
@@ -346,7 +346,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
     if (kind === 'subtitle') {
       children.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 40, after: 120 },
+        spacing: { before: 20, after: 60 },
         children: [new TextRun({ text: t, size: 24, font: F, color: '444444', italics: true })],
       }))
       continue
@@ -356,7 +356,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
     if (kind === 'main') {
       children.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 240, after: 100 },
+        spacing: { before: 120, after: 40 },
         children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       }))
       continue
@@ -366,8 +366,8 @@ export async function downloadTextAsWord(text: string, filename: string) {
     if (kind === 'sub') {
       children.push(new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { before: 60, after: 40, line: 276 },
-        children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
+        spacing: { before: 0, after: 0, line: 240 },
+        children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
       }))
       continue
     }
@@ -375,7 +375,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
     // ── Mustaqil label: "ISH BERUVCHI:" ───────────────────────────────────
     if (kind === 'label') {
       children.push(new Paragraph({
-        spacing: { before: 200, after: 60 },
+        spacing: { before: 100, after: 40 },
         children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
       }))
       continue
@@ -387,7 +387,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
       children.push(new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         indent: { left: 360, hanging: 240 },
-        spacing: { after: 40, line: 276 },
+        spacing: { after: 0, line: 240 },
         children: [new TextRun({ text: `– ${bt}`, size: 24, font: F, color: '000000' })],
       }))
       continue
@@ -402,8 +402,8 @@ export async function downloadTextAsWord(text: string, filename: string) {
 
     children.push(new Paragraph({
       alignment: AlignmentType.JUSTIFIED,
-      indent: isParaStart ? { firstLine: 426 } : {},   // 7.5mm birinchi satr
-      spacing: { after: 40, line: 276 },               // 1.15 qator oralig'i
+      indent: isParaStart ? { firstLine: 426 } : {},
+      spacing: { after: 0, line: 240 },
       children: [new TextRun({ text: t, size: 24, font: F, color: '000000' })],
     }))
   }
@@ -413,7 +413,7 @@ export async function downloadTextAsWord(text: string, filename: string) {
       default: {
         document: {
           run: { font: F, size: 24, color: '000000' },
-          paragraph: { spacing: { line: 276, after: 40 } },
+          paragraph: { spacing: { line: 240, after: 0 } },
         },
       },
     },
