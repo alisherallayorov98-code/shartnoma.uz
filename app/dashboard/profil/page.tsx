@@ -8,6 +8,7 @@ import { useDashboard } from '../context'
 import { useToast } from '@/lib/toast'
 import { getBankByMfo } from '@/lib/bankMfo'
 import { formatPhoneUz } from '@/lib/inputMasks'
+import CityPicker from '@/app/dashboard/shartnomalar/_components/CityPicker'
 
 export default function ProfilPage() {
   const { lang } = useLang()
@@ -926,7 +927,7 @@ export default function ProfilPage() {
                 </div>
                 <div>
                   <label className={lbl}>Viloyat</label>
-                  <select className={`${inp} cursor-pointer`} value={orgExtForm.viloyat || ''} onChange={e => setOrgExtForm({ ...orgExtForm, viloyat: e.target.value })}>
+                  <select className={`${inp} cursor-pointer`} value={orgExtForm.viloyat || ''} onChange={e => setOrgExtForm({ ...orgExtForm, viloyat: e.target.value, tuman: '' })}>
                     <option value="">— Tanlang —</option>
                     {["Toshkent shahri", "Toshkent viloyati", "Samarqand", "Buxoro", "Farg'ona", "Andijon", "Namangan", "Qashqadaryo", "Surxondaryo", "Navoiy", "Jizzax", "Sirdaryo", "Xorazm", "Qoraqalpog'iston"].map(v => (
                       <option key={v} value={v}>{v}</option>
@@ -935,7 +936,7 @@ export default function ProfilPage() {
                 </div>
                 <div>
                   <label className={lbl}>Tuman/Shahar</label>
-                  <input className={inp} placeholder="Yunusobod tumani" value={orgExtForm.tuman || ''} onChange={e => setOrgExtForm({ ...orgExtForm, tuman: e.target.value })}/>
+                  <CityPicker value={orgExtForm.tuman || ''} onChange={v => setOrgExtForm({ ...orgExtForm, tuman: v })} />
                 </div>
               </div>
             </div>
