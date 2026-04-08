@@ -30,13 +30,29 @@ export async function generateSpecWord(
   const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder }
   const headerBg = '1F3864'
 
+  const p = (text: string, opts: { bold?: boolean; underline?: boolean; size?: number; align?: Align; italic?: boolean; color?: string; spaceBefore?: number; spaceAfter?: number; indent?: boolean } = {}) =>
+    new Paragraph({
+      alignment: opts.align ?? AlignmentType.LEFT,
+      spacing: { line: 276, lineRule: 'auto' as const, before: opts.spaceBefore ?? 0, after: opts.spaceAfter ?? 80 },
+      indent: opts.indent ? { firstLine: 426 } : undefined,
+      children: [new TextRun({
+        text,
+        bold: opts.bold,
+        underline: opts.underline ? {} : undefined,
+        italics: opts.italic,
+        font: F,
+        size: opts.size ?? 24,
+        color: opts.color ?? '000000',
+      })],
+    })
+
   const headerCell = (text: string, w: number, align: Align = AlignmentType.CENTER) =>
     new TableCell({
       width: { size: w, type: WidthType.PERCENTAGE },
       shading: { fill: headerBg },
       borders: cellBorders,
       margins: { top: 60, bottom: 60, left: 100, right: 100 },
-      children: [new Paragraph({ alignment: align, children: [new TextRun({ text, bold: true, size: 18, font: F, color: 'FFFFFF' })] })],
+      children: [new Paragraph({ alignment: align, children: [new TextRun({ text, bold: true, size: 20, font: F, color: 'FFFFFF' })] })],
     })
 
   const dataCell = (text: string, w: number, align: Align = AlignmentType.CENTER, bold = false, color = '000000') =>
@@ -44,7 +60,7 @@ export async function generateSpecWord(
       width: { size: w, type: WidthType.PERCENTAGE },
       borders: cellBorders,
       margins: { top: 50, bottom: 50, left: 100, right: 100 },
-      children: [new Paragraph({ alignment: align, children: [new TextRun({ text, bold, size: 20, font: F, color })] })],
+      children: [new Paragraph({ alignment: align, spacing: { line: 276, lineRule: 'auto' as const }, children: [new TextRun({ text, bold, size: 22, font: F, color })] })],
     })
 
   const specTable = new Table({
@@ -85,37 +101,40 @@ export async function generateSpecWord(
         children: [
           new TableCell({
             columnSpan: 5, borders: cellBorders,
-            shading: { fill: 'F2F2F2' },
+            shading: { fill: 'F0F4FF' },
             margins: { top: 60, bottom: 60, left: 100, right: 100 },
-            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'JAMI:', bold: true, size: 22, font: F })] })],
+            children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: 'JAMI:', bold: true, size: 24, font: F })] })],
           }),
           dataCell(fmt(totalBase), 13, AlignmentType.RIGHT, true),
           dataCell('', 9),
           dataCell(fmt(totalQqs), 10, AlignmentType.RIGHT, true),
-          dataCell(fmt(totalJami), 10, AlignmentType.RIGHT, true, 'CC0000'),
+          dataCell(fmt(totalJami), 10, AlignmentType.RIGHT, true, '1F3864'),
         ],
       }),
     ],
   })
 
   // Signature table
-  const B = { font: F, color: '000000', bold: true }
   const contract = spec.contracts
   const cpFull: OrgLike | null = contract?.counterparty_id
     ? cps.find(c => c.id === contract.counterparty_id) || null
     : null
   const cp: OrgLike | undefined = cpFull || (contract?.counterparties as OrgLike | undefined)
 
+  const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+  const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder }
+
   function orgCell(title: string, org: OrgLike | null | undefined) {
     return new TableCell({
-      borders: cellBorders,
-      margins: { top: 160, bottom: 160, left: 220, right: 220 },
+      borders: noBorders,
+      margins: { top: 160, bottom: 160, left: 160, right: 160 },
       children: [
-        new Paragraph({ children: [new TextRun({ ...B, text: title, size: 24 })], spacing: { after: 80 } }),
-        new Paragraph({ children: [new TextRun({ ...B, text: org?.name || '___', size: 22 })], spacing: { after: 200 } }),
-        new Paragraph({ children: [new TextRun({ ...B, text: `Rahbar: ${org?.director_name || '___'}`, size: 20 })], spacing: { after: 240 } }),
-        new Paragraph({ children: [new TextRun({ ...B, text: '_________________________', size: 22 })], spacing: { after: 20 } }),
-        new Paragraph({ children: [new TextRun({ ...B, text: 'M.O.', size: 20 })] }),
+        new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: title, bold: true, size: 24, font: F, underline: {} })] }),
+        new Paragraph({ spacing: { after: 100 }, children: [new TextRun({ text: org?.name || '_______________', bold: true, size: 24, font: F })] }),
+        new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: `Rahbar: ${org?.director_name || '_______________'}`, size: 22, font: F })] }),
+        new Paragraph({ spacing: { after: 200 }, children: [new TextRun({ text: `INN: ${org?.inn || '_______________'}`, size: 22, font: F })] }),
+        new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ text: '_________________________', size: 22, font: F })] }),
+        new Paragraph({ children: [new TextRun({ text: 'M.O.', size: 20, font: F, color: '666666' })] }),
       ],
     })
   }
@@ -140,32 +159,30 @@ export async function generateSpecWord(
   const contractDate = contract?.contract_date ? formatDateUz(contract.contract_date) : ''
 
   const doc = new Document({
+    styles: {
+      default: {
+        document: {
+          run: { font: F, size: 24, color: '000000' },
+          paragraph: { spacing: { line: 276, lineRule: 'auto' as const } },
+        },
+      },
+    },
     sections: [{
-      properties: { page: { margin: { top: 1134, bottom: 1134, left: 567, right: 851 } } },
+      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1701, right: 851 } } },
       footers: { default: footer },
       children: [
         ...(contract ? [
-          new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 40 }, children: [new TextRun({ text: '1-ILOVA', bold: true, size: 22, font: F })] }),
-          new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 40 }, children: [new TextRun({ text: `№${contract.contract_number}-sonli shartnomaga`, size: 20, font: F })] }),
-          new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 200 }, children: [new TextRun({ text: `${contractDate} dan`, size: 20, font: F })] }),
+          p('1-ILOVA', { bold: true, align: AlignmentType.RIGHT, spaceAfter: 40 }),
+          p(`№${contract.contract_number}-sonli shartnomaga`, { align: AlignmentType.RIGHT, spaceAfter: 40 }),
+          p(`${contractDate} dan`, { align: AlignmentType.RIGHT, spaceAfter: 200 }),
         ] : [
-          new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 200 }, children: [new TextRun({ text: `Sana: ${formatDateUz(spec.created_at.split('T')[0])}`, size: 20, font: F })] }),
+          p(`Sana: ${formatDateUz(spec.created_at.split('T')[0])}`, { align: AlignmentType.RIGHT, spaceAfter: 200 }),
         ]),
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 0, after: 200 },
-          children: [new TextRun({ text: 'NARXNI KELISHISH PROTOKOLI', bold: true, size: 26, font: F, underline: {} })],
-        }),
+        p('NARXNI KELISHISH PROTOKOLI', { bold: true, underline: true, size: 28, align: AlignmentType.CENTER, spaceAfter: 200 }),
         specTable,
-        new Paragraph({
-          spacing: { before: 120, after: 80 },
-          children: [new TextRun({ text: `Jami so'z bilan: ${numberToWords(Math.round(totalJami), 'uz')} so'm`, bold: true, size: 22, font: F })],
-        }),
-        new Paragraph({
-          spacing: { after: 240 },
-          children: [new TextRun({ text: "Ushbu Protokol Shartnomaning ajralmas qismi hisoblanadi va ikki nusxada tuzilgan.", size: 20, font: F, italics: true })],
-        }),
-        new Paragraph({ text: '', spacing: { after: 240 } }),
+        p(`Jami so'z bilan: ${numberToWords(Math.round(totalJami), 'uz')} so'm`, { bold: true, spaceBefore: 120, spaceAfter: 80 }),
+        p("Ushbu Protokol Shartnomaning ajralmas qismi hisoblanadi va ikki nusxada tuzilgan.", { italic: true, spaceAfter: 240 }),
+        new Paragraph({ text: '', spacing: { after: 280 } }),
         sigTable,
       ],
     }],
