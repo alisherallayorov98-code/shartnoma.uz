@@ -212,12 +212,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             .eq('status', 'pending')
         }
 
+        const adminFetch = fetch('/api/admin', {
+          method: 'HEAD',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          signal: AbortSignal.timeout(4000),
+        }).catch(() => ({ ok: false }))
+
         const [adminCheck] = await Promise.all([
-          fetch('/api/admin', { method: 'HEAD', headers: { Authorization: `Bearer ${session.access_token}` } }),
+          adminFetch,
           loadOrgs(),
           loadProfile(session.user.id),
         ])
-        setIsAdmin(adminCheck.ok)
+        setIsAdmin((adminCheck as Response).ok)
       } catch (e) {
         console.error('Dashboard init error:', e)
       } finally {
