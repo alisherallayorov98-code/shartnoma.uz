@@ -289,52 +289,55 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right: Branding ────────────────────────────────────────────── */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 flex-col justify-center px-14 relative overflow-hidden">
-        {/* Document pattern background */}
-        <div
-          className="absolute inset-0"
-          style={{ backgroundImage: 'url(/bg-pattern.svg)', backgroundSize: '160px 185px', backgroundRepeat: 'repeat', opacity: 0.07 }}
-        />
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-80 h-80 bg-white rounded-full blur-3xl"/>
-          <div className="absolute bottom-20 left-10 w-56 h-56 bg-white rounded-full blur-2xl"/>
-        </div>
+      <div className="hidden lg:flex flex-1 bg-[#060D1A] flex-col justify-between px-12 py-10 relative overflow-hidden">
+        {/* Subtle glow blobs */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"/>
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-indigo-600/8 rounded-full blur-3xl pointer-events-none"/>
 
-        <div className="relative z-10">
-          <div className="text-blue-100 text-xs font-semibold mb-4 uppercase tracking-widest">Kabinetim.uz</div>
-          <h2 className="text-4xl font-bold text-white leading-tight mb-4">
+        {/* Top: heading + features */}
+        <div className="relative z-10 pt-4">
+          <div className="text-blue-500 text-xs font-semibold mb-5 uppercase tracking-widest">Kabinetim.uz</div>
+          <h2 className="text-3xl font-bold text-white leading-snug mb-3">
             Biznes hujjatlarini<br/>professional darajada
           </h2>
-          <p className="text-blue-100 text-sm mb-10 leading-relaxed max-w-xs">
-            Shartnomalar, kadrlar, buxgalteriya hujjatlarini bir joyda yarating va boshqaring.
+          <p className="text-gray-400 text-sm mb-8 leading-relaxed max-w-sm">
+            Shartnomalar, hisob-fakturalar, buxgalteriya hujjatlarini yarating, yuboring va boshqaring.
           </p>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[
               { icon: '📄', title: 'Avtomatik shartnomalar', desc: "STIR bo'yicha rekvizitlarni avtomatik to'ldirish" },
-              { icon: '🔐', title: 'E-IMZO integratsiyasi', desc: 'Elektron imzo bilan xavfsiz kirish' },
+              { icon: '🔐', title: 'E-IMZO integratsiyasi', desc: 'Elektron imzo bilan xavfsiz hujjat imzolash' },
               { icon: '🏢', title: "Ko'p tashkilot", desc: "Bir hisobda bir nechta tashkilotni boshqaring" },
-              { icon: '🤖', title: 'AI yordamchi', desc: 'Hujjatlarni AI yordamida yarating' },
+              { icon: '🤖', title: 'AI yordamchi', desc: 'Hujjatlarni AI yordamida yarating va tahlil qiling' },
             ].map(item => (
-              <div key={item.title} className="flex items-start gap-3">
-                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-lg shrink-0">{item.icon}</div>
+              <div key={item.title} className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-600/20 border border-blue-600/30 rounded-lg flex items-center justify-center text-base shrink-0">{item.icon}</div>
                 <div>
-                  <div className="text-white font-semibold text-sm">{item.title}</div>
-                  <div className="text-blue-100 text-xs mt-0.5">{item.desc}</div>
+                  <div className="text-white font-medium text-sm">{item.title}</div>
+                  <div className="text-gray-500 text-xs">{item.desc}</div>
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
-          <div className="mt-10 flex items-center gap-3 bg-white/15 rounded-2xl px-4 py-3 backdrop-blur-sm">
+        {/* Laptop mockup */}
+        <div className="relative z-10 flex justify-center my-2">
+          <img src="/laptop-mockup.svg" alt="Dashboard" className="w-full max-w-md drop-shadow-2xl" draggable={false}/>
+        </div>
+
+        {/* Bottom: social proof */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 backdrop-blur-sm">
             <div className="flex -space-x-2">
               {['🧑‍💼', '👩‍💼', '👨‍💼'].map((emoji, i) => (
-                <div key={i} className="w-7 h-7 bg-white/30 rounded-full flex items-center justify-center text-sm border-2 border-white/20">{emoji}</div>
+                <div key={i} className="w-7 h-7 bg-blue-900/60 rounded-full flex items-center justify-center text-sm border-2 border-[#060D1A]">{emoji}</div>
               ))}
             </div>
             <div>
-              <div className="text-white text-xs font-semibold">10,000+ tashkilot ishlatmoqda</div>
-              <div className="text-blue-200 text-xs">O'zbekiston bo'ylab</div>
+              <div className="text-white text-xs font-semibold">10,000+ foydalanuvchi</div>
+              <div className="text-gray-500 text-xs">O'zbekiston bo'ylab ishonchli foydalanilmoqda</div>
             </div>
           </div>
         </div>

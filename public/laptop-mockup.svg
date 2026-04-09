@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 360" fill="none">
+  <!-- Laptop body -->
+  <rect x="60" y="20" width="400" height="260" rx="12" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <!-- Screen bezel -->
+  <rect x="72" y="32" width="376" height="236" rx="6" fill="#0B1220"/>
+  <!-- Camera dot -->
+  <circle cx="260" cy="28" r="3" fill="#334155"/>
+
+  <!-- Dashboard UI inside screen -->
+  <!-- Top bar -->
+  <rect x="72" y="32" width="376" height="28" rx="6" fill="#0F172A"/>
+  <rect x="84" y="42" width="60" height="8" rx="2" fill="#3B82F6"/>
+  <circle cx="420" cy="46" r="7" fill="#1E293B"/>
+  <circle cx="436" cy="46" r="7" fill="#1E293B"/>
+
+  <!-- Sidebar -->
+  <rect x="72" y="60" width="60" height="208" fill="#0F172A"/>
+  <rect x="82" y="72" width="40" height="6" rx="2" fill="#3B82F6"/>
+  <rect x="82" y="86" width="40" height="6" rx="2" fill="#1E293B"/>
+  <rect x="82" y="100" width="40" height="6" rx="2" fill="#1E293B"/>
+  <rect x="82" y="114" width="40" height="6" rx="2" fill="#1E293B"/>
+  <rect x="82" y="128" width="40" height="6" rx="2" fill="#1E293B"/>
+  <rect x="82" y="142" width="40" height="6" rx="2" fill="#1E293B"/>
+
+  <!-- Main content area -->
+  <!-- Stats cards row -->
+  <rect x="142" y="68" width="72" height="42" rx="6" fill="#111827" stroke="#1E293B" stroke-width="1"/>
+  <rect x="150" y="75" width="30" height="5" rx="2" fill="#6B7280"/>
+  <rect x="150" y="85" width="45" height="7" rx="2" fill="#60A5FA"/>
+  <rect x="150" y="97" width="25" height="4" rx="2" fill="#10B981" opacity="0.7"/>
+
+  <rect x="222" y="68" width="72" height="42" rx="6" fill="#111827" stroke="#1E293B" stroke-width="1"/>
+  <rect x="230" y="75" width="30" height="5" rx="2" fill="#6B7280"/>
+  <rect x="230" y="85" width="38" height="7" rx="2" fill="#A78BFA"/>
+  <rect x="230" y="97" width="20" height="4" rx="2" fill="#10B981" opacity="0.7"/>
+
+  <rect x="302" y="68" width="72" height="42" rx="6" fill="#111827" stroke="#1E293B" stroke-width="1"/>
+  <rect x="310" y="75" width="30" height="5" rx="2" fill="#6B7280"/>
+  <rect x="310" y="85" width="42" height="7" rx="2" fill="#34D399"/>
+  <rect x="310" y="97" width="22" height="4" rx="2" fill="#F59E0B" opacity="0.7"/>
+
+  <rect x="382" y="68" width="58" height="42" rx="6" fill="#111827" stroke="#1E293B" stroke-width="1"/>
+  <rect x="390" y="75" width="25" height="5" rx="2" fill="#6B7280"/>
+  <rect x="390" y="85" width="32" height="7" rx="2" fill="#F87171"/>
+  <rect x="390" y="97" width="18" height="4" rx="2" fill="#EF4444" opacity="0.7"/>
+
+  <!-- Chart area -->
+  <rect x="142" y="118" width="180" height="100" rx="6" fill="#111827" stroke="#1E293B" stroke-width="1"/>
+  <rect x="152" y="126" width="60" height="6" rx="2" fill="#E2E8F0"/>
+  <!-- Bar chart -->
+  <rect x="155" y="182" width="12" height="28" rx="2" fill="#3B82F6" opacity="0.8"/>
+  <rect x="172" y="170" width="12" height="40" rx="2" fill="#3B82F6" opacity="0.8"/>
+  <rect x="189" y="175" width="12" height="35" rx="2" fill="#3B82F6" opacity="0.8"/>
+  <rect x="206" y="160" width="12" height="50" rx="2" fill="#3B82F6"/>
+  <rect x="223" y="168" width="12" height="42" rx="2" fill="#3B82F6" opacity="0.8"/>
+  <rect x="240" y="155" width="12" height="55" rx="2" fill="#60A5FA"/>
+  <rect x="257" y="163" width="12" height="47" rx="2" fill="#3B82F6" opacity="0.8"/>
+  <rect x="274" y="150" width="12" height="60" rx="2" fill="#60A5FA"/>
+  <!-- Chart baseline -->
+  <line x1="152" y1="212" x2="296" y2="212" stroke="#1E293B" stroke-width="1"/>
+
+  <!-- Table / list -->
+  <rect x="330" y="118" width="110" height="100" rx="6" fill="#111827" stroke="#1E293B" stroke-width="1"/>
+  <rect x="340" y="126" width="50" height="6" rx="2" fill="#E2E8F0"/>
+  <rect x="340" y="140" width="90" height="1" fill="#1E293B"/>
+  <rect x="340" y="148" width="55" height="5" rx="2" fill="#6B7280"/>
+  <rect x="396" y="148" width="24" height="5" rx="2" fill="#10B981" opacity="0.8"/>
+  <rect x="340" y="161" width="48" height="5" rx="2" fill="#6B7280"/>
+  <rect x="396" y="161" width="24" height="5" rx="2" fill="#F59E0B" opacity="0.8"/>
+  <rect x="340" y="174" width="52" height="5" rx="2" fill="#6B7280"/>
+  <rect x="396" y="174" width="24" height="5" rx="2" fill="#3B82F6" opacity="0.8"/>
+  <rect x="340" y="187" width="45" height="5" rx="2" fill="#6B7280"/>
+  <rect x="396" y="187" width="24" height="5" rx="2" fill="#10B981" opacity="0.8"/>
+  <rect x="340" y="200" width="58" height="5" rx="2" fill="#6B7280"/>
+  <rect x="396" y="200" width="24" height="5" rx="2" fill="#A78BFA" opacity="0.8"/>
+
+  <!-- Bottom status bar -->
+  <rect x="142" y="226" width="298" height="14" rx="4" fill="#111827" stroke="#1E293B" stroke-width="1"/>
+  <rect x="150" y="230" width="40" height="5" rx="2" fill="#6B7280"/>
+  <rect x="198" y="230" width="40" height="5" rx="2" fill="#6B7280"/>
+  <rect x="380" y="230" width="30" height="5" rx="2" fill="#3B82F6" opacity="0.6"/>
+
+  <!-- Laptop base/hinge -->
+  <rect x="40" y="278" width="440" height="14" rx="4" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+  <!-- Trackpad -->
+  <rect x="210" y="284" width="100" height="4" rx="2" fill="#0F172A"/>
+  <!-- Base bottom -->
+  <ellipse cx="260" cy="294" rx="220" ry="8" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+
+  <!-- Glow under laptop -->
+  <ellipse cx="260" cy="345" rx="180" ry="12" fill="#3B82F6" opacity="0.08"/>
+</svg>
