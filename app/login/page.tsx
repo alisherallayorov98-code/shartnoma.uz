@@ -332,23 +332,25 @@ export default function LoginPage() {
       {/* ── RIGHT PANEL ────────────────────────────────────────────────── */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden text-white">
 
-        {/* City photo background */}
+        {/* Business photo background */}
         <img src="/city-bg.jpg" alt="" className="absolute inset-0 w-full h-full object-cover"
-          style={{ filter: 'brightness(0.55) saturate(0.7) hue-rotate(190deg)' }}/>
-        {/* Dark blue overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0D2247]/80 via-[#0F2D5C]/60 to-[#0B1E3A]/70"/>
-        {/* Top glow */}
-        <div className="absolute w-[500px] h-[300px] bg-blue-500 opacity-10 blur-3xl rounded-full top-0 right-0 pointer-events-none"/>
+          style={{ filter: 'brightness(0.35) saturate(0.8) hue-rotate(185deg)', objectPosition: 'center center' }}/>
+        {/* Strong dark overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0A1628]/85 via-[#0D2247]/75 to-[#0B1E3A]/80"/>
+        {/* Glow */}
+        <div className="absolute w-[400px] h-[400px] bg-blue-500 opacity-10 blur-3xl rounded-full top-[-100px] right-[-100px] pointer-events-none"/>
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
 
           {/* Heading */}
           <div>
-            <div className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-5">Kabinetim.uz</div>
-            <h2 className="text-4xl font-bold text-white leading-snug mb-4">
+            <div className="text-blue-300 text-xs font-bold uppercase tracking-widest mb-5">Kabinetim.uz</div>
+            <h2 className="text-4xl font-bold text-white leading-snug mb-4"
+              style={{ textShadow: '0 2px 20px rgba(0,0,0,0.8)' }}>
               Biznes hujjatlarini<br/>professional darajada
             </h2>
-            <p className="text-blue-100/80 text-sm max-w-md leading-relaxed">
+            <p className="text-white/75 text-sm max-w-md leading-relaxed"
+              style={{ textShadow: '0 1px 10px rgba(0,0,0,0.9)' }}>
               Shartnomalar, hisob-fakturalar va buxgalteriya hujjatlarini yarating, yuboring va boshqaring.
             </p>
           </div>
@@ -357,13 +359,13 @@ export default function LoginPage() {
           <div className="space-y-3">
             {FEATURES.map((f, i) => (
               <div key={i}
-                className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl backdrop-blur-md border border-white/5 hover:bg-white/10 transition cursor-default">
-                <div className="p-2.5 bg-blue-500/20 border border-blue-500/30 rounded-xl shrink-0">
+                className="flex items-start gap-4 p-4 bg-black/30 rounded-2xl backdrop-blur-md border border-white/10 hover:bg-black/40 transition cursor-default">
+                <div className="p-2.5 bg-blue-500/30 border border-blue-400/40 rounded-xl shrink-0">
                   <f.icon size={18} className="text-blue-300"/>
                 </div>
                 <div>
                   <div className="font-semibold text-sm text-white">{f.title}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">{f.desc}</div>
+                  <div className="text-xs text-white/60 mt-0.5">{f.desc}</div>
                 </div>
               </div>
             ))}
@@ -381,7 +383,7 @@ export default function LoginPage() {
           </div>
 
           {/* Social proof */}
-          <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-md">
+          <div className="flex items-center gap-4 bg-black/30 border border-white/15 p-4 rounded-2xl backdrop-blur-md">
             <div className="flex -space-x-2">
               {['#3B82F6','#8B5CF6','#10B981'].map((color, i) => (
                 <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0B1E3A] flex items-center justify-center text-xs font-bold"
