@@ -6,16 +6,19 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, LANG_LABELS, type Lang } from '@/lib/i18n'
+import {
+  FileText, Bot, Users, Briefcase, Archive, Scale,
+  CheckCircle2, Eye, EyeOff, ArrowLeft,
+} from 'lucide-react'
 
-// Signup-only marketing content (not in global i18n)
-const M: Record<Lang, { headline: string; sub: string; benefits: string[]; trust: string }> = {
+const M: Record<Lang, { headline: string; sub: string; benefits: { icon: React.ElementType; text: string }[]; trust: string }> = {
   uz: {
     headline: 'Hujjatlaringizni AI bilan tayyorlang',
     sub: 'Kadrlar, buxgalter, kotiba va yurist uchun professional hujjatlar — Word va PDF formatida.',
     benefits: [
-      '30+ shablon: mehnat shartnomasi, buyruq, bayonnoma',
-      'AI yordamchi: tavsiflab bering, hujjat tayyor',
-      'Oyiga 5 ta hujjat bepul',
+      { icon: FileText, text: "30+ shablon: mehnat shartnomasi, buyruq, bayonnoma" },
+      { icon: Bot,      text: "AI yordamchi: tavsiflab bering, hujjat tayyor" },
+      { icon: Users,    text: "Oyiga 5 ta hujjat bepul, karta talab qilinmaydi" },
     ],
     trust: "Kredit karta talab qilinmaydi · O'rnatish shart emas",
   },
@@ -23,9 +26,9 @@ const M: Record<Lang, { headline: string; sub: string; benefits: string[]; trust
     headline: 'Ҳужжатларингизни AI билан тайёрланг',
     sub: 'Кадрлар, бухгалтер, котиба ва юрист учун профессионал ҳужжатлар — Word ва PDF форматида.',
     benefits: [
-      '30+ шаблон: меҳнат шартномаси, буйруқ, баённома',
-      'AI ёрдамчи: тавсифлаб беринг, ҳужжат тайёр',
-      'Ойига 5 та ҳужжат бепул',
+      { icon: FileText, text: '30+ шаблон: меҳнат шартномаси, буйруқ, баённома' },
+      { icon: Bot,      text: 'AI ёрдамчи: тавсифлаб беринг, ҳужжат тайёр' },
+      { icon: Users,    text: 'Ойига 5 та ҳужжат бепул, карта талаб қилинмайди' },
     ],
     trust: 'Кредит карта талаб қилинмайди · Ўрнатиш шарт эмас',
   },
@@ -33,34 +36,50 @@ const M: Record<Lang, { headline: string; sub: string; benefits: string[]; trust
     headline: 'Создавайте документы с помощью AI',
     sub: 'Профессиональные документы для кадров, бухгалтерии, секретариата и юриста — Word и PDF.',
     benefits: [
-      '30+ шаблонов: трудовой договор, приказ, протокол',
-      'AI-ассистент: опишите — документ готов',
-      '5 документов в месяц — бесплатно',
+      { icon: FileText, text: '30+ шаблонов: трудовой договор, приказ, протокол' },
+      { icon: Bot,      text: 'AI-ассистент: опишите — документ готов' },
+      { icon: Users,    text: '5 документов в месяц бесплатно, карта не нужна' },
     ],
     trust: 'Карта не требуется · Установка не нужна',
   },
 }
 
+const DEPT_TAGS: { icon: React.ElementType; label: Record<Lang, string>; color: string }[] = [
+  { icon: FileText,  label: { uz: 'Word / PDF',  oz: 'Word / PDF',   ru: 'Word / PDF'   }, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+  { icon: Bot,       label: { uz: 'AI',          oz: 'AI',           ru: 'AI'           }, color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
+  { icon: Users,     label: { uz: 'Kadrlar',     oz: 'Кадрлар',      ru: 'Кадры'        }, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  { icon: Briefcase, label: { uz: 'Buxgalter',   oz: 'Бухгалтер',    ru: 'Бухгалтер'    }, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+  { icon: Archive,   label: { uz: 'Kotiba',      oz: 'Котиба',       ru: 'Секретарь'    }, color: 'text-sky-400 bg-sky-500/10 border-sky-500/20' },
+  { icon: Scale,     label: { uz: 'Yurist',      oz: 'Юрист',        ru: 'Юрист'        }, color: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
+]
+
+const STATS = [
+  { value: '500+', label: { uz: 'foydalanuvchi', oz: 'фойдаланувчи', ru: 'пользователей' } },
+  { value: '10K+', label: { uz: 'hujjat yaratildi', oz: 'ҳужжат яратилди', ru: 'документов создано' } },
+  { value: '30+',  label: { uz: 'shablon', oz: 'шаблон', ru: 'шаблонов' } },
+]
+
 const BACK: Record<Lang, string> = { uz: 'Bosh sahifa', oz: 'Бош саҳифа', ru: 'На главную' }
 
 export default function SignupPage() {
-  const router = useRouter()
   const { lang, setLang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
 
-  const [email, setEmail]       = useState('')
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm]   = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState('')
-  const [success, setSuccess]   = useState(false)
+  const [email, setEmail]         = useState('')
+  const [password, setPassword]   = useState('')
+  const [confirm, setConfirm]     = useState('')
+  const [showPw, setShowPw]       = useState(false)
+  const [showCf, setShowCf]       = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState('')
+  const [success, setSuccess]     = useState(false)
 
   function translateSupabaseError(msg: string): string {
     const m = msg.toLowerCase()
     if (m.includes('already registered') || m.includes('user already exists'))
       return T({ uz: "Bu email allaqachon ro'yxatdan o'tgan", oz: 'Бу email аллақачон рўйхатдан ўтган', ru: 'Этот email уже зарегистрирован' })
     if (m.includes('rate limit') || m.includes('too many'))
-      return T({ uz: "Juda ko'p urinish. Bir oz kutib, qayta urinib ko'ring", oz: 'Жуда кўп уриниш. Бир оз кутиб, қайта уриниб кўринг', ru: 'Слишком много попыток. Подождите и повторите' })
+      return T({ uz: "Juda ko'p urinish. Biroz kutib, qayta urinib ko'ring", oz: 'Жуда кўп уриниш. Бир оз кутиб, қайта уриниб кўринг', ru: 'Слишком много попыток. Подождите и повторите' })
     if (m.includes('invalid email') || m.includes('email is invalid'))
       return T({ uz: "Noto'g'ri email manzil", oz: 'Нотўғри email манзил', ru: 'Некорректный email адрес' })
     if (m.includes('password') && (m.includes('weak') || m.includes('short') || m.includes('6')))
@@ -69,7 +88,7 @@ export default function SignupPage() {
       return T({ uz: "Ro'yxatdan o'tish hozircha o'chirilgan", oz: 'Рўйхатдан ўтиш ҳозирча ўчирилган', ru: 'Регистрация временно отключена' })
     if (m.includes('network') || m.includes('fetch'))
       return T({ uz: 'Tarmoq xatoligi. Internet aloqasini tekshiring', oz: 'Тармоқ хатолиги. Интернет алоқасини текширинг', ru: 'Ошибка сети. Проверьте подключение к интернету' })
-    return T({ uz: "Ro'yxatdan o'tishda xatolik yuz berdi. Qayta urinib ko'ring", oz: 'Рўйхатдан ўтишда хатолик юз берди. Қайта уриниб кўринг', ru: 'Ошибка при регистрации. Попробуйте ещё раз' })
+    return T({ uz: "Ro'yxatdan o'tishda xatolik. Qayta urinib ko'ring", oz: 'Рўйхатдан ўтишда хатолик. Қайта уриниб кўринг', ru: 'Ошибка при регистрации. Попробуйте ещё раз' })
   }
 
   async function handleSignup(e: React.FormEvent) {
@@ -95,17 +114,15 @@ export default function SignupPage() {
     })
   }
 
-  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-600 transition'
+  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 placeholder-gray-600 transition'
 
-  // ── Success screen ────────────────────────────────────────────
+  // ── Success screen ─────────────────────────────────────────────
   if (success) {
     return (
       <div className="min-h-screen bg-[#0B1220] flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
           <div className="w-16 h-16 bg-green-500/10 border border-green-500/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <svg className="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-            </svg>
+            <CheckCircle2 className="w-7 h-7 text-green-400" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">{T(t.signup.verifyTitle)}</h2>
           <p className="text-gray-500 text-sm mb-1.5">
@@ -120,16 +137,17 @@ export default function SignupPage() {
     )
   }
 
-  // ── Main layout ───────────────────────────────────────────────
+  // ── Main layout ────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0B1220] flex flex-col lg:flex-row">
 
-      {/* ── LEFT: Brand panel (desktop only) ── */}
+      {/* ── LEFT: Brand panel ── */}
       <div className="hidden lg:flex lg:w-[44%] xl:w-[42%] flex-col justify-between px-12 py-10 border-r border-[#1E293B] relative overflow-hidden">
-        {/* Subtle radial glow */}
+
+        {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/3 -left-24 w-72 h-72 bg-blue-600/6 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-4 w-56 h-56 bg-blue-500/4 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 -left-24 w-72 h-72 bg-blue-600/8 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-0 w-56 h-56 bg-indigo-500/5 rounded-full blur-3xl" />
         </div>
 
         {/* Logo + lang */}
@@ -149,31 +167,49 @@ export default function SignupPage() {
         </div>
 
         {/* Value proposition */}
-        <div className="relative space-y-7">
+        <div className="relative space-y-8">
           <div>
             <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-4">AI · SaaS · O'zbekiston</p>
-            <h2 className="text-[1.75rem] font-bold text-white leading-snug mb-4">{M[lang].headline}</h2>
+            <h2 className="text-[1.75rem] font-bold text-white leading-snug mb-3">{M[lang].headline}</h2>
             <p className="text-gray-400 text-sm leading-relaxed">{M[lang].sub}</p>
           </div>
 
-          {/* Benefits */}
+          {/* Benefits — icon + text */}
           <div className="space-y-3">
-            {M[lang].benefits.map((b, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-blue-600/15 border border-blue-600/25 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
-                  </svg>
+            {M[lang].benefits.map((b, i) => {
+              const Icon = b.icon
+              return (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-600/15 border border-blue-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <span className="text-gray-300 text-sm leading-relaxed pt-1.5">{b.text}</span>
                 </div>
-                <span className="text-gray-300 text-sm">{b}</span>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
-          {/* Dept tags */}
+          {/* Dept tags — icon badges */}
           <div className="flex flex-wrap gap-2">
-            {['📄 Word / PDF', '🤖 AI', '👥 Kadrlar', '💼 Buxgalter', '🗂️ Kotiba', '⚖️ Yurist'].map(d => (
-              <span key={d} className="text-xs bg-[#111827] border border-[#1E293B] text-gray-400 px-2.5 py-1 rounded-lg">{d}</span>
+            {DEPT_TAGS.map(tag => {
+              const Icon = tag.icon
+              return (
+                <span key={tag.label.uz}
+                  className={`inline-flex items-center gap-1.5 text-xs border px-2.5 py-1 rounded-lg font-medium ${tag.color}`}>
+                  <Icon className="w-3.5 h-3.5" />
+                  {tag.label[lang]}
+                </span>
+              )
+            })}
+          </div>
+
+          {/* Stats row */}
+          <div className="flex gap-6 pt-1">
+            {STATS.map(s => (
+              <div key={s.value}>
+                <div className="text-xl font-bold text-white">{s.value}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{s.label[lang]}</div>
+              </div>
             ))}
           </div>
         </div>
@@ -208,8 +244,9 @@ export default function SignupPage() {
           <div className="w-full max-w-[400px]">
 
             {/* Back link */}
-            <Link href="/" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition mb-7">
-              ← {BACK[lang]}
+            <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition mb-7">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              {BACK[lang]}
             </Link>
 
             {/* Heading */}
@@ -247,22 +284,36 @@ export default function SignupPage() {
                 <div className="flex-1 h-px bg-[#1E293B]" />
               </div>
 
-              {/* Email/password form */}
+              {/* Form */}
               <form onSubmit={handleSignup} className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-400 mb-1.5">Email</label>
                   <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                     required className={inp} placeholder="email@example.com" />
                 </div>
+
                 <div>
                   <label className="block text-xs font-medium text-gray-400 mb-1.5">{T(t.signup.password)}</label>
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                    required className={inp} placeholder={T(t.signup.passwordHint)} />
+                  <div className="relative">
+                    <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                      required className={inp + ' pr-11'} placeholder={T(t.signup.passwordHint)} />
+                    <button type="button" onClick={() => setShowPw(!showPw)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition">
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
+
                 <div>
                   <label className="block text-xs font-medium text-gray-400 mb-1.5">{T(t.signup.confirmPw)}</label>
-                  <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
-                    required className={inp} placeholder="••••••••" />
+                  <div className="relative">
+                    <input type={showCf ? 'text' : 'password'} value={confirm} onChange={e => setConfirm(e.target.value)}
+                      required className={inp + ' pr-11'} placeholder="••••••••" />
+                    <button type="button" onClick={() => setShowCf(!showCf)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition">
+                      {showCf ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <button type="submit" disabled={loading}
