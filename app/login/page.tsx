@@ -330,10 +330,19 @@ export default function LoginPage() {
       </div>
 
       {/* ── RIGHT PANEL ────────────────────────────────────────────────── */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-[#060D1A] to-[#0B1E3A] text-white relative overflow-hidden">
+      <div className="hidden lg:flex flex-1 relative overflow-hidden text-white">
 
+        {/* Laptop photo background */}
+        <img
+          src="/login-laptop.jpg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ filter: 'brightness(0.25) saturate(0.4) hue-rotate(195deg)', objectPosition: 'center top' }}
+        />
+        {/* Dark navy overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#060D1A]/90 via-[#081628]/80 to-[#0B1E3A]/85"/>
         {/* Glow blobs */}
-        <div className="absolute w-[400px] h-[400px] bg-blue-500 opacity-20 blur-3xl rounded-full top-[-100px] right-[-100px] pointer-events-none"/>
+        <div className="absolute w-[400px] h-[400px] bg-blue-500 opacity-15 blur-3xl rounded-full top-[-100px] right-[-100px] pointer-events-none"/>
         <div className="absolute w-72 h-72 bg-indigo-700 opacity-10 blur-3xl rounded-full bottom-0 left-0 pointer-events-none"/>
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
@@ -341,10 +350,10 @@ export default function LoginPage() {
           {/* Heading */}
           <div>
             <div className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-5">Kabinetim.uz</div>
-            <h2 className="text-4xl font-bold leading-snug mb-4">
+            <h2 className="text-4xl font-bold text-white leading-snug mb-4">
               Biznes hujjatlarini<br/>professional darajada
             </h2>
-            <p className="text-gray-300 text-sm max-w-md leading-relaxed">
+            <p className="text-blue-100/80 text-sm max-w-md leading-relaxed">
               Shartnomalar, hisob-fakturalar va buxgalteriya hujjatlarini yarating, yuboring va boshqaring.
             </p>
           </div>
