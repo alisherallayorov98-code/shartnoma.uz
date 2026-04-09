@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="140" viewBox="0 0 120 140">
+  <!-- Document shape -->
+  <rect x="20" y="10" width="60" height="80" rx="4" fill="none" stroke="white" stroke-width="1.5" opacity="0.18"/>
+  <!-- Folded corner -->
+  <path d="M64 10 L80 26 L64 26 Z" fill="white" opacity="0.08"/>
+  <path d="M64 10 L80 26" stroke="white" stroke-width="1.5" opacity="0.18" fill="none"/>
+  <!-- Text lines -->
+  <line x1="30" y1="36" x2="70" y2="36" stroke="white" stroke-width="1.2" opacity="0.14"/>
+  <line x1="30" y1="46" x2="70" y2="46" stroke="white" stroke-width="1.2" opacity="0.14"/>
+  <line x1="30" y1="56" x2="70" y2="56" stroke="white" stroke-width="1.2" opacity="0.14"/>
+  <line x1="30" y1="66" x2="55" y2="66" stroke="white" stroke-width="1.2" opacity="0.14"/>
+  <!-- Signature line -->
+  <line x1="30" y1="78" x2="56" y2="78" stroke="white" stroke-width="1.5" opacity="0.20"/>
+  <!-- Stamp circle -->
+  <circle cx="65" cy="76" r="8" fill="none" stroke="white" stroke-width="1.5" opacity="0.16"/>
+</svg>

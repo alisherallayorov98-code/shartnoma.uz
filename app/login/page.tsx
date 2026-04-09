@@ -290,6 +290,11 @@ export default function LoginPage() {
 
       {/* ── Right: Branding ────────────────────────────────────────────── */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 flex-col justify-center px-14 relative overflow-hidden">
+        {/* Document pattern background */}
+        <div
+          className="absolute inset-0 opacity-100"
+          style={{ backgroundImage: 'url(/bg-pattern.svg)', backgroundSize: '120px 140px', backgroundRepeat: 'repeat' }}
+        />
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 right-20 w-80 h-80 bg-white rounded-full blur-3xl"/>
           <div className="absolute bottom-20 left-10 w-56 h-56 bg-white rounded-full blur-2xl"/>
