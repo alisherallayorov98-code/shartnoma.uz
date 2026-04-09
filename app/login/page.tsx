@@ -332,14 +332,13 @@ export default function LoginPage() {
       {/* ── RIGHT PANEL ────────────────────────────────────────────────── */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden text-white">
 
-        {/* Blue gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0D2247] via-[#0F2D5C] to-[#1a3d7c]"/>
-        {/* Depth layers */}
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 85% 15%, #1E4FC240 0%, transparent 55%)' }}/>
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 10% 90%, #0A1F5520 0%, transparent 50%)' }}/>
-        {/* Glow blobs */}
-        <div className="absolute w-[500px] h-[500px] bg-blue-400 opacity-10 blur-[120px] rounded-full top-[-150px] right-[-100px] pointer-events-none"/>
-        <div className="absolute w-80 h-80 bg-blue-600 opacity-10 blur-3xl rounded-full bottom-[-50px] left-[-50px] pointer-events-none"/>
+        {/* City photo background */}
+        <img src="/city-bg.jpg" alt="" className="absolute inset-0 w-full h-full object-cover"
+          style={{ filter: 'brightness(0.55) saturate(0.7) hue-rotate(190deg)' }}/>
+        {/* Dark blue overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0D2247]/80 via-[#0F2D5C]/60 to-[#0B1E3A]/70"/>
+        {/* Top glow */}
+        <div className="absolute w-[500px] h-[300px] bg-blue-500 opacity-10 blur-3xl rounded-full top-0 right-0 pointer-events-none"/>
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
 
