@@ -289,33 +289,38 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right: Branding ────────────────────────────────────────────── */}
-      <div className="hidden lg:flex flex-1 bg-[#060D1A] flex-col justify-between px-12 py-10 relative overflow-hidden">
-        {/* Subtle glow blobs */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"/>
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-indigo-600/8 rounded-full blur-3xl pointer-events-none"/>
+      <div className="hidden lg:flex flex-1 flex-col justify-between px-12 py-10 relative overflow-hidden"
+        style={{ background: 'radial-gradient(ellipse at 80% 20%, #0D2847 0%, #071428 40%, #040B18 100%)' }}>
+        {/* Depth layers */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 20% 80%, #0A1F3D55 0%, transparent 60%)' }}/>
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-700/10 rounded-full blur-[100px] pointer-events-none"/>
+        <div className="absolute bottom-10 left-0 w-80 h-80 bg-indigo-800/10 rounded-full blur-3xl pointer-events-none"/>
+        {/* Subtle grid lines */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px' }}/>
 
         {/* Top: heading + features */}
         <div className="relative z-10 pt-4">
-          <div className="text-blue-500 text-xs font-semibold mb-5 uppercase tracking-widest">Kabinetim.uz</div>
-          <h2 className="text-3xl font-bold text-white leading-snug mb-3">
+          <div className="text-blue-400 text-xs font-bold mb-5 uppercase tracking-widest">Kabinetim.uz</div>
+          <h2 className="text-4xl font-bold text-white leading-snug mb-3">
             Biznes hujjatlarini<br/>professional darajada
           </h2>
-          <p className="text-gray-400 text-sm mb-8 leading-relaxed max-w-sm">
+          <p className="text-blue-100/70 text-sm mb-8 leading-relaxed max-w-sm">
             Shartnomalar, hisob-fakturalar, buxgalteriya hujjatlarini yarating, yuboring va boshqaring.
           </p>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[
               { icon: '📄', title: 'Avtomatik shartnomalar', desc: "STIR bo'yicha rekvizitlarni avtomatik to'ldirish" },
-              { icon: '🔐', title: 'E-IMZO integratsiyasi', desc: 'Elektron imzo bilan xavfsiz hujjat imzolash' },
+              { icon: '🔐', title: 'E-imzo integratsiyasi', desc: 'Elektron imzo bilan xavfsiz hujjat imzolash' },
               { icon: '🏢', title: "Ko'p tashkilot", desc: "Bir hisobda bir nechta tashkilotni boshqaring" },
               { icon: '🤖', title: 'AI yordamchi', desc: 'Hujjatlarni AI yordamida yarating va tahlil qiling' },
             ].map(item => (
-              <div key={item.title} className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-600/20 border border-blue-600/30 rounded-lg flex items-center justify-center text-base shrink-0">{item.icon}</div>
+              <div key={item.title} className="flex items-start gap-3">
+                <div className="w-9 h-9 bg-blue-500/20 border border-blue-500/30 rounded-xl flex items-center justify-center text-lg shrink-0 mt-0.5">{item.icon}</div>
                 <div>
-                  <div className="text-white font-medium text-sm">{item.title}</div>
-                  <div className="text-gray-500 text-xs">{item.desc}</div>
+                  <div className="text-white font-semibold text-sm">{item.title}</div>
+                  <div className="text-blue-200/60 text-xs mt-0.5">{item.desc}</div>
                 </div>
               </div>
             ))}
@@ -336,8 +341,8 @@ export default function LoginPage() {
               ))}
             </div>
             <div>
-              <div className="text-white text-xs font-semibold">10,000+ foydalanuvchi</div>
-              <div className="text-gray-500 text-xs">O'zbekiston bo'ylab ishonchli foydalanilmoqda</div>
+              <div className="text-white text-sm font-semibold">10,000+ foydalanuvchi</div>
+              <div className="text-blue-200/50 text-xs">O'zbekiston bo'ylab ishonchli foydalanilmoqda</div>
             </div>
           </div>
         </div>
