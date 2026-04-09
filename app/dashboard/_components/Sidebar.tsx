@@ -157,6 +157,17 @@ export function DashboardSidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-1.5 space-y-0.5 overflow-hidden">
+        {/* Tez shartnoma — mobil uchun alohida tugma */}
+        <Link href="/dashboard/mobile"
+          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+            isActive('/dashboard/mobile')
+              ? 'bg-green-600 text-white shadow-lg'
+              : 'text-green-400 hover:bg-green-900/30 hover:text-green-300 border border-green-900/40'
+          }`}>
+          <span className="text-sm flex-shrink-0">⚡</span>
+          {sidebarOpen && <span className="flex-1 text-left font-medium">{T(t.nav.mobile)}</span>}
+        </Link>
+
         {NAV_ITEMS.map(item => (
           <Link key={item.key} href={item.href}
             className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all ${

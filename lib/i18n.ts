@@ -24,6 +24,7 @@ export const t = {
     buxgalter:      { uz: 'Buxgalter',          oz: 'Бухгалтер',         ru: 'Бухгалтер' },
     kotiba:         { uz: 'Kotiba AI',           oz: 'Котиба AI',         ru: 'Секретарь AI' },
     seif:           { uz: 'Seif',               oz: 'Сейф',              ru: 'Сейф' },
+    mobile:         { uz: 'Tez shartnoma',      oz: 'Тез шартнома',      ru: 'Быстрый договор' },
     logout:         { uz: 'Chiqish',            oz: 'Чиқиш',             ru: 'Выйти' },
   },
 
