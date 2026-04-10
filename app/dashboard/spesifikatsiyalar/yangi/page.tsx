@@ -302,16 +302,28 @@ export default function YangiSpesifikatsiyaPage() {
                   </button>
                 )}
               </div>
-              {cpDropOpen && (() => {
-                const q = cpSearch.toLowerCase()
-                const filtered = cps.filter(cp =>
-                  !q || cp.name.toLowerCase().includes(q) || (cp.inn || '').includes(q)
-                )
+              {cpDropOpen && cpSearch.trim().length > 0 && (() => {
+                const q = cpSearch.toLowerCase().trim()
+                const inn_q = q.replace(/\D/g, '')
+                // STIR boshidan moslik → eng yuqori, keyin qolgan o'xshashlar
+                const scored = cps
+                  .map(cp => {
+                    const inn = (cp.inn || '').replace(/\D/g, '')
+                    const name = cp.name.toLowerCase()
+                    let score = 0
+                    if (inn_q && inn.startsWith(inn_q))        score = 3
+                    else if (inn_q && inn.includes(inn_q))     score = 2
+                    else if (name.includes(q))                  score = 1
+                    return { cp, score }
+                  })
+                  .filter(x => x.score > 0)
+                  .sort((a, b) => b.score - a.score)
+
                 return (
                   <div className="absolute z-30 top-full mt-1 left-0 right-0 bg-[#111827] border border-[#1E293B] rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto">
-                    {filtered.length === 0 ? (
+                    {scored.length === 0 ? (
                       <div className="px-4 py-3 text-xs text-gray-500">Topilmadi</div>
-                    ) : filtered.map(cp => (
+                    ) : scored.map(({ cp }) => (
                       <button key={cp.id} type="button"
                         onMouseDown={() => { setCpId(cp.id); setCpSearch(cp.name); setCpDropOpen(false); setContractId('') }}
                         className={`w-full text-left px-4 py-2.5 text-sm transition hover:bg-[#1F2937] ${cpId === cp.id ? 'text-blue-400 bg-blue-900/20' : 'text-gray-200'}`}>
