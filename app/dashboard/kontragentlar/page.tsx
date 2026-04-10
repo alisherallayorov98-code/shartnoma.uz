@@ -66,6 +66,14 @@ export default function KontragentlarPage() {
   const [stirLoading, setStirLoading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // ── STR Bulk lookup ────────────────────────────────────────────────────────
+  type StirResult = { inn: string; status: 'pending' | 'loading' | 'found' | 'error' | 'duplicate'; name?: string; data?: Record<string, string> }
+  const [stirBulkModal, setStirBulkModal] = useState(false)
+  const [stirInput, setStirInput] = useState('')
+  const [stirResults, setStirResults] = useState<StirResult[]>([])
+  const [stirBulkRunning, setStirBulkRunning] = useState(false)
+  const [stirBulkDone, setStirBulkDone] = useState(false)
+
   const filteredCps = cps.filter(cp =>
     cp.name.toLowerCase().includes(cpSearch.toLowerCase()) ||
     (cp.inn || '').includes(cpSearch) ||
@@ -161,6 +169,72 @@ export default function KontragentlarPage() {
     setCpDetail(null); reloadCps(); setEditingCp(null)
   }
 
+  async function runStirBulk() {
+    const inns = stirInput.split(/[\n,;\s]+/).map(s => s.replace(/\D/g, '')).filter(s => s.length === 9)
+    const unique = [...new Set(inns)]
+    if (unique.length === 0) { toast("Hech qanday 9 raqamli STIR topilmadi", 'error'); return }
+    const existingInns = new Set(cps.map(cp => cp.inn).filter(Boolean))
+    const initial: StirResult[] = unique.map(inn => ({
+      inn,
+      status: existingInns.has(inn) ? 'duplicate' : 'pending',
+    }))
+    setStirResults(initial)
+    setStirBulkRunning(true)
+    setStirBulkDone(false)
+    const { data: { session } } = await supabase.auth.getSession()
+    const updated = [...initial]
+    for (let i = 0; i < updated.length; i++) {
+      if (updated[i].status === 'duplicate') continue
+      updated[i] = { ...updated[i], status: 'loading' }
+      setStirResults([...updated])
+      try {
+        const res = await fetch(`/api/company-lookup?inn=${updated[i].inn}`)
+        const json = await res.json()
+        if (!res.ok || !json.company) {
+          updated[i] = { ...updated[i], status: 'error' }
+        } else {
+          const co = json.company
+          updated[i] = {
+            ...updated[i], status: 'found', name: co.name,
+            data: {
+              name: co.name, inn: updated[i].inn,
+              director_name: co.director || '', address: co.address || '',
+              phone: co.phone || '', bank_name: co.bank_name || '',
+              bank_account: co.account || '', mfo: co.mfo || '',
+              user_id: session!.user.id,
+            },
+          }
+        }
+      } catch {
+        updated[i] = { ...updated[i], status: 'error' }
+      }
+      setStirResults([...updated])
+    }
+    setStirBulkRunning(false)
+    setStirBulkDone(true)
+  }
+
+  async function saveStirBulk() {
+    const toSave = stirResults.filter(r => r.status === 'found' && r.data)
+    if (toSave.length === 0) { toast("Saqlash uchun natija yo'q", 'error'); return }
+    setImporting(true)
+    const rows = toSave.map(r => r.data!)
+    const { error } = await supabase.from('counterparties').insert(rows)
+    setImporting(false)
+    if (error) {
+      if (error.code === '23505') {
+        const { error: e2 } = await supabase.from('counterparties').upsert(rows, { onConflict: 'inn' })
+        if (e2) { toast("Xato: " + e2.message, 'error'); return }
+      } else { toast("Xato: " + error.message, 'error'); return }
+    }
+    toast(`${toSave.length} ta kontragent saqlandi`, 'success')
+    setStirBulkModal(false)
+    setStirInput('')
+    setStirResults([])
+    setStirBulkDone(false)
+    reloadCps()
+  }
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -226,9 +300,8 @@ export default function KontragentlarPage() {
             Shablon
           </button>
           <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
-          <button onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
-            title="CSV fayl yuklash">
+          <button onClick={() => { setStirBulkModal(true); setStirResults([]); setStirInput(''); setStirBulkDone(false) }}
+            className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition">
             <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
             </svg>
@@ -490,6 +563,123 @@ export default function KontragentlarPage() {
                 className="px-5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 text-sm py-2.5 rounded-lg transition">
                 Bekor
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STR Bulk Lookup Modal */}
+      {stirBulkModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B] flex-shrink-0">
+              <div>
+                <h3 className="text-base font-semibold text-white">Ommaviy STIR yuklash</h3>
+                <p className="text-xs text-gray-500 mt-0.5">STIR raqamlarini kiriting — ma'lumotlar Soliq API orqali avtomatik to'ldiriladi</p>
+              </div>
+              <button onClick={() => { if (!stirBulkRunning) { setStirBulkModal(false); setStirResults([]); setStirInput(''); setStirBulkDone(false) } }}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] text-xl">×</button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-5 space-y-4">
+              {/* Input */}
+              {!stirBulkRunning && !stirBulkDone && (
+                <div>
+                  <label className="block text-xs text-gray-400 mb-2">
+                    STIR raqamlari (har bir qatorda bitta, yoki vergul bilan ajrating)
+                  </label>
+                  <textarea
+                    value={stirInput}
+                    onChange={e => setStirInput(e.target.value)}
+                    rows={8}
+                    className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-600 resize-none"
+                    placeholder={"302857743\n305107783\n207560007\n..."}
+                  />
+                  {(() => {
+                    const count = [...new Set(stirInput.split(/[\n,;\s]+/).map(s => s.replace(/\D/g, '')).filter(s => s.length === 9))].length
+                    return count > 0 ? <p className="text-xs text-blue-400 mt-1.5">{count} ta to'g'ri STIR aniqlandi</p> : null
+                  })()}
+                </div>
+              )}
+
+              {/* Results */}
+              {stirResults.length > 0 && (
+                <div className="space-y-2">
+                  {stirBulkRunning && (
+                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+                      <span className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin flex-shrink-0"/>
+                      {stirResults.filter(r => r.status === 'found' || r.status === 'error' || r.status === 'duplicate').length} / {stirResults.length} ta bajarildi
+                    </div>
+                  )}
+                  {stirBulkDone && (
+                    <div className="flex gap-4 text-xs mb-3 flex-wrap">
+                      <span className="text-emerald-400">✓ {stirResults.filter(r => r.status === 'found').length} ta topildi</span>
+                      <span className="text-red-400">✗ {stirResults.filter(r => r.status === 'error').length} ta topilmadi</span>
+                      {stirResults.filter(r => r.status === 'duplicate').length > 0 && (
+                        <span className="text-yellow-400">⚠ {stirResults.filter(r => r.status === 'duplicate').length} ta allaqachon mavjud</span>
+                      )}
+                    </div>
+                  )}
+                  {stirResults.map((r, i) => (
+                    <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border text-sm ${
+                      r.status === 'found' ? 'bg-emerald-900/15 border-emerald-700/30' :
+                      r.status === 'error' ? 'bg-red-900/15 border-red-700/30' :
+                      r.status === 'duplicate' ? 'bg-yellow-900/15 border-yellow-700/30' :
+                      r.status === 'loading' ? 'bg-blue-900/15 border-blue-700/30' :
+                      'bg-[#0F172A] border-[#1E293B]'
+                    }`}>
+                      <div className="flex-shrink-0 w-5 text-center">
+                        {r.status === 'loading' && <span className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin inline-block"/>}
+                        {r.status === 'found' && <span className="text-emerald-400">✓</span>}
+                        {r.status === 'error' && <span className="text-red-400">✗</span>}
+                        {r.status === 'duplicate' && <span className="text-yellow-400">⚠</span>}
+                        {r.status === 'pending' && <span className="text-gray-600">·</span>}
+                      </div>
+                      <span className="font-mono text-xs text-gray-400 flex-shrink-0">{r.inn}</span>
+                      <span className={`flex-1 text-xs truncate ${
+                        r.status === 'found' ? 'text-white font-medium' :
+                        r.status === 'error' ? 'text-red-400' :
+                        r.status === 'duplicate' ? 'text-yellow-400' : 'text-gray-600'
+                      }`}>
+                        {r.status === 'found' ? r.name :
+                         r.status === 'error' ? "Topilmadi" :
+                         r.status === 'duplicate' ? "Allaqachon mavjud" :
+                         r.status === 'loading' ? "Qidirilmoqda..." : "Kutmoqda"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 px-5 py-4 border-t border-[#1E293B] flex-shrink-0">
+              {!stirBulkRunning && !stirBulkDone && (
+                <>
+                  <button onClick={runStirBulk}
+                    disabled={!stirInput.trim()}
+                    className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm py-2.5 rounded-lg font-semibold transition">
+                    Yuklash
+                  </button>
+                  <button onClick={() => { setStirBulkModal(false); setStirInput('') }}
+                    className="px-5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 text-sm py-2.5 rounded-lg transition">
+                    Bekor
+                  </button>
+                </>
+              )}
+              {stirBulkDone && (
+                <>
+                  <button onClick={saveStirBulk} disabled={importing || stirResults.filter(r => r.status === 'found').length === 0}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-sm py-2.5 rounded-lg font-semibold transition">
+                    {importing ? 'Saqlanmoqda...' : `${stirResults.filter(r => r.status === 'found').length} ta saqlash`}
+                  </button>
+                  <button onClick={() => { setStirResults([]); setStirBulkDone(false); setStirInput('') }}
+                    className="px-4 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 text-sm py-2.5 rounded-lg transition">
+                    Qayta
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
