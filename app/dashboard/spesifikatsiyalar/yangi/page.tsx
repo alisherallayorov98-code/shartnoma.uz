@@ -11,6 +11,7 @@ import { useToast } from '@/lib/toast'
 import type { SpecItem, Specification } from '@/lib/types'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 import { BirlikPicker } from '../../_components/BirlikPicker'
+import { FileText, Plus, Trash2, ChevronDown, Save, X } from 'lucide-react'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -32,17 +33,17 @@ const QQS_OPTIONS = [
   { val: '15',  label: '15%' },
 ]
 
-const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
-const lbl = 'block text-xs text-gray-400 mb-1.5 font-medium'
+const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 placeholder-gray-500 transition'
+const lbl = 'block text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-wide'
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function YangiSpesifikatsiyaPage() {
-  const router      = useRouter()
+  const router       = useRouter()
   const searchParams = useSearchParams()
-  const editId      = searchParams.get('id')          // edit mode
-  const { lang }    = useLang()
-  const T           = (obj: Record<Lang, string>) => tr(obj, lang)
+  const editId       = searchParams.get('id')
+  const { lang }     = useLang()
+  const T            = (obj: Record<Lang, string>) => tr(obj, lang)
   const { activeOrg, contracts, cps } = useDashboard()
   const { toast } = useToast()
 
@@ -75,7 +76,7 @@ export default function YangiSpesifikatsiyaPage() {
     load()
   }, [editId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Auto spec number (new only) ───────────────────────────────────────────
+  // ── Auto spec number ──────────────────────────────────────────────────────
   useEffect(() => {
     if (editId || !activeOrg) return
     async function loadNext() {
@@ -101,9 +102,12 @@ export default function YangiSpesifikatsiyaPage() {
     [cps, contracts, activeOrg?.id]
   )
 
-  const asosiy   = items.reduce((s, it) => s + it.miqdori * it.narxi, 0)
-  const qqsJami  = items.reduce((s, it) => s + it.qqs_summa, 0)
-  const grand    = items.reduce((s, it) => s + it.summa, 0)
+  const selectedContract = contracts.find(c => c.id === contractId)
+  const selectedCp = cps.find(cp => cp.id === (cpId || selectedContract?.counterparty_id))
+
+  const asosiy  = items.reduce((s, it) => s + it.miqdori * it.narxi, 0)
+  const qqsJami = items.reduce((s, it) => s + it.qqs_summa, 0)
+  const grand   = items.reduce((s, it) => s + it.summa, 0)
 
   // ── Item helpers ──────────────────────────────────────────────────────────
   function updateItem(i: number, field: keyof SpecItem, value: string | number) {
@@ -140,11 +144,11 @@ export default function YangiSpesifikatsiyaPage() {
 
     setSaving(false)
     if (error) { toast(`Xato: ${error.message}`, 'error'); return }
-    toast(editId ? "Spesifikatsiya yangilandi ✓" : "Spesifikatsiya saqlandi ✓", 'success')
+    toast(editId ? "Spesifikatsiya yangilandi" : "Spesifikatsiya saqlandi", 'success')
     router.push('/dashboard/spesifikatsiyalar')
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (loadingEdit) {
     return (
       <div className="flex items-center justify-center h-full py-24">
@@ -155,41 +159,46 @@ export default function YangiSpesifikatsiyaPage() {
 
   return (
     <div className="min-h-full bg-[#0B1220]">
-      {/* Top bar */}
-      <div className="sticky top-0 z-20 bg-[#0B1220]/95 backdrop-blur border-b border-[#1E293B] px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3 text-sm">
-          <Link href="/dashboard/spesifikatsiyalar" className="text-gray-500 hover:text-gray-300 transition">
-            Spesifikatsiyalar
-          </Link>
-          <span className="text-gray-600">/</span>
-          <span className="text-white font-medium">
-            {editId ? `#${specNumber} — tahrirlash` : 'Yangi spesifikatsiya'}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/dashboard/spesifikatsiyalar"
-            className="px-4 py-2 rounded-lg bg-[#1F2937] border border-[#1E293B] text-gray-300 hover:text-white text-sm transition">
-            Bekor qilish
-          </Link>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-5 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-[#1F2937] disabled:text-gray-500 text-white rounded-lg text-sm font-semibold transition flex items-center gap-2"
-          >
-            {saving && <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"/>}
-            {saving ? 'Saqlanmoqda…' : 'Saqlash'}
-          </button>
+
+      {/* ── Sticky top bar ── */}
+      <div className="sticky top-0 z-20 bg-[#0B1220]/95 backdrop-blur border-b border-[#1E293B] px-6 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3 text-sm">
+            <Link href="/dashboard/spesifikatsiyalar" className="text-gray-500 hover:text-gray-300 transition flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5"/>
+              Spesifikatsiyalar
+            </Link>
+            <ChevronDown className="w-3.5 h-3.5 text-gray-600 -rotate-90"/>
+            <span className="text-white font-medium">
+              {editId ? `#${specNumber} — tahrirlash` : 'Yangi spesifikatsiya'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard/spesifikatsiyalar"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1F2937] border border-[#1E293B] text-gray-300 hover:text-white text-sm transition">
+              <X className="w-3.5 h-3.5"/> Bekor
+            </Link>
+            <button onClick={handleSave} disabled={saving}
+              className="inline-flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-sm font-semibold transition">
+              {saving
+                ? <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin"/>
+                : <Save className="w-3.5 h-3.5"/>}
+              {saving ? 'Saqlanmoqda…' : editId ? 'Yangilash' : 'Saqlash'}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-5">
 
-        {/* Basic info */}
-        <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-white mb-4">Asosiy ma'lumotlar</h2>
-          <div className="grid grid-cols-2 gap-4">
+        {/* ── Top info row ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+          {/* Asosiy ma'lumotlar */}
+          <div className="lg:col-span-1 bg-[#111827] border border-[#1E293B] rounded-2xl p-5 space-y-4">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Asosiy ma'lumotlar</h2>
             <div>
-              <label className={lbl}>Spesifikatsiya raqami *</label>
+              <label className={lbl}>Raqami <span className="text-red-400">*</span></label>
               <input className={inp} value={specNumber}
                 onChange={e => setSpecNumber(e.target.value)}
                 placeholder="SPEC-001"/>
@@ -200,36 +209,86 @@ export default function YangiSpesifikatsiyaPage() {
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Ixtiyoriy izoh…"/>
             </div>
+          </div>
+
+          {/* Tashkilot ma'lumotlari */}
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Sizning tashkilotingiz</h2>
+            {activeOrg ? (
+              <div className="space-y-2.5">
+                {[
+                  { label: 'Nomi',       value: activeOrg.name },
+                  { label: 'INN',        value: activeOrg.inn },
+                  { label: 'Rahbar',     value: activeOrg.director_name },
+                  { label: 'Bank',       value: activeOrg.bank_name },
+                  { label: 'Hisob',      value: activeOrg.bank_account },
+                  { label: 'MFO',        value: activeOrg.mfo },
+                ].filter(r => r.value).map(row => (
+                  <div key={row.label} className="flex items-start gap-2">
+                    <span className="text-[11px] text-gray-500 w-14 flex-shrink-0 pt-0.5">{row.label}</span>
+                    <span className="text-xs text-gray-200 font-medium leading-relaxed">{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Tashkilot tanlanmagan</p>
+            )}
+          </div>
+
+          {/* Kontragent va shartnoma */}
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5 space-y-4">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Bog'liqlik</h2>
             <div>
-              <label className={lbl}>Kontragent (ixtiyoriy)</label>
+              <label className={lbl}>Kontragent</label>
               <select className={inp} value={cpId}
                 onChange={e => { setCpId(e.target.value); setContractId('') }}>
-                <option value="">— Kontragentni tanlang —</option>
+                <option value="">— Tanlang —</option>
                 {cpsWithContracts.map(cp => (
                   <option key={cp.id} value={cp.id}>{cp.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className={lbl}>Shartnoma (ixtiyoriy)</label>
+              <label className={lbl}>Shartnoma</label>
               <select className={inp} value={contractId}
                 onChange={e => setContractId(e.target.value)}>
-                <option value="">— Shartnomani tanlang —</option>
+                <option value="">— Tanlang —</option>
                 {orgContracts.map(c => (
                   <option key={c.id} value={c.id}>
-                    #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang] || c.contract_type}
+                    №{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang] || c.contract_type}
                   </option>
                 ))}
               </select>
             </div>
+            {selectedCp && (
+              <div className="pt-1 border-t border-[#1E293B] space-y-1.5">
+                <p className="text-[11px] text-gray-500 uppercase tracking-wide">Kontragent ma'lumotlari</p>
+                {[
+                  { label: 'Nomi',   value: selectedCp.name },
+                  { label: 'INN',    value: selectedCp.inn },
+                  { label: 'Rahbar', value: selectedCp.director_name },
+                  { label: 'MFO',    value: selectedCp.mfo },
+                ].filter(r => r.value).map(row => (
+                  <div key={row.label} className="flex items-start gap-2">
+                    <span className="text-[11px] text-gray-500 w-14 flex-shrink-0">{row.label}</span>
+                    <span className="text-xs text-gray-200 leading-relaxed">{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Items */}
-        <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-white">Mahsulotlar ro'yxati *</h2>
-            <div className="flex items-center gap-2">
+        {/* ── Items table ── */}
+        <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
+
+          {/* Table header */}
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#1E293B]">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-sm font-semibold text-white">Mahsulotlar ro'yxati</h2>
+              <span className="text-xs bg-[#1F2937] border border-[#1E293B] text-gray-400 px-2 py-0.5 rounded-full">{items.length} ta</span>
+            </div>
+            <div className="flex items-center gap-3">
               <span className="text-xs text-gray-500">Barchasi uchun QQS:</span>
               <div className="flex gap-0.5 bg-[#0F172A] border border-[#1E293B] rounded-lg p-0.5">
                 {QQS_OPTIONS.map(opt => (
@@ -243,117 +302,131 @@ export default function YangiSpesifikatsiyaPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-[#1E293B] overflow-hidden mb-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs min-w-[600px]">
-                <thead>
-                  <tr className="bg-[#0F172A] text-gray-400 text-left border-b border-[#1E293B]">
-                    <th className="px-3 py-2.5 w-8 text-center">№</th>
-                    <th className="px-2 py-2.5">Nomi</th>
-                    <th className="px-2 py-2.5 w-20">O'lchov</th>
-                    <th className="px-2 py-2.5 w-20 text-right">Soni</th>
-                    <th className="px-2 py-2.5 w-28 text-right">Narx</th>
-                    <th className="px-2 py-2.5 w-20 text-center">QQS</th>
-                    <th className="px-2 py-2.5 w-28 text-right">Jami</th>
-                    <th className="px-1 py-2.5 w-6"></th>
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs min-w-[700px]">
+              <thead>
+                <tr className="bg-[#0F172A] text-gray-400 border-b border-[#1E293B]">
+                  <th className="px-4 py-3 w-10 text-center font-medium">№</th>
+                  <th className="px-3 py-3 text-left font-medium">Tovarlar (ish, xizmatlar) nomi</th>
+                  <th className="px-3 py-3 w-24 text-center font-medium">O'lchov</th>
+                  <th className="px-3 py-3 w-20 text-right font-medium">Soni</th>
+                  <th className="px-3 py-3 w-32 text-right font-medium">Narx (so'm)</th>
+                  <th className="px-3 py-3 w-28 text-right font-medium">Asosiy qiymat</th>
+                  <th className="px-3 py-3 w-20 text-center font-medium">QQS</th>
+                  <th className="px-3 py-3 w-28 text-right font-medium">Jami</th>
+                  <th className="px-3 py-3 w-8"/>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => (
+                  <tr key={i} className="border-t border-[#1E293B] hover:bg-[#1F2937]/50 transition group">
+                    <td className="px-4 py-2.5 text-gray-500 text-center">{i + 1}</td>
+                    <td className="px-3 py-2.5">
+                      <input
+                        className="w-full bg-transparent border-b border-transparent group-hover:border-[#1E293B] focus:border-blue-500 text-gray-200 py-0.5 focus:outline-none text-xs placeholder-gray-600 transition"
+                        value={item.nomi} placeholder="Mahsulot yoki xizmat nomi"
+                        onChange={e => updateItem(i, 'nomi', e.target.value)}/>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <BirlikPicker value={item.birlik} onChange={v => updateItem(i, 'birlik', v)}/>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <input type="number"
+                        className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-blue-500 text-xs text-right"
+                        value={item.miqdori} min={0}
+                        onChange={e => updateItem(i, 'miqdori', parseFloat(e.target.value) || 0)}/>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <input type="number"
+                        className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-blue-500 text-xs text-right"
+                        value={item.narxi} min={0}
+                        onChange={e => updateItem(i, 'narxi', parseFloat(e.target.value) || 0)}/>
+                    </td>
+                    <td className="px-3 py-2.5 text-right text-gray-300 text-xs">
+                      {(item.miqdori * item.narxi).toLocaleString()}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <select
+                        className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-1 py-1.5 text-gray-200 focus:outline-none focus:border-blue-500 text-xs cursor-pointer"
+                        value={item.qqs_foiz}
+                        onChange={e => updateItem(i, 'qqs_foiz', e.target.value)}>
+                        {QQS_OPTIONS.map(opt => <option key={opt.val} value={opt.val}>{opt.label}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-semibold text-white">
+                      {item.summa.toLocaleString()}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <button type="button" onClick={() => removeItem(i)}
+                        className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-red-400 rounded transition opacity-0 group-hover:opacity-100">
+                        <Trash2 className="w-3.5 h-3.5"/>
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, i) => (
-                    <tr key={i} className="border-t border-[#1E293B] hover:bg-[#1F2937]">
-                      <td className="px-3 py-2 text-gray-500 text-center">{i + 1}</td>
-                      <td className="px-2 py-2">
-                        <input
-                          className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-blue-600 text-xs placeholder-gray-500"
-                          value={item.nomi} placeholder="Mahsulot nomi"
-                          onChange={e => updateItem(i, 'nomi', e.target.value)}/>
-                      </td>
-                      <td className="px-2 py-2">
-                        <BirlikPicker value={item.birlik} onChange={v => updateItem(i, 'birlik', v)}/>
-                      </td>
-                      <td className="px-2 py-2">
-                        <input type="number"
-                          className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-blue-600 text-xs text-right"
-                          value={item.miqdori} min={0}
-                          onChange={e => updateItem(i, 'miqdori', parseFloat(e.target.value) || 0)}/>
-                      </td>
-                      <td className="px-2 py-2">
-                        <input type="number"
-                          className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-blue-600 text-xs text-right"
-                          value={item.narxi} min={0}
-                          onChange={e => updateItem(i, 'narxi', parseFloat(e.target.value) || 0)}/>
-                      </td>
-                      <td className="px-2 py-2">
-                        <select
-                          className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-1 py-1.5 text-gray-200 focus:outline-none focus:border-blue-600 text-xs cursor-pointer"
-                          value={item.qqs_foiz}
-                          onChange={e => updateItem(i, 'qqs_foiz', e.target.value)}>
-                          {QQS_OPTIONS.map(opt => <option key={opt.val} value={opt.val}>{opt.label}</option>)}
-                        </select>
-                      </td>
-                      <td className="px-2 py-2 text-right text-white font-semibold">
-                        {item.summa.toLocaleString()}
-                      </td>
-                      <td className="px-1 py-2">
-                        <button type="button" onClick={() => removeItem(i)}
-                          className="w-5 h-5 flex items-center justify-center text-gray-600 hover:text-red-400 rounded transition text-base">
-                          ×
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-[#1E293B] bg-[#0F172A]">
-                    <td colSpan={4} className="px-3 py-2.5 text-right text-gray-400 text-xs font-semibold">Jami:</td>
-                    <td className="px-2 py-2.5 text-right text-white text-xs font-semibold">{asosiy.toLocaleString()}</td>
-                    <td className="px-2 py-2.5 text-center text-orange-400 text-xs">{qqsJami > 0 ? qqsJami.toLocaleString() : '—'}</td>
-                    <td className="px-2 py-2.5 text-right text-white font-bold text-sm">{grand.toLocaleString()}</td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-[#1E293B] bg-[#0A1628]">
+                  <td colSpan={5} className="px-4 py-3 text-right text-xs text-gray-400 font-semibold">Jami:</td>
+                  <td className="px-3 py-3 text-right text-white text-xs font-semibold">{asosiy.toLocaleString()}</td>
+                  <td className="px-3 py-3 text-center text-xs">
+                    {qqsJami > 0
+                      ? <span className="text-amber-400 font-semibold">{qqsJami.toLocaleString()}</span>
+                      : <span className="text-gray-600">—</span>}
+                  </td>
+                  <td className="px-3 py-3 text-right font-bold text-white text-sm">{grand.toLocaleString()}</td>
+                  <td/>
+                </tr>
+              </tfoot>
+            </table>
           </div>
 
-          <button type="button" onClick={() => setItems(prev => [...prev, emptyItem()])}
-            className="w-full border-2 border-dashed border-[#1E293B] hover:border-orange-500 text-gray-500 hover:text-orange-400 py-3 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2">
-            + Mahsulot qo'shish
-          </button>
+          {/* Add row button */}
+          <div className="px-5 py-3 border-t border-[#1E293B]">
+            <button type="button"
+              onClick={() => setItems(prev => [...prev, emptyItem()])}
+              className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 font-medium transition">
+              <Plus className="w-4 h-4"/>
+              Qator qo'shish
+            </button>
+          </div>
         </div>
 
-        {/* Summary */}
-        {items.length > 0 && grand > 0 && (
-          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Asosiy summa</p>
-                <p className="text-lg font-bold text-white">{asosiy.toLocaleString()} <span className="text-xs text-gray-500">so'm</span></p>
+        {/* ── Summary ── */}
+        {grand > 0 && (
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-3 divide-x divide-[#1E293B]">
+              <div className="px-6 py-4 text-center">
+                <p className="text-xs text-gray-500 mb-1.5 uppercase tracking-wide">Asosiy summa</p>
+                <p className="text-2xl font-bold text-white">{asosiy.toLocaleString()}</p>
+                <p className="text-xs text-gray-500 mt-0.5">so'm</p>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">QQS</p>
-                <p className="text-lg font-bold text-orange-400">{qqsJami > 0 ? qqsJami.toLocaleString() : '—'} {qqsJami > 0 && <span className="text-xs text-gray-500">so'm</span>}</p>
+              <div className="px-6 py-4 text-center">
+                <p className="text-xs text-gray-500 mb-1.5 uppercase tracking-wide">QQS</p>
+                <p className="text-2xl font-bold text-amber-400">{qqsJami > 0 ? qqsJami.toLocaleString() : '—'}</p>
+                {qqsJami > 0 && <p className="text-xs text-gray-500 mt-0.5">so'm</p>}
               </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Jami summa</p>
-                <p className="text-xl font-bold text-white">{grand.toLocaleString()} <span className="text-xs text-gray-500">so'm</span></p>
+              <div className="px-6 py-4 text-center bg-blue-600/5">
+                <p className="text-xs text-gray-400 mb-1.5 uppercase tracking-wide">Jami summa</p>
+                <p className="text-2xl font-bold text-white">{grand.toLocaleString()}</p>
+                <p className="text-xs text-gray-500 mt-0.5">so'm</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Bottom actions */}
+        {/* ── Bottom actions ── */}
         <div className="flex justify-end gap-3 pb-8">
           <Link href="/dashboard/spesifikatsiyalar"
-            className="px-6 py-2.5 rounded-lg bg-[#1F2937] border border-[#1E293B] text-gray-300 hover:text-white text-sm transition">
-            Bekor qilish
+            className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-lg bg-[#1F2937] border border-[#1E293B] text-gray-300 hover:text-white text-sm transition">
+            <X className="w-4 h-4"/> Bekor qilish
           </Link>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-8 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-[#1F2937] disabled:text-gray-500 text-white rounded-lg text-sm font-semibold transition flex items-center gap-2"
-          >
-            {saving && <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"/>}
+          <button onClick={handleSave} disabled={saving}
+            className="inline-flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-sm font-semibold transition">
+            {saving
+              ? <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"/>
+              : <Save className="w-4 h-4"/>}
             {saving ? 'Saqlanmoqda…' : editId ? 'Yangilash' : 'Saqlash'}
           </button>
         </div>

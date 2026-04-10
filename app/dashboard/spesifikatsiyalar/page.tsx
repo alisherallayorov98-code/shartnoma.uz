@@ -10,6 +10,7 @@ import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import type { Specification } from '@/lib/types'
 import { generateSpecWord } from '@/lib/specExport'
+import { FileText, Plus, Download, Pencil, Trash2 } from 'lucide-react'
 
 export default function SpesifikatsiyalarPage() {
   const { lang } = useLang()
@@ -61,19 +62,24 @@ export default function SpesifikatsiyalarPage() {
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-white">📋 Spesifikatsiyalar</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{specs.length} ta spesifikatsiya</p>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-blue-600/15 border border-blue-600/20 rounded-xl flex items-center justify-center">
+            <FileText className="w-5 h-5 text-blue-400"/>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white">Spesifikatsiyalar</h1>
+            <p className="text-gray-500 text-xs mt-0.5">{specs.length} ta spesifikatsiya</p>
+          </div>
         </div>
         {isFree && specs.length >= 5 ? (
           <button onClick={openUpgradeModal}
-            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
-            {T(t.specTab.newBtn)}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
+            <Plus className="w-4 h-4"/> {T(t.specTab.newBtn)}
           </button>
         ) : (
           <Link href="/dashboard/spesifikatsiyalar/yangi"
-            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
-            {T(t.specTab.newBtn)}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
+            <Plus className="w-4 h-4"/> {T(t.specTab.newBtn)}
           </Link>
         )}
       </div>
@@ -93,7 +99,9 @@ export default function SpesifikatsiyalarPage() {
       {/* Empty state */}
       {specs.length === 0 ? (
         <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-16 text-center">
-          <div className="text-5xl mb-4">📋</div>
+          <div className="w-14 h-14 bg-[#1F2937] border border-[#1E293B] rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-7 h-7 text-gray-500"/>
+          </div>
           <p className="text-gray-400 font-medium">{T(t.specTab.empty)}</p>
           <p className="text-gray-600 text-sm mt-1">{T(t.specTab.createNew)}</p>
         </div>
@@ -146,20 +154,16 @@ export default function SpesifikatsiyalarPage() {
                     <td className="px-4 py-2.5" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => generateSpecWord(spec, activeOrg, cps)}
-                          className="flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition font-semibold">
-                          📝 Word
+                          className="inline-flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg transition font-medium">
+                          <Download className="w-3 h-3"/> Word
                         </button>
-                        <a href="https://www.ilovepdf.com/ru/word_to_pdf" target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 px-2 py-1 rounded hover:bg-orange-900/20 transition font-medium">
-                          📄 Word→PDF
-                        </a>
                         <Link href={`/dashboard/spesifikatsiyalar/yangi?id=${spec.id}`}
-                          className="text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-900/20 transition">
-                          {T(t.specTab.edit)}
+                          className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-white px-2 py-1.5 rounded-lg hover:bg-[#1F2937] transition">
+                          <Pencil className="w-3 h-3"/>
                         </Link>
                         <button onClick={() => deleteSpec(spec.id)}
-                          className="text-xs text-red-500 hover:text-red-400 px-2 py-1 rounded hover:bg-red-900/20 transition">
-                          {T(t.btn.delete)}
+                          className="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-900/20 transition">
+                          <Trash2 className="w-3 h-3"/>
                         </button>
                       </div>
                     </td>
