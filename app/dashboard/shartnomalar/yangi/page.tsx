@@ -808,10 +808,16 @@ export default function YangiShartnoma() {
               {/* ── Bottom: Product name + Shablon ── */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {(form.contract_type === 'oldi_sotdi' || form.contract_type === 'daval') && (
-                  <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4">
-                    <label className={lbl}>Mahsulot / xizmat nomi</label>
+                  <div className="bg-[#111827] border border-amber-600/40 rounded-xl p-4">
+                    <label className="block text-xs text-amber-400 mb-1.5 font-semibold">
+                      Mahsulot / xizmat nomi <span className="text-red-400">*</span>
+                    </label>
                     <input value={form.product_name} onChange={e => setForm(f => ({ ...f, product_name: e.target.value }))}
-                      className={inp} placeholder="Tovar yoki xizmat nomi" />
+                      className={`${inp} ${!form.product_name ? 'border-amber-600/50 focus:border-amber-500' : ''}`}
+                      placeholder="Tovar yoki xizmat nomini kiriting" />
+                    {!form.product_name && (
+                      <p className="text-[11px] text-amber-600 mt-1">Bu maydon shartnoma matnida ishlatiladi</p>
+                    )}
                   </div>
                 )}
                 <div className={`bg-[#111827] border border-[#1E293B] rounded-xl p-4 ${!(form.contract_type === 'oldi_sotdi' || form.contract_type === 'daval') ? 'lg:col-span-2' : ''}`}>
