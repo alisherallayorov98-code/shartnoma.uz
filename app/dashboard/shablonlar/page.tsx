@@ -7,7 +7,6 @@ import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { DEFAULT_TEMPLATES, getTplField, type AppTemplate } from '@/lib/defaultTemplates'
-import { Modal, ModalActions } from '../_components/Modal'
 import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
@@ -42,8 +41,6 @@ type DbCustomTemplate = {
   description: string | null; content: string
 }
 
-const emptyCustomTpl = { type: 'oldi_sotdi', name: '', description: '', content: '' }
-
 export default function ShablonlarPage() {
   const router = useRouter()
   const { lang } = useLang()
@@ -53,16 +50,9 @@ export default function ShablonlarPage() {
 
   const [customTemplates, setCustomTemplates] = useState<AppTemplate[]>([])
   const [templateFilter, setTemplateFilter] = useState('barchasi')
-  const [customTemplateModal, setCustomTemplateModal] = useState(false)
-  const [editingCustomTemplate, setEditingCustomTemplate] = useState<AppTemplate | null>(null)
-  const [customTplForm, setCustomTplForm] = useState(emptyCustomTpl)
-  const [saving, setSaving] = useState(false)
   const [wordImporting, setWordImporting] = useState(false)
   const wordImportRef = useRef<HTMLInputElement>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-
-  const lbl = 'block text-xs text-gray-400 mb-1'
-  const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
 
   useEffect(() => {
     if (activeOrg) loadCustomTemplates(activeOrg.id)
@@ -82,32 +72,6 @@ export default function ShablonlarPage() {
       isDefault: false,
       tags: [],
     })))
-  }
-
-  async function saveCustomTemplate(e: React.FormEvent) {
-    e.preventDefault(); setSaving(true)
-    if (!activeOrg) return
-    if (!customTplForm.name.trim()) { toast(T(t.msg.tplNameRequired), 'error'); setSaving(false); return }
-    if (!customTplForm.content.trim()) { toast(T(t.msg.tplContentReq), 'error'); setSaving(false); return }
-    const payload = {
-      organization_id: activeOrg.id,
-      type: customTplForm.type,
-      name: customTplForm.name,
-      description: customTplForm.description,
-      content: customTplForm.content,
-    }
-    let dbErr = null
-    if (editingCustomTemplate) {
-      const { error } = await supabase.from('custom_templates').update(payload).eq('id', editingCustomTemplate.id)
-      dbErr = error
-    } else {
-      const { error } = await supabase.from('custom_templates').insert(payload)
-      dbErr = error
-    }
-    setSaving(false)
-    if (dbErr) { toast(`${T(t.msg.errorPrefix)}: ${dbErr.message}`, 'error'); return }
-    setCustomTemplateModal(false); setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl)
-    loadCustomTemplates(activeOrg.id)
   }
 
   function deleteCustomTemplate(id: string) {
@@ -179,7 +143,7 @@ export default function ShablonlarPage() {
           </>
         )}
 
-        <button onClick={() => { setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl); setCustomTemplateModal(true) }}
+        <button onClick={() => router.push('/dashboard/shablonlar/yangi')}
           className={`flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition ${isFree ? 'ml-auto' : ''}`}>
           {T(t.tplTab.addBtn)}
         </button>
@@ -231,11 +195,8 @@ export default function ShablonlarPage() {
                 className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
                 {T(t.tplTab.view)}
               </button>
-              <button onClick={() => {
-                setEditingCustomTemplate(tpl.isDefault ? null : tpl)
-                setCustomTplForm({ type: tpl.type, name: tpl.name, description: tpl.description, content: tpl.content })
-                setCustomTemplateModal(true)
-              }} className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
+              <button onClick={() => router.push(`/dashboard/shablonlar/${tpl.id}/edit`)}
+                className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
                 {T(t.btn.edit)}
               </button>
               {!tpl.isDefault && (
@@ -259,43 +220,6 @@ export default function ShablonlarPage() {
           </p>
         </div>
       </div>
-
-
-      {/* Add/Edit custom template modal */}
-      {customTemplateModal && (
-        <Modal title={editingCustomTemplate ? "Shablonni tahrirlash" : T(t.tplTab.addBtn)} onClose={() => { setCustomTemplateModal(false); setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl) }} wide>
-          <form onSubmit={saveCustomTemplate} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={lbl}>Shablon nomi *</label>
-                <input className={inp} required placeholder="Tovar sotib olish shartnomasi"
-                  value={customTplForm.name} onChange={e => setCustomTplForm({ ...customTplForm, name: e.target.value })}/>
-              </div>
-              <div>
-                <label className={lbl}>Tur</label>
-                <select className={`${inp} cursor-pointer`} value={customTplForm.type} onChange={e => setCustomTplForm({ ...customTplForm, type: e.target.value })}>
-                  {Object.entries(CONTRACT_TYPES_I18N).map(([k, v]) => <option key={k} value={k}>{v[lang]}</option>)}
-                </select>
-              </div>
-              <div className="col-span-2">
-                <label className={lbl}>Tavsif</label>
-                <input className={inp} placeholder="Qisqacha tavsif..."
-                  value={customTplForm.description} onChange={e => setCustomTplForm({ ...customTplForm, description: e.target.value })}/>
-              </div>
-            </div>
-            <div>
-              <label className={lbl}>Shablon matni *</label>
-              <textarea
-                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500 font-mono resize-none"
-                rows={14} required
-                placeholder="Shartnoma matni..."
-                value={customTplForm.content} onChange={e => setCustomTplForm({ ...customTplForm, content: e.target.value })}/>
-              <p className="text-xs text-gray-500 mt-1">Tip: O'zgaruvchilar uchun &#123;&#123;TASHKILOT_NOMI&#125;&#125; ko'rinishini ishlating</p>
-            </div>
-            <ModalActions onClose={() => { setCustomTemplateModal(false); setEditingCustomTemplate(null); setCustomTplForm(emptyCustomTpl) }} saving={saving}/>
-          </form>
-        </Modal>
-      )}
 
       {confirmDeleteId && (
         <ConfirmModal
