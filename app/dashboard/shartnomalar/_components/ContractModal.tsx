@@ -219,6 +219,14 @@ export default function ContractModal({
 
   // cps prop yangilanganda localCps ni ham yangilash
   useEffect(() => { setLocalCps(cps) }, [cps])
+
+  // Tahrirlashda tanlangan kontragentni inputda ko'rsatish
+  useEffect(() => {
+    if (form.counterparty_id) {
+      const cp = cps.find(c => c.id === form.counterparty_id)
+      if (cp) setCpSearch(cp.name)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [cpStirLoading, setCpStirLoading] = useState(false)
   const [cpLookupSource, setCpLookupSource] = useState<'global_db' | 'soliq_api' | null>(null)
   const cpDropRef = useRef<HTMLDivElement>(null)
@@ -764,53 +772,65 @@ export default function ContractModal({
                   )}
                 </div>
 
-                {/* Counterparty with search dropdown */}
+                {/* Counterparty — direct STIR/name search */}
                 <div>
                   <label className={lbl}>{T(t.modal.selectCp)} <span className="text-red-400">*</span></label>
                   <div className="relative" ref={cpDropRef}>
-                    <div
-                      className={`${inp} cursor-pointer flex items-center justify-between`}
-                      onClick={() => setCpDropOpen(o => !o)}
-                    >
-                      <span className={selectedCp ? 'text-white' : 'text-gray-500'}>
-                        {selectedCp ? selectedCp.name : T(t.modal.selectCp)}
-                      </span>
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                    {cpDropOpen && (
-                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl max-h-60 flex flex-col">
-                        <div className="p-2 border-b border-[#1E293B]">
-                          <input
-                            autoFocus
-                            value={cpSearch}
-                            onChange={e => setCpSearch(e.target.value)}
-                            placeholder="Qidirish..."
-                            className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 text-sm px-3 py-1.5 rounded focus:outline-none placeholder-gray-500"
-                          />
-                        </div>
-                        <div className="overflow-y-auto flex-1">
-                          {filteredCps.map(cp => (
-                            <button
-                              key={cp.id}
-                              type="button"
-                              onClick={() => { setForm(f => ({ ...f, counterparty_id: cp.id })); setCpDropOpen(false); setCpSearch('') }}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-[#1F2937] transition ${form.counterparty_id === cp.id ? 'text-blue-400 bg-[#0F172A]' : 'text-gray-200'}`}
-                            >
-                              <div className="font-medium">{cp.name}</div>
-                              {cp.inn && <div className="text-xs text-gray-500">INN: {cp.inn}</div>}
-                            </button>
-                          ))}
-                          {filteredCps.length === 0 && (
-                            <div className="px-3 py-2 text-sm text-gray-500">Topilmadi</div>
-                          )}
-                        </div>
-                        <div className="p-2 border-t border-[#1E293B]">
-                          <button type="button" onClick={() => { setCpDropOpen(false); setQuickAddCp(true) }} className="w-full text-xs text-blue-400 hover:text-blue-300 text-left px-1">
-                            + Yangi kontragent qo'shish
+                    <input
+                      value={cpSearch}
+                      onChange={e => {
+                        const val = e.target.value
+                        setCpSearch(val)
+                        // Any edit clears selection (no freeze)
+                        setForm(f => ({ ...f, counterparty_id: '' }))
+                        if (!val.trim()) { setCpDropOpen(false); return }
+                        // Auto-select on exact 9-digit STIR
+                        const digits = val.replace(/\D/g, '')
+                        if (digits.length === 9) {
+                          const match = localCps.find(c => (c.inn || '').replace(/\D/g, '') === digits)
+                          if (match) {
+                            setForm(f => ({ ...f, counterparty_id: match.id }))
+                            setCpSearch(match.name)
+                            setCpDropOpen(false)
+                            return
+                          }
+                        }
+                        setCpDropOpen(true)
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          if (filteredCps.length > 0) {
+                            const cp = filteredCps[0]
+                            setForm(f => ({ ...f, counterparty_id: cp.id }))
+                            setCpSearch(cp.name)
+                            setCpDropOpen(false)
+                          }
+                        }
+                        if (e.key === 'Escape') setCpDropOpen(false)
+                      }}
+                      onFocus={() => { if (!form.counterparty_id && cpSearch.trim()) setCpDropOpen(true) }}
+                      placeholder="STIR yoki nomi bilan qidirish..."
+                      className={inp}
+                    />
+                    {cpDropOpen && cpSearch.trim() && !form.counterparty_id && filteredCps.length > 0 && (
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        {filteredCps.slice(0, 12).map(cp => (
+                          <button
+                            key={cp.id}
+                            type="button"
+                            onMouseDown={e => e.preventDefault()}
+                            onClick={() => {
+                              setForm(f => ({ ...f, counterparty_id: cp.id }))
+                              setCpSearch(cp.name)
+                              setCpDropOpen(false)
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-[#1F2937] transition text-gray-200"
+                          >
+                            <div className="font-medium">{cp.name}</div>
+                            {cp.inn && <div className="text-xs text-gray-500">STIR: {cp.inn}</div>}
                           </button>
-                        </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -840,6 +860,10 @@ export default function ContractModal({
                       )}
                     </div>
                   )}
+                  <button type="button" onClick={() => { setCpDropOpen(false); setQuickAddCp(true) }}
+                    className="mt-1.5 text-xs text-blue-400 hover:text-blue-300 transition">
+                    + Yangi kontragent qo'shish
+                  </button>
                 </div>
 
                 {/* Product name — only for oldi_sotdi and daval */}
