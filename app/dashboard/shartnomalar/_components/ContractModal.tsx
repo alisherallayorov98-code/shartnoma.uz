@@ -444,6 +444,18 @@ export default function ContractModal({
   async function handleQuickAddCp() {
     if (!newCp.name.trim()) { toast('Tashkilot nomi kiritilishi shart', 'error'); return }
     setSavingCp(true)
+
+    // INN bo'yicha duplikat tekshirish
+    if (newCp.inn.trim()) {
+      const { data: existing } = await supabase.from('counterparties')
+        .select('id, name').eq('inn', newCp.inn.trim()).maybeSingle()
+      if (existing) {
+        setSavingCp(false)
+        toast(`Bu STIR (${newCp.inn.trim()}) allaqachon bazada mavjud: "${existing.name}"`, 'error')
+        return
+      }
+    }
+
     const { data: { session } } = await supabase.auth.getSession()
     const { data, error } = await supabase.from('counterparties').insert({
       name: newCp.name.trim(),

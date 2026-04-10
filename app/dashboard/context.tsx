@@ -165,7 +165,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const loadCps = useCallback(async () => {
     const { data, error } = await supabase.from('counterparties').select('*').order('created_at', { ascending: false })
     if (error) { console.error('loadCps:', error.message); return }
-    setCps(data || [])
+    // INN bo'yicha deduplikatsiya — birinchi (yangi) yozuvni saqlaydi
+    const seen = new Set<string>()
+    const unique = (data || []).filter(cp => {
+      const key = cp.inn?.trim() || cp.id
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    setCps(unique)
   }, [])
 
   const loadEmployees = useCallback(async (orgId?: string) => {
