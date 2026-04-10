@@ -15,6 +15,16 @@ const CONTRACT_TYPE_LIST = Object.entries(CONTRACT_TYPES_I18N)
 
 const VARS = ['{{BUYURTMACHI_NOMI}}', '{{IJROCHI_NOMI}}', '{{SUMMA}}', '{{SANA}}', '{{RAQAM}}', '{{SHAHAR}}']
 
+// Strip header (before first numbered section) and footer (TOMONLARNING REKVIZITLARI+)
+function stripHeaderFooter(content: string): string {
+  const lines = content.split('\n')
+  const firstIdx = lines.findIndex(l => /^\d+\.\s+\S/.test(l.trim()) && !/^\d+\.\d+/.test(l.trim()))
+  if (firstIdx < 0) return content
+  const rekvizitIdx = lines.findIndex((l, i) => i >= firstIdx && /TOMONLARNING REKVIZITLARI|РЕКВИЗИТЫ СТОРОН/i.test(l))
+  const end = rekvizitIdx > 0 ? rekvizitIdx : lines.length
+  return lines.slice(firstIdx, end).join('\n').trimEnd()
+}
+
 export default function EditTemplatePage() {
   const params = useParams()
   const router = useRouter()
@@ -38,7 +48,7 @@ export default function EditTemplatePage() {
         name: getTplField(def, 'name', lang),
         type: def.type,
         description: getTplField(def, 'description', lang),
-        content: getTplField(def, 'content', lang),
+        content: stripHeaderFooter(getTplField(def, 'content', lang)),
       })
       setLoading(false)
       return
@@ -52,7 +62,7 @@ export default function EditTemplatePage() {
             isDefault: false, icon: '📄', tags: [],
           }
           setOriginal(tpl)
-          setForm({ name: data.name, type: data.type, description: data.description || '', content: data.content })
+          setForm({ name: data.name, type: data.type, description: data.description || '', content: stripHeaderFooter(data.content) })
         }
         setLoading(false)
       })
@@ -203,7 +213,7 @@ export default function EditTemplatePage() {
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
                 <h2 className="text-sm font-semibold text-white">Shablon matni</h2>
-                <p className="text-xs text-gray-500 mt-0.5">O'zgaruvchilar uchun &#123;&#123;NOMI&#125;&#125; ko'rinishini ishlating</p>
+                <p className="text-xs text-gray-500 mt-0.5">Sarlavha va rekvizitlar avtomatik qo'shiladi — faqat asosiy seksiyalar tahrirlanadi</p>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {VARS.map(v => (
