@@ -14,8 +14,42 @@ import { DEFAULT_TEMPLATES, type AppTemplate } from '@/lib/defaultTemplates'
 import { useToast } from '@/lib/toast'
 import CityPicker from './CityPicker'
 
+// O'zbek kirill → lotin transliteratsiyasi
+function cyrillicToLatin(str: string): string {
+  const MAP: Record<string, string> = {
+    'А':'A','а':'a','Б':'B','б':'b','В':'V','в':'v','Г':'G','г':'g',
+    'Д':'D','д':'d','Е':'E','е':'e','Ё':'Yo','ё':'yo','Ж':'J','ж':'j',
+    'З':'Z','з':'z','И':'I','и':'i','Й':'Y','й':'y','К':'K','к':'k',
+    'Л':'L','л':'l','М':'M','м':'m','Н':'N','н':'n','О':'O','о':'o',
+    'П':'P','п':'p','Р':'R','р':'r','С':'S','с':'s','Т':'T','т':'t',
+    'У':'U','у':'u','Ф':'F','ф':'f','Х':'X','х':'x','Ц':'Ts','ц':'ts',
+    'Ч':'Ch','ч':'ch','Ш':'Sh','ш':'sh','Щ':'Sh','щ':'sh',
+    'Ъ':"'","ъ":"'",'Ы':'I','ы':'i','Ь':'','ь':'',
+    'Э':'E','э':'e','Ю':'Yu','ю':'yu','Я':'Ya','я':'ya',
+    'Ў':"O'",'ў':"o'",'Қ':'Q','қ':'q','Ғ':"G'",'ғ':"g'",'Ҳ':'H','ҳ':'h',
+  }
+  return str.split('').map(c => MAP[c] ?? c).join('')
+}
+
+// Tuman/shahar nomini tozalash: kirill→lotin, Title Case, ortiqcha "shahri/tumani" olib tashlash
+function normalizeTuman(raw: string): string {
+  // Kirill harflari bor-yo'qligini tekshirish
+  const hasCyrillic = /[А-ЯёЎҚҒҲа-яўқғҳ]/.test(raw)
+  const s = hasCyrillic ? cyrillicToLatin(raw) : raw
+  // Title Case
+  const titled = s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+  // "Shahar", "Shahar Shahri", "Tuman", "Tumani" kabi takroriy so'zlarni tozalash
+  return titled
+    .replace(/\bShahar\s+Shahri\b/gi, 'Shahri')
+    .replace(/\bShahar\b(?!\s+shahri)/gi, 'shahri')
+    .replace(/\bTuman\b(?!\s+tumani)/gi, 'tumani')
+    .trim()
+}
+
 function orgCityDefault(org: { viloyat?: string; tuman?: string } | null | undefined): string {
   if (!org) return 'Toshkent shahri'
+  const tuman = org.tuman?.trim()
+  if (tuman) return normalizeTuman(tuman)
   const v = org.viloyat?.trim() || ''
   const MAP: Record<string, string> = {
     'Toshkent shahri': 'Toshkent shahri', 'Toshkent viloyati': 'Toshkent shahri',
