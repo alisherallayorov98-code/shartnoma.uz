@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
@@ -25,6 +25,7 @@ function bolimlarToText(bolimlar: Bolim[]): string {
 
 export default function YangiShablon() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { lang } = useLang()
   const { activeOrg } = useDashboard()
   const { toast } = useToast()
@@ -32,6 +33,20 @@ export default function YangiShablon() {
   const [saving, setSaving] = useState(false)
   const [meta, setMeta] = useState({ name: '', type: 'oldi_sotdi', description: '' })
   const [bolimlar, setBolimlar] = useState<Bolim[]>([{ sarlavha: '', bandlar: [''] }])
+
+  // Word importdan kelgan ma'lumotni yuklab olish
+  useEffect(() => {
+    if (searchParams.get('from_word') !== '1') return
+    const raw = localStorage.getItem('word_import_draft')
+    if (!raw) return
+    try {
+      const { name, content } = JSON.parse(raw) as { name: string; content: string }
+      localStorage.removeItem('word_import_draft')
+      setMeta(m => ({ ...m, name }))
+      setBolimlar([{ sarlavha: 'Asosiy matn', bandlar: [content] }])
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Section helpers ────────────────────────────────────────────────────────
   function addBolim() {

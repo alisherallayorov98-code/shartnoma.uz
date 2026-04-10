@@ -98,9 +98,8 @@ export default function ShablonlarPage() {
       const text = div.innerText.trim()
       if (!text) { toast("Fayl bo'sh yoki o'qib bo'lmadi", 'error'); setWordImporting(false); return }
       const baseName = file.name.replace(/\.docx$/i, '')
-      setEditingCustomTemplate(null)
-      setCustomTplForm({ type: 'boshqa', name: baseName, description: `Word fayldan import: ${file.name}`, content: text })
-      setCustomTemplateModal(true)
+      localStorage.setItem('word_import_draft', JSON.stringify({ name: baseName, content: text }))
+      router.push('/dashboard/shablonlar/yangi?from_word=1')
     } catch (err) {
       toast(err instanceof Error ? err.message : "Faylni o'qishda xatolik yuz berdi", 'error')
     } finally {

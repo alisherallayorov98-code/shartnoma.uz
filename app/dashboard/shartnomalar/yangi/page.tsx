@@ -119,6 +119,10 @@ export default function YangiShartnoma() {
   const [cityModalOpen, setCityModalOpen] = useState(false)
   const [cityInput, setCityInput] = useState('')
 
+  // Inline edits for org and cp panels
+  const [orgEdits, setOrgEdits] = useState<Record<string, string>>({})
+  const [cpEdits, setCpEdits] = useState<Record<string, string>>({})
+
   // ── Init ────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -142,6 +146,10 @@ export default function YangiShartnoma() {
     loadCustomTemplates(activeOrg.id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeOrg?.id])
+
+  // Org yoki CP o'zgarganda inline edits ni tozalash
+  useEffect(() => { setOrgEdits({}) }, [form.organization_id])
+  useEffect(() => { setCpEdits({}) }, [form.counterparty_id])
 
   // Tashkilot QQS to'lovchi bo'lsa avtomatik yoqish
   useEffect(() => {
@@ -245,8 +253,8 @@ export default function YangiShartnoma() {
   // ── Structure editor ──────────────────────────────────────────────────────────
 
   function getStructureForEdit(): ContractStructure {
-    const org = orgs.find(o => o.id === form.organization_id)
-    const cp = localCps.find(c => c.id === form.counterparty_id)
+    const org = mergedOrg
+    const cp = mergedCp
     if (editStructure && structureUserEdited) return editStructure
     const amount = parseFloat(form.amount) || 0
     const extra: Record<string, string> = {}
@@ -438,10 +446,15 @@ export default function YangiShartnoma() {
     if (!form.contract_number.trim()) { toast("Shartnoma raqami kiritilishi shart", 'error'); return }
     setSaving(true)
 
-    const org = orgs.find(o => o.id === form.organization_id)
-    const cp = localCps.find(c => c.id === form.counterparty_id)
+    const org = mergedOrg
+    const cp = mergedCp
     const amount = parseFloat(form.amount) || 0
     let content = form.content
+
+    // Agar inline edits bo'lsa, CP ni DB'ga ham yangilab qo'yamiz
+    if (cp && Object.keys(cpEdits).length > 0) {
+      await supabase.from('counterparties').update(cpEdits).eq('id', cp.id)
+    }
 
     if (!content) {
       const extra: Record<string, string> = {}
@@ -526,8 +539,8 @@ export default function YangiShartnoma() {
   const [previewContent, setPreviewContent] = useState('')
 
   function buildPreviewContent(): string {
-    const org = orgs.find(o => o.id === form.organization_id)
-    const cp = localCps.find(c => c.id === form.counterparty_id)
+    const org = mergedOrg
+    const cp = mergedCp
     const amount = parseFloat(form.amount) || 0
     if (form.content) return form.content
     const extra: Record<string, string> = {}
@@ -563,6 +576,8 @@ export default function YangiShartnoma() {
 
   const selectedOrg = orgs.find(o => o.id === form.organization_id)
   const selectedCp = localCps.find(c => c.id === form.counterparty_id)
+  const mergedOrg = selectedOrg ? { ...selectedOrg, ...orgEdits } : null
+  const mergedCp = selectedCp ? { ...selectedCp, ...cpEdits } : null
   const filteredCps = (() => {
     const q = cpSearch.toLowerCase().trim()
     if (!q) return localCps
@@ -729,20 +744,24 @@ export default function YangiShartnoma() {
                   </div>
                   {selectedOrg ? (
                     <div className="p-4 space-y-0 divide-y divide-[#1E293B]">
-                      {[
-                        ['STIR/ЖШШИР', selectedOrg.inn],
-                        ['Nomi', selectedOrg.name],
-                        ['Rahbar (FIO)', selectedOrg.director_name],
-                        ['MFO', selectedOrg.mfo],
-                        ['Bank nomi', selectedOrg.bank_name],
-                        ['Hisob raqami', selectedOrg.bank_account],
-                        ['OKED', selectedOrg.oked],
-                        ['Manzil', selectedOrg.address],
-                        ['Telefon', selectedOrg.phone],
-                      ].map(([label, val]) => (
-                        <div key={label} className="flex items-baseline gap-2 py-2">
+                      {([
+                        ['STIR/ЖШШИР', 'inn'],
+                        ['Nomi', 'name'],
+                        ['Rahbar (FIO)', 'director_name'],
+                        ['MFO', 'mfo'],
+                        ['Bank nomi', 'bank_name'],
+                        ['Hisob raqami', 'bank_account'],
+                        ['OKED', 'oked'],
+                        ['Manzil', 'address'],
+                        ['Telefon', 'phone'],
+                      ] as [string, string][]).map(([label, field]) => (
+                        <div key={field} className="flex items-center gap-2 py-1.5">
                           <span className="text-[11px] text-gray-500 w-28 flex-shrink-0">{label}</span>
-                          <span className="text-xs text-gray-200 flex-1 break-words">{val || <span className="text-gray-600 italic">—</span>}</span>
+                          <input
+                            value={orgEdits[field] ?? (selectedOrg as unknown as Record<string,string>)[field] ?? ''}
+                            onChange={e => setOrgEdits(p => ({ ...p, [field]: e.target.value }))}
+                            className="text-xs text-gray-200 flex-1 bg-transparent border-b border-transparent hover:border-[#374151] focus:border-blue-600 focus:outline-none px-0.5 transition min-w-0"
+                          />
                         </div>
                       ))}
                     </div>
@@ -804,25 +823,26 @@ export default function YangiShartnoma() {
                         <span>⚠</span><span>Bu tashkilot Soliq&apos;da <strong>faol emas</strong></span>
                       </div>
                     )}
-                    {[
-                      ['STIR', selectedCp?.inn],
-                      ['Nomi', selectedCp?.name],
-                      ['Rahbar (FIO)', selectedCp?.director_name],
-                      ['MFO', selectedCp?.mfo],
-                      ['Bank nomi', selectedCp?.bank_name],
-                      ['Hisob raqami', selectedCp?.bank_account],
-                      ['OKED', selectedCp?.oked],
-                      ['Manzil', selectedCp?.address],
-                      ['Telefon', selectedCp?.phone],
-                    ].map(([label, val]) => (
-                      <div key={label} className="flex items-center gap-2 px-4 py-2">
+                    {selectedCp && (([
+                      ['STIR', 'inn'],
+                      ['Nomi', 'name'],
+                      ['Rahbar (FIO)', 'director_name'],
+                      ['MFO', 'mfo'],
+                      ['Bank nomi', 'bank_name'],
+                      ['Hisob raqami', 'bank_account'],
+                      ['OKED', 'oked'],
+                      ['Manzil', 'address'],
+                      ['Telefon', 'phone'],
+                    ] as [string, string][]).map(([label, field]) => (
+                      <div key={field} className="flex items-center gap-2 px-4 py-1.5">
                         <span className="text-[11px] text-gray-500 w-28 flex-shrink-0">{label}</span>
-                        {val
-                          ? <span className="text-xs text-gray-200 flex-1 break-all">{val}</span>
-                          : <span className="text-xs text-gray-700 italic flex-1">—</span>
-                        }
+                        <input
+                          value={cpEdits[field] ?? (selectedCp as unknown as Record<string,string>)[field] ?? ''}
+                          onChange={e => setCpEdits(p => ({ ...p, [field]: e.target.value }))}
+                          className="text-xs text-gray-200 flex-1 bg-transparent border-b border-transparent hover:border-[#374151] focus:border-blue-600 focus:outline-none px-0.5 transition min-w-0"
+                        />
                       </div>
-                    ))}
+                    )))}
                   </div>
                 </div>
               </div>
