@@ -26,9 +26,9 @@ function generateContractNumbers(base: string, count: number): string[] {
     return Array.from({ length: count }, (_, i) => String(start + i))
   }
 
-  // 2. Nol bilan boshlanadigan son suffiks: 2026/001 → 2026/001, 2026/002
+  // 2. Son suffiks: 2026/001 → 2026/002, 10/04-1 → 10/04-2
   const padded = b.match(/^(.*[\/\-])(\d+)$/)
-  if (padded && padded[2].length >= 2 && padded[2].startsWith('0')) {
+  if (padded) {
     const prefix = padded[1], num = padded[2]
     const start = parseInt(num), pad = num.length
     return Array.from({ length: count }, (_, i) =>
@@ -36,8 +36,8 @@ function generateContractNumbers(base: string, count: number): string[] {
     )
   }
 
-  // 3. Qolgan holat: 01/10 → 01/10, 01/10-1, 01/10-2
-  return [b, ...Array.from({ length: count - 1 }, (_, i) => `${b}-${i + 1}`)]
+  // 3. Boshqa holat: base-1, base-2, base-3
+  return Array.from({ length: count }, (_, i) => `${b}-${i + 1}`)
 }
 
 // ─── Tur ranglari ─────────────────────────────────────────────────────────────
