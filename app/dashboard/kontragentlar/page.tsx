@@ -170,9 +170,11 @@ export default function KontragentlarPage() {
   }
 
   async function runStirBulk() {
+    const LIMIT = 50
     const inns = stirInput.split(/[\n,;\s]+/).map(s => s.replace(/\D/g, '')).filter(s => s.length === 9)
-    const unique = [...new Set(inns)]
+    const unique = [...new Set(inns)].slice(0, LIMIT)
     if (unique.length === 0) { toast("Hech qanday 9 raqamli STIR topilmadi", 'error'); return }
+    if (inns.length > LIMIT) toast(`Bir vaqtda max ${LIMIT} ta. Qolganlarini keyinroq yuklang.`, 'error')
     const existingInns = new Set(cps.map(cp => cp.inn).filter(Boolean))
     const initial: StirResult[] = unique.map(inn => ({
       inn,
@@ -188,6 +190,7 @@ export default function KontragentlarPage() {
       updated[i] = { ...updated[i], status: 'loading' }
       setStirResults([...updated])
       try {
+        if (i > 0) await new Promise(r => setTimeout(r, 100))
         const res = await fetch(`/api/company-lookup?inn=${updated[i].inn}`)
         const json = await res.json()
         if (!res.ok || !json.company) {
@@ -587,7 +590,7 @@ export default function KontragentlarPage() {
               {!stirBulkRunning && !stirBulkDone && (
                 <div>
                   <label className="block text-xs text-gray-400 mb-2">
-                    STIR raqamlari (har bir qatorda bitta, yoki vergul bilan ajrating)
+                    STIR raqamlari — har bir qatorda bitta (maksimum 50 ta)
                   </label>
                   <textarea
                     value={stirInput}
