@@ -22,6 +22,14 @@ function calcItem(item: SpecItem): SpecItem {
   return { ...item, qqs_summa, summa: asosiy + qqs_summa }
 }
 
+// Teskari hisob: Jami kiritilsa → Narx hisoblanadi
+function calcItemFromJami(item: SpecItem, jami: number): SpecItem {
+  const foiz = item.qqs_foiz === 'siz' ? 0 : parseFloat(item.qqs_foiz || '0')
+  const miqdori = item.miqdori || 1
+  const narxi = Math.round(jami / (miqdori * (1 + foiz / 100)))
+  return calcItem({ ...item, narxi })
+}
+
 const emptyItem = (): SpecItem => calcItem({
   nomi: '', birlik: 'dona', miqdori: 1, narxi: 0, qqs_foiz: 'siz', qqs_summa: 0, summa: 0,
 })
@@ -114,6 +122,10 @@ export default function YangiSpesifikatsiyaPage() {
   // ── Item helpers ──────────────────────────────────────────────────────────
   function updateItem(i: number, field: keyof SpecItem, value: string | number) {
     setItems(prev => prev.map((item, idx) => idx !== i ? item : calcItem({ ...item, [field]: value })))
+  }
+
+  function updateItemFromJami(i: number, jami: number) {
+    setItems(prev => prev.map((item, idx) => idx !== i ? item : calcItemFromJami(item, jami)))
   }
 
   function removeItem(i: number) {
@@ -322,17 +334,17 @@ export default function YangiSpesifikatsiyaPage() {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="text-xs border-collapse" style={{ minWidth: '860px', width: '100%' }}>
+            <table className="text-xs border-collapse" style={{ minWidth: '960px', width: '100%' }}>
               <colgroup>
                 <col style={{ width: '40px' }}/>   {/* № */}
                 <col/>                              {/* Nomi — flexible */}
-                <col style={{ width: '90px' }}/>   {/* O'lchov */}
-                <col style={{ width: '70px' }}/>   {/* Soni */}
-                <col style={{ width: '110px' }}/>  {/* Narx */}
-                <col style={{ width: '110px' }}/>  {/* Asosiy */}
-                <col style={{ width: '80px' }}/>   {/* QQS % */}
-                <col style={{ width: '90px' }}/>   {/* QQS summa */}
-                <col style={{ width: '110px' }}/>  {/* Jami */}
+                <col style={{ width: '100px' }}/>  {/* O'lchov */}
+                <col style={{ width: '100px' }}/>  {/* Soni */}
+                <col style={{ width: '130px' }}/>  {/* Narx */}
+                <col style={{ width: '120px' }}/>  {/* Asosiy */}
+                <col style={{ width: '90px' }}/>   {/* QQS % */}
+                <col style={{ width: '100px' }}/>  {/* QQS summa */}
+                <col style={{ width: '130px' }}/>  {/* Jami */}
                 <col style={{ width: '32px' }}/>   {/* × */}
               </colgroup>
               <thead>
@@ -388,8 +400,12 @@ export default function YangiSpesifikatsiyaPage() {
                     <td className="px-2 py-2 text-right text-amber-400 whitespace-nowrap">
                       {item.qqs_summa > 0 ? item.qqs_summa.toLocaleString() : <span className="text-gray-600">—</span>}
                     </td>
-                    <td className="px-2 py-2 text-right font-semibold text-white whitespace-nowrap">
-                      {item.summa.toLocaleString()}
+                    <td className="px-2 py-2">
+                      <input type="number"
+                        title="Jami summani kiritib narxni avtomatik hisoblang"
+                        className="w-full bg-[#0F172A] border border-blue-600/30 rounded px-1.5 py-1 text-white font-semibold focus:outline-none focus:border-blue-500 text-xs text-right"
+                        value={item.summa} min={0}
+                        onChange={e => updateItemFromJami(i, parseFloat(e.target.value) || 0)}/>
                     </td>
                     <td className="px-1 py-2">
                       <button type="button" onClick={() => removeItem(i)}
