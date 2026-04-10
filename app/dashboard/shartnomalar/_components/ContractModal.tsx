@@ -416,6 +416,93 @@ export default function ContractModal({
     })
   }
 
+  // ─── Enter bosilganda kontragent qidirish / saqlash ───────────────────────
+
+  async function handleCpEnter() {
+    const q = cpSearch.trim()
+    if (!q) return
+    const digits = q.replace(/\D/g, '')
+
+    // 9 xonali STIR bo'lsa
+    if (digits.length === 9) {
+      // 1. Avval localCps dan topamiz
+      const existing = localCps.find(c => (c.inn || '').replace(/\D/g, '') === digits)
+      if (existing) {
+        setForm(f => ({ ...f, counterparty_id: existing.id }))
+        setCpSearch(existing.name)
+        setCpDropOpen(false)
+        return
+      }
+      // 2. API dan qidiramiz
+      setCpStirLoading(true)
+      try {
+        const res = await fetch(`/api/company-lookup?inn=${digits}`)
+        const apiData = await res.json()
+        if (!res.ok) {
+          toast(apiData.error || "Bu STIR bo'yicha ma'lumot topilmadi", 'error')
+          return
+        }
+        const co = apiData.company
+        // 3. Counterparties ga saqlaymiz (barcha foydalanuvchilar uchun umumiy)
+        const { data: { session } } = await supabase.auth.getSession()
+        const { data: saved, error: saveErr } = await supabase
+          .from('counterparties')
+          .insert({
+            name:          co.name,
+            inn:           digits,
+            director_name: co.director   || '',
+            address:       co.address    || '',
+            phone:         co.phone      || '',
+            bank_name:     co.bank_name  || '',
+            bank_account:  co.account    || '',
+            mfo:           co.mfo        || '',
+            user_id:       session!.user.id,
+          })
+          .select()
+          .single()
+
+        if (saveErr) {
+          // Boshqa foydalanuvchi allaqachon saqlab qo'ygan bo'lsa
+          if (saveErr.code === '23505') {
+            const { data: found } = await supabase
+              .from('counterparties').select('*').eq('inn', digits).maybeSingle()
+            if (found) {
+              setLocalCps(prev => [...prev, found as Counterparty])
+              setForm(f => ({ ...f, counterparty_id: (found as Counterparty).id }))
+              setCpSearch((found as Counterparty).name)
+              setCpDropOpen(false)
+              toast(`Bazadan topildi: ${(found as Counterparty).name}`, 'success')
+              return
+            }
+          }
+          toast('Saqlashda xato: ' + saveErr.message, 'error')
+          return
+        }
+
+        setLocalCps(prev => [...prev, saved as Counterparty])
+        onCpAdded?.(saved)
+        setForm(f => ({ ...f, counterparty_id: (saved as Counterparty).id }))
+        setCpSearch((saved as Counterparty).name)
+        setCpDropOpen(false)
+        const src = apiData.source === 'global_db' ? 'Bazadan topildi' : 'Soliq API dan olindi'
+        toast(`${src}: ${co.name}`, 'success')
+      } catch {
+        toast("So'rovda xatolik", 'error')
+      } finally {
+        setCpStirLoading(false)
+      }
+      return
+    }
+
+    // Nomi bo'yicha qidiruv — birinchi natijani tanlaymiz
+    if (filteredCps.length > 0) {
+      const cp = filteredCps[0]
+      setForm(f => ({ ...f, counterparty_id: cp.id }))
+      setCpSearch(cp.name)
+      setCpDropOpen(false)
+    }
+  }
+
   // ─── Quick add CP ─────────────────────────────────────────────────────────
 
   async function lookupStirNewCp() {
@@ -781,38 +868,27 @@ export default function ContractModal({
                       onChange={e => {
                         const val = e.target.value
                         setCpSearch(val)
-                        // Any edit clears selection (no freeze)
                         setForm(f => ({ ...f, counterparty_id: '' }))
                         if (!val.trim()) { setCpDropOpen(false); return }
-                        // Auto-select on exact 9-digit STIR
-                        const digits = val.replace(/\D/g, '')
-                        if (digits.length === 9) {
-                          const match = localCps.find(c => (c.inn || '').replace(/\D/g, '') === digits)
-                          if (match) {
-                            setForm(f => ({ ...f, counterparty_id: match.id }))
-                            setCpSearch(match.name)
-                            setCpDropOpen(false)
-                            return
-                          }
-                        }
                         setCpDropOpen(true)
                       }}
                       onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          if (filteredCps.length > 0) {
-                            const cp = filteredCps[0]
-                            setForm(f => ({ ...f, counterparty_id: cp.id }))
-                            setCpSearch(cp.name)
-                            setCpDropOpen(false)
-                          }
-                        }
+                        if (e.key === 'Enter') { e.preventDefault(); handleCpEnter() }
                         if (e.key === 'Escape') setCpDropOpen(false)
                       }}
                       onFocus={() => { if (!form.counterparty_id && cpSearch.trim()) setCpDropOpen(true) }}
-                      placeholder="STIR yoki nomi bilan qidirish..."
-                      className={inp}
+                      placeholder="STIR yoki nomi — Enter bosing..."
+                      disabled={cpStirLoading}
+                      className={`${inp} ${cpStirLoading ? 'opacity-60 cursor-wait' : ''}`}
                     />
+                    {cpStirLoading && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg className="w-4 h-4 text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                        </svg>
+                      </div>
+                    )}
                     {cpDropOpen && cpSearch.trim() && !form.counterparty_id && filteredCps.length > 0 && (
                       <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl max-h-60 overflow-y-auto">
                         {filteredCps.slice(0, 12).map(cp => (
@@ -860,10 +936,6 @@ export default function ContractModal({
                       )}
                     </div>
                   )}
-                  <button type="button" onClick={() => { setCpDropOpen(false); setQuickAddCp(true) }}
-                    className="mt-1.5 text-xs text-blue-400 hover:text-blue-300 transition">
-                    + Yangi kontragent qo'shish
-                  </button>
                 </div>
 
                 {/* Product name — only for oldi_sotdi and daval */}
