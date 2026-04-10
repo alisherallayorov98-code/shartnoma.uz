@@ -140,7 +140,13 @@ const REGIONS: { name: string; places: string[] }[] = [
 // Eski ma'lumotlar "Toshkent" → "Toshkent shahri", yangi "Paxtachi tumani" → o'zgarishsiz
 export function cityLabel(city: string): string {
   if (!city) return 'Toshkent shahri'
-  if (city.endsWith(' tumani') || city.endsWith(' shahri') || city.endsWith(' shahristoni')) return city
+  const lower = city.toLowerCase()
+  if (
+    lower.endsWith(' tumani') ||
+    lower.endsWith(' shahri') ||
+    lower.endsWith(' shahristoni') ||
+    lower.endsWith(' shahar')
+  ) return city
   return `${city} shahri`
 }
 
