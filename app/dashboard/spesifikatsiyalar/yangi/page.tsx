@@ -208,7 +208,7 @@ export default function YangiSpesifikatsiyaPage() {
 
         {/* ── Top fields row ── */}
         <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div>
               <label className={lbl}>Spesifikatsiya raqami <span className="text-red-400">*</span></label>
               <input className={inp} value={specNumber}
@@ -222,19 +222,10 @@ export default function YangiSpesifikatsiyaPage() {
                 placeholder="Ixtiyoriy izoh…"/>
             </div>
             <div>
-              <label className={lbl}>Kontragent</label>
-              <select className={inp} value={cpId}
-                onChange={e => { setCpId(e.target.value); setContractId('') }}>
-                <option value="">— Tanlang —</option>
-                {cpsWithContracts.map(cp => (
-                  <option key={cp.id} value={cp.id}>{cp.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label className={lbl}>Shartnoma raqami</label>
               <select className={inp} value={contractId}
-                onChange={e => setContractId(e.target.value)}>
+                onChange={e => setContractId(e.target.value)}
+                disabled={!cpId}>
                 <option value="">— Tanlang —</option>
                 {orgContracts.map(c => (
                   <option key={c.id} value={c.id}>
@@ -278,35 +269,43 @@ export default function YangiSpesifikatsiyaPage() {
 
           {/* O'ng: Kontragent ma'lumotlari */}
           <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5">
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Kontragent ma'lumotlari</p>
-            {selectedCp ? (
-              <div className="space-y-0">
-                {[
-                  { label: 'STIR/ЖШШИР', value: selectedCp.inn },
-                  { label: 'Nomi',       value: selectedCp.name },
-                  { label: 'Rahbar (FIO)', value: selectedCp.director_name },
-                  { label: 'MFO',        value: selectedCp.mfo },
-                  { label: 'Bank nomi',  value: selectedCp.bank_name },
-                  { label: 'Hisob raqami', value: selectedCp.bank_account },
-                  { label: 'OKED',       value: (selectedCp as any).oked },
-                  { label: 'Manzil',     value: selectedCp.address },
-                  { label: 'Telefon',    value: selectedCp.phone },
-                ].filter(r => r.value).map(row => (
-                  <div key={row.label} className="flex items-start border-b border-[#1E293B]/60 py-2 gap-3">
-                    <span className="text-[11px] text-blue-400/80 w-28 flex-shrink-0 pt-0.5">{row.label}</span>
-                    <span className="text-xs text-gray-200 leading-relaxed break-all">{row.value}</span>
-                  </div>
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Kontragent ma'lumotlari</p>
+
+            {/* Kontragent tanlash */}
+            <div className="mb-4">
+              <select
+                className={inp}
+                value={cpId}
+                onChange={e => { setCpId(e.target.value); setContractId('') }}>
+                <option value="">— Kontragentni tanlang —</option>
+                {cps.map(cp => (
+                  <option key={cp.id} value={cp.id}>{cp.name}</option>
                 ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="w-12 h-12 bg-[#1F2937] border border-[#1E293B] rounded-xl flex items-center justify-center mb-3">
-                  <FileText className="w-6 h-6 text-gray-600"/>
+              </select>
+            </div>
+
+            {/* Maydonlar — doim ko'rinadi */}
+            <div className="space-y-0">
+              {([
+                { label: 'STIR/ЖШШИР',   value: selectedCp?.inn },
+                { label: 'Nomi',          value: selectedCp?.name },
+                { label: 'Rahbar (FIO)',  value: selectedCp?.director_name },
+                { label: 'MFO',           value: selectedCp?.mfo },
+                { label: 'Bank nomi',     value: selectedCp?.bank_name },
+                { label: 'Hisob raqami',  value: selectedCp?.bank_account },
+                { label: 'OKED',          value: (selectedCp as any)?.oked },
+                { label: 'Manzil',        value: selectedCp?.address },
+                { label: 'Telefon',       value: selectedCp?.phone },
+              ] as { label: string; value?: string }[]).map(row => (
+                <div key={row.label} className="flex items-start border-b border-[#1E293B]/60 py-2 gap-3">
+                  <span className="text-[11px] text-blue-400/80 w-28 flex-shrink-0 pt-0.5">{row.label}</span>
+                  {row.value
+                    ? <span className="text-xs text-gray-200 leading-relaxed break-all">{row.value}</span>
+                    : <span className="text-xs text-gray-600 italic">—</span>
+                  }
                 </div>
-                <p className="text-sm text-gray-500">Kontragentni tanlang</p>
-                <p className="text-xs text-gray-600 mt-1">Ma'lumotlar avtomatik chiqadi</p>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         </div>
 
