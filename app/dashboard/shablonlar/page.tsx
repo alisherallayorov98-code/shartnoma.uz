@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { DEFAULT_TEMPLATES, getTplField, type AppTemplate } from '@/lib/defaultTemplates'
-import { downloadTextAsPDF, downloadTextAsWord } from '@/lib/downloadUtils'
 import { Modal, ModalActions } from '../_components/Modal'
 import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
@@ -54,7 +54,6 @@ export default function ShablonlarPage() {
 
   const [customTemplates, setCustomTemplates] = useState<AppTemplate[]>([])
   const [templateFilter, setTemplateFilter] = useState('barchasi')
-  const [templatePreview, setTemplatePreview] = useState<AppTemplate | null>(null)
   const [customTemplateModal, setCustomTemplateModal] = useState(false)
   const [editingCustomTemplate, setEditingCustomTemplate] = useState<AppTemplate | null>(null)
   const [customTplForm, setCustomTplForm] = useState(emptyCustomTpl)
@@ -229,7 +228,7 @@ export default function ShablonlarPage() {
               </div>
             )}
             <div className="flex gap-2 pt-1 border-t border-[#1E293B] flex-wrap">
-              <button onClick={() => setTemplatePreview(tpl)}
+              <button onClick={() => router.push(`/dashboard/shablonlar/${tpl.id}`)}
                 className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
                 {T(t.tplTab.view)}
               </button>
@@ -262,62 +261,6 @@ export default function ShablonlarPage() {
         </div>
       </div>
 
-      {/* Template preview modal */}
-      {templatePreview && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setTemplatePreview(null)}>
-          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center px-6 py-4 border-b border-[#1E293B] flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{templatePreview.icon}</span>
-                <div>
-                  <h2 className="text-base font-semibold text-white">{getTplField(templatePreview, 'name', lang)}</h2>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${typeColors[templatePreview.type] || 'bg-[#1F2937] text-gray-300'}`}>
-                    {CONTRACT_TYPES_I18N[templatePreview.type]?.[lang] || templatePreview.type}
-                  </span>
-                </div>
-              </div>
-              <button onClick={() => setTemplatePreview(null)} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded-lg hover:bg-[#1F2937] text-xl">×</button>
-            </div>
-            <div className="overflow-y-auto p-6">
-              <pre className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap font-sans">{getTplField(templatePreview, 'content', lang)}</pre>
-            </div>
-            <div className="px-6 py-4 border-t border-[#1E293B] flex gap-2 flex-wrap">
-              <button onClick={() => navigator.clipboard.writeText(getTplField(templatePreview, 'content', lang))}
-                className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2 rounded-lg text-sm transition">
-                📋 Nusxa olish
-              </button>
-              <button onClick={() => downloadTextAsPDF(getTplField(templatePreview, 'content', lang), getTplField(templatePreview, 'name', lang))}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition">
-                📄 PDF
-              </button>
-              <button onClick={() => downloadTextAsWord(getTplField(templatePreview, 'content', lang), getTplField(templatePreview, 'name', lang))}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
-                📝 Word
-              </button>
-              <button onClick={() => {
-                setEditingCustomTemplate(templatePreview.isDefault ? null : templatePreview)
-                setCustomTplForm({ type: templatePreview.type, name: getTplField(templatePreview, 'name', lang), description: getTplField(templatePreview, 'description', lang), content: getTplField(templatePreview, 'content', lang) })
-                setTemplatePreview(null)
-                setCustomTemplateModal(true)
-              }} className="bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2 px-4 rounded-lg text-sm font-medium transition">
-                Tahrirlash
-              </button>
-              <button onClick={() => {
-                try {
-                  localStorage.setItem('tpl_to_contract', JSON.stringify({
-                    type: templatePreview.type,
-                    content: getTplField(templatePreview, 'content', lang),
-                  }))
-                } catch { /* */ }
-                setTemplatePreview(null)
-                router.push('/dashboard/shartnomalar?from_tpl=1')
-              }} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-sm font-medium transition">
-                ✍️ Shartnoma yarat
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add/Edit custom template modal */}
       {customTemplateModal && (
