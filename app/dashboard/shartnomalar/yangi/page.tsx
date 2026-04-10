@@ -777,35 +777,32 @@ export default function YangiShartnoma() {
                       )}
                     </div>
                   </div>
-                  {selectedCp ? (
-                    <div className="p-4 space-y-0 divide-y divide-[#1E293B]">
-                      {selectedCp.stir_status === 'inactive' && (
-                        <div className="flex items-center gap-1.5 text-xs text-red-400 bg-red-900/20 border border-red-700/30 rounded-lg px-3 py-2 mb-2">
-                          <span>⚠</span><span>Bu tashkilot Soliq&apos;da <strong>faol emas</strong></span>
-                        </div>
-                      )}
-                      {[
-                        ['STIR/ЖШШИР', selectedCp.inn],
-                        ['Nomi', selectedCp.name],
-                        ['Rahbar (FIO)', selectedCp.director_name],
-                        ['MFO', selectedCp.mfo],
-                        ['Bank nomi', selectedCp.bank_name],
-                        ['Hisob raqami', selectedCp.bank_account],
-                        ['OKED', selectedCp.oked],
-                        ['Manzil', selectedCp.address],
-                        ['Telefon', selectedCp.phone],
-                      ].map(([label, val]) => (
-                        <div key={label} className="flex items-baseline gap-2 py-2">
-                          <span className="text-[11px] text-gray-500 w-28 flex-shrink-0">{label}</span>
-                          <span className="text-xs text-gray-200 flex-1 break-words">{val || <span className="text-gray-600 italic">—</span>}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center text-gray-500 text-sm">
-                      Kontragentni tanlang yoki yangi qo&apos;shing
-                    </div>
-                  )}
+                  <div className="divide-y divide-[#1E293B]">
+                    {selectedCp?.stir_status === 'inactive' && (
+                      <div className="flex items-center gap-1.5 text-xs text-red-400 bg-red-900/20 px-4 py-2">
+                        <span>⚠</span><span>Bu tashkilot Soliq&apos;da <strong>faol emas</strong></span>
+                      </div>
+                    )}
+                    {[
+                      ['STIR', selectedCp?.inn],
+                      ['Nomi', selectedCp?.name],
+                      ['Rahbar (FIO)', selectedCp?.director_name],
+                      ['MFO', selectedCp?.mfo],
+                      ['Bank nomi', selectedCp?.bank_name],
+                      ['Hisob raqami', selectedCp?.bank_account],
+                      ['OKED', selectedCp?.oked],
+                      ['Manzil', selectedCp?.address],
+                      ['Telefon', selectedCp?.phone],
+                    ].map(([label, val]) => (
+                      <div key={label} className="flex items-center gap-2 px-4 py-2">
+                        <span className="text-[11px] text-gray-500 w-28 flex-shrink-0">{label}</span>
+                        {val
+                          ? <span className="text-xs text-gray-200 flex-1 break-all">{val}</span>
+                          : <span className="text-xs text-gray-700 italic flex-1">—</span>
+                        }
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
