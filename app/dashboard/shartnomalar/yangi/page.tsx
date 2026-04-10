@@ -115,6 +115,10 @@ export default function YangiShartnoma() {
   const [editStructure, setEditStructure] = useState<ContractStructure | null>(null)
   const [structureUserEdited, setStructureUserEdited] = useState(false)
 
+  // City setup modal
+  const [cityModalOpen, setCityModalOpen] = useState(false)
+  const [cityInput, setCityInput] = useState('')
+
   // ── Init ────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -126,14 +130,15 @@ export default function YangiShartnoma() {
   // Auto-fill contract number and org
   useEffect(() => {
     if (!activeOrg) return
-    const orgContracts = ([] as { contract_number?: string }[]) // Will be overridden by localStorage or default
-    void orgContracts
-    const num = autoContractNum()
-    setForm(f => ({
-      ...f,
-      organization_id: f.organization_id || activeOrg.id,
-      city: f.city || orgCityDefault(activeOrg),
-    }))
+    const savedCity = localStorage.getItem(`contract_city_${activeOrg.id}`)
+    if (savedCity) {
+      setForm(f => ({ ...f, organization_id: f.organization_id || activeOrg.id, city: savedCity }))
+    } else {
+      const defaultCity = orgCityDefault(activeOrg)
+      setCityInput(defaultCity)
+      setCityModalOpen(true)
+      setForm(f => ({ ...f, organization_id: f.organization_id || activeOrg.id, city: defaultCity }))
+    }
     loadCustomTemplates(activeOrg.id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeOrg?.id])
@@ -657,7 +662,14 @@ export default function YangiShartnoma() {
                     <input type="date" value={form.contract_date} onChange={e => setForm(f => ({ ...f, contract_date: e.target.value }))} className={inp} />
                   </div>
                   <div>
-                    <label className={lbl}>Tuzilgan joy</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className={lbl} style={{marginBottom:0}}>Tuzilgan joy</label>
+                      <button type="button" onClick={() => { setCityInput(form.city); setCityModalOpen(true) }}
+                        className="text-[10px] text-gray-500 hover:text-blue-400 transition flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        Standartni o'zgartirish
+                      </button>
+                    </div>
                     <CityPicker value={form.city} onChange={v => setForm(f => ({ ...f, city: v }))} />
                   </div>
                   <div>
@@ -1475,6 +1487,65 @@ export default function YangiShartnoma() {
           </div>
         </div>
       )}
+      {/* ── City Setup Modal ── */}
+      {cityModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-sm shadow-2xl">
+            <div className="px-6 py-5 border-b border-[#1E293B]">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-600/30 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Shartnoma tuzish joyi</h3>
+                  <p className="text-xs text-gray-500">Bir marta kiriting — keyingi barchaga avtomatik qo'yiladi</p>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1.5">Shahar / tuman</label>
+                <input
+                  autoFocus
+                  value={cityInput}
+                  onChange={e => setCityInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const city = cityInput.trim() || orgCityDefault(activeOrg)
+                      localStorage.setItem(`contract_city_${activeOrg?.id}`, city)
+                      setForm(f => ({ ...f, city }))
+                      setCityModalOpen(false)
+                    }
+                  }}
+                  className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 text-gray-200 text-sm px-3 py-2.5 rounded-lg focus:outline-none placeholder-gray-600"
+                  placeholder="Masalan: Toshkent shahri"
+                />
+                <p className="text-xs text-gray-600 mt-1.5">Bu sozlama faqat sizning qurilmangizda saqlanadi. Keyinchalik "Tuzilgan joy" yonidagi ⚙ orqali o'zgartirishingiz mumkin.</p>
+              </div>
+              <div className="flex gap-2">
+                <button type="button"
+                  onClick={() => {
+                    const city = cityInput.trim() || orgCityDefault(activeOrg)
+                    localStorage.setItem(`contract_city_${activeOrg?.id}`, city)
+                    setForm(f => ({ ...f, city }))
+                    setCityModalOpen(false)
+                  }}
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm py-2.5 rounded-lg font-semibold transition">
+                  Saqlash
+                </button>
+                <button type="button" onClick={() => setCityModalOpen(false)}
+                  className="px-4 bg-[#1F2937] hover:bg-[#2D3748] border border-[#1E293B] text-gray-300 text-sm py-2.5 rounded-lg transition">
+                  O'tkazib yuborish
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
