@@ -543,10 +543,24 @@ export default function ContractModal({
 
   const selectedOrg = orgs.find(o => o.id === form.organization_id)
   const selectedCp = localCps.find(c => c.id === form.counterparty_id)
-  const filteredCps = localCps.filter(cp =>
-    cp.name.toLowerCase().includes(cpSearch.toLowerCase()) ||
-    (cp.inn || '').includes(cpSearch)
-  )
+  const filteredCps = (() => {
+    const q = cpSearch.toLowerCase().trim()
+    if (!q) return localCps
+    const inn_q = q.replace(/\D/g, '')
+    return localCps
+      .map(cp => {
+        const inn = (cp.inn || '').replace(/\D/g, '')
+        const name = cp.name.toLowerCase()
+        let score = 0
+        if (inn_q && inn.startsWith(inn_q))    score = 3
+        else if (inn_q && inn.includes(inn_q)) score = 2
+        else if (name.includes(q))             score = 1
+        return { cp, score }
+      })
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(x => x.cp)
+  })()
 
   // ─── All templates (default + custom) ─────────────────────────────────────
 
@@ -801,32 +815,31 @@ export default function ContractModal({
                     )}
                   </div>
                   {selectedCp && (
-                    <p className="text-[11px] text-gray-600 mt-1">
-                      {selectedCp.inn && <span className="mr-2">INN: <span className="text-gray-400">{selectedCp.inn}</span></span>}
-                      {selectedCp.director_name && <span>Rahbar: <span className="text-gray-400">{selectedCp.director_name}</span></span>}
-                    </p>
-                  )}
-                  {selectedCp && (() => {
-                    if (selectedCp.stir_status === 'inactive') return (
-                      <div className="mt-1.5 flex items-center gap-1.5 text-xs text-red-400 bg-red-900/20 border border-red-700/30 rounded-lg px-3 py-1.5">
-                        <span>⚠</span><span>Bu tashkilot Soliq ma&apos;lumotlarida <strong>faol emas</strong>. Shartnoma tuzishdan avval tekshiring.</span>
-                      </div>
-                    )
-                    if (selectedCp.stir_checked_at) {
-                      const days = Math.floor((Date.now() - new Date(selectedCp.stir_checked_at).getTime()) / 86400000)
-                      if (days > 30) return (
-                        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-700/30 rounded-lg px-3 py-1.5">
-                          <span>🕐</span><span>Bu kontragent <strong>{days} kun</strong> oldin tekshirilgan. Soliqdan yangilash tavsiya etiladi.</span>
+                    <div className="mt-2 bg-[#0F172A] border border-[#1E293B] rounded-xl overflow-hidden">
+                      {([
+                        { label: 'STIR',         value: selectedCp.inn },
+                        { label: 'Rahbar',        value: selectedCp.director_name },
+                        { label: 'MFO',           value: selectedCp.mfo },
+                        { label: 'Bank',          value: selectedCp.bank_name },
+                        { label: 'Hisob raqami',  value: selectedCp.bank_account },
+                        { label: 'Manzil',        value: selectedCp.address },
+                        { label: 'Telefon',       value: selectedCp.phone },
+                      ] as { label: string; value?: string | null }[])
+                        .filter(r => r.value)
+                        .map(row => (
+                          <div key={row.label} className="flex items-start border-b border-[#1E293B]/60 px-3 py-1.5 gap-2 last:border-0">
+                            <span className="text-[10px] text-blue-400/80 w-24 flex-shrink-0 pt-0.5">{row.label}</span>
+                            <span className="text-[11px] text-gray-300 leading-relaxed break-all">{row.value}</span>
+                          </div>
+                        ))
+                      }
+                      {selectedCp.stir_status === 'inactive' && (
+                        <div className="flex items-center gap-1.5 text-xs text-red-400 bg-red-900/20 px-3 py-1.5">
+                          <span>⚠</span><span>Soliqda <strong>faol emas</strong></span>
                         </div>
-                      )
-                    }
-                    if (!selectedCp.stir_checked_at && selectedCp.inn) return (
-                      <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-500 bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-1.5">
-                        <span>💡</span><span>Bu kontragent hali Soliq API orqali tekshirilmagan.</span>
-                      </div>
-                    )
-                    return null
-                  })()}
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Product name — only for oldi_sotdi and daval */}
