@@ -130,6 +130,12 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex flex-col justify-between px-8 py-8 max-w-[520px]">
         <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
 
+          {/* Back link */}
+          <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition mb-8">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+            {T({ uz: 'Bosh sahifa', oz: 'Бош саҳифа', ru: 'На главную' })}
+          </Link>
+
           {/* Logo + lang */}
           <div className="flex items-center justify-between mb-10">
             <Link href="/" className="flex items-center gap-2.5">
