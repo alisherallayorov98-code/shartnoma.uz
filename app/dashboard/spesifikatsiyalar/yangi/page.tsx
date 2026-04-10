@@ -304,63 +304,79 @@ export default function YangiSpesifikatsiyaPage() {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-xs min-w-[700px]">
+            <table className="text-xs border-collapse" style={{ minWidth: '860px', width: '100%' }}>
+              <colgroup>
+                <col style={{ width: '40px' }}/>   {/* № */}
+                <col/>                              {/* Nomi — flexible */}
+                <col style={{ width: '90px' }}/>   {/* O'lchov */}
+                <col style={{ width: '70px' }}/>   {/* Soni */}
+                <col style={{ width: '110px' }}/>  {/* Narx */}
+                <col style={{ width: '110px' }}/>  {/* Asosiy */}
+                <col style={{ width: '80px' }}/>   {/* QQS % */}
+                <col style={{ width: '90px' }}/>   {/* QQS summa */}
+                <col style={{ width: '110px' }}/>  {/* Jami */}
+                <col style={{ width: '32px' }}/>   {/* × */}
+              </colgroup>
               <thead>
                 <tr className="bg-[#0F172A] text-gray-400 border-b border-[#1E293B]">
-                  <th className="px-4 py-3 w-10 text-center font-medium">№</th>
-                  <th className="px-3 py-3 text-left font-medium">Tovarlar (ish, xizmatlar) nomi</th>
-                  <th className="px-3 py-3 w-24 text-center font-medium">O'lchov</th>
-                  <th className="px-3 py-3 w-20 text-right font-medium">Soni</th>
-                  <th className="px-3 py-3 w-32 text-right font-medium">Narx (so'm)</th>
-                  <th className="px-3 py-3 w-28 text-right font-medium">Asosiy qiymat</th>
-                  <th className="px-3 py-3 w-20 text-center font-medium">QQS</th>
-                  <th className="px-3 py-3 w-28 text-right font-medium">Jami</th>
-                  <th className="px-3 py-3 w-8"/>
+                  <th className="px-2 py-2.5 text-center font-medium whitespace-nowrap">№</th>
+                  <th className="px-3 py-2.5 text-left font-medium whitespace-nowrap">Nomi</th>
+                  <th className="px-2 py-2.5 text-center font-medium whitespace-nowrap">O'lchov</th>
+                  <th className="px-2 py-2.5 text-right font-medium whitespace-nowrap">Soni</th>
+                  <th className="px-2 py-2.5 text-right font-medium whitespace-nowrap">Narx</th>
+                  <th className="px-2 py-2.5 text-right font-medium whitespace-nowrap">Asosiy</th>
+                  <th className="px-2 py-2.5 text-center font-medium whitespace-nowrap">QQS,%</th>
+                  <th className="px-2 py-2.5 text-right font-medium whitespace-nowrap">QQS summa</th>
+                  <th className="px-2 py-2.5 text-right font-medium whitespace-nowrap">Jami</th>
+                  <th/>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, i) => (
                   <tr key={i} className="border-t border-[#1E293B] hover:bg-[#1F2937]/50 transition group">
-                    <td className="px-4 py-2.5 text-gray-500 text-center">{i + 1}</td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-2 py-2 text-gray-500 text-center whitespace-nowrap">{i + 1}</td>
+                    <td className="px-3 py-2">
                       <input
                         className="w-full bg-transparent border-b border-transparent group-hover:border-[#1E293B] focus:border-blue-500 text-gray-200 py-0.5 focus:outline-none text-xs placeholder-gray-600 transition"
                         value={item.nomi} placeholder="Mahsulot yoki xizmat nomi"
                         onChange={e => updateItem(i, 'nomi', e.target.value)}/>
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-2 py-2">
                       <BirlikPicker value={item.birlik} onChange={v => updateItem(i, 'birlik', v)}/>
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-2 py-2">
                       <input type="number"
-                        className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-blue-500 text-xs text-right"
+                        className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-1.5 py-1 text-gray-200 focus:outline-none focus:border-blue-500 text-xs text-right"
                         value={item.miqdori} min={0}
                         onChange={e => updateItem(i, 'miqdori', parseFloat(e.target.value) || 0)}/>
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-2 py-2">
                       <input type="number"
-                        className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-2 py-1.5 text-gray-200 focus:outline-none focus:border-blue-500 text-xs text-right"
+                        className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-1.5 py-1 text-gray-200 focus:outline-none focus:border-blue-500 text-xs text-right"
                         value={item.narxi} min={0}
                         onChange={e => updateItem(i, 'narxi', parseFloat(e.target.value) || 0)}/>
                     </td>
-                    <td className="px-3 py-2.5 text-right text-gray-300 text-xs">
+                    <td className="px-2 py-2 text-right text-gray-300 whitespace-nowrap">
                       {(item.miqdori * item.narxi).toLocaleString()}
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-2 py-2">
                       <select
-                        className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-1 py-1.5 text-gray-200 focus:outline-none focus:border-blue-500 text-xs cursor-pointer"
+                        className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-1 py-1 text-gray-200 focus:outline-none focus:border-blue-500 text-xs cursor-pointer"
                         value={item.qqs_foiz}
                         onChange={e => updateItem(i, 'qqs_foiz', e.target.value)}>
                         {QQS_OPTIONS.map(opt => <option key={opt.val} value={opt.val}>{opt.label}</option>)}
                       </select>
                     </td>
-                    <td className="px-3 py-2.5 text-right font-semibold text-white">
+                    <td className="px-2 py-2 text-right text-amber-400 whitespace-nowrap">
+                      {item.qqs_summa > 0 ? item.qqs_summa.toLocaleString() : <span className="text-gray-600">—</span>}
+                    </td>
+                    <td className="px-2 py-2 text-right font-semibold text-white whitespace-nowrap">
                       {item.summa.toLocaleString()}
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-1 py-2">
                       <button type="button" onClick={() => removeItem(i)}
                         className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-red-400 rounded transition opacity-0 group-hover:opacity-100">
-                        <Trash2 className="w-3.5 h-3.5"/>
+                        <Trash2 className="w-3 h-3"/>
                       </button>
                     </td>
                   </tr>
@@ -368,14 +384,13 @@ export default function YangiSpesifikatsiyaPage() {
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-[#1E293B] bg-[#0A1628]">
-                  <td colSpan={5} className="px-4 py-3 text-right text-xs text-gray-400 font-semibold">Jami:</td>
-                  <td className="px-3 py-3 text-right text-white text-xs font-semibold">{asosiy.toLocaleString()}</td>
-                  <td className="px-3 py-3 text-center text-xs">
-                    {qqsJami > 0
-                      ? <span className="text-amber-400 font-semibold">{qqsJami.toLocaleString()}</span>
-                      : <span className="text-gray-600">—</span>}
+                  <td colSpan={5} className="px-3 py-2.5 text-right text-gray-400 font-semibold whitespace-nowrap">Jami:</td>
+                  <td className="px-2 py-2.5 text-right text-white font-semibold whitespace-nowrap">{asosiy.toLocaleString()}</td>
+                  <td/>
+                  <td className="px-2 py-2.5 text-right whitespace-nowrap">
+                    {qqsJami > 0 ? <span className="text-amber-400 font-semibold">{qqsJami.toLocaleString()}</span> : <span className="text-gray-600">—</span>}
                   </td>
-                  <td className="px-3 py-3 text-right font-bold text-white text-sm">{grand.toLocaleString()}</td>
+                  <td className="px-2 py-2.5 text-right font-bold text-white whitespace-nowrap">{grand.toLocaleString()}</td>
                   <td/>
                 </tr>
               </tfoot>
