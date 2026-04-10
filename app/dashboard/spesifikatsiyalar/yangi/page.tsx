@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -63,6 +63,9 @@ export default function YangiSpesifikatsiyaPage() {
   const [saving, setSaving]           = useState(false)
   const [loadingEdit, setLoadingEdit] = useState(!!editId)
   const [teskaricHisob, setTeskaricHisob] = useState(false)
+  const [cpSearch, setCpSearch]           = useState('')
+  const [cpDropOpen, setCpDropOpen]       = useState(false)
+  const cpSearchRef = useRef<HTMLDivElement>(null)
 
   // ── Load for edit ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -78,9 +81,15 @@ export default function YangiSpesifikatsiyaPage() {
       setSpecNumber(spec.spec_number)
       setNotes(spec.notes || '')
       setContractId(spec.contract_id || '')
-      setCpId(spec.contracts?.counterparty_id || '')
+      const loadedCpId = spec.contracts?.counterparty_id || ''
+      setCpId(loadedCpId)
       setItems(spec.items.length > 0 ? spec.items : [emptyItem()])
       setLoadingEdit(false)
+      // cpSearch ni keyinroq cps yuklanganidan keyin to'ldirish
+      if (loadedCpId) {
+        const found = cps.find(c => c.id === loadedCpId)
+        if (found) setCpSearch(found.name)
+      }
     }
     load()
   }, [editId]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -271,17 +280,48 @@ export default function YangiSpesifikatsiyaPage() {
           <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5">
             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Kontragent ma'lumotlari</p>
 
-            {/* Kontragent tanlash */}
-            <div className="mb-4">
-              <select
-                className={inp}
-                value={cpId}
-                onChange={e => { setCpId(e.target.value); setContractId('') }}>
-                <option value="">— Kontragentni tanlang —</option>
-                {cps.map(cp => (
-                  <option key={cp.id} value={cp.id}>{cp.name}</option>
-                ))}
-              </select>
+            {/* Kontragent qidirish + tanlash */}
+            <div className="relative mb-4" ref={cpSearchRef}>
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input
+                  className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg pl-9 pr-8 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 placeholder-gray-500 transition"
+                  placeholder="STIR yoki nom bo'yicha qidirish…"
+                  value={cpSearch}
+                  onChange={e => { setCpSearch(e.target.value); setCpDropOpen(true) }}
+                  onFocus={() => setCpDropOpen(true)}
+                  onBlur={() => setTimeout(() => setCpDropOpen(false), 150)}
+                />
+                {cpId && (
+                  <button type="button"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition"
+                    onMouseDown={e => { e.preventDefault(); setCpId(''); setCpSearch(''); setContractId('') }}>
+                    <X className="w-3.5 h-3.5"/>
+                  </button>
+                )}
+              </div>
+              {cpDropOpen && (() => {
+                const q = cpSearch.toLowerCase()
+                const filtered = cps.filter(cp =>
+                  !q || cp.name.toLowerCase().includes(q) || (cp.inn || '').includes(q)
+                )
+                return (
+                  <div className="absolute z-30 top-full mt-1 left-0 right-0 bg-[#111827] border border-[#1E293B] rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto">
+                    {filtered.length === 0 ? (
+                      <div className="px-4 py-3 text-xs text-gray-500">Topilmadi</div>
+                    ) : filtered.map(cp => (
+                      <button key={cp.id} type="button"
+                        onMouseDown={() => { setCpId(cp.id); setCpSearch(cp.name); setCpDropOpen(false); setContractId('') }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition hover:bg-[#1F2937] ${cpId === cp.id ? 'text-blue-400 bg-blue-900/20' : 'text-gray-200'}`}>
+                        <div className="font-medium truncate">{cp.name}</div>
+                        {cp.inn && <div className="text-xs text-gray-500 mt-0.5">STIR: {cp.inn}</div>}
+                      </button>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
 
             {/* Maydonlar — doim ko'rinadi */}
