@@ -1050,6 +1050,7 @@ export default function YangiShartnoma() {
                 </div>
               </div>
             </div>
+          </div>
           )}
 
           {/* ══ STEP 3: Sections editor ══ */}
