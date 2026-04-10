@@ -55,13 +55,14 @@ export default function YangiSpesifikatsiyaPage() {
   const { activeOrg, contracts, cps } = useDashboard()
   const { toast } = useToast()
 
-  const [specNumber, setSpecNumber] = useState('')
-  const [notes, setNotes]           = useState('')
-  const [contractId, setContractId] = useState('')
-  const [cpId, setCpId]             = useState('')
-  const [items, setItems]           = useState<SpecItem[]>([emptyItem()])
-  const [saving, setSaving]         = useState(false)
+  const [specNumber, setSpecNumber]   = useState('')
+  const [notes, setNotes]             = useState('')
+  const [contractId, setContractId]   = useState('')
+  const [cpId, setCpId]               = useState('')
+  const [items, setItems]             = useState<SpecItem[]>([emptyItem()])
+  const [saving, setSaving]           = useState(false)
   const [loadingEdit, setLoadingEdit] = useState(!!editId)
+  const [teskaricHisob, setTeskaricHisob] = useState(false)
 
   // ── Load for edit ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -317,6 +318,16 @@ export default function YangiSpesifikatsiyaPage() {
             <div className="flex items-center gap-2.5">
               <h2 className="text-sm font-semibold text-white">Mahsulotlar ro'yxati</h2>
               <span className="text-xs bg-[#1F2937] border border-[#1E293B] text-gray-400 px-2 py-0.5 rounded-full">{items.length} ta</span>
+              <button type="button"
+                onClick={() => setTeskaricHisob(v => !v)}
+                className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition ${
+                  teskaricHisob
+                    ? 'bg-blue-600/20 border-blue-600/40 text-blue-400'
+                    : 'border-[#1E293B] text-gray-500 hover:text-gray-300 hover:border-[#374151]'
+                }`}>
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${teskaricHisob ? 'bg-blue-400' : 'bg-gray-600'}`}/>
+                Teskari hisob
+              </button>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs text-gray-500">Barchasi uchun QQS:</span>
@@ -400,12 +411,16 @@ export default function YangiSpesifikatsiyaPage() {
                     <td className="px-2 py-2 text-right text-amber-400 whitespace-nowrap">
                       {item.qqs_summa > 0 ? item.qqs_summa.toLocaleString() : <span className="text-gray-600">—</span>}
                     </td>
-                    <td className="px-2 py-2">
-                      <input type="number"
-                        title="Jami summani kiritib narxni avtomatik hisoblang"
-                        className="w-full bg-[#0F172A] border border-blue-600/30 rounded px-1.5 py-1 text-white font-semibold focus:outline-none focus:border-blue-500 text-xs text-right"
-                        value={item.summa} min={0}
-                        onChange={e => updateItemFromJami(i, parseFloat(e.target.value) || 0)}/>
+                    <td className="px-2 py-2 text-right">
+                      {teskaricHisob ? (
+                        <input type="number"
+                          title="Jami summani kiriting — narx avtomatik hisoblanadi"
+                          className="w-full bg-[#0F172A] border border-blue-500/50 rounded px-1.5 py-1 text-blue-300 font-semibold focus:outline-none focus:border-blue-400 text-xs text-right"
+                          value={item.summa} min={0}
+                          onChange={e => updateItemFromJami(i, parseFloat(e.target.value) || 0)}/>
+                      ) : (
+                        <span className="font-semibold text-white whitespace-nowrap">{item.summa.toLocaleString()}</span>
+                      )}
                     </td>
                     <td className="px-1 py-2">
                       <button type="button" onClick={() => removeItem(i)}
@@ -442,28 +457,6 @@ export default function YangiSpesifikatsiyaPage() {
           </div>
         </div>
 
-        {/* ── Summary ── */}
-        {grand > 0 && (
-          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-3 divide-x divide-[#1E293B]">
-              <div className="px-6 py-4 text-center">
-                <p className="text-xs text-gray-500 mb-1.5 uppercase tracking-wide">Asosiy summa</p>
-                <p className="text-2xl font-bold text-white">{asosiy.toLocaleString()}</p>
-                <p className="text-xs text-gray-500 mt-0.5">so'm</p>
-              </div>
-              <div className="px-6 py-4 text-center">
-                <p className="text-xs text-gray-500 mb-1.5 uppercase tracking-wide">QQS</p>
-                <p className="text-2xl font-bold text-amber-400">{qqsJami > 0 ? qqsJami.toLocaleString() : '—'}</p>
-                {qqsJami > 0 && <p className="text-xs text-gray-500 mt-0.5">so'm</p>}
-              </div>
-              <div className="px-6 py-4 text-center bg-blue-600/5">
-                <p className="text-xs text-gray-400 mb-1.5 uppercase tracking-wide">Jami summa</p>
-                <p className="text-2xl font-bold text-white">{grand.toLocaleString()}</p>
-                <p className="text-xs text-gray-500 mt-0.5">so'm</p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* ── Bottom actions ── */}
         <div className="flex justify-end gap-3 pb-8">
