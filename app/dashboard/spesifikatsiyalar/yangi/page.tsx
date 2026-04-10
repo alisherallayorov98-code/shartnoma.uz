@@ -191,14 +191,11 @@ export default function YangiSpesifikatsiyaPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-5">
 
-        {/* ── Top info row ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-          {/* Asosiy ma'lumotlar */}
-          <div className="lg:col-span-1 bg-[#111827] border border-[#1E293B] rounded-2xl p-5 space-y-4">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Asosiy ma'lumotlar</h2>
+        {/* ── Top fields row ── */}
+        <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className={lbl}>Raqami <span className="text-red-400">*</span></label>
+              <label className={lbl}>Spesifikatsiya raqami <span className="text-red-400">*</span></label>
               <input className={inp} value={specNumber}
                 onChange={e => setSpecNumber(e.target.value)}
                 placeholder="SPEC-001"/>
@@ -209,35 +206,6 @@ export default function YangiSpesifikatsiyaPage() {
                 onChange={e => setNotes(e.target.value)}
                 placeholder="Ixtiyoriy izoh…"/>
             </div>
-          </div>
-
-          {/* Tashkilot ma'lumotlari */}
-          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Sizning tashkilotingiz</h2>
-            {activeOrg ? (
-              <div className="space-y-2.5">
-                {[
-                  { label: 'Nomi',       value: activeOrg.name },
-                  { label: 'INN',        value: activeOrg.inn },
-                  { label: 'Rahbar',     value: activeOrg.director_name },
-                  { label: 'Bank',       value: activeOrg.bank_name },
-                  { label: 'Hisob',      value: activeOrg.bank_account },
-                  { label: 'MFO',        value: activeOrg.mfo },
-                ].filter(r => r.value).map(row => (
-                  <div key={row.label} className="flex items-start gap-2">
-                    <span className="text-[11px] text-gray-500 w-14 flex-shrink-0 pt-0.5">{row.label}</span>
-                    <span className="text-xs text-gray-200 font-medium leading-relaxed">{row.value}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">Tashkilot tanlanmagan</p>
-            )}
-          </div>
-
-          {/* Kontragent va shartnoma */}
-          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5 space-y-4">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Bog'liqlik</h2>
             <div>
               <label className={lbl}>Kontragent</label>
               <select className={inp} value={cpId}
@@ -249,7 +217,7 @@ export default function YangiSpesifikatsiyaPage() {
               </select>
             </div>
             <div>
-              <label className={lbl}>Shartnoma</label>
+              <label className={lbl}>Shartnoma raqami</label>
               <select className={inp} value={contractId}
                 onChange={e => setContractId(e.target.value)}>
                 <option value="">— Tanlang —</option>
@@ -260,20 +228,68 @@ export default function YangiSpesifikatsiyaPage() {
                 ))}
               </select>
             </div>
-            {selectedCp && (
-              <div className="pt-1 border-t border-[#1E293B] space-y-1.5">
-                <p className="text-[11px] text-gray-500 uppercase tracking-wide">Kontragent ma'lumotlari</p>
+          </div>
+        </div>
+
+        {/* ── Org + Counterparty panels ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+          {/* Chap: Sizning tashkilotingiz */}
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5">
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Sizning tashkilotingiz</p>
+            {activeOrg ? (
+              <div className="space-y-0">
                 {[
-                  { label: 'Nomi',   value: selectedCp.name },
-                  { label: 'INN',    value: selectedCp.inn },
-                  { label: 'Rahbar', value: selectedCp.director_name },
-                  { label: 'MFO',    value: selectedCp.mfo },
+                  { label: 'STIR/ЖШШИР', value: activeOrg.inn },
+                  { label: 'Nomi',       value: activeOrg.name },
+                  { label: 'Rahbar (FIO)', value: activeOrg.director_name },
+                  { label: 'MFO',        value: activeOrg.mfo },
+                  { label: 'Bank nomi',  value: activeOrg.bank_name },
+                  { label: 'Hisob raqami', value: activeOrg.bank_account },
+                  { label: 'OKED',       value: (activeOrg as any).oked },
+                  { label: 'Manzil',     value: activeOrg.address },
+                  { label: 'Telefon',    value: activeOrg.phone },
                 ].filter(r => r.value).map(row => (
-                  <div key={row.label} className="flex items-start gap-2">
-                    <span className="text-[11px] text-gray-500 w-14 flex-shrink-0">{row.label}</span>
-                    <span className="text-xs text-gray-200 leading-relaxed">{row.value}</span>
+                  <div key={row.label} className="flex items-start border-b border-[#1E293B]/60 py-2 gap-3">
+                    <span className="text-[11px] text-blue-400/80 w-28 flex-shrink-0 pt-0.5">{row.label}</span>
+                    <span className="text-xs text-gray-200 leading-relaxed break-all">{row.value}</span>
                   </div>
                 ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Tashkilot tanlanmagan</p>
+            )}
+          </div>
+
+          {/* O'ng: Kontragent ma'lumotlari */}
+          <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-5">
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Kontragent ma'lumotlari</p>
+            {selectedCp ? (
+              <div className="space-y-0">
+                {[
+                  { label: 'STIR/ЖШШИР', value: selectedCp.inn },
+                  { label: 'Nomi',       value: selectedCp.name },
+                  { label: 'Rahbar (FIO)', value: selectedCp.director_name },
+                  { label: 'MFO',        value: selectedCp.mfo },
+                  { label: 'Bank nomi',  value: selectedCp.bank_name },
+                  { label: 'Hisob raqami', value: selectedCp.bank_account },
+                  { label: 'OKED',       value: (selectedCp as any).oked },
+                  { label: 'Manzil',     value: selectedCp.address },
+                  { label: 'Telefon',    value: selectedCp.phone },
+                ].filter(r => r.value).map(row => (
+                  <div key={row.label} className="flex items-start border-b border-[#1E293B]/60 py-2 gap-3">
+                    <span className="text-[11px] text-blue-400/80 w-28 flex-shrink-0 pt-0.5">{row.label}</span>
+                    <span className="text-xs text-gray-200 leading-relaxed break-all">{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="w-12 h-12 bg-[#1F2937] border border-[#1E293B] rounded-xl flex items-center justify-center mb-3">
+                  <FileText className="w-6 h-6 text-gray-600"/>
+                </div>
+                <p className="text-sm text-gray-500">Kontragentni tanlang</p>
+                <p className="text-xs text-gray-600 mt-1">Ma'lumotlar avtomatik chiqadi</p>
               </div>
             )}
           </div>
