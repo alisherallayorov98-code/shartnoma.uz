@@ -93,7 +93,9 @@ export default function YangiSpesifikatsiyaPage() {
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const orgContracts = useMemo(
-    () => contracts.filter(c => c.organization_id === activeOrg?.id && (!cpId || c.counterparty_id === cpId)),
+    () => cpId
+      ? contracts.filter(c => c.organization_id === activeOrg?.id && c.counterparty_id === cpId)
+      : [],
     [contracts, activeOrg?.id, cpId]
   )
 
