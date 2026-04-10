@@ -131,7 +131,6 @@ export default function YangiShartnoma() {
     const num = autoContractNum()
     setForm(f => ({
       ...f,
-      contract_number: f.contract_number || num,
       organization_id: f.organization_id || activeOrg.id,
       city: f.city || orgCityDefault(activeOrg),
     }))
