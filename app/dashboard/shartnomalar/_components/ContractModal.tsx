@@ -16,7 +16,6 @@ import CityPicker from './CityPicker'
 
 function orgCityDefault(org: { viloyat?: string; tuman?: string } | null | undefined): string {
   if (!org) return 'Toshkent shahri'
-  if (org.tuman?.trim()) return org.tuman.trim()
   const v = org.viloyat?.trim() || ''
   const MAP: Record<string, string> = {
     'Toshkent shahri': 'Toshkent shahri', 'Toshkent viloyati': 'Toshkent shahri',
