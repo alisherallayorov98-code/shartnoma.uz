@@ -138,6 +138,16 @@ export default function YangiShartnoma() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeOrg?.id])
 
+  // Tashkilot QQS to'lovchi bo'lsa avtomatik yoqish
+  useEffect(() => {
+    const org = orgs.find(o => o.id === form.organization_id)
+    if (!org) return
+    const isQqs = !!(org.qqsreg?.trim())
+    const rate = org.qqs_stavka ? parseInt(org.qqs_stavka) : 12
+    setForm(f => ({ ...f, qqs_enabled: isQqs, qqs_rate: isNaN(rate) ? 12 : rate }))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.organization_id])
+
   // Handle from_tpl (template → contract)
   useEffect(() => {
     if (searchParams.get('from_tpl') !== '1') return
@@ -856,11 +866,19 @@ export default function YangiShartnoma() {
           {/* ══ STEP 2 ══ */}
           {step === 2 && (
             <div className="max-w-xl mx-auto">
-              <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-6 space-y-5">
-                <div>
-                  <h2 className="text-sm font-semibold text-white mb-1">Qo&apos;shimcha ma&apos;lumotlar</h2>
-                  <p className="text-xs text-gray-500">{(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]} uchun maxsus shartlar</p>
+              <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
+                <div className="px-5 py-3.5 bg-[#0F172A] border-b border-[#1E293B] flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-600/30 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-white">Qo&apos;shimcha ma&apos;lumotlar</h2>
+                    <p className="text-xs text-gray-500">{(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]} uchun maxsus shartlar</p>
+                  </div>
                 </div>
+                <div className="p-5 space-y-5">
                 <div className="space-y-4">
 
                   {form.contract_type === 'ijara' && (<>
@@ -1000,20 +1018,29 @@ export default function YangiShartnoma() {
                   )}
 
                   {/* QQS */}
-                  <div className="pt-3 border-t border-[#1E293B]">
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <div onClick={() => setForm(f => ({ ...f, qqs_enabled: !f.qqs_enabled }))}
-                          className={`relative w-10 h-5 rounded-full transition ${form.qqs_enabled ? 'bg-blue-600' : 'bg-[#1F2937]'}`}>
-                          <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${form.qqs_enabled ? 'translate-x-5' : ''}`}/>
-                        </div>
-                        <span className="text-sm text-gray-300">{T(t.modal.qqs)}</span>
-                      </label>
+                  <div className="pt-4 border-t border-[#1E293B]">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="flex items-center gap-2.5 cursor-pointer"
+                          onClick={() => setForm(f => ({ ...f, qqs_enabled: !f.qqs_enabled }))}>
+                          <div className={`relative w-10 h-5 rounded-full transition ${form.qqs_enabled ? 'bg-blue-600' : 'bg-[#1F2937]'}`}>
+                            <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${form.qqs_enabled ? 'translate-x-5' : ''}`}/>
+                          </div>
+                          <span className="text-sm text-gray-300 font-medium">QQS</span>
+                          {form.qqs_enabled
+                            ? <span className="text-xs text-green-400 bg-green-900/20 border border-green-700/30 px-2 py-0.5 rounded-full">Yoqilgan</span>
+                            : <span className="text-xs text-gray-500 bg-[#1F2937] border border-[#1E293B] px-2 py-0.5 rounded-full">O'chirilgan</span>
+                          }
+                        </label>
+                        {selectedOrg?.qqsreg && !form.qqs_enabled && (
+                          <p className="text-[11px] text-amber-500 mt-1 ml-12">Tashkilot QQS to&apos;lovchi, lekin bu shartnomada o&apos;chirilgan</p>
+                        )}
+                      </div>
                       {form.qqs_enabled && (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">{T(t.modal.qqsRate)}:</span>
+                          <span className="text-xs text-gray-500">Stavka:</span>
                           <select value={form.qqs_rate} onChange={e => setForm(f => ({ ...f, qqs_rate: parseInt(e.target.value) }))}
-                            className="bg-[#0B1220] border border-[#1E293B] text-gray-200 rounded px-2 py-1 text-xs focus:outline-none cursor-pointer">
+                            className="bg-[#0B1220] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:border-blue-600 cursor-pointer">
                             <option value={12}>12%</option><option value={15}>15%</option><option value={0}>0%</option>
                           </select>
                         </div>
