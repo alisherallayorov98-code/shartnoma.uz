@@ -220,6 +220,7 @@ export default function ContractModal({
   // cps prop yangilanganda localCps ni ham yangilash
   useEffect(() => { setLocalCps(cps) }, [cps])
   const [cpStirLoading, setCpStirLoading] = useState(false)
+  const [cpLookupSource, setCpLookupSource] = useState<'global_db' | 'soliq_api' | null>(null)
   const cpDropRef = useRef<HTMLDivElement>(null)
 
   const isEdit = !!form.id
@@ -413,27 +414,28 @@ export default function ContractModal({
     const inn = newCp.inn.trim()
     if (!inn || !/^\d{9}$/.test(inn)) { toast("STIR 9 raqamdan iborat bo'lishi kerak", 'error'); return }
     setCpStirLoading(true)
+    setCpLookupSource(null)
     try {
-      const res = await fetch(`/api/stir?stir=${inn}`)
+      // 1. Global baza + Soliq API (company-lookup avval global bazani tekshiradi)
+      const res = await fetch(`/api/company-lookup?inn=${inn}`)
       const data = await res.json()
-      if (!res.ok) { toast(data.error || "STIR ma'lumot topilmadi", 'error'); return }
+      if (!res.ok) { toast(data.error || "Ma'lumot topilmadi", 'error'); return }
       const co = data.company
+      setCpLookupSource(data.source)
       setNewCp(p => ({
         ...p,
-        name: co.name || p.name,
-        director_name: co.director_name || p.director_name,
-        address: co.address || p.address,
-        qqsreg: co.qqsreg || p.qqsreg,
-        oked: co.oked || p.oked,
+        name:          co.name          || p.name,
+        director_name: co.director      || p.director_name,
+        address:       co.address       || p.address,
+        mfo:           co.mfo           || p.mfo,
+        bank_name:     co.bank_name     || p.bank_name,
+        bank_account:  co.account       || p.bank_account,
+        phone:         co.phone         || p.phone,
       }))
-      const infoParts: string[] = []
-      if (co.status === 'active') infoParts.push('✓ Faol')
-      else if (co.status === 'inactive') infoParts.push('⚠ Faol emas!')
-      if (co.oked_name) infoParts.push(co.oked_name)
-      if (co.reg_date) infoParts.push(`Ro'yxatdan: ${co.reg_date}`)
-      toast(infoParts.length ? infoParts.join(' | ') : "Ma'lumotlar to'ldirildi", co.status === 'inactive' ? 'error' : 'success')
+      const src = data.source === 'global_db' ? "Bazadan topildi" : "Soliq API dan olindi"
+      toast(src + (co.name ? `: ${co.name}` : ''), 'success')
     } catch {
-      toast("STIR so'rovida xatolik", 'error')
+      toast("So'rovda xatolik", 'error')
     } finally {
       setCpStirLoading(false)
     }
@@ -456,6 +458,25 @@ export default function ContractModal({
       oked: newCp.oked.trim(),
       user_id: session!.user.id,
     }).select().single()
+
+    // Global bazaga ham saqlash (MFO yoki hisob raqam bo'lsa)
+    if (!error && newCp.inn.trim() && (newCp.mfo.trim() || newCp.bank_account.trim())) {
+      fetch('/api/company-lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session!.access_token}` },
+        body: JSON.stringify({
+          inn:       newCp.inn.trim(),
+          name:      newCp.name.trim(),
+          director:  newCp.director_name.trim(),
+          address:   newCp.address.trim(),
+          mfo:       newCp.mfo.trim(),
+          bank_name: newCp.bank_name.trim(),
+          account:   newCp.bank_account.trim(),
+          phone:     newCp.phone.trim(),
+        }),
+      }).catch(() => {/* admin emas bo'lsa 403 — e'tiborsiz */})
+    }
+
     setSavingCp(false)
     if (error) { toast('Xato: ' + error.message, 'error'); return }
     if (data) {
@@ -464,6 +485,7 @@ export default function ContractModal({
       setForm(f => ({ ...f, counterparty_id: data.id }))
     }
     setQuickAddCp(false)
+    setCpLookupSource(null)
     setNewCp({ name: '', inn: '', director_name: '', address: '', phone: '', bank_name: '', bank_account: '', mfo: '', qqsreg: '', oked: '' })
     setCpDropOpen(false)
   }
@@ -1391,19 +1413,32 @@ export default function ContractModal({
                   className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">INN</label>
+                <label className="block text-xs text-gray-400 mb-1">
+                  INN / STIR
+                  {cpLookupSource && (
+                    <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium ${cpLookupSource === 'global_db' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-blue-500/15 text-blue-400'}`}>
+                      {cpLookupSource === 'global_db' ? '✓ Bazadan' : '↓ Soliq API'}
+                    </span>
+                  )}
+                </label>
                 <div className="flex gap-2">
-                  <input value={newCp.inn} onChange={e => setNewCp(p => ({ ...p, inn: e.target.value }))}
-                    placeholder="123456789" maxLength={9}
+                  <input
+                    value={newCp.inn}
+                    onChange={e => { setNewCp(p => ({ ...p, inn: e.target.value })); setCpLookupSource(null) }}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); lookupStirNewCp() } }}
+                    placeholder="123456789 — Enter bosing"
+                    maxLength={9}
                     className="flex-1 bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600" />
                   <button type="button" disabled={cpStirLoading || !newCp.inn}
                     onClick={lookupStirNewCp}
                     className="px-2.5 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600/30 text-blue-400 rounded-lg text-xs disabled:opacity-40 transition flex-shrink-0"
-                    title="Soliqdan ma'lumot olish">
-                    {cpStirLoading ? '...' : '🔍'}
+                    title="Ma'lumot olish">
+                    {cpStirLoading
+                      ? <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                      : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>}
                   </button>
                 </div>
-                <p className="text-xs text-gray-600 mt-1">9 raqam kiriting va 🔍 bosing</p>
+                <p className="text-[11px] text-gray-600 mt-1">9 raqam yozing va Enter bosing — avtomatik to'ldiriladi</p>
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Rahbar F.I.O</label>
@@ -1455,7 +1490,7 @@ export default function ContractModal({
           </div>
           <div className="flex gap-3 px-6 py-4 border-t border-[#1E293B]">
             <button type="button" onClick={handleQuickAddCp} disabled={savingCp}
-              className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-sm py-2.5 rounded-lg font-semibold transition">
+              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm py-2.5 rounded-lg font-semibold transition">
               {savingCp ? 'Saqlanmoqda...' : 'Saqlash'}
             </button>
             <button type="button" onClick={() => setQuickAddCp(false)}

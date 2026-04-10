@@ -36,7 +36,7 @@ export default function AdminPage() {
   const router = useRouter()
   const tokenRef = useRef<string>('')
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'clients'|'payments'|'demo'|'new'|'feedback'|'templates'|'content'|'contracts'|'settings'>('clients')
+  const [tab, setTab] = useState<'clients'|'payments'|'demo'|'new'|'feedback'|'templates'|'content'|'contracts'|'settings'|'global_db'>('clients')
   const [clients, setClients] = useState<Client[]>([])
   const [demos, setDemos] = useState<DemoRow[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
@@ -91,6 +91,15 @@ export default function AdminPage() {
   // Settings
   const [settings, setSettings] = useState<Record<string,string>>({})
   const [settingsSaving, setSettingsSaving] = useState(false)
+
+  // Global companies DB
+  const [globalCompanies, setGlobalCompanies] = useState<{id:string;inn:string;name:string;director:string|null;address:string|null;mfo:string|null;bank_name:string|null;account:string|null;phone:string|null;source:string;updated_at:string}[]>([])
+  const [globalSearch, setGlobalSearch] = useState('')
+  const [globalLoaded, setGlobalLoaded] = useState(false)
+  const [globalSaving, setGlobalSaving] = useState(false)
+  const [globalStirLoading, setGlobalStirLoading] = useState(false)
+  const [globalForm, setGlobalForm] = useState({ inn:'', name:'', director:'', address:'', mfo:'', bank_name:'', account:'', phone:'' })
+  const [globalAddOpen, setGlobalAddOpen] = useState(false)
 
   // New content modal
   const [addContentModal, setAddContentModal] = useState(false)
@@ -182,6 +191,56 @@ export default function AdminPage() {
   async function loadSettings() {
     const data = await apiPost({ action: 'get_settings' })
     if (data?.settings) setSettings(data.settings)
+  }
+
+  async function loadGlobalCompanies() {
+    const { data } = await supabase.from('global_companies').select('*').order('updated_at', { ascending: false }).limit(500)
+    if (data) setGlobalCompanies(data)
+    setGlobalLoaded(true)
+  }
+
+  async function handleGlobalStirLookup() {
+    const inn = globalForm.inn.trim()
+    if (!/^\d{9}$/.test(inn)) return
+    setGlobalStirLoading(true)
+    try {
+      const res = await fetch(`/api/stir?stir=${inn}`)
+      const data = await res.json()
+      if (res.ok && data.company) {
+        const co = data.company
+        setGlobalForm(p => ({
+          ...p,
+          name:      co.name      || p.name,
+          director:  co.director_name || p.director,
+          address:   co.address   || p.address,
+        }))
+      }
+    } finally { setGlobalStirLoading(false) }
+  }
+
+  async function handleGlobalSave(e: React.FormEvent) {
+    e.preventDefault()
+    if (!globalForm.inn || !globalForm.name) return
+    setGlobalSaving(true)
+    await fetch('/api/company-lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenRef.current}` },
+      body: JSON.stringify(globalForm),
+    })
+    setGlobalSaving(false)
+    setGlobalAddOpen(false)
+    setGlobalForm({ inn:'', name:'', director:'', address:'', mfo:'', bank_name:'', account:'', phone:'' })
+    loadGlobalCompanies()
+    notify('✓ Saqlandi')
+  }
+
+  async function handleGlobalDelete(inn: string) {
+    if (!confirm(`${inn} ni o'chirasizmi?`)) return
+    await fetch(`/api/company-lookup?inn=${inn}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${tokenRef.current}` },
+    })
+    setGlobalCompanies(prev => prev.filter(c => c.inn !== inn))
   }
 
   async function saveTemplate(e: React.FormEvent) {
@@ -534,6 +593,7 @@ export default function AdminPage() {
                 { key:'templates', label:'Shablonlar' },
                 { key:'content', label:'Kontent' },
                 { key:'settings', label:'Sozlamalar' },
+                { key:'global_db', label:'Global Baza' },
               ].map(t=>(
                 <button key={t.key} onClick={()=>{
                   setTab(t.key as any)
@@ -541,6 +601,7 @@ export default function AdminPage() {
                   if(t.key==='content' && siteContent.length===0) loadSiteContent()
                   if(t.key==='contracts' && allContracts.length===0) loadAllContracts()
                   if(t.key==='settings' && Object.keys(settings).length===0) loadSettings()
+                  if(t.key==='global_db' && !globalLoaded) loadGlobalCompanies()
                 }}
                   className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${tab===t.key?'border-blue-500 text-white':'border-transparent text-gray-500 hover:text-white'}`}>
                   {t.label}
@@ -561,6 +622,11 @@ export default function AdminPage() {
               {tab==='content' && (
                 <button onClick={()=>setAddContentModal(true)} className="text-sm bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg transition font-medium">
                   + Kontent qo'shish
+                </button>
+              )}
+              {tab==='global_db' && (
+                <button onClick={()=>setGlobalAddOpen(true)} className="text-sm bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg transition font-medium">
+                  + Tashkilot qo'shish
                 </button>
               )}
             </div>
@@ -1147,6 +1213,129 @@ export default function AdminPage() {
               {settingsSaving ? 'Saqlanmoqda...' : '💾 Barcha sozlamalarni saqlash'}
             </button>
           </form>
+        )}
+
+        {/* ── GLOBAL DB TAB ── */}
+        {tab==='global_db' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <input value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)}
+                placeholder="INN yoki nom bo'yicha qidirish..."
+                className={inp + ' max-w-sm'}/>
+              <span className="text-xs text-gray-500">{globalCompanies.length} ta tashkilot</span>
+            </div>
+            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-gray-400 border-b border-gray-800">
+                    <th className="text-left px-4 py-3">INN</th>
+                    <th className="text-left px-4 py-3">Nomi</th>
+                    <th className="text-left px-4 py-3">Rahbar</th>
+                    <th className="text-left px-4 py-3">MFO</th>
+                    <th className="text-left px-4 py-3">Hisob raqam</th>
+                    <th className="text-left px-4 py-3">Manba</th>
+                    <th className="px-4 py-3"/>
+                  </tr>
+                </thead>
+                <tbody>
+                  {globalCompanies
+                    .filter(c => !globalSearch || c.inn.includes(globalSearch) || c.name.toLowerCase().includes(globalSearch.toLowerCase()))
+                    .map(c=>(
+                    <tr key={c.id} className="border-b border-gray-800/60 hover:bg-gray-800/40 transition">
+                      <td className="px-4 py-3 font-mono text-xs text-gray-300">{c.inn}</td>
+                      <td className="px-4 py-3 text-white max-w-[200px] truncate">{c.name}</td>
+                      <td className="px-4 py-3 text-gray-400 text-xs">{c.director || '—'}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-300">{c.mfo || '—'}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-300">{c.account ? c.account.slice(0,8)+'...' : '—'}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${c.source==='manual'?'bg-emerald-900/40 text-emerald-400':c.source==='soliq_api'?'bg-blue-900/40 text-blue-400':'bg-gray-800 text-gray-400'}`}>
+                          {c.source==='manual'?'Admin':c.source==='soliq_api'?'Soliq API':'Foydalanuvchi'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button onClick={()=>handleGlobalDelete(c.inn)}
+                          className="text-xs text-red-400 hover:text-red-300 hover:bg-red-900/20 px-2 py-1 rounded transition">
+                          O'chirish
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {globalCompanies.length === 0 && (
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm">Hali ma'lumot yo'q</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── GLOBAL ADD MODAL ── */}
+        {globalAddOpen && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg shadow-2xl">
+              <div className="flex justify-between items-center px-6 py-4 border-b border-gray-800">
+                <div className="font-semibold text-white">Tashkilot qo'shish</div>
+                <button onClick={()=>setGlobalAddOpen(false)} className="text-gray-400 hover:text-white w-8 h-8 flex items-center justify-center hover:bg-gray-800 rounded-lg text-lg">×</button>
+              </div>
+              <form onSubmit={handleGlobalSave} className="p-6 space-y-3">
+                <div>
+                  <label className={lbl}>INN / STIR <span className="text-red-400">*</span></label>
+                  <div className="flex gap-2">
+                    <input value={globalForm.inn} onChange={e=>setGlobalForm(p=>({...p,inn:e.target.value}))}
+                      onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); handleGlobalStirLookup() } }}
+                      placeholder="123456789 — Enter bosing" maxLength={9}
+                      className={inp + ' flex-1'} required/>
+                    <button type="button" onClick={handleGlobalStirLookup} disabled={globalStirLoading||globalForm.inn.length!==9}
+                      className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600/30 text-blue-400 rounded-lg text-sm disabled:opacity-40 transition">
+                      {globalStirLoading ? '...' : 'Soliq'}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className={lbl}>Nomi <span className="text-red-400">*</span></label>
+                  <input value={globalForm.name} onChange={e=>setGlobalForm(p=>({...p,name:e.target.value}))} className={inp} required/>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={lbl}>Rahbar</label>
+                    <input value={globalForm.director} onChange={e=>setGlobalForm(p=>({...p,director:e.target.value}))} className={inp}/>
+                  </div>
+                  <div>
+                    <label className={lbl}>Telefon</label>
+                    <input value={globalForm.phone} onChange={e=>setGlobalForm(p=>({...p,phone:e.target.value}))} className={inp} placeholder="+998..."/>
+                  </div>
+                </div>
+                <div>
+                  <label className={lbl}>Manzil</label>
+                  <input value={globalForm.address} onChange={e=>setGlobalForm(p=>({...p,address:e.target.value}))} className={inp}/>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={lbl}>MFO</label>
+                    <input value={globalForm.mfo} onChange={e=>setGlobalForm(p=>({...p,mfo:e.target.value}))} className={inp} placeholder="00000"/>
+                  </div>
+                  <div>
+                    <label className={lbl}>Bank nomi</label>
+                    <input value={globalForm.bank_name} onChange={e=>setGlobalForm(p=>({...p,bank_name:e.target.value}))} className={inp}/>
+                  </div>
+                </div>
+                <div>
+                  <label className={lbl}>Hisob raqami</label>
+                  <input value={globalForm.account} onChange={e=>setGlobalForm(p=>({...p,account:e.target.value}))} className={inp} placeholder="20208000000000000000"/>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="submit" disabled={globalSaving}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2.5 rounded-lg font-semibold transition text-sm">
+                    {globalSaving ? 'Saqlanmoqda...' : 'Saqlash'}
+                  </button>
+                  <button type="button" onClick={()=>setGlobalAddOpen(false)}
+                    className="px-5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 py-2.5 rounded-lg transition text-sm">
+                    Bekor
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
       </div>
 
