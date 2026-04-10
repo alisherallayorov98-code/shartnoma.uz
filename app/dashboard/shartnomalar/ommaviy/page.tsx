@@ -95,6 +95,10 @@ export default function OmmaviyPage() {
   // Step 2 — kontragentlar
   const [cpSearch, setCpSearch] = useState('')
   const [selectedCpIds, setSelectedCpIds] = useState<Set<string>>(new Set())
+  const [cpStatusFilter, setCpStatusFilter] = useState<'all' | 'without' | 'with'>('all')
+  const [filterYear, setFilterYear] = useState<number>(() => new Date().getFullYear())
+  const [existingCpIds, setExistingCpIds] = useState<Set<string>>(new Set())
+  const [loadingExisting, setLoadingExisting] = useState(false)
 
   // Step 3 — yaratish
   const [creating, setCreating] = useState(false)
@@ -111,6 +115,37 @@ export default function OmmaviyPage() {
     loadCustomTemplates()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // contractDate o'zgarganda filterYear yangilansin
+  useEffect(() => {
+    const year = new Date(contractDate).getFullYear()
+    if (!isNaN(year)) setFilterYear(year)
+  }, [contractDate])
+
+  // Step 2 ga o'tganda yoki filterYear o'zgarganda mavjud shartnomalarni yukla
+  useEffect(() => {
+    if (step === 2 && activeOrg) {
+      loadExistingContracts(filterYear)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, filterYear, activeOrg])
+
+  async function loadExistingContracts(year: number) {
+    if (!activeOrg) return
+    setLoadingExisting(true)
+    const { data } = await supabase
+      .from('contracts')
+      .select('counterparty_id')
+      .eq('organization_id', activeOrg.id)
+      .gte('contract_date', `${year}-01-01`)
+      .lte('contract_date', `${year}-12-31`)
+    if (data) {
+      setExistingCpIds(new Set(
+        data.map((d: { counterparty_id: string }) => d.counterparty_id).filter(Boolean)
+      ))
+    }
+    setLoadingExisting(false)
+  }
 
   async function loadCustomTemplates() {
     if (!activeOrg) return
@@ -131,13 +166,18 @@ export default function OmmaviyPage() {
   // ── Filtrlangan kontragentlar ─────────────────────────────────────────────
 
   const filteredCps = useMemo(() => {
+    let result = cps
     const q = cpSearch.trim().toLowerCase()
-    if (!q) return cps
-    return cps.filter(c =>
-      c.name.toLowerCase().includes(q) ||
-      (c.inn || '').includes(q)
-    )
-  }, [cps, cpSearch])
+    if (q) {
+      result = result.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        (c.inn || '').includes(q)
+      )
+    }
+    if (cpStatusFilter === 'without') result = result.filter(c => !existingCpIds.has(c.id))
+    else if (cpStatusFilter === 'with') result = result.filter(c => existingCpIds.has(c.id))
+    return result
+  }, [cps, cpSearch, cpStatusFilter, existingCpIds])
 
   // ── Tanlangan kontragentlar ───────────────────────────────────────────────
 
@@ -489,6 +529,46 @@ export default function OmmaviyPage() {
       {/* ──────────────────── STEP 2 ──────────────────── */}
       {step === 2 && (
         <div className="max-w-2xl space-y-4">
+          {/* Yil + status filter */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Tekshirish yili:</span>
+              <select
+                value={filterYear}
+                onChange={e => setFilterYear(Number(e.target.value))}
+                className="bg-[#111827] border border-[#1E293B] rounded-lg px-2 py-1.5 text-white text-sm focus:border-orange-500 focus:outline-none"
+              >
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-1">
+              {([
+                { key: 'all',     label: 'Barchasi' },
+                { key: 'without', label: "Shartnomasi yo'qlar" },
+                { key: 'with',    label: 'Shartnomasi borlar' },
+              ] as const).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setCpStatusFilter(key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition border ${
+                    cpStatusFilter === key
+                      ? key === 'without'
+                        ? 'bg-green-500/20 text-green-400 border-green-500/40'
+                        : key === 'with'
+                          ? 'bg-orange-500/20 text-orange-400 border-orange-500/40'
+                          : 'bg-blue-500/20 text-blue-400 border-blue-500/40'
+                      : 'bg-[#111827] border-[#1E293B] text-gray-400 hover:border-gray-500'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {loadingExisting && <span className="text-xs text-gray-500 animate-pulse">Tekshirilmoqda...</span>}
+          </div>
+
           {/* Search + select all */}
           <div className="flex gap-3">
             <div className="flex-1 relative">
@@ -516,9 +596,12 @@ export default function OmmaviyPage() {
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
             <span>Jami: <b className="text-white">{cps.length}</b></span>
             {cpSearch && <span>Topildi: <b className="text-white">{filteredCps.length}</b></span>}
+            <span>
+              {filterYear}-yil shartnomasi bor: <b className="text-orange-400">{existingCpIds.size}</b>
+            </span>
             {selectedCpIds.size > 0 && (
               <span className="text-orange-400">
                 Tanlangan: <b>{selectedCpIds.size}</b>
@@ -555,6 +638,11 @@ export default function OmmaviyPage() {
                         <p className="text-sm text-white font-medium truncate">{cp.name}</p>
                         <p className="text-xs text-gray-500">{cp.inn || '—'}</p>
                       </div>
+                      {existingCpIds.has(cp.id) && (
+                        <span className="text-xs text-orange-400 bg-orange-900/20 px-2 py-0.5 rounded whitespace-nowrap">
+                          {filterYear} ✓
+                        </span>
+                      )}
                       {cp.stir_status === 'inactive' && (
                         <span className="text-xs text-red-400 bg-red-900/20 px-2 py-0.5 rounded">Faol emas</span>
                       )}
