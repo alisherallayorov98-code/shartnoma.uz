@@ -245,6 +245,60 @@ const TESTIMONIALS: { name: string; role: Record<string, string>; company: strin
   },
 ]
 
+// ── FAQ Component ────────────────────────────────────────────────────────────
+const FAQ_ITEMS: { q: Record<Lang, string>; a: Record<Lang, string> }[] = [
+  {
+    q: { uz: "Bepul tarifda nima bor?", oz: "Bepul tarifda nima bor?", ru: "Что входит в бесплатный тариф?" },
+    a: { uz: "Oyiga 5 ta hujjat yaratish, 8 tur shartnoma, Word va PDF yuklab olish — kredit karta talab qilinmaydi.", oz: "Oyiga 5 ta hujjat yaratish, 8 tur shartnoma, Word va PDF yuklab olish — kredit karta talab qilinmaydi.", ru: "5 документов в месяц, 8 типов договоров, скачивание Word и PDF — карта не требуется." },
+  },
+  {
+    q: { uz: "To'lov qanday amalga oshiriladi?", oz: "To'lov qanday amalga oshiriladi?", ru: "Как осуществляется оплата?" },
+    a: { uz: "To'lov Telegram orqali bank o'tkazma yoki Click/Payme orqali amalga oshiriladi. Aktivatsiya 24 soat ichida.", oz: "To'lov Telegram orqali bank o'tkazma yoki Click/Payme orqali amalga oshiriladi. Aktivatsiya 24 soat ichida.", ru: "Оплата через Telegram банковским переводом или через Click/Payme. Активация в течение 24 часов." },
+  },
+  {
+    q: { uz: "Ma'lumotlarim xavfsizmi?", oz: "Ma'lumotlarim xavfsizmi?", ru: "Безопасны ли мои данные?" },
+    a: { uz: "Ha. Har bir foydalanuvchi faqat o'z ma'lumotlarini ko'radi. Supabase Row Level Security (RLS) himoyasi bilan.", oz: "Ha. Har bir foydalanuvchi faqat o'z ma'lumotlarini ko'radi. Supabase Row Level Security (RLS) himoyasi bilan.", ru: "Да. Каждый пользователь видит только свои данные. Защита через Supabase Row Level Security (RLS)." },
+  },
+  {
+    q: { uz: "Bir nechta tashkilotni boshqarish mumkinmi?", oz: "Bir nechta tashkilotni boshqarish mumkinmi?", ru: "Можно ли управлять несколькими организациями?" },
+    a: { uz: "Ha, bitta hisobdan cheksiz tashkilot qo'sha olasiz. Har birining muhri, imzosi va rekvizitlari alohida saqlanadi.", oz: "Ha, bitta hisobdan cheksiz tashkilot qo'sha olasiz. Har birining muhri, imzosi va rekvizitlari alohida saqlanadi.", ru: "Да, с одного аккаунта можно добавить неограниченное количество организаций. У каждой свои реквизиты, печать и подпись." },
+  },
+  {
+    q: { uz: "Qaysi formatda yuklab olish mumkin?", oz: "Qaysi formatda yuklab olish mumkin?", ru: "В каком формате можно скачать?" },
+    a: { uz: "Word (.docx) va PDF formatlarida. Standart va AI Pro tariflarida muhr, imzo va rekvizitlar avtomatik kiritiladi.", oz: "Word (.docx) va PDF formatlarida. Standart va AI Pro tariflarida muhr, imzo va rekvizitlar avtomatik kiritiladi.", ru: "В форматах Word (.docx) и PDF. На тарифах Стандарт и AI Pro — печать, подпись и реквизиты вставляются автоматически." },
+  },
+  {
+    q: { uz: "AI qanday ishlaydi?", oz: "AI qanday ishlaydi?", ru: "Как работает AI?" },
+    a: { uz: "O'zbek tilida hujjatni tavsiflab bering — AI GPT-4 asosida professional hujjat yaratadi. Yurist AI esa shartnomangizni tahlil qilib, xatolar va risklar haqida xabar beradi.", oz: "O'zbek tilida hujjatni tavsiflab bering — AI GPT-4 asosida professional hujjat yaratadi.", ru: "Опишите документ на узбекском языке — AI на основе GPT-4 создаст профессиональный документ. Юрист AI анализирует договор и сообщает об ошибках и рисках." },
+  },
+]
+
+function FaqList({ lang }: { lang: Lang }) {
+  const [open, setOpen] = useState<number | null>(null)
+  return (
+    <div className="space-y-3">
+      {FAQ_ITEMS.map((item, i) => (
+        <div key={i} className="fadein border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-colors"
+          style={{ transitionDelay: `${i * 60}ms` }}>
+          <button onClick={() => setOpen(open === i ? null : i)}
+            className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left">
+            <span className="text-white font-semibold text-sm">{item.q[lang]}</span>
+            <svg className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-300 ${open === i ? 'rotate-180' : ''}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          {open === i && (
+            <div className="px-6 pb-5 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+              {item.a[lang]}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Hero typing words ─────────────────────────────────────────────────────────
 const HERO_WORDS: Record<Lang, string[]> = {
   uz: ['AI tayyor qiladi', '2 daqiqada tayyor', 'Word va PDF chiqaradi', 'professional hujjat'],
@@ -293,6 +347,8 @@ export default function Home() {
   const { theme, toggleTheme } = useTheme()
   const l = LP[lang]
   const isLight = theme === 'light'
+
+  const [mobileMenu, setMobileMenu] = useState(false)
 
   // Hero typing animation
   const [heroWord,    setHeroWord]    = useState('')
@@ -389,11 +445,46 @@ export default function Home() {
               {l.login}
             </Link>
             <Link href="/signup"
-              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 rounded-xl text-sm font-bold transition shadow-lg shadow-blue-900/40 flex items-center gap-2">
+              className="hidden sm:flex px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 rounded-xl text-sm font-bold transition shadow-lg shadow-blue-900/40 items-center gap-2">
               {l.cta} <ArrowRight className="w-4 h-4"/>
             </Link>
+            {/* Hamburger — only mobile */}
+            <button onClick={() => setMobileMenu(v => !v)}
+              className="sm:hidden w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition">
+              {mobileMenu
+                ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/></svg>
+              }
+            </button>
           </div>
         </div>
+
+        {/* Mobile dropdown */}
+        {mobileMenu && (
+          <div className="sm:hidden border-t border-white/5 bg-[#080810]/95 backdrop-blur-xl px-5 py-4 space-y-3">
+            <a href="#features" onClick={() => setMobileMenu(false)} className="block text-sm text-gray-300 hover:text-white py-2 border-b border-white/5">{l.nav[0]}</a>
+            <a href="#depts"    onClick={() => setMobileMenu(false)} className="block text-sm text-gray-300 hover:text-white py-2 border-b border-white/5">{l.nav[1]}</a>
+            <a href="#pricing"  onClick={() => setMobileMenu(false)} className="block text-sm text-gray-300 hover:text-white py-2 border-b border-white/5">{l.nav[2]}</a>
+            <div className="flex gap-2 pt-1">
+              {(Object.keys(LANG_LABELS) as Lang[]).map(lng => (
+                <button key={lng} onClick={() => { setLang(lng); setMobileMenu(false) }}
+                  className={`px-3 py-1.5 text-xs rounded-lg transition ${lang===lng ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400'}`}>
+                  {LANG_LABELS[lng]}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-1">
+              <Link href="/login" onClick={() => setMobileMenu(false)}
+                className="flex-1 text-center py-2.5 border border-white/10 text-sm text-gray-300 rounded-xl hover:bg-white/5 transition">
+                {l.login}
+              </Link>
+              <Link href="/signup" onClick={() => setMobileMenu(false)}
+                className="flex-1 text-center py-2.5 bg-blue-600 hover:bg-blue-500 text-sm font-bold text-white rounded-xl transition">
+                {l.cta}
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ── HERO ── */}
@@ -872,6 +963,96 @@ export default function Home() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ── COMPARISON TABLE ── */}
+      <section className="relative max-w-4xl mx-auto px-5 py-24">
+        <div className="text-center mb-14 fadein">
+          <div className="inline-flex items-center gap-2 text-blue-400 text-sm font-medium mb-4">
+            <Zap className="w-4 h-4"/>
+            {lang==='ru' ? 'СРАВНЕНИЕ' : lang==='oz' ? 'TAQQOSLASH' : 'TAQQOSLASH'}
+          </div>
+          <h2 className="text-4xl md:text-5xl font-black bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent mb-3">
+            {lang==='ru' ? 'Kabinetim.uz vs Вручную' : lang==='oz' ? "Kabinetim.uz vs Qo'lda" : "Kabinetim.uz vs Qo'lda"}
+          </h2>
+          <p className="text-gray-500 text-base">
+            {lang==='ru' ? 'Почему тысячи компаний переходят на автоматизацию' : lang==='oz' ? "Nima uchun minglab kompaniyalar avtomatizatsiyaga o'tmoqda" : "Nima uchun minglab kompaniyalar avtomatizatsiyaga o'tmoqda"}
+          </p>
+        </div>
+
+        <div className="fadein overflow-hidden rounded-2xl border border-white/10">
+          {/* Header row */}
+          <div className="grid grid-cols-3 bg-white/[0.05] border-b border-white/10">
+            <div className="px-5 py-4 text-sm font-semibold text-gray-400">
+              {lang==='ru' ? 'Критерий' : lang==='oz' ? "Mezon" : "Mezon"}
+            </div>
+            <div className="px-5 py-4 text-sm font-black text-blue-300 text-center border-x border-white/10 bg-blue-500/10">
+              Kabinetim.uz
+            </div>
+            <div className="px-5 py-4 text-sm font-semibold text-gray-500 text-center">
+              {lang==='ru' ? 'Word вручную' : lang==='oz' ? "Word qo'lda" : "Word qo'lda"}
+            </div>
+          </div>
+
+          {[
+            {
+              label: { uz: 'Hujjat yaratish vaqti', oz: 'Hujjat yaratish vaqti', ru: 'Время создания документа' },
+              us: '~2 daqiqa',   them: '~40 daqiqa',  usGood: true,
+            },
+            {
+              label: { uz: 'Xato ehtimoli', oz: 'Xato ehtimoli', ru: 'Вероятность ошибок' },
+              us: lang==='ru'?'Минимальная':'Minimal', them: lang==='ru'?'Высокая':'Yuqori', usGood: true,
+            },
+            {
+              label: { uz: 'Shablon soni', oz: 'Shablon soni', ru: 'Количество шаблонов' },
+              us: '30+', them: lang==='ru'?'1 (самодельный)':lang==='oz'?"1 (o'zi yasagan)":"1 (o'zi yasagan)", usGood: true,
+            },
+            {
+              label: { uz: 'Kontragent ma\'lumotlari', oz: "Kontragent ma'lumotlari", ru: 'Данные контрагента' },
+              us: lang==='ru'?'Автозаполнение':lang==='oz'?'Avtoto\'ldirish':"Avtoto'ldirish", them: lang==='ru'?'Вручную каждый раз':lang==='oz'?"Har safar qo'lda":"Har safar qo'lda", usGood: true,
+            },
+            {
+              label: { uz: 'Word + PDF eksport', oz: 'Word + PDF eksport', ru: 'Экспорт Word + PDF' },
+              us: '✓', them: lang==='ru'?'Только Word':'Faqat Word', usGood: true,
+            },
+            {
+              label: { uz: 'Ko\'p tashkilot', oz: "Ko'p tashkilot", ru: 'Несколько организаций' },
+              us: '✓', them: '✗', usGood: true,
+            },
+            {
+              label: { uz: 'AI tahlil', oz: 'AI tahlil', ru: 'AI анализ' },
+              us: '✓', them: '✗', usGood: true,
+            },
+            {
+              label: { uz: 'Narxi', oz: 'Narxi', ru: 'Стоимость' },
+              us: lang==='ru'?'Бесплатно / 50 000 сум':lang==='oz'?"Bepul / 50 000 so'm":"Bepul / 50 000 so'm",
+              them: lang==='ru'?'Время сотрудника':lang==='oz'?"Xodimning vaqti":"Xodimning vaqti", usGood: true,
+            },
+          ].map((row, i) => (
+            <div key={i} className={`grid grid-cols-3 border-b border-white/5 last:border-0 ${i % 2 === 0 ? '' : 'bg-white/[0.015]'}`}>
+              <div className="px-5 py-3.5 text-sm text-gray-400">{row.label[lang]}</div>
+              <div className="px-5 py-3.5 text-sm font-semibold text-emerald-400 text-center border-x border-white/5 bg-blue-500/[0.04]">
+                {row.us}
+              </div>
+              <div className="px-5 py-3.5 text-sm text-red-400/80 text-center">{row.them}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="relative max-w-3xl mx-auto px-5 pb-24">
+        <div className="text-center mb-14 fadein">
+          <div className="inline-flex items-center gap-2 text-purple-400 text-sm font-medium mb-4">
+            <MessageSquare className="w-4 h-4"/>
+            FAQ
+          </div>
+          <h2 className="text-4xl md:text-5xl font-black bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
+            {lang==='ru' ? 'Частые вопросы' : lang==='oz' ? "Ko'p so'raladigan savollar" : "Ko'p so'raladigan savollar"}
+          </h2>
+        </div>
+
+        <FaqList lang={lang} />
       </section>
 
       {/* ── CTA ── */}
