@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useDashboard } from '../context'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -542,6 +543,25 @@ export default function KadrlarPage() {
             {T({ uz: 'Shartnomalar, buyruqlar va boshqa kadrlar hujjatlarini avtomatik tayyorlang', oz: 'Шартномалар, буюрқлар ва бошқа кадрлар ҳужжатларини автоматик тайёрланг', ru: 'Автоматическая подготовка договоров, приказов и других кадровых документов' })}
           </p>
         </div>
+
+        {/* Bittada hammasi — featured banner */}
+        <Link href="/dashboard/kadrlar/ishga-qabul"
+          className="block bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 hover:border-blue-400/50 rounded-2xl p-4 transition group">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+              style={{ background: 'linear-gradient(135deg,#2563eb33,#7c3aed33)' }}>⚡</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-white font-bold text-sm">Ishga qabul — bittada hammasi</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-600/30 text-blue-300 font-bold">YANGI</span>
+              </div>
+              <p className="text-gray-400 text-xs mt-0.5">Ma'lumotni bir marta to'ldiring — buyruq, shartnoma, lavozim yo'riqnomasi va boshqalar avtomatik shakllanadi</p>
+            </div>
+            <svg className="w-5 h-5 text-blue-400 group-hover:translate-x-1 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </Link>
 
         {isFree && (
           <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-4 flex items-center justify-between gap-3">
