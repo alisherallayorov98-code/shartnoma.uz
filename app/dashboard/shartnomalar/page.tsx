@@ -140,6 +140,12 @@ export default function ShartnomalarPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [yearFilter, setYearFilter] = useState<string>('all')
 
+  // Pagination
+  const [perPage, setPerPage] = useState(20)
+  const [page, setPage] = useState(1)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setPage(1) }, [statusFilter, yearFilter, search])
+
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
@@ -478,6 +484,10 @@ export default function ShartnomalarPage() {
     return 0
   }), [filtered, sortCol, sortDir])
 
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage))
+  const safePage = Math.min(page, totalPages)
+  const paginated = sorted.slice((safePage - 1) * perPage, safePage * perPage)
+
   // ── Bulk selection ─────────────────────────────────────────────────────────
   function toggleSelect(id: string) {
     setSelectedIds(prev => {
@@ -675,7 +685,7 @@ export default function ShartnomalarPage() {
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((c) => (
+                {paginated.map((c) => (
                   <tr key={c.id} className={`border-b border-[#1E293B] hover:bg-[#1F2937] transition ${selectedIds.has(c.id) ? 'bg-blue-900/10' : ''}`}>
                     {/* Checkbox */}
                     <td className="px-3 py-3 w-8">
@@ -834,6 +844,37 @@ export default function ShartnomalarPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </div>
+
+      {/* ── Per-page + Pagination ── */}
+      <div className="mt-3 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <span>Qatorlar:</span>
+          {[20, 50, 100].map(n => (
+            <button key={n} onClick={() => { setPerPage(n); setPage(1) }}
+              className={`px-2.5 py-1 rounded-lg border transition ${perPage === n ? 'bg-blue-600 border-blue-600 text-white' : 'bg-[#1F2937] border-[#1E293B] text-gray-400 hover:text-white'}`}>
+              {n}
+            </button>
+          ))}
+          <span className="ml-1 text-gray-600">/ {sorted.length} ta</span>
+        </div>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1 text-xs">
+            <button disabled={safePage <= 1} onClick={() => setPage(p => p - 1)}
+              className="px-2.5 py-1 rounded-lg border border-[#1E293B] bg-[#1F2937] text-gray-400 hover:text-white disabled:opacity-30 transition">‹</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1).map((p, idx, arr) => (
+              <span key={p}>
+                {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-gray-600">…</span>}
+                <button onClick={() => setPage(p)}
+                  className={`px-2.5 py-1 rounded-lg border transition ${safePage === p ? 'bg-blue-600 border-blue-600 text-white' : 'border-[#1E293B] bg-[#1F2937] text-gray-400 hover:text-white'}`}>
+                  {p}
+                </button>
+              </span>
+            ))}
+            <button disabled={safePage >= totalPages} onClick={() => setPage(p => p + 1)}
+              className="px-2.5 py-1 rounded-lg border border-[#1E293B] bg-[#1F2937] text-gray-400 hover:text-white disabled:opacity-30 transition">›</button>
           </div>
         )}
       </div>

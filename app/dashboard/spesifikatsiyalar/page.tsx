@@ -23,6 +23,11 @@ export default function SpesifikatsiyalarPage() {
   const [viewSpec, setViewSpec] = useState<Specification | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
+  const [perPage, setPerPage] = useState(20)
+  const [specPage, setSpecPage] = useState(1)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setSpecPage(1) }, [search])
+
   useEffect(() => {
     if (activeOrg) loadSpecs(activeOrg.id)
   }, [activeOrg?.id])
@@ -57,6 +62,10 @@ export default function SpesifikatsiyalarPage() {
       (s.contracts?.counterparties?.name || '').toLowerCase().includes(q)
     )
   }, [specs, search])
+
+  const specTotalPages = Math.max(1, Math.ceil(filteredSpecs.length / perPage))
+  const safeSpecPage = Math.min(specPage, specTotalPages)
+  const paginatedSpecs = filteredSpecs.slice((safeSpecPage - 1) * perPage, safeSpecPage * perPage)
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -124,7 +133,7 @@ export default function SpesifikatsiyalarPage() {
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-gray-500 text-sm">Qidiruv bo'yicha natija topilmadi</td>
                 </tr>
-              ) : filteredSpecs.map(spec => {
+              ) : paginatedSpecs.map(spec => {
                 const total = spec.items.reduce((s, it) => s + (it.summa || 0), 0)
                 const contract = spec.contracts
                 return (
@@ -172,6 +181,37 @@ export default function SpesifikatsiyalarPage() {
               })}
             </tbody>
           </table>
+          <div className="px-4 py-3 border-t border-[#1E293B] flex items-center justify-between flex-wrap gap-3">
+            <span className="text-xs text-gray-500">{filteredSpecs.length} ta spesifikatsiya</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <span>Qatorlar:</span>
+                {[20, 50, 100].map(n => (
+                  <button key={n} onClick={() => { setPerPage(n); setSpecPage(1) }}
+                    className={`px-2 py-0.5 rounded border transition ${perPage === n ? 'bg-blue-600 border-blue-600 text-white' : 'border-[#1E293B] bg-[#0F172A] text-gray-400 hover:text-white'}`}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+              {specTotalPages > 1 && (
+                <div className="flex items-center gap-1 text-xs">
+                  <button disabled={safeSpecPage <= 1} onClick={() => setSpecPage(p => p - 1)}
+                    className="px-2 py-0.5 rounded border border-[#1E293B] bg-[#0F172A] text-gray-400 hover:text-white disabled:opacity-30 transition">‹</button>
+                  {Array.from({ length: specTotalPages }, (_, i) => i + 1).filter(p => p === 1 || p === specTotalPages || Math.abs(p - safeSpecPage) <= 1).map((p, idx, arr) => (
+                    <span key={p}>
+                      {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-gray-600">…</span>}
+                      <button onClick={() => setSpecPage(p)}
+                        className={`px-2 py-0.5 rounded border transition ${safeSpecPage === p ? 'bg-blue-600 border-blue-600 text-white' : 'border-[#1E293B] bg-[#0F172A] text-gray-400 hover:text-white'}`}>
+                        {p}
+                      </button>
+                    </span>
+                  ))}
+                  <button disabled={safeSpecPage >= specTotalPages} onClick={() => setSpecPage(p => p + 1)}
+                    className="px-2 py-0.5 rounded border border-[#1E293B] bg-[#0F172A] text-gray-400 hover:text-white disabled:opacity-30 transition">›</button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

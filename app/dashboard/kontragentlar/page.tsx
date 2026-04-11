@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -74,6 +74,11 @@ export default function KontragentlarPage() {
   const [stirLoading, setStirLoading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const [perPage, setPerPage] = useState(20)
+  const [cpPage, setCpPage] = useState(1)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setCpPage(1) }, [cpSearch])
+
   // ── STR Bulk lookup ────────────────────────────────────────────────────────
   type StirResult = { inn: string; status: 'pending' | 'loading' | 'found' | 'error' | 'duplicate'; name?: string; data?: Record<string, string> }
   const [stirBulkModal, setStirBulkModal] = useState(false)
@@ -87,6 +92,10 @@ export default function KontragentlarPage() {
     (cp.inn || '').includes(cpSearch) ||
     (cp.director_name || '').toLowerCase().includes(cpSearch.toLowerCase())
   )
+
+  const cpTotalPages = Math.max(1, Math.ceil(filteredCps.length / perPage))
+  const safeCpPage = Math.min(cpPage, cpTotalPages)
+  const paginatedCps = filteredCps.slice((safeCpPage - 1) * perPage, safeCpPage * perPage)
 
   const cpContractCount = useMemo(() => {
     const map = new Map<string, number>()
@@ -390,13 +399,13 @@ export default function KontragentlarPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredCps.map((cp, idx) => {
+              {paginatedCps.map((cp, idx) => {
                 const cpContracts = cpContractCount.get(cp.id) ?? 0
                 return (
                   <tr key={cp.id}
                     className="border-t border-[#1E293B] hover:bg-[#1F2937] cursor-pointer transition group"
                     onClick={() => setCpDetail(cp)}>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{idx + 1}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{(safeCpPage - 1) * perPage + idx + 1}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-orange-900/60 rounded-lg flex items-center justify-center text-orange-300 font-bold text-sm flex-shrink-0">
@@ -452,8 +461,36 @@ export default function KontragentlarPage() {
               })}
             </tbody>
           </table>
-          <div className="px-4 py-3 border-t border-[#1E293B] text-xs text-gray-500">
-            {T(t.cpTab.total)}: {filteredCps.length} {T(t.cpTab.contacts)}
+          <div className="px-4 py-3 border-t border-[#1E293B] flex items-center justify-between flex-wrap gap-3">
+            <span className="text-xs text-gray-500">{T(t.cpTab.total)}: {filteredCps.length} {T(t.cpTab.contacts)}</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <span>Qatorlar:</span>
+                {[20, 50, 100].map(n => (
+                  <button key={n} onClick={() => { setPerPage(n); setCpPage(1) }}
+                    className={`px-2 py-0.5 rounded border transition ${perPage === n ? 'bg-blue-600 border-blue-600 text-white' : 'border-[#1E293B] bg-[#0F172A] text-gray-400 hover:text-white'}`}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+              {cpTotalPages > 1 && (
+                <div className="flex items-center gap-1 text-xs">
+                  <button disabled={safeCpPage <= 1} onClick={() => setCpPage(p => p - 1)}
+                    className="px-2 py-0.5 rounded border border-[#1E293B] bg-[#0F172A] text-gray-400 hover:text-white disabled:opacity-30 transition">‹</button>
+                  {Array.from({ length: cpTotalPages }, (_, i) => i + 1).filter(p => p === 1 || p === cpTotalPages || Math.abs(p - safeCpPage) <= 1).map((p, idx, arr) => (
+                    <span key={p}>
+                      {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-gray-600">…</span>}
+                      <button onClick={() => setCpPage(p)}
+                        className={`px-2 py-0.5 rounded border transition ${safeCpPage === p ? 'bg-blue-600 border-blue-600 text-white' : 'border-[#1E293B] bg-[#0F172A] text-gray-400 hover:text-white'}`}>
+                        {p}
+                      </button>
+                    </span>
+                  ))}
+                  <button disabled={safeCpPage >= cpTotalPages} onClick={() => setCpPage(p => p + 1)}
+                    className="px-2 py-0.5 rounded border border-[#1E293B] bg-[#0F172A] text-gray-400 hover:text-white disabled:opacity-30 transition">›</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
