@@ -14,7 +14,7 @@ import { formatPhoneUz, filterDigits } from '@/lib/inputMasks'
 import CpDetailModal from './_components/CpDetailModal'
 import { logAudit } from '@/lib/audit'
 
-const emptyCp = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', phone: '', qqsreg: '', oked: '', stir_status: '', stir_checked_at: '' }
+const emptyCp = { name: '', inn: '', director_name: '', bank_name: '', bank_account: '', mfo: '', address: '', phone: '', qqsreg: '', oked: '', stir_status: '', stir_checked_at: null as string | null }
 
 function cpCompleteness(cp: { name: string; inn: string; director_name: string; bank_name: string; bank_account: string; mfo: string; address: string; phone?: string; qqsreg?: string }) {
   const checks = [cp.name, cp.inn, cp.director_name, cp.bank_name, cp.bank_account, cp.mfo, cp.address, cp.phone, cp.qqsreg]
@@ -450,7 +450,7 @@ export default function KontragentlarPage() {
                         <button onClick={() => {
                           setEditingCp(cp)
                           const bankName = (!cp.bank_name && cp.mfo?.length === 5) ? (getBankByMfo(cp.mfo) || '') : (cp.bank_name || '')
-                          setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: bankName, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '', oked: cp.oked || '', stir_status: cp.stir_status || '', stir_checked_at: cp.stir_checked_at || '' })
+                          setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: bankName, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '', oked: cp.oked || '', stir_status: cp.stir_status || '', stir_checked_at: cp.stir_checked_at || null })
                           setModal(true)
                         }} className="p-1.5 bg-[#1F2937] hover:bg-blue-700 rounded text-xs text-gray-300" title="Tahrirlash">✎</button>
                         <button onClick={() => deleteCp(cp.id)}
@@ -504,7 +504,7 @@ export default function KontragentlarPage() {
           onEdit={cp => {
             setEditingCp(cp)
             const bankName = (!cp.bank_name && cp.mfo?.length === 5) ? (getBankByMfo(cp.mfo) || '') : (cp.bank_name || '')
-            setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: bankName, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '', oked: cp.oked || '', stir_status: cp.stir_status || '', stir_checked_at: cp.stir_checked_at || '' })
+            setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: bankName, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '', oked: cp.oked || '', stir_status: cp.stir_status || '', stir_checked_at: cp.stir_checked_at || null })
             setCpDetail(null); setModal(true)
           }}
           onDelete={id => { setCpDetail(null); deleteCp(id) }}
