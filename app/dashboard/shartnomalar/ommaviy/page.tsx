@@ -20,15 +20,15 @@ function generateContractNumbers(base: string, count: number): string[] {
   if (count === 0) return []
   const b = base.trim()
 
-  // 1. Toza son: 50 → 50, 51, 52
+  // 1. Toza son: 50 → 50, 51, 52, 53
   if (/^\d+$/.test(b)) {
     const start = parseInt(b)
     return Array.from({ length: count }, (_, i) => String(start + i))
   }
 
-  // 2. Son suffiks: 2026/001 → 2026/002, 10/04-1 → 10/04-2
+  // 2. Nol bilan boshlanadigan suffiks: 2026/001 → 2026/001, 2026/002, 2026/003
   const padded = b.match(/^(.*[\/\-])(\d+)$/)
-  if (padded) {
+  if (padded && padded[2].startsWith('0')) {
     const prefix = padded[1], num = padded[2]
     const start = parseInt(num), pad = num.length
     return Array.from({ length: count }, (_, i) =>
@@ -36,8 +36,8 @@ function generateContractNumbers(base: string, count: number): string[] {
     )
   }
 
-  // 3. Boshqa holat: base-1, base-2, base-3
-  return Array.from({ length: count }, (_, i) => `${b}-${i + 1}`)
+  // 3. Boshqa holat: 01/10 → 01/10, 01/10-1, 01/10-2, 01/10-3
+  return [b, ...Array.from({ length: count - 1 }, (_, i) => `${b}-${i + 1}`)]
 }
 
 // ─── Tur ranglari ─────────────────────────────────────────────────────────────
@@ -77,8 +77,8 @@ export default function OmmaviyPage() {
   const router = useRouter()
 
   const {
-    orgs, cps, activeOrg, subscription, bankAccounts,
-    canCreateContract, openUpgradeModal, reloadContracts, userId,
+    orgs, cps, activeOrg, subscription, contracts, bankAccounts,
+    canCreateContract, openUpgradeModal, reloadContracts, userId, isSubValid,
   } = useDashboard()
 
   const [step, setStep] = useState(1)
@@ -292,6 +292,25 @@ export default function OmmaviyPage() {
   // ── Batch yaratish ────────────────────────────────────────────────────────
 
   async function handleCreate() {
+    // Bepul rejada qolgan slotni tekshirish
+    if (!isSubValid) {
+      const FREE_LIMIT = 5
+      const used = subscription
+        ? (subscription.contracts_used || 0)
+        : contracts.filter(c => c.organization_id === activeOrg?.id).length
+      const remaining = Math.max(0, FREE_LIMIT - used)
+      if (selectedCps.length > remaining) {
+        toast(
+          remaining === 0
+            ? `Bepul reja limiti tugagan (${FREE_LIMIT} ta). Tarifni yangilang.`
+            : `Bepul rejada faqat ${remaining} ta slot qolgan, siz ${selectedCps.length} ta yaratmoqchisiz.`,
+          'error'
+        )
+        openUpgradeModal()
+        return
+      }
+    }
+
     setCreating(true)
     setProgress(0)
     setCreatedCount(0)
