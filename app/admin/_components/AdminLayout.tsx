@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 
 const NAV = [
+  { key: 'ai',            icon: '🤖', label: 'AI Tahlil',   highlight: true },
   { key: 'clients',       icon: '👥', label: 'Mijozlar' },
   { key: 'payments',      icon: '💳', label: "To'lovlar" },
   { key: 'demo',          icon: '🎯', label: 'Demo' },
@@ -16,6 +17,8 @@ const NAV = [
   { key: 'global_db',     icon: '🗄️', label: 'Global Baza' },
   { key: 'announcements', icon: '🔔', label: 'Yangiliklar' },
 ]
+
+interface NavItem { key: string; icon: string; label: string; highlight?: boolean }
 
 interface Props {
   tab: string
@@ -95,17 +98,24 @@ export default function AdminLayout({ tab, setTab, onTabChange, darkMode, toggle
         {/* Sidebar */}
         <aside className={`${sidebar} border-r flex-shrink-0 transition-all duration-200 ${collapsed ? 'w-14' : 'w-52'} flex flex-col`}>
           <nav className="flex-1 py-3 space-y-0.5 px-2 overflow-y-auto">
-            {NAV.map(item => {
+            {(NAV as NavItem[]).map(item => {
               const count = counts[item.key]
+              const isAi = item.highlight
+              const isActive = tab === item.key
               return (
                 <button key={item.key} onClick={() => handleTab(item.key)}
-                  className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg border text-sm transition font-medium ${tab === item.key ? activeNav : idleNav}`}>
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg border text-sm transition font-medium ${
+                    isActive
+                      ? isAi ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/50' : activeNav
+                      : isAi ? (darkMode ? 'text-indigo-400 hover:bg-indigo-900/20 border-indigo-900/30 hover:border-indigo-500/40' : 'text-indigo-600 hover:bg-indigo-50 border-transparent') : idleNav
+                  }`}>
                   <span className="text-base flex-shrink-0">{item.icon}</span>
                   {!collapsed && (
                     <>
                       <span className="flex-1 text-left truncate">{item.label}</span>
-                      {count !== undefined && count > 0 && (
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === item.key ? 'bg-blue-500/30 text-blue-300' : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
+                      {isAi && !isActive && <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-indigo-500/20 text-indigo-400">NEW</span>}
+                      {count !== undefined && count > 0 && !isAi && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-blue-500/30 text-blue-300' : darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600'}`}>
                           {count}
                         </span>
                       )}
