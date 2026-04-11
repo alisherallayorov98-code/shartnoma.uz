@@ -427,7 +427,6 @@ export default function YangiShartnoma() {
   // ── Validation ────────────────────────────────────────────────────────────────
 
   function validateStep1(): boolean {
-    if (!form.contract_number.trim()) { toast("Shartnoma raqami kiritilishi shart", 'error'); return false }
     if (!form.organization_id) { toast("Tashkilotni tanlang", 'error'); return false }
     if (!form.counterparty_id) { toast("Kontragentni tanlang", 'error'); return false }
     return true
@@ -443,7 +442,6 @@ export default function YangiShartnoma() {
 
   async function handleSave() {
     if (!form.organization_id) { toast(T(t.msg.selectOrg), 'error'); return }
-    if (!form.contract_number.trim()) { toast("Shartnoma raqami kiritilishi shart", 'error'); return }
     setSaving(true)
 
     const org = mergedOrg
