@@ -225,7 +225,7 @@ export default function AdminPage() {
     e.preventDefault()
     if (!editClient) return
     setSaving('edit')
-    await apiPost({ action: 'upsert_sub', org_id: editClient.id, user_id: editClient.user_id, sub_id: editClient.sub_id, plan: editForm.plan, period_end: new Date(editForm.period_end).toISOString(), is_active: editForm.is_active })
+    await apiPost({ action: 'upsert_sub', org_id: editClient.id, user_id: editClient.user_id, sub_id: editClient.sub_id, plan: editForm.plan, period_end: editForm.period_end ? new Date(editForm.period_end).toISOString() : null, is_active: editForm.is_active })
     notify(`✓ ${editClient.name} tarifi yangilandi`)
     setSaving(''); setEditClient(null); loadAll()
   }
