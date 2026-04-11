@@ -36,7 +36,7 @@ export default function AdminPage() {
   const router = useRouter()
   const tokenRef = useRef<string>('')
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'clients'|'payments'|'demo'|'new'|'feedback'|'templates'|'content'|'contracts'|'settings'|'global_db'>('clients')
+  const [tab, setTab] = useState<'clients'|'payments'|'demo'|'new'|'feedback'|'templates'|'content'|'contracts'|'settings'|'global_db'|'announcements'>('clients')
   const [clients, setClients] = useState<Client[]>([])
   const [demos, setDemos] = useState<DemoRow[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
@@ -106,6 +106,13 @@ export default function AdminPage() {
   const [newContentForm, setNewContentForm] = useState({ key:'', label:'', type:'text', value:'' })
   // Content text edit drafts (key -> draft value)
   const [contentDrafts, setContentDrafts] = useState<Record<string,string>>({})
+
+  // Announcements
+  type Ann = { id:string; title:string; body:string; type:string; is_published:boolean; link_url:string|null; link_text:string|null; created_at:string }
+  const [announcements, setAnnouncements] = useState<Ann[]>([])
+  const [annForm, setAnnForm] = useState({ title:'', body:'', type:'yangilik', link_url:'', link_text:'' })
+  const [annSaving, setAnnSaving] = useState(false)
+  const [annLoaded, setAnnLoaded] = useState(false)
 
   useEffect(() => { checkAdmin() }, [])
 
@@ -191,6 +198,39 @@ export default function AdminPage() {
   async function loadSettings() {
     const data = await apiPost({ action: 'get_settings' })
     if (data?.settings) setSettings(data.settings)
+  }
+
+  async function loadAnnouncements() {
+    const { data } = await supabase.from('announcements').select('*').order('created_at', { ascending: false })
+    if (data) setAnnouncements(data)
+    setAnnLoaded(true)
+  }
+
+  async function saveAnnouncement() {
+    if (!annForm.title.trim() || !annForm.body.trim()) { setMsg({ text: 'Sarlavha va matn kiritilishi shart', ok: false }); return }
+    setAnnSaving(true)
+    const { error } = await supabase.from('announcements').insert({
+      title: annForm.title.trim(), body: annForm.body.trim(),
+      type: annForm.type,
+      link_url: annForm.link_url.trim() || null,
+      link_text: annForm.link_text.trim() || null,
+      is_published: false,
+    })
+    setAnnSaving(false)
+    if (error) { setMsg({ text: 'Xato: ' + error.message, ok: false }); return }
+    setAnnForm({ title:'', body:'', type:'yangilik', link_url:'', link_text:'' })
+    setMsg({ text: "Yangilik qo'shildi (hali nashr etilmagan)", ok: true })
+    loadAnnouncements()
+  }
+
+  async function togglePublish(id: string, current: boolean) {
+    await supabase.from('announcements').update({ is_published: !current }).eq('id', id)
+    loadAnnouncements()
+  }
+
+  async function deleteAnnouncement(id: string) {
+    await supabase.from('announcements').delete().eq('id', id)
+    loadAnnouncements()
   }
 
   async function loadGlobalCompanies() {
@@ -594,6 +634,7 @@ export default function AdminPage() {
                 { key:'content', label:'Kontent' },
                 { key:'settings', label:'Sozlamalar' },
                 { key:'global_db', label:'Global Baza' },
+                { key:'announcements', label:'Yangiliklar' },
               ].map(t=>(
                 <button key={t.key} onClick={()=>{
                   setTab(t.key as any)
@@ -602,6 +643,7 @@ export default function AdminPage() {
                   if(t.key==='contracts' && allContracts.length===0) loadAllContracts()
                   if(t.key==='settings' && Object.keys(settings).length===0) loadSettings()
                   if(t.key==='global_db' && !globalLoaded) loadGlobalCompanies()
+                  if(t.key==='announcements' && !annLoaded) loadAnnouncements()
                 }}
                   className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${tab===t.key?'border-blue-500 text-white':'border-transparent text-gray-500 hover:text-white'}`}>
                   {t.label}
@@ -1338,6 +1380,78 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* ── ANNOUNCEMENTS TAB ── */}
+      {tab === 'announcements' && (
+        <div className="space-y-6">
+          {/* Yangi qo'shish */}
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+            <h3 className="font-semibold text-white">Yangi e'lon qo'shish</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={lbl}>Sarlavha *</label>
+                <input value={annForm.title} onChange={e=>setAnnForm(p=>({...p,title:e.target.value}))} className={inp} placeholder="Yangilik sarlavhasi"/>
+              </div>
+              <div>
+                <label className={lbl}>Turi</label>
+                <select value={annForm.type} onChange={e=>setAnnForm(p=>({...p,type:e.target.value}))} className={inp}>
+                  <option value="yangilik">📰 Yangilik</option>
+                  <option value="yangilanish">🔄 Yangilanish</option>
+                  <option value="ilova">🚀 Yangi ilova</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className={lbl}>Matn *</label>
+              <textarea value={annForm.body} onChange={e=>setAnnForm(p=>({...p,body:e.target.value}))} className={inp} rows={4} placeholder="Batafsil ma'lumot..."/>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={lbl}>Havola URL (ixtiyoriy)</label>
+                <input value={annForm.link_url} onChange={e=>setAnnForm(p=>({...p,link_url:e.target.value}))} className={inp} placeholder="https://..."/>
+              </div>
+              <div>
+                <label className={lbl}>Havola matni</label>
+                <input value={annForm.link_text} onChange={e=>setAnnForm(p=>({...p,link_text:e.target.value}))} className={inp} placeholder="Ko'proq o'qish"/>
+              </div>
+            </div>
+            <button onClick={saveAnnouncement} disabled={annSaving}
+              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition">
+              {annSaving ? 'Saqlanmoqda...' : "Qo'shish (nashr etilmagan)"}
+            </button>
+          </div>
+
+          {/* Ro'yxat */}
+          <div className="space-y-3">
+            {announcements.length === 0 && <p className="text-gray-500 text-sm">Hali e'lon yo'q</p>}
+            {announcements.map(a => (
+              <div key={a.id} className={`bg-gray-900 border rounded-xl p-4 flex items-start gap-4 ${a.is_published ? 'border-emerald-700/40' : 'border-gray-800'}`}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-xs text-gray-400">{a.type}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${a.is_published ? 'bg-emerald-900/40 text-emerald-300' : 'bg-gray-800 text-gray-400'}`}>
+                      {a.is_published ? '✓ Nashr etilgan' : '○ Nashr etilmagan'}
+                    </span>
+                    <span className="text-xs text-gray-600 ml-auto">{new Date(a.created_at).toLocaleDateString('uz-UZ')}</span>
+                  </div>
+                  <p className="text-sm font-semibold text-white">{a.title}</p>
+                  <p className="text-xs text-gray-400 mt-1 line-clamp-2">{a.body}</p>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button onClick={() => togglePublish(a.id, a.is_published)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${a.is_published ? 'bg-gray-800 text-gray-300 hover:bg-red-900/40 hover:text-red-300' : 'bg-emerald-900/40 text-emerald-300 hover:bg-emerald-900/70'}`}>
+                    {a.is_published ? 'Yashirish' : 'Nashr etish'}
+                  </button>
+                  <button onClick={() => deleteAnnouncement(a.id)}
+                    className="px-3 py-1.5 rounded-lg text-xs text-red-400 hover:bg-red-900/30 transition">
+                    O'chirish
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── EDIT SUB MODAL ── */}
       {editClient && (

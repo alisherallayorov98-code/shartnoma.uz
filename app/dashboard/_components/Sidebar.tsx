@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { key: 'buxgalter',       href: '/dashboard/buxgalter',     icon: '💼', label: t.nav.buxgalter },
   { key: 'kotiba',          href: '/dashboard/kotiba',        icon: '🗂️', label: t.nav.kotiba },
   { key: 'seif',            href: '/dashboard/seif',          icon: '🔒', label: t.nav.seif },
+  { key: 'yangiliklar',     href: '/dashboard/yangiliklar',   icon: '🔔', label: { uz: 'Yangiliklar', oz: 'Янгиликлар', ru: 'Новости' } },
   { key: 'profile',         href: '/dashboard/profil',        icon: '👤', label: t.nav.profile },
 ]
 

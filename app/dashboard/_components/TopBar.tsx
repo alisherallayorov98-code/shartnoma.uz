@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useDashboard } from '../context'
 import { useLang } from '@/lib/LanguageContext'
 import { LANG_LABELS, type Lang } from '@/lib/i18n'
@@ -15,10 +16,25 @@ export function TopBar() {
   const { lang, setLang } = useLang()
   const { theme, toggleTheme } = useTheme()
   const { toast } = useToast()
+  const router = useRouter()
   const [langOpen, setLangOpen] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [fbForm, setFbForm] = useState({ category: 'taklif', title: '', message: '' })
   const [fbSaving, setFbSaving] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (!userId) return
+    async function checkUnread() {
+      const [{ data: anns }, { data: reads }] = await Promise.all([
+        supabase.from('announcements').select('id').eq('is_published', true),
+        supabase.from('announcement_reads').select('announcement_id').eq('user_id', userId!),
+      ])
+      const readSet = new Set((reads || []).map(r => r.announcement_id))
+      setUnreadCount((anns || []).filter(a => !readSet.has(a.id)).length)
+    }
+    checkUnread()
+  }, [userId])
 
   async function submitFeedback(e: React.FormEvent) {
     e.preventDefault()
@@ -69,6 +85,19 @@ export function TopBar() {
           </div>
         )}
       </div>
+
+      {/* Notification bell */}
+      <button onClick={() => { router.push('/dashboard/yangiliklar'); setUnreadCount(0) }}
+        title="Yangiliklar" className="relative w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </button>
 
       {/* Feedback button */}
       <button onClick={() => setFeedbackOpen(true)} title="Taklif / Xato bildirish"
