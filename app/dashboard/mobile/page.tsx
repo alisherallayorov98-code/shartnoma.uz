@@ -62,6 +62,7 @@ export default function MobilePage() {
   const [cpQuery, setCpQuery]               = useState('')
   const [selectedCp, setSelectedCp]         = useState<Counterparty | null>(null)
   const [cpOpen, setCpOpen]                 = useState(false)
+  const [cpStirLoading, setCpStirLoading]   = useState(false)
   const [contractType, setContractType]     = useState('oldi_sotdi')
   const [amount, setAmount]                 = useState('')
   const [contractNumber, setContractNumber] = useState(() => autoNum())
@@ -92,6 +93,41 @@ export default function MobilePage() {
     const q = cpQuery.toLowerCase()
     return cp.name.toLowerCase().includes(q) || cp.inn?.includes(q)
   })
+
+  // ── STIR auto-lookup ─────────────────────────────────────────────────────
+  async function handleStirLookup(val: string) {
+    const digits = val.replace(/\D/g, '')
+    if (digits.length !== 9) return
+    const existing = cps.find(c => (c.inn || '').replace(/\D/g, '') === digits)
+    if (existing) { setSelectedCp(existing); setCpOpen(false); setCpQuery(existing.name); return }
+    setCpStirLoading(true)
+    try {
+      const res = await fetch(`/api/company-lookup?inn=${digits}`)
+      const apiData = await res.json()
+      if (!res.ok) { toast(apiData.error || "STIR bo'yicha ma'lumot topilmadi", 'error'); return }
+      const co = apiData.company
+      const { data: { session } } = await supabase.auth.getSession()
+      const { data: saved, error: saveErr } = await supabase.from('counterparties').insert({
+        name: co.name, inn: digits,
+        director_name: co.director || '', address: co.address || '',
+        phone: co.phone || '', bank_name: co.bank_name || '',
+        bank_account: co.account || '', mfo: co.mfo || '',
+        user_id: session!.user.id,
+      }).select().single()
+      if (saveErr) {
+        if (saveErr.code === '23505') {
+          const { data: found } = await supabase.from('counterparties').select('*').eq('inn', digits).maybeSingle()
+          if (found) { setSelectedCp(found as Counterparty); setCpOpen(false); setCpQuery((found as Counterparty).name); toast(`Bazadan topildi: ${(found as Counterparty).name}`, 'success'); return }
+        }
+        toast('Saqlashda xato: ' + saveErr.message, 'error'); return
+      }
+      setSelectedCp(saved as Counterparty)
+      setCpOpen(false)
+      setCpQuery((saved as Counterparty).name)
+      toast(`${apiData.source === 'global_db' ? 'Bazadan topildi' : 'Soliq API dan olindi'}: ${co.name}`, 'success')
+    } catch { toast("So'rovda xatolik", 'error') }
+    finally { setCpStirLoading(false) }
+  }
 
   // ── Save ──────────────────────────────────────────────────────────────────
   async function handleCreate() {
@@ -352,12 +388,26 @@ export default function MobilePage() {
                     type="text"
                     placeholder="Kontragent qidirish..."
                     value={cpQuery}
-                    onChange={e => { setCpQuery(e.target.value); setCpOpen(true) }}
+                    onChange={e => {
+                      const val = e.target.value
+                      setCpQuery(val)
+                      setCpOpen(true)
+                      if (val.replace(/\D/g, '').length === 9) handleStirLookup(val)
+                    }}
                     onFocus={() => setCpOpen(true)}
-                    className="w-full pl-10 pr-4 py-3.5 bg-[#111827] border border-[#1E293B] rounded-2xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-600"
+                    placeholder="STIR (9 raqam) yoki tashkilot nomi..."
+                    className={`w-full pl-10 pr-4 py-3.5 bg-[#111827] border border-[#1E293B] rounded-2xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-600 ${cpStirLoading ? 'opacity-60' : ''}`}
                   />
+                  {cpStirLoading && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <svg className="w-4 h-4 text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      </svg>
+                    </div>
+                  )}
                 </div>
-                {cpOpen && (
+                {cpOpen && !cpStirLoading && (
                   <div className="absolute z-30 mt-1 w-full bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden shadow-2xl max-h-52 overflow-y-auto">
                     {filteredCps.length === 0 ? (
                       <div className="px-4 py-3 text-gray-500 text-sm">Topilmadi</div>

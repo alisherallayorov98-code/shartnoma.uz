@@ -326,8 +326,8 @@ export default function YangiShartnoma() {
 
   // ── Enter: STIR qidirish → API → saqlash ─────────────────────────────────────
 
-  async function handleCpEnter() {
-    const q = cpSearch.trim()
+  async function handleCpEnter(overrideQuery?: string) {
+    const q = (overrideQuery ?? cpSearch).trim()
     if (!q) return
     const digits = q.replace(/\D/g, '')
 
@@ -782,13 +782,14 @@ export default function YangiShartnoma() {
                           setCpSearch(val)
                           setForm(f => ({ ...f, counterparty_id: '' }))
                           setCpDropOpen(!!val.trim())
+                          if (val.replace(/\D/g, '').length === 9) handleCpEnter(val)
                         }}
                         onKeyDown={e => {
                           if (e.key === 'Enter') { e.preventDefault(); handleCpEnter() }
                           if (e.key === 'Escape') setCpDropOpen(false)
                         }}
                         onFocus={() => { if (!form.counterparty_id && cpSearch.trim()) setCpDropOpen(true) }}
-                        placeholder="STIR yoki nomi — Enter bosing..."
+                        placeholder="STIR (9 raqam) yoki nomi..."
                         disabled={cpStirLoading}
                         className={`w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-600 placeholder-gray-500 transition ${cpStirLoading ? 'opacity-60 cursor-wait' : ''}`}
                       />
@@ -1554,7 +1555,12 @@ export default function YangiShartnoma() {
                   className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm py-2.5 rounded-lg font-semibold transition">
                   Saqlash
                 </button>
-                <button type="button" onClick={() => setCityModalOpen(false)}
+                <button type="button" onClick={() => {
+                    const city = cityInput.trim() || orgCityDefault(activeOrg)
+                    localStorage.setItem(`contract_city_${activeOrg?.id}`, city)
+                    setForm(f => ({ ...f, city }))
+                    setCityModalOpen(false)
+                  }}
                   className="px-4 bg-[#1F2937] hover:bg-[#2D3748] border border-[#1E293B] text-gray-300 text-sm py-2.5 rounded-lg transition">
                   O'tkazib yuborish
                 </button>
