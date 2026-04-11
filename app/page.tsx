@@ -656,9 +656,13 @@ export default function Home() {
               <p className="text-gray-300 text-sm leading-relaxed mb-6">&ldquo;{t.text[lang]}&rdquo;</p>
               {/* Author */}
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full ${t.color} flex items-center justify-center text-xs font-bold text-white flex-shrink-0`}>
-                  {t.avatar}
-                </div>
+                <Image
+                  src={`/testimonial-${i + 1}.png`}
+                  alt={t.name}
+                  width={44}
+                  height={44}
+                  className="w-11 h-11 rounded-full object-cover flex-shrink-0 ring-2 ring-white/10"
+                />
                 <div>
                   <div className="text-white font-semibold text-sm">{t.name}</div>
                   <div className="text-gray-500 text-xs">{t.role[lang]} · {t.company}</div>
