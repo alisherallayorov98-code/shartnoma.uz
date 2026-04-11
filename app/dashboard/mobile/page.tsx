@@ -14,22 +14,25 @@ import { generateContractPDF } from '@/lib/export/contractPdf'
 import { shareByTelegram } from '../shartnomalar/services/contractService'
 import { logAudit } from '@/lib/audit'
 import { useToast } from '@/lib/toast'
+import { useLang } from '@/lib/LanguageContext'
+import { t, tr, type Lang } from '@/lib/i18n'
+import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 
 // ─── Contract type config ────────────────────────────────────────────────────
 
-const CONTRACT_TYPES = [
-  { key: 'oldi_sotdi', label: "Oldi-sotdi",        icon: '🛒', color: '#3B82F6' },
-  { key: 'xizmat',     label: "Xizmat",             icon: '🔧', color: '#10B981' },
-  { key: 'ijara',      label: "Ijara",              icon: '🏠', color: '#F59E0B' },
-  { key: 'pudrat',     label: "Pudrat",             icon: '🏗️', color: '#F97316' },
-  { key: 'moliyaviy',  label: "Moliyaviy",          icon: '💰', color: '#8B5CF6' },
-  { key: 'daval',      label: "Daval",              icon: '⚙️', color: '#06B6D4' },
-  { key: 'xalqaro',    label: "Xalqaro",            icon: '🌐', color: '#6366F1' },
-  { key: 'agentlik',   label: "Agentlik",           icon: '🤝', color: '#EC4899' },
-  { key: 'transport',  label: "Transport",          icon: '🚛', color: '#14B8A6' },
-  { key: 'lizing',     label: "Lizing",             icon: '📦', color: '#64748B' },
-  { key: 'qoshimcha',  label: "Qo'shimcha",         icon: '➕', color: '#6B7280' },
-  { key: 'boshqa',     label: "Boshqa",             icon: '📋', color: '#4B5563' },
+const CONTRACT_TYPE_META = [
+  { key: 'oldi_sotdi', icon: '🛒', color: '#3B82F6' },
+  { key: 'xizmat',     icon: '🔧', color: '#10B981' },
+  { key: 'ijara',      icon: '🏠', color: '#F59E0B' },
+  { key: 'pudrat',     icon: '🏗️', color: '#F97316' },
+  { key: 'moliyaviy',  icon: '💰', color: '#8B5CF6' },
+  { key: 'daval',      icon: '⚙️', color: '#06B6D4' },
+  { key: 'xalqaro',    icon: '🌐', color: '#6366F1' },
+  { key: 'agentlik',   icon: '🤝', color: '#EC4899' },
+  { key: 'transport',  icon: '🚛', color: '#14B8A6' },
+  { key: 'lizing',     icon: '📦', color: '#64748B' },
+  { key: 'qoshimcha',  icon: '➕', color: '#6B7280' },
+  { key: 'boshqa',     icon: '📋', color: '#4B5563' },
 ]
 
 function autoNum(): string {
@@ -53,10 +56,17 @@ function orgCityDefault(org: { viloyat?: string; tuman?: string } | null | undef
 export default function MobilePage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const {
     orgs, cps, activeOrg, subscription, userId,
     canCreateContract, openUpgradeModal, reloadContracts,
   } = useDashboard()
+
+  const CONTRACT_TYPES = CONTRACT_TYPE_META.map(m => ({
+    ...m,
+    label: T(CONTRACT_TYPES_I18N[m.key] || { uz: m.key, oz: m.key, ru: m.key }),
+  }))
 
   // ── Form state ────────────────────────────────────────────────────────────
   const [cpQuery, setCpQuery]               = useState('')
@@ -104,7 +114,7 @@ export default function MobilePage() {
     try {
       const res = await fetch(`/api/company-lookup?inn=${digits}`)
       const apiData = await res.json()
-      if (!res.ok) { toast(apiData.error || "STIR bo'yicha ma'lumot topilmadi", 'error'); return }
+      if (!res.ok) { toast(apiData.error || T(t.mobilePage.notFound), 'error'); return }
       const co = apiData.company
       const { data: { session } } = await supabase.auth.getSession()
       const { data: saved, error: saveErr } = await supabase.from('counterparties').insert({
@@ -117,23 +127,23 @@ export default function MobilePage() {
       if (saveErr) {
         if (saveErr.code === '23505') {
           const { data: found } = await supabase.from('counterparties').select('*').eq('inn', digits).maybeSingle()
-          if (found) { setSelectedCp(found as Counterparty); setCpOpen(false); setCpQuery((found as Counterparty).name); toast(`Bazadan topildi: ${(found as Counterparty).name}`, 'success'); return }
+          if (found) { setSelectedCp(found as Counterparty); setCpOpen(false); setCpQuery((found as Counterparty).name); toast(`${T(t.mobilePage.fromDb)}: ${(found as Counterparty).name}`, 'success'); return }
         }
-        toast('Saqlashda xato: ' + saveErr.message, 'error'); return
+        toast(T(t.mobilePage.saveError) + ': ' + saveErr.message, 'error'); return
       }
       setSelectedCp(saved as Counterparty)
       setCpOpen(false)
       setCpQuery((saved as Counterparty).name)
-      toast(`${apiData.source === 'global_db' ? 'Bazadan topildi' : 'Soliq API dan olindi'}: ${co.name}`, 'success')
-    } catch { toast("So'rovda xatolik", 'error') }
+      toast(`${apiData.source === 'global_db' ? T(t.mobilePage.fromDb) : T(t.mobilePage.fromApi)}: ${co.name}`, 'success')
+    } catch { toast(T(t.mobilePage.requestError), 'error') }
     finally { setCpStirLoading(false) }
   }
 
   // ── Save ──────────────────────────────────────────────────────────────────
   async function handleCreate() {
-    if (!activeOrg) { toast("Tashkilot tanlanmagan", 'error'); return }
-    if (!selectedCp) { toast("Kontragentni tanlang", 'error'); return }
-    if (!contractNumber.trim()) { toast("Shartnoma raqami kiritilishi shart", 'error'); return }
+    if (!activeOrg) { toast(T(t.mobilePage.noOrgWarn), 'error'); return }
+    if (!selectedCp) { toast(T(t.mobilePage.noCpWarn), 'error'); return }
+    if (!contractNumber.trim()) { toast(T(t.mobilePage.noNumWarn), 'error'); return }
 
     if (!canCreateContract()) { openUpgradeModal(); return }
 
@@ -196,7 +206,7 @@ export default function MobilePage() {
           counterparties:counterparty_id (id, name, inn, director_name, address)
         `).single()
 
-      if (error) { toast(`Xato: ${error.message}`, 'error'); return }
+      if (error) { toast(`${T(t.mobilePage.saveError2)}: ${error.message}`, 'error'); return }
 
       logAudit('create', 'contracts', inserted.id, {
         contract_number: payload.contract_number,
@@ -221,7 +231,7 @@ export default function MobilePage() {
     setDocxLoading(true)
     try {
       await generateContractDOCX(savedContract)
-    } catch { toast("Word faylda xato", 'error') }
+    } catch { toast(T(t.mobilePage.wordError), 'error') }
     finally { setDocxLoading(false) }
   }
 
@@ -231,7 +241,7 @@ export default function MobilePage() {
     setPdfLoading(true)
     try {
       await generateContractPDF(savedContract)
-    } catch { toast("PDF faylda xato", 'error') }
+    } catch { toast(T(t.mobilePage.pdfError), 'error') }
     finally { setPdfLoading(false) }
   }
 
@@ -241,7 +251,7 @@ export default function MobilePage() {
     setTgLoading(true)
     try {
       const res = await shareByTelegram(savedContract)
-      if (res === 'error') toast("Telegram yuborishda xato", 'error')
+      if (res === 'error') toast(T(t.mobilePage.tgError), 'error')
     } finally {
       setTgLoading(false)
     }
@@ -271,19 +281,19 @@ export default function MobilePage() {
           <div className="w-20 h-20 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
             <span className="text-4xl">✅</span>
           </div>
-          <h1 className="text-xl font-bold text-white mb-1">Shartnoma yaratildi!</h1>
+          <h1 className="text-xl font-bold text-white mb-1">{T(t.mobilePage.created)}</h1>
           <p className="text-gray-400 text-sm">{typeName}</p>
           <div className="mt-3 px-4 py-2 bg-[#1E293B] rounded-xl">
             <span className="text-blue-400 font-mono font-semibold">№ {savedContract.contract_number}</span>
             <span className="text-gray-500 text-xs ml-2">{savedContract.contract_date}</span>
           </div>
           <div className="mt-2 text-sm text-gray-300">
-            <span className="text-gray-500">Kontragent: </span>
+            <span className="text-gray-500">{T(t.mobilePage.counterparty)}: </span>
             {savedContract.counterparties?.name || selectedCp?.name}
           </div>
           {savedContract.amount > 0 && (
             <div className="mt-1 text-sm text-green-400 font-semibold">
-              {savedContract.amount.toLocaleString()} so'm
+              {savedContract.amount.toLocaleString()} {T(t.mobilePage.sum)}
             </div>
           )}
         </div>
@@ -298,7 +308,7 @@ export default function MobilePage() {
             {docxLoading ? (
               <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
             ) : <span className="text-xl">📄</span>}
-            Word yuklab olish
+            {T(t.mobilePage.downloadWord)}
           </button>
 
           <button
@@ -309,7 +319,7 @@ export default function MobilePage() {
             {pdfLoading ? (
               <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
             ) : <span className="text-xl">📋</span>}
-            PDF yuklab olish
+            {T(t.mobilePage.downloadPdf)}
           </button>
 
           <button
@@ -320,7 +330,7 @@ export default function MobilePage() {
             {tgLoading ? (
               <span className="w-5 h-5 border-2 border-[#2CA5E0]/30 border-t-[#2CA5E0] rounded-full animate-spin"/>
             ) : <span className="text-xl">✈️</span>}
-            Telegramga yuborish
+            {T(t.mobilePage.sendTelegram)}
           </button>
         </div>
 
@@ -330,13 +340,13 @@ export default function MobilePage() {
             onClick={handleNew}
             className="w-full py-3.5 rounded-2xl bg-[#111827] border border-[#1E293B] text-gray-300 font-medium text-sm hover:border-blue-600 hover:text-white transition"
           >
-            ➕ Yangi shartnoma
+            {T(t.mobilePage.newContract)}
           </button>
           <button
             onClick={() => router.push('/dashboard/shartnomalar')}
             className="w-full py-3.5 rounded-2xl text-gray-500 text-sm hover:text-gray-300 transition"
           >
-            Shartnomalar ro'yxatiga o'tish →
+            {T(t.mobilePage.contractsList)}
           </button>
         </div>
       </div>
@@ -355,8 +365,8 @@ export default function MobilePage() {
           ←
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-white font-bold text-base leading-tight">Tez shartnoma</h1>
-          <p className="text-gray-400 text-xs truncate">{activeOrg?.name || 'Tashkilot tanlanmagan'}</p>
+          <h1 className="text-white font-bold text-base leading-tight">{T(t.nav.mobile)}</h1>
+          <p className="text-gray-400 text-xs truncate">{activeOrg?.name || T(t.mobilePage.noOrg)}</p>
           {activeOrg?.bank_name && (
             <p className="text-gray-600 text-[10px] truncate">{activeOrg.bank_name} · MFO: {activeOrg.mfo}</p>
           )}
@@ -368,7 +378,7 @@ export default function MobilePage() {
         {/* Kontragent */}
         <div>
           <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 block">
-            Kontragent
+            {T(t.mobilePage.counterparty)}
           </label>
           <div ref={cpRef} className="relative">
             {selectedCp ? (
@@ -381,11 +391,11 @@ export default function MobilePage() {
                   <span className="text-gray-500 text-xs ml-2 flex-shrink-0">✕</span>
                 </div>
                 {selectedCp.inn && <div className="text-gray-500 text-xs mt-0.5">INN: {selectedCp.inn}</div>}
-                {selectedCp.director_name && <div className="text-gray-500 text-xs">Rahbar: {selectedCp.director_name}</div>}
+                {selectedCp.director_name && <div className="text-gray-500 text-xs">{T(t.mobilePage.director)}: {selectedCp.director_name}</div>}
                 {selectedCp.bank_name && (
                   <div className="text-gray-600 text-xs mt-1.5 border-t border-[#1E293B] pt-1.5 space-y-0.5">
                     <div>{selectedCp.bank_name}{selectedCp.mfo ? ` · MFO: ${selectedCp.mfo}` : ''}</div>
-                    {selectedCp.bank_account && <div>H/r: {selectedCp.bank_account}</div>}
+                    {selectedCp.bank_account && <div>{T(t.mobilePage.account)}: {selectedCp.bank_account}</div>}
                   </div>
                 )}
               </div>
@@ -396,7 +406,6 @@ export default function MobilePage() {
                   <input
                     autoFocus={false}
                     type="text"
-                    placeholder="Kontragent qidirish..."
                     value={cpQuery}
                     onChange={e => {
                       const val = e.target.value
@@ -405,7 +414,7 @@ export default function MobilePage() {
                       if (val.replace(/\D/g, '').length === 9) handleStirLookup(val)
                     }}
                     onFocus={() => setCpOpen(true)}
-                    placeholder="STIR (9 raqam) yoki tashkilot nomi..."
+                    placeholder={T(t.mobilePage.searchCp)}
                     className={`w-full pl-10 pr-4 py-3.5 bg-[#111827] border border-[#1E293B] rounded-2xl text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-600 ${cpStirLoading ? 'opacity-60' : ''}`}
                   />
                   {cpStirLoading && (
@@ -420,7 +429,7 @@ export default function MobilePage() {
                 {cpOpen && !cpStirLoading && (
                   <div className="absolute z-30 mt-1 w-full bg-[#111827] border border-[#1E293B] rounded-2xl overflow-hidden shadow-2xl max-h-52 overflow-y-auto">
                     {filteredCps.length === 0 ? (
-                      <div className="px-4 py-3 text-gray-500 text-sm">Topilmadi</div>
+                      <div className="px-4 py-3 text-gray-500 text-sm">{T(t.mobilePage.notFound)}</div>
                     ) : filteredCps.map(cp => (
                       <button
                         key={cp.id}
@@ -441,7 +450,7 @@ export default function MobilePage() {
         {/* Shartnoma turi */}
         <div>
           <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 block">
-            Shartnoma turi
+            {T(t.mobilePage.contractType)}
           </label>
           <div className="grid grid-cols-3 gap-2">
             {CONTRACT_TYPES.map(t => (
@@ -465,7 +474,7 @@ export default function MobilePage() {
         {/* Summa */}
         <div>
           <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 block">
-            Summa (so'm)
+            {T(t.mobilePage.amountLabel)}
           </label>
           <input
             type="number"
@@ -477,7 +486,7 @@ export default function MobilePage() {
           />
           {amount && parseFloat(amount) > 0 && (
             <div className="mt-1 text-xs text-gray-500 px-1">
-              {parseFloat(amount).toLocaleString()} so'm
+              {parseFloat(amount).toLocaleString()} {T(t.mobilePage.sum)}
             </div>
           )}
         </div>
@@ -486,7 +495,7 @@ export default function MobilePage() {
         <div className="flex gap-3">
           <div className="flex-1">
             <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 block">
-              Raqam
+              {T(t.mobilePage.numberLabel)}
             </label>
             <input
               type="text"
@@ -497,7 +506,7 @@ export default function MobilePage() {
           </div>
           <div className="flex-1">
             <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 block">
-              Sana
+              {T(t.mobilePage.dateLabel)}
             </label>
             <input
               type="date"
@@ -541,9 +550,9 @@ export default function MobilePage() {
           }}
         >
           {saving ? (
-            <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Saqlanmoqda...</>
+            <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {T(t.mobilePage.saving)}</>
           ) : (
-            <>✅ Shartnoma yaratish</>
+            <>{T(t.mobilePage.createBtn)}</>
           )}
         </button>
       </div>

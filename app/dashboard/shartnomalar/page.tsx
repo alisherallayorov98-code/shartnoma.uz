@@ -523,7 +523,7 @@ export default function ShartnomalarPage() {
         <div>
           <h1 className="text-xl font-bold text-white">{T(t.contracts.title)}</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            {orgContracts.length} ta shartnoma
+            {orgContracts.length} {T(t.contracts.taCount)}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -547,7 +547,7 @@ export default function ShartnomalarPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
-            Ommaviy
+            {T(t.contracts.ommaviy)}
           </button>
           <button
             onClick={openNewContract}
@@ -562,7 +562,7 @@ export default function ShartnomalarPage() {
       {isNearLimit && (
         <div className="mb-4 bg-yellow-900/30 border border-yellow-700/50 rounded-xl p-4 flex items-center justify-between">
           <div>
-            <p className="text-yellow-300 text-sm font-medium">Bepul limit tugayapti</p>
+            <p className="text-yellow-300 text-sm font-medium">{T(t.contracts.freeLimit)}</p>
             <p className="text-yellow-500 text-xs mt-0.5">
               {orgContracts.length} / 5 ta shartnoma ishlatildi
             </p>
@@ -571,7 +571,7 @@ export default function ShartnomalarPage() {
             onClick={openUpgradeModal}
             className="bg-yellow-600 hover:bg-yellow-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition"
           >
-            Tarifni yangilash
+            {T(t.contracts.upgradeBtn)}
           </button>
         </div>
       )}
@@ -590,11 +590,11 @@ export default function ShartnomalarPage() {
           />
           {serverResults !== null ? (
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-blue-400">
-              {serverResults.length} natija
+              {serverResults.length} {T(t.contracts.results)}
             </span>
           ) : search.length > 0 && search.length < 3 ? (
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-              3 ta belgi kiriting
+              {T(t.contracts.minChars)}
             </span>
           ) : null}
         </div>
@@ -603,9 +603,9 @@ export default function ShartnomalarPage() {
           onChange={e => setYearFilter(e.target.value)}
           className="bg-[#0F172A] border border-[#1E293B] text-gray-200 px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:border-blue-600 cursor-pointer"
         >
-          <option value="all">Barcha yillar</option>
+          <option value="all">{T(t.contracts.allYears)}</option>
           {years.map(y => (
-            <option key={y} value={y}>{y}-yil</option>
+            <option key={y} value={y}>{y}{T(t.contracts.yearSuffix)}</option>
           ))}
         </select>
         <select
@@ -622,23 +622,23 @@ export default function ShartnomalarPage() {
       {/* ── Bulk actions bar ── */}
       {selectedIds.size > 0 && (
         <div className="mb-3 bg-blue-900/30 border border-blue-700/40 rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap">
-          <span className="text-sm text-blue-300 font-medium">{selectedIds.size} ta tanlandi</span>
+          <span className="text-sm text-blue-300 font-medium">{selectedIds.size} {T(t.contracts.bulk)}</span>
           <div className="flex gap-2 ml-auto flex-wrap">
             <button onClick={() => bulkUpdateStatus('completed')}
               className="text-xs bg-green-900/40 hover:bg-green-800/50 border border-green-700/40 text-green-300 px-3 py-1.5 rounded-lg transition">
-              Bajarildi
+              {T(t.contracts.bulkDone)}
             </button>
             <button onClick={() => bulkUpdateStatus('cancelled')}
               className="text-xs bg-red-900/40 hover:bg-red-800/50 border border-red-700/40 text-red-300 px-3 py-1.5 rounded-lg transition">
-              Bekor qilish
+              {T(t.contracts.bulkCancel)}
             </button>
             <button onClick={() => bulkUpdateStatus('draft')}
               className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-3 py-1.5 rounded-lg transition">
-              Qoralama
+              {T(t.contracts.bulkDraft)}
             </button>
             <button onClick={() => setSelectedIds(new Set())}
               className="text-xs text-gray-500 hover:text-gray-300 transition ml-1">
-              Bekor
+              {T(t.contracts.bulkDeselect)}
             </button>
           </div>
         </div>

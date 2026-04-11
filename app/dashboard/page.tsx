@@ -149,11 +149,11 @@ export default function DashboardOverviewPage() {
           <div className="flex-1 min-w-0">
             <div className={`font-semibold text-sm ${subDaysLeft === 1 ? 'text-red-300' : subDaysLeft <= 3 ? 'text-orange-300' : 'text-yellow-300'}`}>
               {subDaysLeft === 1
-                ? 'Obunangiz bugun tugaydi!'
-                : `Obunangiz ${subDaysLeft} kun ichida tugaydi`}
+                ? T(t.dash.subEndsToday)
+                : `${T(t.dash.subEndsPrefix)} ${subDaysLeft} ${T(t.dash.subEndsInDays)}`}
             </div>
             <div className="text-gray-400 text-xs mt-0.5">
-              {subscription?.period_end && new Date(subscription.period_end).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' })} — obuna muddatini uzaytirishni unutmang
+              {subscription?.period_end && new Date(subscription.period_end).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' })} — {T(t.dash.subRenewNote)}
             </div>
           </div>
           <a href="mailto:info@kabinetim.uz?subject=Obunani uzaytirish"
@@ -164,7 +164,7 @@ export default function DashboardOverviewPage() {
                 ? 'bg-orange-600 hover:bg-orange-500 text-white'
                 : 'bg-yellow-600 hover:bg-yellow-500 text-white'
             }`}>
-            Murojaat qilish →
+            {T(t.dash.contactBtn)}
           </a>
         </div>
       )}
@@ -175,16 +175,16 @@ export default function DashboardOverviewPage() {
           <div className="text-2xl shrink-0">⏰</div>
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-sm text-orange-300">
-              {expiringContracts.length} ta shartnoma muddati yaqinlashmoqda
+              {expiringContracts.length} {T(t.dash.expiringMsg)}
             </div>
             <div className="text-gray-400 text-xs mt-0.5 truncate">
               {expiringContracts.slice(0, 3).map(c => c.contract_number).join(', ')}
-              {expiringContracts.length > 3 ? ` va yana ${expiringContracts.length - 3} ta` : ''}
+              {expiringContracts.length > 3 ? ` ${T(t.dash.andMore)} ${expiringContracts.length - 3} ta` : ''}
             </div>
           </div>
           <Link href="/dashboard/shartnomalar"
             className="shrink-0 text-xs font-semibold px-4 py-2 rounded-xl bg-orange-700 hover:bg-orange-600 text-white transition whitespace-nowrap">
-            Ko'rish →
+            {T(t.dash.viewBtn)}
           </Link>
         </div>
       )}
@@ -196,7 +196,7 @@ export default function DashboardOverviewPage() {
           <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, #3b82f6 0%, transparent 60%)' }}/>
           <div className="relative flex items-center justify-between flex-wrap gap-4">
             <div>
-              <div className="text-xs text-blue-400 mb-1 font-medium tracking-wide uppercase">Kabinetim.uz — Boshqaruv paneli</div>
+              <div className="text-xs text-blue-400 mb-1 font-medium tracking-wide uppercase">{T(t.dash.controlPanel)}</div>
               <h1 className="text-xl font-bold text-white">{activeOrg?.name || '—'}</h1>
               <div className="text-sm text-gray-400 mt-0.5">INN: {activeOrg?.inn || '—'} · {activeOrg?.director_name || ''}</div>
             </div>
@@ -204,7 +204,7 @@ export default function DashboardOverviewPage() {
               <div className="text-xs text-gray-500">{today}</div>
               {quota && (
                 <div className={`mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${isFree ? 'bg-[#1F2937] text-gray-200' : 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50'}`}>
-                  {isFree ? '🔒 Bepul tarif' : `⭐ ${quota.plan} tarif`}
+                  {isFree ? T(t.dash.freePlan) : `⭐ ${quota.plan} ${T(t.dash.planLabel)}`}
                 </div>
               )}
             </div>
@@ -221,7 +221,7 @@ export default function DashboardOverviewPage() {
             </div>
             <div className="text-3xl font-bold text-white">{cntTotal}</div>
             <div className="text-xs text-gray-400 mt-1">{T(t.overviewTab.totalContracts)}</div>
-            {cntTotal > 0 && <div className="text-xs text-gray-500 mt-1">{cntDraft} qoralama · {cntDone} bajarildi</div>}
+            {cntTotal > 0 && <div className="text-xs text-gray-500 mt-1">{cntDraft} {T(t.dash.draftAnd)} · {cntDone} {T(t.dash.done)}</div>}
           </Link>
 
           <Link href="/dashboard/shartnomalar"
@@ -232,7 +232,7 @@ export default function DashboardOverviewPage() {
             </div>
             <div className="text-3xl font-bold text-emerald-400">{cntActive}</div>
             <div className="text-xs text-gray-400 mt-1">{T(t.overview.activeContracts)}</div>
-            {cntActive > 0 && <div className="text-xs text-emerald-700 mt-1">{totalActive.toLocaleString()} so&apos;m</div>}
+            {cntActive > 0 && <div className="text-xs text-emerald-700 mt-1">{totalActive.toLocaleString()} {T(t.overviewTab.som)}</div>}
           </Link>
 
           <Link href="/dashboard/tashkilotlar"
@@ -243,7 +243,7 @@ export default function DashboardOverviewPage() {
             </div>
             <div className="text-3xl font-bold text-white">{orgs.length}</div>
             <div className="text-xs text-gray-400 mt-1">{T(t.orgs.title)}</div>
-            {activeOrg && <div className="text-xs text-gray-500 mt-1 truncate">Faol: {activeOrg.name}</div>}
+            {activeOrg && <div className="text-xs text-gray-500 mt-1 truncate">{T(t.dash.activeOrg)}: {activeOrg.name}</div>}
           </Link>
 
           <Link href="/dashboard/kontragentlar"
@@ -261,39 +261,39 @@ export default function DashboardOverviewPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Moliyaviy ko'rsatkichlar */}
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
-            <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">Moliyaviy ko&apos;rsatkichlar</div>
+            <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">{T(t.dash.financialTitle)}</div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>Faol shartnomalar</span>
-                <span className="text-sm font-semibold text-emerald-400">{totalActive.toLocaleString()} so&apos;m</span>
+                <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>{T(t.dash.activeContracts)}</span>
+                <span className="text-sm font-semibold text-emerald-400">{totalActive.toLocaleString()} {T(t.overviewTab.som)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>Bajarildi</span>
-                <span className="text-sm font-semibold text-blue-400">{totalDone.toLocaleString()} so&apos;m</span>
+                <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>{T(t.dash.completedLbl)}</span>
+                <span className="text-sm font-semibold text-blue-400">{totalDone.toLocaleString()} {T(t.overviewTab.som)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-500 inline-block"/>Qoralama</span>
-                <span className="text-sm font-semibold text-gray-400">{totalDraft.toLocaleString()} so&apos;m</span>
+                <span className="text-xs text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-500 inline-block"/>{T(t.dash.draftLbl)}</span>
+                <span className="text-sm font-semibold text-gray-400">{totalDraft.toLocaleString()} {T(t.overviewTab.som)}</span>
               </div>
               <div className="border-t border-[#1E293B] pt-3 flex justify-between items-center">
-                <span className="text-xs text-gray-500">Jami</span>
-                <span className="text-sm font-bold text-white">{totalAll.toLocaleString()} so&apos;m</span>
+                <span className="text-xs text-gray-500">{T(t.dash.totalLbl)}</span>
+                <span className="text-sm font-bold text-white">{totalAll.toLocaleString()} {T(t.overviewTab.som)}</span>
               </div>
             </div>
           </div>
 
           {/* Shartnomalar holati */}
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
-            <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">Shartnomalar holati</div>
+            <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">{T(t.dash.statusTitle)}</div>
             {cntTotal === 0 ? (
-              <div className="text-center text-gray-500 text-sm py-4">Shartnomalar yo&apos;q</div>
+              <div className="text-center text-gray-500 text-sm py-4">{T(t.dash.noContracts)}</div>
             ) : (
               <div className="space-y-3">
                 {[
-                  { label: 'Faol',     cnt: cntActive,    color: 'bg-emerald-500' },
-                  { label: 'Qoralama', cnt: cntDraft,     color: 'bg-gray-500' },
-                  { label: 'Bajarildi',cnt: cntDone,      color: 'bg-blue-500' },
-                  { label: 'Bekor',    cnt: cntCancelled, color: 'bg-red-500' },
+                  { label: T(t.dash.activeLbl),     cnt: cntActive,    color: 'bg-emerald-500' },
+                  { label: T(t.dash.draftLbl),      cnt: cntDraft,     color: 'bg-gray-500' },
+                  { label: T(t.dash.completedLbl),  cnt: cntDone,      color: 'bg-blue-500' },
+                  { label: T(t.dash.cancelledLbl),  cnt: cntCancelled, color: 'bg-red-500' },
                 ].map(({ label, cnt, color }) => (
                   <div key={label}>
                     <div className="flex justify-between text-xs mb-1">
@@ -311,14 +311,14 @@ export default function DashboardOverviewPage() {
 
           {/* Oylik kvota */}
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
-            <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">Oylik kvota</div>
+            <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">{T(t.dash.quotaTitle)}</div>
             {quota ? (
               <div>
                 <div className="flex items-end gap-2 mb-3">
                   <span className="text-4xl font-bold text-white">{quota.used ?? '∞'}</span>
-                  <span className="text-xl text-gray-500 mb-1">/ {quota.limit ?? 'Cheksiz'}</span>
+                  <span className="text-xl text-gray-500 mb-1">/ {quota.limit ?? T(t.dash.unlimited)}</span>
                 </div>
-                <div className="text-xs text-gray-500 mb-3">Yaratilgan shartnomalar · {quota.plan} tarif</div>
+                <div className="text-xs text-gray-500 mb-3">{T(t.dash.createdContracts)} · {quota.plan} {T(t.dash.planLabel)}</div>
                 {quota.limit && (
                   <>
                     <div className="h-2 bg-[#1E293B] rounded-full overflow-hidden mb-2">
@@ -326,7 +326,7 @@ export default function DashboardOverviewPage() {
                         style={{ width: `${Math.min(quota.percent!, 100)}%` }}/>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500">
-                      <span>{quota.limit - (quota.used ?? 0)} ta qoldi</span>
+                      <span>{quota.limit - (quota.used ?? 0)} {T(t.dash.remaining)}</span>
                       <span>{quota.percent}%</span>
                     </div>
                   </>
@@ -334,19 +334,19 @@ export default function DashboardOverviewPage() {
                 {isFree && (
                   <button onClick={openUpgradeModal}
                     className="mt-4 w-full py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-yellow-600/30 to-orange-600/30 border border-yellow-700/50 text-yellow-400 hover:from-yellow-600/50 hover:to-orange-600/50 transition">
-                    ⭐ Premiumga o&apos;tish
+                    {T(t.dash.goToPremium)}
                   </button>
                 )}
               </div>
             ) : (
-              <div className="text-gray-500 text-sm">Ma&apos;lumot yo&apos;q</div>
+              <div className="text-gray-500 text-sm">{T(t.dash.noData)}</div>
             )}
           </div>
         </div>
 
         {/* ── Oylik statistika grafigi ── */}
         <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
-          <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">Oylik statistika (so'nggi 6 oy)</div>
+          <div className="text-xs text-gray-400 uppercase tracking-wide mb-4 font-medium">{T(t.dash.monthlyStats)}</div>
           <div className="flex items-end gap-3 h-28">
             {monthlyData.map((m, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
@@ -355,7 +355,7 @@ export default function DashboardOverviewPage() {
                   <div
                     className="w-full rounded-t-md bg-blue-600/70 hover:bg-blue-500/90 transition-all"
                     style={{ height: `${Math.round((m.count / maxCount) * 72)}px`, minHeight: m.count > 0 ? '4px' : '0' }}
-                    title={`${m.count} ta · ${m.amount.toLocaleString()} so'm`}
+                    title={`${m.count} ta · ${m.amount.toLocaleString()} ${T(t.overviewTab.som)}`}
                   />
                 </div>
                 <span className="text-[10px] text-gray-500 capitalize">{m.label}</span>
@@ -378,7 +378,7 @@ export default function DashboardOverviewPage() {
               <div className="text-gray-500 text-sm mb-4">{T(t.overviewTab.noContracts)}</div>
               <Link href="/dashboard/shartnomalar"
                 className="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm text-white transition inline-block">
-                + Yangi shartnoma yaratish
+                {T(t.dash.newContractBtn)}
               </Link>
             </div>
           ) : (
@@ -415,15 +415,15 @@ export default function DashboardOverviewPage() {
 
         {/* ── Tezkor harakatlar ── */}
         <div>
-          <div className="text-xs text-gray-400 uppercase tracking-wide mb-3 font-medium">Tezkor harakatlar</div>
+          <div className="text-xs text-gray-400 uppercase tracking-wide mb-3 font-medium">{T(t.dash.quickActions)}</div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { label: 'Yangi shartnoma',       icon: '📄', hoverBorder: 'hover:border-blue-700/60',   href: '/dashboard/shartnomalar' },
-              { label: "Kontragent qo'shish",    icon: '🤝', hoverBorder: 'hover:border-orange-700/60', href: '/dashboard/kontragentlar' },
-              { label: "Tashkilot qo'shish",     icon: '🏢', hoverBorder: 'hover:border-blue-700/60',   href: '/dashboard/tashkilotlar' },
-              { label: 'Yurist AI',              icon: '⚖️', hoverBorder: 'hover:border-emerald-700/60',href: '/dashboard/yurist' },
-              { label: 'Kadrlar hujjatlari',    icon: '👥', hoverBorder: 'hover:border-cyan-700/60',   href: '/dashboard/kadrlar' },
-              { label: 'Buxgalter hujjatlari',  icon: '💼', hoverBorder: 'hover:border-blue-700/60',   href: '/dashboard/buxgalter' },
+              { label: T(t.dash.qaNewContract),  icon: '📄', hoverBorder: 'hover:border-blue-700/60',   href: '/dashboard/shartnomalar' },
+              { label: T(t.dash.qaAddCp),        icon: '🤝', hoverBorder: 'hover:border-orange-700/60', href: '/dashboard/kontragentlar' },
+              { label: T(t.dash.qaAddOrg),       icon: '🏢', hoverBorder: 'hover:border-blue-700/60',   href: '/dashboard/tashkilotlar' },
+              { label: T(t.nav.yurist_ai),       icon: '⚖️', hoverBorder: 'hover:border-emerald-700/60',href: '/dashboard/yurist' },
+              { label: T(t.dash.qaKadrlar),      icon: '👥', hoverBorder: 'hover:border-cyan-700/60',   href: '/dashboard/kadrlar' },
+              { label: T(t.dash.qaBuxgalter),    icon: '💼', hoverBorder: 'hover:border-blue-700/60',   href: '/dashboard/buxgalter' },
             ].map((a, i) => (
               <Link key={i} href={a.href}
                 className={`bg-[#111827] border border-[#1E293B] ${a.hoverBorder} hover:bg-[#1F2937] rounded-xl p-4 text-left transition group block`}>
@@ -438,7 +438,7 @@ export default function DashboardOverviewPage() {
         {activeOrg && (
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b border-[#1E293B] flex items-center justify-between">
-              <h2 className="font-semibold text-sm text-gray-200">🏦 Tashkilot rekvizitlari</h2>
+              <h2 className="font-semibold text-sm text-gray-200">{T(t.dash.rekvTitle)}</h2>
               <button
                 onClick={() => {
                   const all = [
@@ -450,18 +450,18 @@ export default function DashboardOverviewPage() {
                 }}
                 className="text-xs text-blue-400 hover:text-blue-300 transition"
               >
-                {copiedField === 'all' ? '✓ Nusxalandi' : '📋 Hammasini nusxalash'}
+                {copiedField === 'all' ? T(t.dash.copied) : T(t.dash.copyAll)}
               </button>
             </div>
             <div className="divide-y divide-[#1E293B]/50">
               {[
-                { key: 'name',         label: 'Tashkilot nomi', value: activeOrg.name },
-                { key: 'inn',          label: 'INN (STIR)',      value: activeOrg.inn },
-                { key: 'director',     label: 'Rahbar',          value: activeOrg.director_name },
-                { key: 'bank_name',    label: 'Bank nomi',       value: activeOrg.bank_name },
-                { key: 'bank_account', label: 'Hisob raqami',    value: activeOrg.bank_account },
-                { key: 'mfo',          label: 'MFO',             value: activeOrg.mfo },
-                { key: 'address',      label: 'Manzil',          value: activeOrg.address },
+                { key: 'name',         label: T(t.dash.rekvName),    value: activeOrg.name },
+                { key: 'inn',          label: T(t.dash.rekvInn),     value: activeOrg.inn },
+                { key: 'director',     label: T(t.dash.rekvDirector),value: activeOrg.director_name },
+                { key: 'bank_name',    label: T(t.dash.rekvBank),    value: activeOrg.bank_name },
+                { key: 'bank_account', label: T(t.dash.rekvAccount), value: activeOrg.bank_account },
+                { key: 'mfo',          label: T(t.dash.rekvMfo),     value: activeOrg.mfo },
+                { key: 'address',      label: T(t.dash.rekvAddress), value: activeOrg.address },
               ].filter(r => r.value).map(row => (
                 <div key={row.key} className="flex items-center justify-between px-5 py-3 hover:bg-[#1F2937] transition group">
                   <div className="min-w-0 flex-1">
@@ -485,12 +485,12 @@ export default function DashboardOverviewPage() {
           <div className="bg-red-900/20 border border-red-800/40 rounded-xl p-4 flex items-center gap-4">
             <span className="text-2xl">⚙️</span>
             <div className="flex-1">
-              <div className="text-sm font-semibold text-red-300">Admin panel</div>
-              <div className="text-xs text-gray-500">Foydalanuvchilar va obunalarni boshqarish</div>
+              <div className="text-sm font-semibold text-red-300">{T(t.dash.adminTitle)}</div>
+              <div className="text-xs text-gray-500">{T(t.dash.adminDesc)}</div>
             </div>
             <a href="/admin" target="_blank" rel="noopener noreferrer"
               className="px-4 py-2 bg-red-700 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition">
-              Ochish ↗
+              {T(t.dash.adminOpen)}
             </a>
           </div>
         )}

@@ -1,9 +1,13 @@
 'use client'
 
 import { useDashboard } from '../context'
+import { useLang } from '@/lib/LanguageContext'
+import { t, tr, type Lang } from '@/lib/i18n'
 
 export default function UpgradeModal() {
   const { upgradeModalOpen, closeUpgradeModal, activeOrg } = useDashboard()
+  const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
 
   if (!upgradeModalOpen) return null
 
@@ -17,8 +21,11 @@ export default function UpgradeModal() {
   }
 
   const contactTelegram = (plan: string) => {
+    const greet = lang === 'ru' ? 'Здравствуйте' : 'Salom'
+    const forOrg = lang === 'ru' ? 'для' : 'uchun'
+    const wantPlan = lang === 'ru' ? `хочу перейти на тариф ${plan}.` : `${plan} tarifiga o'tmoqchiman.`
     const msg = encodeURIComponent(
-      `Salom! "${activeOrg?.name || 'Tashkilot'}" uchun ${plan} tarifiga o'tmoqchiman.`
+      `${greet}! "${activeOrg?.name || 'Tashkilot'}" ${forOrg} ${wantPlan}`
     )
     window.open(`https://t.me/shartnoma_uz?text=${msg}`, '_blank')
   }
@@ -29,8 +36,8 @@ export default function UpgradeModal() {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[#1E293B]">
           <div>
-            <h2 className="text-xl font-bold text-white">Tarifni yaxshilash</h2>
-            <p className="text-gray-400 text-sm mt-1">Cheklovsiz ishlash uchun Premium tarifni tanlang</p>
+            <h2 className="text-xl font-bold text-white">{T(t.upgrade.title)}</h2>
+            <p className="text-gray-400 text-sm mt-1">{T(t.upgrade.subtitle)}</p>
           </div>
           <button
             onClick={closeUpgradeModal}
@@ -53,14 +60,14 @@ export default function UpgradeModal() {
               STANDARD
             </div>
             <div className="text-3xl font-black text-white mb-1">50,000</div>
-            <div className="text-blue-300 text-sm mb-4">so'm / oy</div>
+            <div className="text-blue-300 text-sm mb-4">{T(t.upgrade.somPerMonth)}</div>
             <ul className="space-y-2 mb-5">
               {[
-                'Cheksiz shartnomalar',
-                'Barcha shablon turlari',
-                'AI bilan shartnoma tahlili',
-                'PDF va Word eksport',
-                'Kontragentlar baza',
+                T(t.upgrade.stdFeature1),
+                T(t.upgrade.stdFeature2),
+                T(t.upgrade.stdFeature3),
+                T(t.upgrade.stdFeature4),
+                T(t.upgrade.stdFeature5),
               ].map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
                   <svg className="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,14 +102,14 @@ export default function UpgradeModal() {
               AI PRO
             </div>
             <div className="text-3xl font-black text-white mb-1">199,000</div>
-            <div className="text-orange-300 text-sm mb-4">so'm / oy</div>
+            <div className="text-orange-300 text-sm mb-4">{T(t.upgrade.somPerMonth)}</div>
             <ul className="space-y-2 mb-5">
               {[
-                'Standard tarif imkoniyatlari',
-                'Korporativ AI asistenti',
-                'Buxgalter hujjatlari AI',
-                'Kadrlar va kotiba AI',
-                'Yurist AI maslahatchi',
+                T(t.upgrade.proFeature1),
+                T(t.upgrade.proFeature2),
+                T(t.upgrade.proFeature3),
+                T(t.upgrade.proFeature4),
+                T(t.upgrade.proFeature5),
               ].map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
                   <svg className="w-4 h-4 text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,7 +137,7 @@ export default function UpgradeModal() {
         </div>
 
         <p className="text-center text-gray-500 text-xs pb-5 px-6">
-          To'lov Telegram orqali amalga oshiriladi. Savollar uchun: @shartnoma_uz
+          {T(t.upgrade.payNote)}
         </p>
       </div>
     </div>

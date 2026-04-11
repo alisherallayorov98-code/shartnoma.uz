@@ -8,16 +8,14 @@ import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import type { Employee } from '@/lib/types'
 import { logAudit } from '@/lib/audit'
+import { useLang } from '@/lib/LanguageContext'
+import { t, tr, type Lang } from '@/lib/i18n'
 
 const emptyEmp = {
   ism: '', jshshir: '', passport: '', lavozim: '',
   bolim: '', maosh: '', ish_boshi: '', tel: '', status: 'active',
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  active: 'Faol',
-  fired:  'Ishdan bo\'shagan',
-}
 const STATUS_COLOR: Record<string, string> = {
   active: 'bg-green-500/20 text-green-400 border border-green-500/30',
   fired:  'bg-red-900/30 text-red-400 border border-red-700/30',
@@ -26,6 +24,12 @@ const STATUS_COLOR: Record<string, string> = {
 export default function XodimlarPage() {
   const { activeOrg, employees, reloadEmployees } = useDashboard()
   const { toast } = useToast()
+  const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
+  const STATUS_LABEL: Record<string, string> = {
+    active: T(t.empPage.statusActive),
+    fired:  T(t.empPage.statusFired),
+  }
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'fired'>('active')
@@ -68,8 +72,8 @@ export default function XodimlarPage() {
 
   async function saveEmp(e: React.FormEvent) {
     e.preventDefault()
-    if (!activeOrg) { toast("Tashkilot tanlanmagan", 'error'); return }
-    if (!form.ism.trim()) { toast("F.I.O. majburiy", 'error'); return }
+    if (!activeOrg) { toast(T(t.msg.selectOrg), 'error'); return }
+    if (!form.ism.trim()) { toast(T(t.empPage.fioRequired), 'error'); return }
     setSaving(true)
     const payload = {
       ism: form.ism.trim(),
@@ -93,8 +97,8 @@ export default function XodimlarPage() {
       if (!error && inserted) logAudit('create', 'employees', inserted.id, { ism: payload.ism })
     }
     setSaving(false)
-    if (err) { toast('Xato: ' + err.message, 'error'); return }
-    toast(editing ? 'Xodim tahrirlandi' : 'Xodim qo\'shildi', 'success')
+    if (err) { toast(`${T(t.msg.errorPrefix)}: ${err.message}`, 'error'); return }
+    toast(editing ? T(t.empPage.edited) : T(t.empPage.added), 'success')
     setModal(false)
     reloadEmployees()
   }
@@ -102,22 +106,22 @@ export default function XodimlarPage() {
   async function doDelete(id: string) {
     const emp = employees.find(e => e.id === id)
     const { error } = await supabase.from('employees').delete().eq('id', id).eq('organization_id', activeOrg!.id)
-    if (error) { toast('Xato: ' + error.message, 'error'); return }
+    if (error) { toast(`${T(t.msg.errorPrefix)}: ${error.message}`, 'error'); return }
     if (emp) logAudit('delete', 'employees', id, { ism: emp.ism })
-    toast("Xodim o'chirildi", 'success')
+    toast(T(t.empPage.deleted), 'success')
     reloadEmployees()
   }
 
   async function lookupJshshir() {
     const jshshir = form.jshshir.trim()
     if (!jshshir || !/^\d{14}$/.test(jshshir)) {
-      toast("JSHSHIR 14 raqamdan iborat bo'lishi kerak", 'error'); return
+      toast(T(t.empPage.jshshirInvalid), 'error'); return
     }
     setJshshirLoading(true)
     try {
       const res = await fetch(`/api/jshshir?jshshir=${jshshir}`)
       const data = await res.json()
-      if (!res.ok) { toast(data.error || "JSHSHIR bo'yicha ma'lumot topilmadi", 'error'); return }
+      if (!res.ok) { toast(data.error || T(t.empPage.notFoundById), 'error'); return }
       const p = data.person
       setForm(prev => ({
         ...prev,
@@ -125,12 +129,12 @@ export default function XodimlarPage() {
       }))
       const infoParts: string[] = []
       if (p.full_name) infoParts.push(p.full_name)
-      if (p.status === 'active') infoParts.push('✓ Faol')
-      else if (p.status === 'inactive') infoParts.push('⚠ Faol emas')
+      if (p.status === 'active') infoParts.push(`✓ ${T(t.empPage.statusActive)}`)
+      else if (p.status === 'inactive') infoParts.push(`⚠ ${T(t.status.cancelled)}`)
       if (p.address) infoParts.push(p.address)
-      toast(infoParts.length ? infoParts.join(' | ') : "Ma'lumotlar to'ldirildi", p.status === 'inactive' ? 'error' : 'success')
+      toast(infoParts.length ? infoParts.join(' | ') : T(t.empPage.dataFilled), p.status === 'inactive' ? 'error' : 'success')
     } catch {
-      toast("JSHSHIR so'rovida xatolik", 'error')
+      toast(T(t.empPage.lookupError), 'error')
     } finally {
       setJshshirLoading(false)
     }
@@ -141,14 +145,14 @@ export default function XodimlarPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-white">🧑‍💼 Xodimlar</h1>
+          <h1 className="text-xl font-bold text-white">{T(t.empPage.title)}</h1>
           <p className="text-gray-500 text-sm mt-0.5">
-            {employees.filter(e => (e.status || 'active') === 'active').length} ta faol xodim
+            {employees.filter(e => (e.status || 'active') === 'active').length} {T(t.empPage.activeCount)}
           </p>
         </div>
         <button onClick={openAdd}
           className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
-          + Xodim qo'shish
+          {T(t.empPage.addBtn)}
         </button>
       </div>
 
@@ -159,7 +163,7 @@ export default function XodimlarPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Ism, lavozim, bo'lim yoki JSHSHIR…"
+            placeholder={T(t.empPage.searchPlaceholder)}
             className="w-full bg-[#111827] border border-[#1E293B] text-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
         </div>
         <div className="flex gap-1">
@@ -170,7 +174,7 @@ export default function XodimlarPage() {
                   ? 'bg-blue-600 text-white'
                   : 'bg-[#111827] border border-[#1E293B] text-gray-400 hover:text-white'
               }`}>
-              {s === 'all' ? 'Barchasi' : s === 'active' ? 'Faol' : "Ishdan bo'shagan"}
+              {s === 'all' ? T(t.empPage.statusAll) : s === 'active' ? T(t.empPage.statusActive) : T(t.empPage.statusFired)}
             </button>
           ))}
         </div>
@@ -181,11 +185,11 @@ export default function XodimlarPage() {
         <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-16 text-center">
           <div className="text-5xl mb-4">🧑‍💼</div>
           <p className="text-gray-400 font-medium">
-            {search || statusFilter !== 'active' ? "Xodim topilmadi" : "Hali xodim qo'shilmagan"}
+            {search || statusFilter !== 'active' ? T(t.empPage.empty) : T(t.empPage.emptyFirst)}
           </p>
           {!search && statusFilter === 'active' && (
             <button onClick={openAdd} className="mt-3 text-blue-400 text-sm hover:text-blue-300">
-              Birinchi xodimni qo'shish →
+              {T(t.empPage.addFirst)}
             </button>
           )}
         </div>
@@ -195,12 +199,12 @@ export default function XodimlarPage() {
             <thead>
               <tr className="border-b border-[#1E293B] text-gray-500 text-xs uppercase tracking-wider">
                 <th className="px-4 py-3 text-left w-8">№</th>
-                <th className="px-4 py-3 text-left">F.I.O.</th>
-                <th className="px-4 py-3 text-left">Lavozim</th>
-                <th className="px-4 py-3 text-left">Bo'lim</th>
-                <th className="px-4 py-3 text-left">Maosh</th>
-                <th className="px-4 py-3 text-left">Telefon</th>
-                <th className="px-4 py-3 text-center">Holat</th>
+                <th className="px-4 py-3 text-left">{T(t.empPage.colFio)}</th>
+                <th className="px-4 py-3 text-left">{T(t.empPage.colPosition)}</th>
+                <th className="px-4 py-3 text-left">{T(t.empPage.colDept)}</th>
+                <th className="px-4 py-3 text-left">{T(t.empPage.colSalary)}</th>
+                <th className="px-4 py-3 text-left">{T(t.empPage.colPhone)}</th>
+                <th className="px-4 py-3 text-center">{T(t.empPage.colStatus)}</th>
                 <th className="px-4 py-3 w-20"></th>
               </tr>
             </thead>
@@ -224,7 +228,7 @@ export default function XodimlarPage() {
                   <td className="px-4 py-3 text-gray-300 text-xs">{emp.lavozim || '—'}</td>
                   <td className="px-4 py-3 text-gray-400 text-xs">{emp.bolim || '—'}</td>
                   <td className="px-4 py-3 text-gray-300 text-xs">
-                    {emp.maosh ? `${Number(emp.maosh.replace(/\s/g, '')).toLocaleString()} so'm` : '—'}
+                    {emp.maosh ? `${Number(emp.maosh.replace(/\s/g, '')).toLocaleString()} ${T(t.empPage.sum)}` : '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-400 text-xs">{emp.tel || '—'}</td>
                   <td className="px-4 py-3 text-center">
@@ -245,7 +249,7 @@ export default function XodimlarPage() {
             </tbody>
           </table>
           <div className="px-4 py-3 border-t border-[#1E293B] text-xs text-gray-500">
-            Jami: {filtered.length} ta xodim
+            {T(t.empPage.total)}: {filtered.length} {T(t.empPage.taXodim)}
           </div>
         </div>
       )}
@@ -253,17 +257,17 @@ export default function XodimlarPage() {
       {/* Add/Edit modal */}
       {modal && (
         <Modal
-          title={editing ? "Xodimni tahrirlash" : "Yangi xodim qo'shish"}
+          title={editing ? T(t.empPage.editModal) : T(t.empPage.addModal)}
           onClose={() => setModal(false)}>
           <form onSubmit={saveEmp} className="space-y-4">
             <div>
-              <label className={lbl}>F.I.O. *</label>
+              <label className={lbl}>{T(t.empPage.fioLabel)}</label>
               <input className={inp} required placeholder="Rahimov Bobur Aliyevich"
                 value={form.ism} onChange={e => setForm({ ...form, ism: e.target.value })}/>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={lbl}>JSHSHIR (14 raqam)</label>
+                <label className={lbl}>{T(t.empPage.jshshirLabel)}</label>
                 <div className="flex gap-1.5">
                   <input className={`${inp} flex-1`} placeholder="12345678901234" maxLength={14}
                     value={form.jshshir} onChange={e => setForm({ ...form, jshshir: e.target.value.replace(/\D/g, '').slice(0, 14) })}/>
@@ -277,41 +281,41 @@ export default function XodimlarPage() {
                 </div>
               </div>
               <div>
-                <label className={lbl}>Pasport seriya/raqam</label>
+                <label className={lbl}>{T(t.empPage.passportLabel)}</label>
                 <input className={inp} placeholder="AB 1234567"
                   value={form.passport} onChange={e => setForm({ ...form, passport: e.target.value })}/>
               </div>
               <div>
-                <label className={lbl}>Lavozim</label>
+                <label className={lbl}>{T(t.empPage.positionLabel)}</label>
                 <input className={inp} placeholder="Dasturchi"
                   value={form.lavozim} onChange={e => setForm({ ...form, lavozim: e.target.value })}/>
               </div>
               <div>
-                <label className={lbl}>Bo'lim</label>
+                <label className={lbl}>{T(t.empPage.deptLabel)}</label>
                 <input className={inp} placeholder="IT bo'limi"
                   value={form.bolim} onChange={e => setForm({ ...form, bolim: e.target.value })}/>
               </div>
               <div>
-                <label className={lbl}>Maosh (so'm)</label>
+                <label className={lbl}>{T(t.empPage.salaryLabel)}</label>
                 <input className={inp} placeholder="5 000 000"
                   value={form.maosh} onChange={e => setForm({ ...form, maosh: e.target.value })}/>
               </div>
               <div>
-                <label className={lbl}>Telefon</label>
+                <label className={lbl}>{T(t.empPage.phoneLabel)}</label>
                 <input className={inp} placeholder="+998901234567"
                   value={form.tel} onChange={e => setForm({ ...form, tel: e.target.value })}/>
               </div>
               <div>
-                <label className={lbl}>Ishga kirgan sana</label>
+                <label className={lbl}>{T(t.empPage.startDateLabel)}</label>
                 <input className={inp} type="date"
                   value={form.ish_boshi} onChange={e => setForm({ ...form, ish_boshi: e.target.value })}/>
               </div>
               <div>
-                <label className={lbl}>Holat</label>
+                <label className={lbl}>{T(t.empPage.statusLabel)}</label>
                 <select className={inp} value={form.status}
                   onChange={e => setForm({ ...form, status: e.target.value })}>
-                  <option value="active">Faol</option>
-                  <option value="fired">Ishdan bo'shagan</option>
+                  <option value="active">{T(t.empPage.statusActive)}</option>
+                  <option value="fired">{T(t.empPage.statusFired)}</option>
                 </select>
               </div>
             </div>
@@ -322,7 +326,7 @@ export default function XodimlarPage() {
 
       {confirmDeleteId && (
         <ConfirmModal
-          message="Bu xodimni o'chirishni tasdiqlaysizmi?"
+          message={T(t.empPage.deleteConfirm)}
           onConfirm={() => { const id = confirmDeleteId; setConfirmDeleteId(null); doDelete(id) }}
           onCancel={() => setConfirmDeleteId(null)}
         />

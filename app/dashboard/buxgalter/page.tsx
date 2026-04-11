@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useDashboard } from '../context'
+import { useLang } from '@/lib/LanguageContext'
+import { t, tr, type Lang } from '@/lib/i18n'
 import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
 import dynamic from 'next/dynamic'
@@ -157,6 +159,8 @@ const FEATURES: FeatureConfig[] = [
 
 export default function BuxgalterPage() {
   const { activeOrg, hasAiAccess, isFree, contracts, cps, openUpgradeModal } = useDashboard()
+  const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const [selected, setSelected] = useState<BuxFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -301,9 +305,9 @@ export default function BuxgalterPage() {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
             <span className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center text-xl">💼</span>
-            Buxgalter hujjatlari
+            {T(t.nav.buxgalter)}
           </h1>
-          <p className="text-gray-400 text-sm mt-1">Bosh hisobchi darajasida moliyaviy hujjatlar — AI va avtomatik kalkulyator</p>
+          <p className="text-gray-400 text-sm mt-1">{T({ uz: 'Bosh hisobchi darajasida moliyaviy hujjatlar — AI va avtomatik kalkulyator', oz: 'Бош ҳисобчи даражасида молиявий ҳужжатлар — AI ва автоматик калькулятор', ru: 'Финансовые документы на уровне главного бухгалтера — AI и автокалькулятор' })}</p>
         </div>
 
         {/* Stats bar */}
@@ -315,15 +319,15 @@ export default function BuxgalterPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-white">{orgContracts.length}</div>
-                <div className="text-xs text-gray-500 mt-1">Jami shartnomalar</div>
+                <div className="text-xs text-gray-500 mt-1">{T(t.overviewTab.totalContracts)}</div>
               </div>
               <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-emerald-400">{activeContracts.length}</div>
-                <div className="text-xs text-gray-500 mt-1">Faol shartnomalar</div>
+                <div className="text-xs text-gray-500 mt-1">{T(t.overview.activeContracts)}</div>
               </div>
               <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-blue-400">{(activeSum / 1_000_000).toFixed(1)}M</div>
-                <div className="text-xs text-gray-500 mt-1">Faol summa</div>
+                <div className="text-xs text-gray-500 mt-1">{T(t.overviewTab.activeSum)}</div>
               </div>
             </div>
           )
@@ -332,24 +336,24 @@ export default function BuxgalterPage() {
         {isFree && (
           <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-white text-sm font-semibold mb-0.5">🔒 Obuna talab qilinadi</div>
-              <div className="text-gray-400 text-xs">Buxgalteriya hujjatlarini yaratish Standart yoki AI Pro tarifida ishlaydi</div>
+              <div className="text-white text-sm font-semibold mb-0.5">{T(t.aiPage.subRequired)}</div>
+              <div className="text-gray-400 text-xs">{T({ uz: 'Buxgalteriya hujjatlarini yaratish Standart yoki AI Pro tarifida ishlaydi', oz: 'Бухгалтерия ҳужжатларини яратиш Стандарт ёки AI Pro тарифида ишлайди', ru: 'Создание бухгалтерских документов — тарифы Стандарт или AI Pro' })}</div>
             </div>
             <button onClick={openUpgradeModal}
               className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-              Obuna olish →
+              {T(t.aiPage.getSubBtn)}
             </button>
           </div>
         )}
         {!isFree && !hasAiAccess() && (
           <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-white text-sm font-semibold mb-0.5">✦ AI Pro versiyada ishlaydi</div>
-              <div className="text-gray-400 text-xs">Ba&apos;zi AI funksiyalar faqat AI Pro tarifida ishlaydi</div>
+              <div className="text-white text-sm font-semibold mb-0.5">{T(t.aiPage.aiProTitle)}</div>
+              <div className="text-gray-400 text-xs">{T({ uz: 'Ba\'zi AI funksiyalar faqat AI Pro tarifida ishlaydi', oz: 'Баъзи AI функциялар фақат AI Pro тарифида ишлайди', ru: 'Некоторые AI функции работают только в тарифе AI Pro' })}</div>
             </div>
             <button onClick={openUpgradeModal}
               className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-              AI Pro olish →
+              {T(t.aiPage.getAiProBtn)}
             </button>
           </div>
         )}
@@ -361,7 +365,7 @@ export default function BuxgalterPage() {
               <button key={feature.key} onClick={() => selectFeature(feature.key)}
                 className="bg-[#111827] border border-[#1E293B] hover:border-blue-600/50 hover:bg-[#1F2937] rounded-xl p-5 text-left transition group relative">
                 {feature.isCustom && (
-                  <span className="absolute top-3 right-3 text-[10px] bg-emerald-600/20 text-emerald-400 border border-emerald-600/30 rounded px-1.5 py-0.5">Kalkulyator</span>
+                  <span className="absolute top-3 right-3 text-[10px] bg-emerald-600/20 text-emerald-400 border border-emerald-600/30 rounded px-1.5 py-0.5">{T({ uz: 'Kalkulyator', oz: 'Калькулятор', ru: 'Калькулятор' })}</span>
                 )}
                 <div className="text-3xl mb-3">{feature.icon}</div>
                 <div className="font-semibold text-white text-sm mb-1 group-hover:text-blue-400 transition">{feature.title}</div>
@@ -377,7 +381,7 @@ export default function BuxgalterPage() {
             <div className="flex items-center gap-3">
               <button onClick={() => { setSelected(null); setResult(null); setError('') }}
                 className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition">
-                ← Orqaga
+                {T(t.aiPage.back)}
               </button>
               <div className="w-px h-4 bg-[#1E293B]"/>
               <div className="flex items-center gap-2">
@@ -423,7 +427,7 @@ export default function BuxgalterPage() {
                             value={contractOpen ? contractSearch : (selected || '')}
                             onFocus={() => { setContractOpen(true); setContractSearch(selected || '') }}
                             onChange={e => { setContractSearch(e.target.value); setFormData(p => ({ ...p, shartnoma_raqam: e.target.value })); setContractOpen(true) }}
-                            placeholder={selectedCp && orgContracts.some(c => (c.counterparties?.name || '').toLowerCase().includes(selectedCp.toLowerCase())) ? `${selectedCp} shartnomalaridan tanlang...` : orgContracts.length ? "Shartnoma raqami kiriting yoki ro'yxatdan tanlang..." : field.placeholder}
+                            placeholder={selectedCp && orgContracts.some(c => (c.counterparties?.name || '').toLowerCase().includes(selectedCp.toLowerCase())) ? `${selectedCp} ${T({ uz: 'shartnomalaridan tanlang...', oz: 'шартномаларидан танланг...', ru: 'из договоров выберите...' })}` : orgContracts.length ? T({ uz: "Shartnoma raqami kiriting yoki ro'yxatdan tanlang...", oz: "Шартнома рақами киритинг ёки рўйхатдан танланг...", ru: "Введите номер договора или выберите из списка..." }) : field.placeholder}
                             className={inp + ' pr-8'}
                             autoComplete="off"
                           />
@@ -439,17 +443,17 @@ export default function BuxgalterPage() {
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium text-white">№ {c.contract_number}</span>
                                     <span className="text-xs text-gray-500">{c.contract_date}</span>
-                                    {c.status === 'active' && <span className="text-[10px] bg-emerald-600/20 text-emerald-400 rounded px-1">faol</span>}
+                                    {c.status === 'active' && <span className="text-[10px] bg-emerald-600/20 text-emerald-400 rounded px-1">{T({ uz: 'faol', oz: 'фаол', ru: 'активн.' })}</span>}
                                   </div>
                                   {c.counterparties?.name && <div className="text-xs text-gray-400 mt-0.5">{c.counterparties.name}</div>}
-                                  {c.amount ? <div className="text-xs text-blue-400/70">{Number(c.amount).toLocaleString('uz-UZ')} so&apos;m</div> : null}
+                                  {c.amount ? <div className="text-xs text-blue-400/70">{Number(c.amount).toLocaleString('uz-UZ')} {T({ uz: "so'm", oz: "сўм", ru: "сум" })}</div> : null}
                                 </button>
                               ))}
                             </div>
                           )}
                           {contractOpen && filtered.length === 0 && contractSearch && (
                             <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-[#111827] border border-[#1E293B] rounded-lg px-3 py-2 text-xs text-gray-500">
-                              Topilmadi — qo&apos;lda kiriting
+                              {T({ uz: "Topilmadi — qo'lda kiriting", oz: 'Топилмади — қўлда киритинг', ru: 'Не найдено — введите вручную' })}
                             </div>
                           )}
                         </div>
@@ -521,9 +525,9 @@ export default function BuxgalterPage() {
 
                 {activeOrg && (
                   <div className="bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-2 text-xs text-gray-400">
-                    Tashkilot: <span className="text-white font-medium">{activeOrg.name}</span>
-                    {activeOrg.bank_name && <> · Bank: {activeOrg.bank_name}</>}
-                    {activeOrg.bank_account && <> · H/R: {activeOrg.bank_account}</>}
+                    {T({ uz: 'Tashkilot', oz: 'Ташкилот', ru: 'Организация' })}: <span className="text-white font-medium">{activeOrg.name}</span>
+                    {activeOrg.bank_name && <> · {T({ uz: 'Bank', oz: 'Банк', ru: 'Банк' })}: {activeOrg.bank_name}</>}
+                    {activeOrg.bank_account && <> · {T({ uz: 'H/R', oz: 'Ҳ/Р', ru: 'Р/С' })}: {activeOrg.bank_account}</>}
                   </div>
                 )}
 
@@ -537,8 +541,8 @@ export default function BuxgalterPage() {
                     <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>AI ishlamoqda…</>
-                  ) : <>🤖 AI bilan tayyorlash</>}
+                    </svg>{T(t.aiPage.preparing)}</>
+                  ) : <>{T(t.aiPage.generateAi)}</>}
                 </button>
 
                 {result && (

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useLang } from '@/lib/LanguageContext'
+import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
 import { downloadTextAsWord } from '@/lib/downloadUtils'
 import { saveAiDocument } from '@/lib/aiDocuments'
@@ -84,6 +85,7 @@ function ResultActions({
 
 export default function YuristPage() {
   const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { toast } = useToast()
   const { contracts, activeOrg, cps, hasAiAccess, subscription, openUpgradeModal, reloadContracts } = useDashboard()
 
@@ -123,7 +125,7 @@ export default function YuristPage() {
       const newContent = (contract.content || '') + '\n\n' + clauseText
       const { error } = await supabase.from('contracts').update({ content: newContent }).eq('id', hubContract)
       if (error) { toast(error.message, 'error'); return }
-      toast("Band shartnomaga qo'shildi!", 'success')
+      toast(T(t.yuristPage.clauseAddedMsg), 'success')
       reloadContracts()
     } finally {
       setAddingClause(false)
@@ -162,7 +164,7 @@ export default function YuristPage() {
   }
 
   async function saveToDb(featureKey: string, title: string, content: string) {
-    if (!activeOrg?.id) { toast('Tashkilot tanlanmagan', 'error'); return }
+    if (!activeOrg?.id) { toast(T(t.aiPage.errorNoOrg), 'error'); return }
     const result = await saveAiDocument({
       organization_id: activeOrg.id,
       section: 'yurist',
@@ -171,8 +173,8 @@ export default function YuristPage() {
       content,
       meta: {},
     })
-    if (result) { toast('Saqlandi!', 'success'); setSavedPanelKey(k => k + 1) }
-    else toast('Saqlashda xatolik', 'error')
+    if (result) { toast(T(t.yuristPage.savedMsg), 'success'); setSavedPanelKey(k => k + 1) }
+    else toast(T(t.yuristPage.saveErrorMsg), 'error')
   }
 
   async function runTuzatishDirect(contractContent: string) {
@@ -218,7 +220,7 @@ export default function YuristPage() {
         user_id: user?.id,
       })
       if (error) { toast(error.message, 'error'); return }
-      toast("Shartnoma tizimga saqlandi!", 'success')
+      toast(T({ uz: 'Shartnoma tizimga saqlandi!', oz: 'Шартнома тизимга сақланди!', ru: 'Договор сохранён в систему!' }), 'success')
       setSaveContractModal(null)
       setSaveContractCp('')
       reloadContracts()
@@ -306,17 +308,17 @@ export default function YuristPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">⚖️ Yurist AI</h1>
-          <p className="text-gray-400 text-sm mt-0.5">Claude AI yordamida shartnomalaringizni tahlil qiling, tarjima qiling va takomillashtiring</p>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">{T(t.yuristPage.title)}</h1>
+          <p className="text-gray-400 text-sm mt-0.5">{T(t.yuristPage.subtitle)}</p>
         </div>
         {!hasAiAccess() ? (
           <button onClick={openUpgradeModal}
             className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-            ✦ Pro versiyani olish →
+            {T(t.yuristPage.getProBtn)}
           </button>
         ) : (
           <span className="text-xs bg-blue-600/10 border border-blue-600/30 text-blue-400 px-3 py-1.5 rounded-xl font-medium">
-            ⭐ {subscription?.plan === 'ai_pro' ? 'AI Pro' : subscription?.plan === 'standard' ? 'Standart' : 'Premium'} — Cheksiz foydalanish
+            ⭐ {subscription?.plan === 'ai_pro' ? 'AI Pro' : subscription?.plan === 'standard' ? 'Standart' : 'Premium'} — {T(t.yuristPage.unlimitedBadge)}
           </span>
         )}
       </div>
@@ -360,7 +362,7 @@ export default function YuristPage() {
           <span className="text-xl">{sel.icon}</span>
           <h3 className="font-semibold text-white">{sel.name}</h3>
           {!hasAiAccess() && (
-            <span className="ml-auto text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Pro versiya</span>
+            <span className="ml-auto text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">{T(t.yuristPage.proBadge)}</span>
           )}
         </div>
 
@@ -376,7 +378,7 @@ export default function YuristPage() {
                   <label className="block text-xs text-gray-400 mb-1">Kontragent</label>
                   <select value={hubCp} onChange={e => { setHubCp(e.target.value); setHubContract(''); setHubResult(null); setHubError('') }}
                     className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
-                    <option value="">— Barcha kontragentlar —</option>
+                    <option value="">{T(t.yuristPage.allCps)}</option>
                     {cpOptions.map(([id, name]) => (
                       <option key={id} value={id}>{name}</option>
                     ))}
@@ -386,25 +388,25 @@ export default function YuristPage() {
               {/* Contract filter */}
               <div>
                 <label className="block text-xs text-gray-400 mb-1">
-                  Shartnoma tanlang
+                  {T({ uz: 'Shartnoma tanlang', oz: 'Шартнома танланг', ru: 'Выберите договор' })}
                   {contractsWithContent.length === 0 && filteredBycp.length > 0 && (
-                    <span className="ml-2 text-amber-400">⚠ Hech bir shartnomada matn yo'q</span>
+                    <span className="ml-2 text-amber-400">{T(t.yuristPage.noContentWarn)}</span>
                   )}
                 </label>
                 <select value={hubContract} onChange={e => { setHubContract(e.target.value); setHubResult(null); setHubError('') }}
                   className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
-                  <option value="">— Shartnomani tanlang —</option>
+                  <option value="">{T(t.yuristPage.selectContract)}</option>
                   {filteredBycp.map(c => {
                     const hasContent = Boolean(c.content?.trim())
                     return (
                       <option key={c.id} value={c.id} disabled={!hasContent}>
-                        {hasContent ? '✓' : '✗'} #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]}{!hubCp ? ` · ${c.counterparties?.name || '—'}` : ''}{!hasContent ? " (matn yo'q)" : ''}
+                        {hasContent ? '✓' : '✗'} #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]}{!hubCp ? ` · ${c.counterparties?.name || '—'}` : ''}{!hasContent ? ` ${T(t.yuristPage.noContractText)}` : ''}
                       </option>
                     )
                   })}
                 </select>
                 {hubContract && !selectedHasContent && (
-                  <p className="text-amber-400 text-xs mt-1">⚠ Bu shartnomada matn yo'q. Shartnomani oching va bandlar qo'shing.</p>
+                  <p className="text-amber-400 text-xs mt-1">{T(t.yuristPage.noTextWarn)}</p>
                 )}
               </div>
             </div>
@@ -449,20 +451,20 @@ export default function YuristPage() {
         {hubFeature === 'clause' && (
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Kontragent (ixtiyoriy)</label>
+              <label className="block text-xs text-gray-400 mb-1">{T({ uz: 'Kontragent (ixtiyoriy)', oz: 'Контрагент (ихтиёрий)', ru: 'Контрагент (необязательно)' })}</label>
               <select value={hubCp} onChange={e => { setHubCp(e.target.value); setHubContract(''); setHubResult(null) }}
                 className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
-                <option value="">— Barcha kontragentlar —</option>
+                <option value="">{T(t.yuristPage.allCps)}</option>
                 {cpOptions.map(([id, name]) => (
                   <option key={id} value={id}>{name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Shartnoma (ixtiyoriy — band shu shartnomaga qo'shiladi)</label>
+              <label className="block text-xs text-gray-400 mb-1">{T({ uz: "Shartnoma (ixtiyoriy — band shu shartnomaga qo'shiladi)", oz: "Шартнома (ихтиёрий — банд шу шартномага қўшилади)", ru: "Договор (необязательно — пункт добавится к этому договору)" })}</label>
               <select value={hubContract} onChange={e => { setHubContract(e.target.value); setHubResult(null) }}
                 className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
-                <option value="">— Shartnoma tanlanmagan —</option>
+                <option value="">{T({ uz: '— Shartnoma tanlanmagan —', oz: '— Шартнома танланмаган —', ru: '— Договор не выбран —' })}</option>
                 {filteredBycp.map(c => (
                   <option key={c.id} value={c.id}>
                     #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]}
@@ -608,7 +610,7 @@ export default function YuristPage() {
               {hubError.includes('premium') && (
                 <button onClick={openUpgradeModal}
                   className="block mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg">
-                  Pro versiyani olish →
+                  {T(t.yuristPage.getProBtn)}
                 </button>
               )}
             </div>
@@ -619,11 +621,11 @@ export default function YuristPage() {
         {!canUse && (
           <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-5 text-center">
             <div className="text-3xl mb-2">🔒</div>
-            <div className="text-white font-semibold mb-1">Pro versiyada ishlaydi</div>
-            <div className="text-gray-400 text-sm mb-4">Yurist AI faqat Standart yoki AI Pro tarifida ishlaydi. Hoziroq ulaning va shartnomalaringizni AI bilan tahlil qiling.</div>
+            <div className="text-white font-semibold mb-1">{T(t.yuristPage.proLockTitle)}</div>
+            <div className="text-gray-400 text-sm mb-4">{T(t.yuristPage.proLockDesc)}</div>
             <button onClick={openUpgradeModal}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition">
-              ✦ Pro versiyani olish →
+              {T(t.yuristPage.getProBtn)}
             </button>
           </div>
         )}
@@ -632,7 +634,7 @@ export default function YuristPage() {
         {canUse && !hubLoading && !hubResult && (
           <button onClick={runHubFeature} disabled={fixFileLoading}
             className="w-full py-3 rounded-xl text-sm font-semibold transition bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed">
-            {fixFileLoading ? '⏳ Fayl o\'qilmoqda...' : `${sel.icon} ${sel.name} boshlash`}
+            {fixFileLoading ? T(t.yuristPage.fileReading) : `${sel.icon} ${sel.name} ${T(t.yuristPage.startBtn)}`}
           </button>
         )}
 
@@ -640,8 +642,8 @@ export default function YuristPage() {
         {hubLoading && (
           <div className="text-center py-8">
             <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"/>
-            <div className="text-gray-400 text-sm">Claude AI ishlamoqda...</div>
-            <div className="text-gray-500 text-xs mt-1">~10-20 soniya</div>
+            <div className="text-gray-400 text-sm">{T(t.yuristPage.aiWorking)}</div>
+            <div className="text-gray-500 text-xs mt-1">{T(t.yuristPage.aiWorkingSec)}</div>
           </div>
         )}
 
@@ -650,7 +652,7 @@ export default function YuristPage() {
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setPreviewText(null)}>
             <div className="bg-[#111827] border border-[#1E293B] rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E293B]">
-                <h3 className="font-semibold text-white">👁 Ko&apos;rish: {sel.name}</h3>
+                <h3 className="font-semibold text-white">👁 {T(t.yuristPage.previewTitle)}: {sel.name}</h3>
                 <button onClick={() => setPreviewText(null)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
               </div>
               <div className="flex-1 overflow-y-auto p-6">
@@ -661,7 +663,7 @@ export default function YuristPage() {
               <div className="px-5 py-4 border-t border-[#1E293B] flex gap-3">
                 <button onClick={() => { downloadTextAsWord(previewText, sel.name); setPreviewText(null) }}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">
-                  📝 Word yuklash
+                  {T(t.yuristPage.downloadWord)}
                 </button>
                 <a href="https://www.ilovepdf.com/ru/word_to_pdf" target="_blank" rel="noopener noreferrer"
                   className="flex-1 bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 py-2.5 rounded-xl text-sm font-semibold transition text-center">
@@ -949,12 +951,12 @@ export default function YuristPage() {
       {!hasAiAccess() && (
         <div className="bg-blue-600/10 border border-blue-600/30 rounded-2xl p-5 flex items-center justify-between gap-4">
           <div>
-            <div className="text-white font-semibold text-sm mb-1">✦ Pro versiyada ishlaydi</div>
-            <div className="text-gray-400 text-xs">Shartnoma tahlili, tarjima, grammatika, yuridik maslahat — barchasi AI bilan</div>
+            <div className="text-white font-semibold text-sm mb-1">{T(t.yuristPage.proLockTitle)}</div>
+            <div className="text-gray-400 text-xs">{T({ uz: 'Shartnoma tahlili, tarjima, grammatika, yuridik maslahat — barchasi AI bilan', oz: 'Шартнома таҳлили, таржима, грамматика, юридик маслаҳат — барчаси AI билан', ru: 'Анализ договора, перевод, грамматика, юридическая консультация — всё с AI' })}</div>
           </div>
           <button onClick={openUpgradeModal}
             className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
-            Pro versiyani olish →
+            {T(t.yuristPage.getProBtn)}
           </button>
         </div>
       )}
@@ -969,28 +971,28 @@ export default function YuristPage() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B]">
-              <h3 className="font-semibold text-white">📂 Tizimga shartnoma sifatida saqlash</h3>
+              <h3 className="font-semibold text-white">📂 {T(t.yuristPage.saveToSystem)}</h3>
               <button onClick={() => { setSaveContractModal(null); setSaveContractCp('') }}
                 className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
             </div>
             <div className="p-6 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Shartnoma raqami</label>
+                  <label className="block text-xs text-gray-400 mb-1">{T({ uz: 'Shartnoma raqami', oz: 'Шартнома рақами', ru: 'Номер договора' })}</label>
                   <input value={saveContractModal.raqam}
                     onChange={e => setSaveContractModal({ ...saveContractModal, raqam: e.target.value })}
                     placeholder="2025/01"
                     className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600"/>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Sana</label>
+                  <label className="block text-xs text-gray-400 mb-1">{T({ uz: 'Sana', oz: 'Сана', ru: 'Дата' })}</label>
                   <input type="date" value={saveContractModal.sana}
                     onChange={e => setSaveContractModal({ ...saveContractModal, sana: e.target.value })}
                     className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600"/>
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Shartnoma turi</label>
+                <label className="block text-xs text-gray-400 mb-1">{T({ uz: 'Shartnoma turi', oz: 'Шартнома тури', ru: 'Тип договора' })}</label>
                 <select value={saveContractModal.tur}
                   onChange={e => setSaveContractModal({ ...saveContractModal, tur: e.target.value })}
                   className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 cursor-pointer">
@@ -998,21 +1000,21 @@ export default function YuristPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Kontragent (ixtiyoriy)</label>
+                <label className="block text-xs text-gray-400 mb-1">{T({ uz: 'Kontragent (ixtiyoriy)', oz: 'Контрагент (ихтиёрий)', ru: 'Контрагент (необязательно)' })}</label>
                 <select value={saveContractCp} onChange={e => setSaveContractCp(e.target.value)}
                   className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 cursor-pointer">
-                  <option value="">— Kontragent tanlanmagan —</option>
+                  <option value="">{T({ uz: '— Kontragent tanlanmagan —', oz: '— Контрагент танланмаган —', ru: '— Контрагент не выбран —' })}</option>
                   {cps.map(cp => <option key={cp.id} value={cp.id}>{cp.name}</option>)}
                 </select>
               </div>
               <div className="flex gap-3 pt-2">
                 <button onClick={saveContractToSystem} disabled={saveContractLoading}
                   className="flex-1 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition">
-                  {saveContractLoading ? '⏳ Saqlanmoqda...' : '💾 Saqlash'}
+                  {saveContractLoading ? T({ uz: '⏳ Saqlanmoqda...', oz: '⏳ Сақланмоқда...', ru: '⏳ Сохранение...' }) : T(t.yuristPage.saveBtn)}
                 </button>
                 <button onClick={() => { setSaveContractModal(null); setSaveContractCp('') }}
                   className="flex-1 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 py-2.5 rounded-xl text-sm transition">
-                  Bekor qilish
+                  {T({ uz: 'Bekor qilish', oz: 'Бекор қилиш', ru: 'Отмена' })}
                 </button>
               </div>
             </div>

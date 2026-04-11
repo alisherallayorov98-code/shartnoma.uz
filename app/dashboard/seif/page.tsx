@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useDashboard } from '../context'
 import { supabase } from '@/lib/supabase'
+import { useLang } from '@/lib/LanguageContext'
+import { t, tr, type Lang } from '@/lib/i18n'
 
 type OrgDoc = {
   id: string
@@ -13,15 +15,10 @@ type OrgDoc = {
   created_at: string
 }
 
-const CATEGORIES = [
-  { key: 'barchasi',   label: 'Barchasi',                icon: '📂' },
-  { key: 'guvohnoma', label: "Ro'yxat guvohnomalari",   icon: '🏛️' },
-  { key: 'ustav',     label: 'Ustav / Nizom',            icon: '📜' },
-  { key: 'litsenziya',label: 'Litsenziyalar',            icon: '✅' },
-  { key: 'bank',      label: 'Bank hujjatlari',          icon: '🏦' },
-  { key: 'soliq',     label: 'Soliq hujjatlari',         icon: '🧾' },
-  { key: 'boshqa',    label: 'Boshqa',                   icon: '📁' },
-]
+const CATEGORY_KEYS = ['barchasi', 'guvohnoma', 'ustav', 'litsenziya', 'bank', 'soliq', 'boshqa'] as const
+const CATEGORY_ICONS: Record<string, string> = {
+  barchasi: '📂', guvohnoma: '🏛️', ustav: '📜', litsenziya: '✅', bank: '🏦', soliq: '🧾', boshqa: '📁',
+}
 
 const MAX_DOCS = 20
 const MAX_FILE_MB = 20
@@ -62,6 +59,19 @@ async function compressImageToPdf(file: File): Promise<Blob> {
 
 export default function SeifPage() {
   const { activeOrg } = useDashboard()
+  const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    barchasi:   T(t.seifPage.catAll),
+    guvohnoma:  T(t.seifPage.catGuvohnoma),
+    ustav:      T(t.seifPage.catUstav),
+    litsenziya: T(t.seifPage.catLitsenziya),
+    bank:       T(t.seifPage.catBank),
+    soliq:      T(t.seifPage.catSoliq),
+    boshqa:     T(t.seifPage.catBoshqa),
+  }
+  const CATEGORIES = CATEGORY_KEYS.map(key => ({ key, label: CATEGORY_LABELS[key], icon: CATEGORY_ICONS[key] }))
   const [docs, setDocs] = useState<OrgDoc[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -117,15 +127,15 @@ export default function SeifPage() {
     const isPdf = file.type === 'application/pdf'
 
     if (!isImage && !isPdf) {
-      setUploadError('Faqat PDF yoki rasm (JPG, PNG) yuklash mumkin')
+      setUploadError(T(t.seifPage.onlyPdfImg))
       return
     }
     if (file.size > MAX_FILE_MB * 1024 * 1024) {
-      setUploadError(`Fayl hajmi ${MAX_FILE_MB}MB dan oshmasligi kerak`)
+      setUploadError(`${T(t.seifPage.maxSize)} ${MAX_FILE_MB}MB ${T(t.seifPage.maxSizeSuffix)}`)
       return
     }
     if (docs.length >= MAX_DOCS) {
-      setUploadError(`Maksimal ${MAX_DOCS} ta hujjat saqlash mumkin`)
+      setUploadError(`${T(t.seifPage.maxDocs)} ${MAX_DOCS} ${T(t.seifPage.maxDocsSuffix)}`)
       return
     }
 
@@ -138,7 +148,7 @@ export default function SeifPage() {
         name.replace(/[^a-zA-Z0-9.\-_]/g, '_').replace(/_+/g, '_')
 
       if (isImage) {
-        setUploadProgress('Rasm siqilmoqda...')
+        setUploadProgress(T(t.seifPage.compressing))
         uploadBlob = await compressImageToPdf(file)
         finalName = sanitize(file.name.replace(/\.[^.]+$/, '')) + '.pdf'
       } else {
@@ -151,7 +161,7 @@ export default function SeifPage() {
         ? uploadName.trim().replace(/\.pdf$/i, '') + '.pdf'
         : finalName
 
-      setUploadProgress("Supabase ga yuklanmoqda...")
+      setUploadProgress(T(t.seifPage.uploading2))
       const filePath = `${activeOrg.id}/${Date.now()}-${finalName}`
 
       const { error: storageError } = await supabase.storage
@@ -213,7 +223,7 @@ export default function SeifPage() {
   }
 
   async function handleDelete(doc: OrgDoc) {
-    if (!confirm(`"${doc.name}" o'chirilsinmi?`)) return
+    if (!confirm(`"${doc.name}" ${T(t.seifPage.deleteConfirm)}`)) return
     setDeleting(prev => new Set(prev).add(doc.id))
     try {
       await supabase.storage.from('org-documents').remove([doc.file_path])
@@ -261,35 +271,32 @@ export default function SeifPage() {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
             <span className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center text-xl">🔒</span>
-            Seif
+            {T(t.nav.seif)}
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Korporativ hujjatlarni xavfsiz saqlang — istalgan qurilmadan kirish
+            {T(t.seifPage.subtitle)}
           </p>
         </div>
 
         {/* Ogohlantirish */}
         <div className="bg-amber-900/20 border border-amber-700/40 rounded-xl px-4 py-3 text-xs text-amber-300 flex items-start gap-2">
           <span className="mt-0.5 shrink-0">⚠️</span>
-          <span>
-            Shaxsiy ma&apos;lumotlar (pasport, ID nusxalari, xodimlar ma&apos;lumotlari) <strong>yuklamang</strong>.
-            Faqat korporativ hujjatlar saqlang.
-          </span>
+          <span>{T(t.seifPage.warning)}</span>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-white">{docs.length}</div>
-            <div className="text-xs text-gray-500 mt-1">Hujjatlar</div>
+            <div className="text-xs text-gray-500 mt-1">{T(t.seifPage.docs)}</div>
           </div>
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-blue-400">{MAX_DOCS - docs.length}</div>
-            <div className="text-xs text-gray-500 mt-1">Bo&apos;sh joy</div>
+            <div className="text-xs text-gray-500 mt-1">{T(t.seifPage.freeSpace)}</div>
           </div>
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-emerald-400">{formatSize(totalSize)}</div>
-            <div className="text-xs text-gray-500 mt-1">Jami hajm</div>
+            <div className="text-xs text-gray-500 mt-1">{T(t.seifPage.totalSize)}</div>
           </div>
         </div>
 
@@ -297,8 +304,8 @@ export default function SeifPage() {
         {docs.length > 0 && (
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl px-4 py-3">
             <div className="flex justify-between text-xs text-gray-400 mb-1.5">
-              <span>Saqlash joyi</span>
-              <span>{docs.length} / {MAX_DOCS} hujjat</span>
+              <span>{T(t.seifPage.uploadTitle)}</span>
+              <span>{docs.length} / {MAX_DOCS} {T(t.seifPage.docs)}</span>
             </div>
             <div className="h-1.5 bg-[#1E293B] rounded-full overflow-hidden">
               <div
@@ -313,7 +320,7 @@ export default function SeifPage() {
         <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Hujjat nomi (ixtiyoriy)</label>
+              <label className="block text-xs text-gray-400 mb-1">{T(t.seifPage.docNameLabel)}</label>
               <input
                 className={inp}
                 placeholder="Ustav 2024-yil yangilangan"
@@ -322,7 +329,7 @@ export default function SeifPage() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Kategoriya</label>
+              <label className="block text-xs text-gray-400 mb-1">{T(t.seifPage.categoryLabel)}</label>
               <select
                 value={uploadCategory}
                 onChange={e => setUploadCategory(e.target.value)}
@@ -349,13 +356,13 @@ export default function SeifPage() {
             {uploading ? (
               <div>
                 <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <div className="text-sm text-gray-300 font-medium">{uploadProgress || 'Yuklanmoqda...'}</div>
+                <div className="text-sm text-gray-300 font-medium">{uploadProgress || T(t.seifPage.uploading)}</div>
               </div>
             ) : (
               <>
                 <div className="text-4xl mb-3">📂</div>
                 <div className="text-sm text-gray-300 font-medium mb-1">
-                  Fayl tashlang yoki bosib tanlang
+                  {T(t.seifPage.dragDrop)}
                 </div>
                 <div className="text-xs text-gray-500">
                   PDF, JPG, PNG · max {MAX_FILE_MB}MB
@@ -418,9 +425,7 @@ export default function SeifPage() {
             <div className="p-12 text-center">
               <div className="text-5xl mb-3">🔒</div>
               <div className="text-gray-500 text-sm">
-                {activeCategory === 'barchasi'
-                  ? "Hujjatlar yo'q. Yuqoridan fayl yuklang."
-                  : "Bu kategoriyada hujjat yo'q."}
+                {T(t.seifPage.empty)}
               </div>
             </div>
           ) : (
@@ -437,7 +442,7 @@ export default function SeifPage() {
                       <div className="text-sm font-medium text-white truncate">{doc.name}</div>
                       <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2 flex-wrap">
                         <span className="bg-[#1F2937] px-1.5 py-0.5 rounded text-gray-400">
-                          {cat?.icon} {cat?.label || doc.category}
+                          {cat?.icon} {cat?.label || CATEGORY_LABELS[doc.category] || doc.category}
                         </span>
                         <span>{formatSize(doc.file_size)}</span>
                         <span>{new Date(doc.created_at).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
@@ -448,13 +453,13 @@ export default function SeifPage() {
                         onClick={() => handlePreview(doc)}
                         className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium"
                       >
-                        👁 Ko&apos;rish
+                        👁 {T(t.btn.view)}
                       </button>
                       <button
                         onClick={() => handleDownload(doc)}
                         className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition font-medium"
                       >
-                        ↓ Yuklab olish
+                        ↓ {T(t.btn.download)}
                       </button>
                       <button
                         onClick={() => openEdit(doc)}
@@ -516,9 +521,9 @@ export default function SeifPage() {
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
           onClick={e => { if (e.target === e.currentTarget) setEditDoc(null) }}>
           <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6 w-full max-w-md space-y-4">
-            <h3 className="text-sm font-semibold text-white">Hujjatni tahrirlash</h3>
+            <h3 className="text-sm font-semibold text-white">{T(t.seifPage.editTitle)}</h3>
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Hujjat nomi</label>
+              <label className="block text-xs text-gray-400 mb-1">{T(t.seifPage.nameLabel)}</label>
               <input
                 className={inp}
                 value={editName}
@@ -527,7 +532,7 @@ export default function SeifPage() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Kategoriya</label>
+              <label className="block text-xs text-gray-400 mb-1">{T(t.seifPage.categoryLabel)}</label>
               <select
                 className={`${inp} cursor-pointer`}
                 value={editCategory}
@@ -541,11 +546,11 @@ export default function SeifPage() {
             <div className="flex gap-2 pt-1">
               <button onClick={saveEdit} disabled={editSaving}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2 rounded-lg text-sm font-semibold transition">
-                {editSaving ? 'Saqlanmoqda...' : 'Saqlash'}
+                {editSaving ? T(t.btn.saving) : T(t.btn.save)}
               </button>
               <button onClick={() => setEditDoc(null)}
                 className="flex-1 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 py-2 rounded-lg text-sm transition">
-                Bekor qilish
+                {T(t.btn.cancel)}
               </button>
             </div>
           </div>

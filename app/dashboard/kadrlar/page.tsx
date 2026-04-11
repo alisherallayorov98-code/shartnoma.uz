@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useDashboard } from '../context'
+import { useLang } from '@/lib/LanguageContext'
+import { t, tr, type Lang } from '@/lib/i18n'
 import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
@@ -362,6 +364,8 @@ const EMP_FIELD_MAP: Record<string, string> = {
 export default function KadrlarPage() {
   const { activeOrg, hasAiAccess, isFree, openUpgradeModal, employees } = useDashboard()
   const { toast } = useToast()
+  const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const [activeCat, setActiveCat] = useState<Category>('shartnoma')
   const [selected, setSelected] = useState<KadrFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
@@ -532,34 +536,34 @@ export default function KadrlarPage() {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
             <span className="w-10 h-10 bg-blue-600/20 rounded-xl flex items-center justify-center text-xl">👥</span>
-            Kadrlar hujjatlari
+            {T(t.nav.kadrlar)}
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Shartnomalar, buyruqlar va boshqa kadrlar hujjatlarini avtomatik tayyorlang
+            {T({ uz: 'Shartnomalar, buyruqlar va boshqa kadrlar hujjatlarini avtomatik tayyorlang', oz: 'Шартномалар, буюрқлар ва бошқа кадрлар ҳужжатларини автоматик тайёрланг', ru: 'Автоматическая подготовка договоров, приказов и других кадровых документов' })}
           </p>
         </div>
 
         {isFree && (
           <div className="bg-orange-600/10 border border-orange-600/30 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-white text-sm font-semibold mb-0.5">🔒 Obuna talab qilinadi</div>
-              <div className="text-gray-400 text-xs">Kadrlar hujjatlarini yaratish Standart yoki AI Pro tarifida ishlaydi</div>
+              <div className="text-white text-sm font-semibold mb-0.5">{T(t.aiPage.subRequired)}</div>
+              <div className="text-gray-400 text-xs">{T({ uz: 'Kadrlar hujjatlarini yaratish Standart yoki AI Pro tarifida ishlaydi', oz: 'Кадрлар ҳужжатларини яратиш Стандарт ёки AI Pro тарифида ишлайди', ru: 'Создание кадровых документов — тарифы Стандарт или AI Pro' })}</div>
             </div>
             <button onClick={openUpgradeModal}
               className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-              Obuna olish →
+              {T(t.aiPage.getSubBtn)}
             </button>
           </div>
         )}
         {!isFree && !hasAiAccess() && (
           <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-white text-sm font-semibold mb-0.5">✦ AI Pro versiyada ishlaydi</div>
-              <div className="text-gray-400 text-xs">Ba&apos;zi AI funksiyalar faqat AI Pro tarifida ishlaydi</div>
+              <div className="text-white text-sm font-semibold mb-0.5">{T(t.aiPage.aiProTitle)}</div>
+              <div className="text-gray-400 text-xs">{T({ uz: 'Ba\'zi AI funksiyalar faqat AI Pro tarifida ishlaydi', oz: 'Баъзи AI функциялар фақат AI Pro тарифида ишлайди', ru: 'Некоторые AI функции работают только в тарифе AI Pro' })}</div>
             </div>
             <button onClick={openUpgradeModal}
               className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-              AI Pro olish →
+              {T(t.aiPage.getAiProBtn)}
             </button>
           </div>
         )}
@@ -596,12 +600,12 @@ export default function KadrlarPage() {
                   <div className="text-xs text-gray-500 leading-relaxed">{feature.description}</div>
                   {!feature.useAI && (
                     <div className="mt-3 inline-flex items-center gap-1 text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full">
-                      ⚡ Shablon asosida — tez
+                      {T(t.aiPage.templateFast)}
                     </div>
                   )}
                   {feature.useAI && (
                     <div className="mt-3 inline-flex items-center gap-1 text-xs bg-blue-600/10 border border-blue-600/30 text-blue-400 px-2 py-0.5 rounded-full">
-                      🤖 AI yordamida
+                      {T(t.aiPage.aiBadge)}
                     </div>
                   )}
                 </button>
@@ -617,7 +621,7 @@ export default function KadrlarPage() {
             <div className="flex items-center gap-3">
               <button onClick={goBack}
                 className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition">
-                ← Orqaga
+                {T(t.aiPage.back)}
               </button>
               <div className="w-px h-4 bg-[#1E293B]"/>
               <div className="flex items-center gap-2">
@@ -625,7 +629,7 @@ export default function KadrlarPage() {
                 <h2 className="font-semibold text-white">{currentFeature.title}</h2>
               </div>
               {!currentFeature.useAI && (
-                <span className="text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full">⚡ Shablon</span>
+                <span className="text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full">{T(t.aiPage.templateBadge)}</span>
               )}
             </div>
 
@@ -651,14 +655,14 @@ export default function KadrlarPage() {
             {/* Employee selector — shown for forms with mappable fields */}
             {currentFeature.fields.some(f => EMP_FIELD_MAP[f.key]) && employees.length > 0 && (
               <div className="relative">
-                <label className="block text-xs text-gray-400 mb-1">Mavjud xodimdan avtoto'ldirish</label>
+                <label className="block text-xs text-gray-400 mb-1">{T(t.aiPage.autoFillLabel)}</label>
                 <input
                   type="text"
                   value={empSearch}
                   onFocus={() => setEmpOpen(true)}
                   onChange={e => { setEmpSearch(e.target.value); setEmpOpen(true) }}
                   onBlur={() => setTimeout(() => setEmpOpen(false), 150)}
-                  placeholder="Xodim ismini kiriting yoki tanlang…"
+                  placeholder={T(t.aiPage.autoFillPlaceholder)}
                   className={inp}
                   autoComplete="off"
                 />
@@ -707,7 +711,7 @@ export default function KadrlarPage() {
                   <div key={field.key} className={field.textarea ? 'sm:col-span-2' : ''}>
                     <label className="block text-xs text-gray-400 mb-1">
                       {field.label}
-                      {field.optional && <span className="text-gray-500 ml-1">(ixtiyoriy)</span>}
+                      {field.optional && <span className="text-gray-500 ml-1">{T(t.aiPage.optional)}</span>}
                     </label>
                     {field.textarea ? (
                       <textarea
@@ -758,9 +762,9 @@ export default function KadrlarPage() {
             {/* Org info */}
             {activeOrg && (
               <div className="bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-2 text-xs text-gray-400">
-                Tashkilot: <span className="text-white font-medium">{activeOrg.name}</span>
-                {' '}· INN: {activeOrg.inn}
-                {' '}· Direktor: {activeOrg.director_name}
+                {T(t.aiPage.orgInfo)}: <span className="text-white font-medium">{activeOrg.name}</span>
+                {' '}· {T(t.aiPage.inn)}: {activeOrg.inn}
+                {' '}· {T(t.aiPage.director)}: {activeOrg.director_name}
               </div>
             )}
 
@@ -776,10 +780,10 @@ export default function KadrlarPage() {
                 <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>Tayyorlanmoqda…</>
+                </svg>{T(t.aiPage.preparing)}</>
               ) : currentFeature.useAI
-                ? <>🤖 AI bilan tayyorlash</>
-                : <>⚡ Hujjat tayyorlash</>
+                ? <>{T(t.aiPage.generateAi)}</>
+                : <>{T(t.aiPage.generateTemplate)}</>
               }
             </button>
 

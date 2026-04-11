@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
+import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../../context'
 import { getStructure, structureToText, numberToWords } from '@/lib/contractStructures'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
@@ -73,6 +74,7 @@ function orgCityDefault(org: { viloyat?: string; tuman?: string } | null | undef
 
 export default function OmmaviyPage() {
   const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -222,13 +224,13 @@ export default function OmmaviyPage() {
   // ── Validatsiya ───────────────────────────────────────────────────────────
 
   function validateStep1(): boolean {
-    if (!baseNumber.trim()) { toast('Boshlang\'ich raqam kiritilishi shart', 'error'); return false }
-    if (!contractDate) { toast('Sana kiritilishi shart', 'error'); return false }
+    if (!baseNumber.trim()) { toast(T(t.ommaviy.errNumRequired), 'error'); return false }
+    if (!contractDate) { toast(T(t.ommaviy.errDateRequired), 'error'); return false }
     return true
   }
 
   function validateStep2(): boolean {
-    if (selectedCpIds.size === 0) { toast('Kamida 1 ta kontragent tanlang', 'error'); return false }
+    if (selectedCpIds.size === 0) { toast(T(t.ommaviy.errSelectCp), 'error'); return false }
     return true
   }
 
@@ -302,8 +304,8 @@ export default function OmmaviyPage() {
       if (selectedCps.length > remaining) {
         toast(
           remaining === 0
-            ? `Bepul reja limiti tugagan (${FREE_LIMIT} ta). Tarifni yangilang.`
-            : `Bepul rejada faqat ${remaining} ta slot qolgan, siz ${selectedCps.length} ta yaratmoqchisiz.`,
+            ? T(t.ommaviy.errFreeLimit).replace('{limit}', String(FREE_LIMIT))
+            : T(t.ommaviy.errFreeSlots).replace('{remaining}', String(remaining)).replace('{count}', String(selectedCps.length)),
           'error'
         )
         openUpgradeModal()
@@ -380,9 +382,9 @@ export default function OmmaviyPage() {
     setCreating(false)
 
     if (fail === 0) {
-      toast(`${ok} ta shartnoma muvaffaqiyatli yaratildi`, 'success')
+      toast(T(t.ommaviy.toastSuccess).replace('{count}', String(ok)), 'success')
     } else {
-      toast(`${ok} ta yaratildi, ${fail} ta xatolik`, 'error')
+      toast(T(t.ommaviy.toastPartial).replace('{ok}', String(ok)).replace('{fail}', String(fail)), 'error')
     }
   }
 
@@ -402,15 +404,15 @@ export default function OmmaviyPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
           </svg>
         </button>
-        <h1 className="text-xl font-semibold text-white">Ommaviy shartnoma yaratish</h1>
+        <h1 className="text-xl font-semibold text-white">{T(t.ommaviy.title)}</h1>
       </div>
 
       {/* ── Steps ── */}
       <div className="flex items-center gap-2 mb-8">
         {[
-          { n: 1, label: 'Sozlamalar' },
-          { n: 2, label: 'Kontragentlar' },
-          { n: 3, label: 'Tasdiqlash' },
+          { n: 1, label: T(t.ommaviy.step1) },
+          { n: 2, label: T(t.ommaviy.step2) },
+          { n: 3, label: T(t.ommaviy.step3) },
         ].map(({ n, label }) => (
           <div key={n} className="flex items-center gap-2">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition ${
@@ -437,7 +439,7 @@ export default function OmmaviyPage() {
         <div className="max-w-2xl space-y-6">
           {/* Shartnoma turi */}
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
-            <label className="block text-sm text-gray-400 mb-3 font-medium">Shartnoma turi</label>
+            <label className="block text-sm text-gray-400 mb-3 font-medium">{T(t.ommaviy.typeLabel)}</label>
             <div className="grid grid-cols-3 gap-2">
               {CONTRACT_TYPES.map(({ key, color }) => (
                 <button
@@ -460,18 +462,18 @@ export default function OmmaviyPage() {
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5 space-y-4">
             <div>
               <label className="block text-sm text-gray-400 mb-1.5 font-medium">
-                Boshlang'ich shartnoma raqami
+                {T(t.ommaviy.baseNumLabel)}
               </label>
               <input
                 type="text"
                 value={baseNumber}
                 onChange={e => setBaseNumber(e.target.value)}
-                placeholder="Misol: 01/10 yoki 50 yoki 2026/001"
+                placeholder={T(t.ommaviy.baseNumPlh)}
                 className="w-full bg-[#0B1220] border border-[#1E293B] rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:border-orange-500 focus:outline-none"
               />
               {baseNumber.trim() && (
                 <p className="mt-2 text-xs text-gray-500">
-                  Namuna:&nbsp;
+                  {T(t.ommaviy.sample)}&nbsp;
                   {generateContractNumbers(baseNumber.trim(), Math.min(4, 5)).map((n, i) => (
                     <span key={i} className="text-orange-400 font-mono mr-2">{n}</span>
                   ))}
@@ -481,7 +483,7 @@ export default function OmmaviyPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1.5 font-medium">Shartnoma sanasi</label>
+              <label className="block text-sm text-gray-400 mb-1.5 font-medium">{T(t.ommaviy.dateLabel)}</label>
               <input
                 type="date"
                 value={contractDate}
@@ -493,10 +495,10 @@ export default function OmmaviyPage() {
 
           {/* Ixtiyoriy maydonlar */}
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5 space-y-4">
-            <p className="text-sm text-gray-400 font-medium">Ixtiyoriy maydonlar</p>
+            <p className="text-sm text-gray-400 font-medium">{T(t.ommaviy.optionalFields)}</p>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Summa (hamma shartnomaga bir xil)</label>
+              <label className="block text-xs text-gray-500 mb-1">{T(t.ommaviy.amountLabel)}</label>
               <input
                 type="number"
                 value={amount}
@@ -507,25 +509,25 @@ export default function OmmaviyPage() {
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Mahsulot / xizmat nomi</label>
+              <label className="block text-xs text-gray-500 mb-1">{T(t.ommaviy.productLabel)}</label>
               <input
                 type="text"
                 value={productName}
                 onChange={e => setProductName(e.target.value)}
-                placeholder="Masalan: qurilish materiallari"
+                placeholder={T(t.ommaviy.productPlh)}
                 className="w-full bg-[#0B1220] border border-[#1E293B] rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:border-orange-500 focus:outline-none"
               />
             </div>
 
             {customTemplates.length > 0 && (
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Shablon</label>
+                <label className="block text-xs text-gray-500 mb-1">{T(t.ommaviy.templateLabel)}</label>
                 <select
                   value={selectedTemplate}
                   onChange={e => setSelectedTemplate(e.target.value)}
                   className="w-full bg-[#0B1220] border border-[#1E293B] rounded-lg px-3 py-2.5 text-white text-sm focus:border-orange-500 focus:outline-none"
                 >
-                  <option value="auto">Avtomatik (standart shablon)</option>
+                  <option value="auto">{T(t.ommaviy.templateAuto)}</option>
                   {customTemplates.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
@@ -539,7 +541,7 @@ export default function OmmaviyPage() {
               onClick={() => { if (validateStep1()) setStep(2) }}
               className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition"
             >
-              Keyingisi →
+              {T(t.ommaviy.next)}
             </button>
           </div>
         </div>
@@ -551,7 +553,7 @@ export default function OmmaviyPage() {
           {/* Yil + status filter */}
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Tekshirish yili:</span>
+              <span className="text-xs text-gray-500">{T(t.ommaviy.checkYear)}</span>
               <select
                 value={filterYear}
                 onChange={e => setFilterYear(Number(e.target.value))}
@@ -564,9 +566,9 @@ export default function OmmaviyPage() {
             </div>
             <div className="flex gap-1">
               {([
-                { key: 'all',     label: 'Barchasi' },
-                { key: 'without', label: "Shartnomasi yo'qlar" },
-                { key: 'with',    label: 'Shartnomasi borlar' },
+                { key: 'all',     label: T(t.ommaviy.filterAll) },
+                { key: 'without', label: T(t.ommaviy.filterWithout) },
+                { key: 'with',    label: T(t.ommaviy.filterWith) },
               ] as const).map(({ key, label }) => (
                 <button
                   key={key}
@@ -585,7 +587,7 @@ export default function OmmaviyPage() {
                 </button>
               ))}
             </div>
-            {loadingExisting && <span className="text-xs text-gray-500 animate-pulse">Tekshirilmoqda...</span>}
+            {loadingExisting && <span className="text-xs text-gray-500 animate-pulse">{T(t.ommaviy.checking)}</span>}
           </div>
 
           {/* Search + select all */}
@@ -598,7 +600,7 @@ export default function OmmaviyPage() {
                 type="text"
                 value={cpSearch}
                 onChange={e => setCpSearch(e.target.value)}
-                placeholder="Nom yoki INN bo'yicha qidirish..."
+                placeholder={T(t.ommaviy.searchPlh)}
                 className="w-full bg-[#111827] border border-[#1E293B] rounded-lg pl-9 pr-3 py-2.5 text-white text-sm placeholder-gray-600 focus:border-orange-500 focus:outline-none"
               />
             </div>
@@ -610,20 +612,20 @@ export default function OmmaviyPage() {
                   : 'bg-[#111827] border-[#1E293B] text-gray-300 hover:border-gray-500'
               }`}
             >
-              {allFilteredSelected ? 'Tanlovni olib tashlash' : 'Hammasini tanlash'}
+              {allFilteredSelected ? T(t.ommaviy.deselectAll) : T(t.ommaviy.selectAll)}
             </button>
           </div>
 
           {/* Stats */}
           <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
-            <span>Jami: <b className="text-white">{cps.length}</b></span>
-            {cpSearch && <span>Topildi: <b className="text-white">{filteredCps.length}</b></span>}
+            <span>{T(t.ommaviy.total)} <b className="text-white">{cps.length}</b></span>
+            {cpSearch && <span>{T(t.ommaviy.found)} <b className="text-white">{filteredCps.length}</b></span>}
             <span>
-              {filterYear}-yil shartnomasi bor: <b className="text-orange-400">{existingCpIds.size}</b>
+              {filterYear}{T(t.ommaviy.withContract)} <b className="text-orange-400">{existingCpIds.size}</b>
             </span>
             {selectedCpIds.size > 0 && (
               <span className="text-orange-400">
-                Tanlangan: <b>{selectedCpIds.size}</b>
+                {T(t.ommaviy.selected)} <b>{selectedCpIds.size}</b>
               </span>
             )}
           </div>
@@ -632,9 +634,7 @@ export default function OmmaviyPage() {
           <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
             {filteredCps.length === 0 ? (
               <div className="p-8 text-center text-gray-500 text-sm">
-                {cps.length === 0
-                  ? 'Kontragentlar topilmadi. Avval kontragent qo\'shing.'
-                  : 'Qidiruv natijasi bo\'sh'}
+                {cps.length === 0 ? T(t.ommaviy.noCps) : T(t.ommaviy.noSearch)}
               </div>
             ) : (
               <div className="divide-y divide-[#1E293B] max-h-[480px] overflow-y-auto">
@@ -663,7 +663,7 @@ export default function OmmaviyPage() {
                         </span>
                       )}
                       {cp.stir_status === 'inactive' && (
-                        <span className="text-xs text-red-400 bg-red-900/20 px-2 py-0.5 rounded">Faol emas</span>
+                        <span className="text-xs text-red-400 bg-red-900/20 px-2 py-0.5 rounded">{T(t.ommaviy.inactive)}</span>
                       )}
                     </label>
                   )
@@ -677,13 +677,13 @@ export default function OmmaviyPage() {
               onClick={() => setStep(1)}
               className="text-gray-400 hover:text-white text-sm transition"
             >
-              ← Orqaga
+              {T(t.ommaviy.back)}
             </button>
             <button
               onClick={() => { if (validateStep2()) setStep(3) }}
               className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition"
             >
-              Keyingisi →
+              {T(t.ommaviy.next)}
             </button>
           </div>
         </div>
@@ -698,28 +698,28 @@ export default function OmmaviyPage() {
             <>
               {/* Umumiy ma'lumot */}
               <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5 space-y-3">
-                <p className="text-sm text-gray-400 font-medium mb-3">Yaratiluvchi shartnomalar xulosa</p>
+                <p className="text-sm text-gray-400 font-medium mb-3">{T(t.ommaviy.summaryTitle)}</p>
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="bg-[#0B1220] rounded-lg p-3">
-                    <p className="text-gray-500 text-xs">Tur</p>
+                    <p className="text-gray-500 text-xs">{T(t.ommaviy.labelType)}</p>
                     <p className="text-white font-medium mt-0.5">
                       {(CONTRACT_TYPE_NAMES as Record<string, string>)[contractType]}
                     </p>
                   </div>
                   <div className="bg-[#0B1220] rounded-lg p-3">
-                    <p className="text-gray-500 text-xs">Sana</p>
+                    <p className="text-gray-500 text-xs">{T(t.ommaviy.labelDate)}</p>
                     <p className="text-white font-medium mt-0.5">{contractDate}</p>
                   </div>
                   <div className="bg-[#0B1220] rounded-lg p-3">
-                    <p className="text-gray-500 text-xs">Kontragentlar</p>
+                    <p className="text-gray-500 text-xs">{T(t.ommaviy.labelCps)}</p>
                     <p className="text-orange-400 font-bold text-xl mt-0.5">{selectedCps.length}</p>
                   </div>
                   {amount && (
                     <div className="bg-[#0B1220] rounded-lg p-3">
-                      <p className="text-gray-500 text-xs">Summa (har birida)</p>
+                      <p className="text-gray-500 text-xs">{T(t.ommaviy.labelAmount)}</p>
                       <p className="text-white font-medium mt-0.5">
-                        {parseFloat(amount).toLocaleString('uz-UZ')} so'm
+                        {parseFloat(amount).toLocaleString('uz-UZ')} so&apos;m
                       </p>
                     </div>
                   )}
@@ -728,7 +728,7 @@ export default function OmmaviyPage() {
 
               {/* Raqamlar preview */}
               <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
-                <p className="text-sm text-gray-400 font-medium mb-3">Shartnoma raqamlari (namuna)</p>
+                <p className="text-sm text-gray-400 font-medium mb-3">{T(t.ommaviy.numbersTitle)}</p>
                 <div className="space-y-1.5 max-h-48 overflow-y-auto">
                   {previewNumbers.slice(0, 8).map((num, i) => (
                     <div key={i} className="flex items-center gap-3 text-sm">
@@ -738,7 +738,7 @@ export default function OmmaviyPage() {
                   ))}
                   {previewNumbers.length > 8 && (
                     <p className="text-xs text-gray-600 pt-1">
-                      ... va yana {previewNumbers.length - 8} ta
+                      {T(t.ommaviy.andMore)} {previewNumbers.length - 8} {T(t.ommaviy.andMoreSuffix)}
                     </p>
                   )}
                 </div>
@@ -748,7 +748,7 @@ export default function OmmaviyPage() {
               {creating && (
                 <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5">
                   <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-gray-400">Yaratilmoqda...</span>
+                    <span className="text-gray-400">{T(t.ommaviy.creating)}</span>
                     <span className="text-white font-medium">{progress}%</span>
                   </div>
                   <div className="h-2 bg-[#0B1220] rounded-full overflow-hidden">
@@ -758,7 +758,7 @@ export default function OmmaviyPage() {
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    {createdCount} ta yaratildi{errorCount > 0 ? `, ${errorCount} ta xatolik` : ''}
+                    {createdCount} {T(t.ommaviy.progressText)}{errorCount > 0 ? `, ${errorCount} ${T(t.ommaviy.errorText)}` : ''}
                   </p>
                 </div>
               )}
@@ -769,7 +769,7 @@ export default function OmmaviyPage() {
                   disabled={creating}
                   className="text-gray-400 hover:text-white text-sm transition disabled:opacity-40"
                 >
-                  ← Orqaga
+                  {T(t.ommaviy.back)}
                 </button>
                 <button
                   onClick={handleCreate}
@@ -782,10 +782,10 @@ export default function OmmaviyPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                       </svg>
-                      Yaratilmoqda...
+                      {T(t.ommaviy.creating)}
                     </>
                   ) : (
-                    `${selectedCps.length} ta shartnoma yaratish`
+                    `${selectedCps.length} ${T(t.ommaviy.createBtn)}`
                   )}
                 </button>
               </div>
@@ -801,9 +801,9 @@ export default function OmmaviyPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-white font-semibold text-lg">{createdCount} ta shartnoma yaratildi!</p>
+                <p className="text-white font-semibold text-lg">{createdCount} {T(t.ommaviy.doneTitle)}</p>
                 {errorCount > 0 && (
-                  <p className="text-red-400 text-sm mt-1">{errorCount} ta xatolik yuz berdi</p>
+                  <p className="text-red-400 text-sm mt-1">{errorCount} {T(t.ommaviy.doneError)}</p>
                 )}
               </div>
               <div className="flex justify-center gap-3 pt-2">
@@ -814,13 +814,13 @@ export default function OmmaviyPage() {
                   }}
                   className="bg-[#1F2937] hover:bg-[#374151] text-gray-300 px-5 py-2.5 rounded-lg text-sm transition"
                 >
-                  Yangi ommaviy yuborish
+                  {T(t.ommaviy.newBatch)}
                 </button>
                 <button
                   onClick={() => router.push('/dashboard/shartnomalar')}
                   className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
                 >
-                  Shartnomalar ro'yxatiga
+                  {T(t.ommaviy.toList)}
                 </button>
               </div>
             </div>

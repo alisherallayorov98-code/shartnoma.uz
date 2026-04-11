@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   FileText, Building2, Users, Download, Shield,
   CheckCircle, ArrowRight, Zap, Star, Crown, Sparkles,
@@ -190,6 +192,73 @@ const LP: Record<Lang, {
   },
 }
 
+// ── CountUp component ────────────────────────────────────────────────────────
+function CountUp({ end, suffix = '', duration = 1600 }: { end: number; suffix?: string; duration?: number }) {
+  const [val, setVal] = useState(0)
+  const [going, setGoing] = useState(false)
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    const el = ref.current; if (!el) return
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setGoing(true); obs.disconnect() } }, { threshold: 0.5 })
+    obs.observe(el); return () => obs.disconnect()
+  }, [])
+  useEffect(() => {
+    if (!going) return
+    const steps = 50; const inc = end / steps; let cur = 0
+    const id = setInterval(() => { cur += inc; if (cur >= end) { setVal(end); clearInterval(id) } else { setVal(Math.floor(cur)) } }, duration / steps)
+    return () => clearInterval(id)
+  }, [going, end, duration])
+  return <span ref={ref}>{val}{suffix}</span>
+}
+
+// ── Testimonials data ─────────────────────────────────────────────────────────
+const TESTIMONIALS: { name: string; role: Record<string, string>; company: string; text: Record<string, string>; avatar: string; color: string }[] = [
+  {
+    name: 'Nodira Yusupova', avatar: 'NY', color: 'bg-violet-500',
+    role: { uz: 'HR menejeri', oz: 'HR менежери', ru: 'HR менеджер' },
+    company: 'Toshkent Logistika MChJ',
+    text: {
+      uz: "Avval har bir shartnomani Word da qo'lda yozardim — 30-40 daqiqa ketardi. Endi 2 daqiqada tayyor. Kadrlar bo'limi uchun o'zgarishlar ulkan.",
+      oz: "Аввал ҳар бир шартномани Word да қўлда ёзардим — 30-40 дақиқа кетарди. Энди 2 дақиқада тайёр. Кадрлар бўлими учун ўзгаришлар улкан.",
+      ru: "Раньше каждый договор писала вручную в Word — уходило 30-40 минут. Теперь готово за 2 минуты. Для HR огромный прогресс.",
+    },
+  },
+  {
+    name: 'Bobur Xasanov', avatar: 'BX', color: 'bg-blue-500',
+    role: { uz: 'Moliyaviy direktor', oz: 'Молиявий директор', ru: 'Финансовый директор' },
+    company: 'Samarqand Trade LLC',
+    text: {
+      uz: "Bir nechta tashkilotni bitta hisobdan boshqarish imkoniyati menga eng ko'p yoqadi. Buxgalter bo'limi uchun ham to'liq mos keladi.",
+      oz: "Бир нечта ташкилотни битта ҳисобдан бошқариш имконияти менга энг кўп ёқади. Бухгалтер бўлими учун ҳам тўлиқ мос келади.",
+      ru: "Больше всего нравится управление несколькими организациями из одного аккаунта. Для бухгалтерии тоже идеально подходит.",
+    },
+  },
+  {
+    name: 'Malika Rahimova', avatar: 'MR', color: 'bg-emerald-500',
+    role: { uz: "Yuridik bo'lim boshlig'i", oz: "Юридик бўлим бошлиғи", ru: 'Руководитель юротдела' },
+    company: 'Andijon Qurilish Holding',
+    text: {
+      uz: "Yurist AI shartnomadagi xatolarni topib beradi. Xavf tahlili funksiyasi — real pul tejaydi. Butun jamoaga tavsiya qilaman.",
+      oz: "Юрист AI шартномадаги хатоларни топиб беради. Хавф таҳлили функцияси — реал пул тежайди.",
+      ru: "Юрист AI находит ошибки в договорах. Функция анализа рисков реально экономит деньги. Рекомендую всей команде.",
+    },
+  },
+]
+
+// ── Hero typing words ─────────────────────────────────────────────────────────
+const HERO_WORDS: Record<Lang, string[]> = {
+  uz: ['AI tayyor qiladi', '2 daqiqada tayyor', 'Word va PDF chiqaradi', 'professional hujjat'],
+  oz: ['AI тайёр қилади', '2 дақиқада тайёр', 'Word ва PDF чиқаради', 'профессионал ҳужжат'],
+  ru: ['AI создаёт', 'готово за 2 минуты', 'Word и PDF на выходе', 'профессиональный документ'],
+}
+
+// ── Marquee items ─────────────────────────────────────────────────────────────
+const MARQUEE_ITEMS = [
+  'Mehnat shartnomasi', 'Buyruq', 'Bayonnoma', 'Dalolatnoma', 'NDA', 'Ijara shartnomasi',
+  "To'lov grafigi", 'Kafolat xati', 'Rasmiy xat', 'Ishonchnoma', 'Xizmat shartnomasi',
+  "Lavozim yo'riqnomasi", 'Faktura', 'Akt sverki', 'Transport shartnomasi', 'Talabnoma',
+]
+
 const DEPT_ICONS = [
   <UserCheck key="uc" className="w-7 h-7"/>,
   <Calculator key="calc" className="w-7 h-7"/>,
@@ -225,7 +294,55 @@ export default function Home() {
   const l = LP[lang]
   const isLight = theme === 'light'
 
+  // Hero typing animation
+  const [heroWord,    setHeroWord]    = useState('')
+  const [heroDeleting, setHeroDeleting] = useState(false)
+  const [heroIdx,     setHeroIdx]     = useState(0)
+
+  useEffect(() => {
+    const words   = HERO_WORDS[lang]
+    const current = words[heroIdx % words.length]
+    if (!heroDeleting && heroWord === current) {
+      const id = setTimeout(() => setHeroDeleting(true), 2200)
+      return () => clearTimeout(id)
+    }
+    const speed = heroDeleting ? 45 : 90
+    const id = setTimeout(() => {
+      if (!heroDeleting) {
+        setHeroWord(current.slice(0, heroWord.length + 1))
+      } else if (heroWord.length > 0) {
+        setHeroWord(current.slice(0, heroWord.length - 1))
+      } else {
+        setHeroDeleting(false)
+        setHeroIdx(i => (i + 1) % words.length)
+      }
+    }, speed)
+    return () => clearTimeout(id)
+  }, [heroWord, heroDeleting, heroIdx, lang])
+
+  // Scroll reveal
+  useEffect(() => {
+    const els = document.querySelectorAll('.fadein')
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('fi-visible'); obs.unobserve(e.target) } })
+    }, { threshold: 0.07 })
+    els.forEach(el => obs.observe(el))
+    return () => obs.disconnect()
+  }, [])
+
   return (
+    <>
+    <style>{`
+      .fadein { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+      .fadein.fi-visible { opacity: 1; transform: translateY(0); }
+      @keyframes marqueeScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+      .marquee-track { animation: marqueeScroll 28s linear infinite; }
+      .marquee-track:hover { animation-play-state: paused; }
+      @keyframes heroPulse { 0%,100% { opacity:.15; transform:scale(1); } 50% { opacity:.25; transform:scale(1.08); } }
+      .hero-blob { animation: heroPulse 6s ease-in-out infinite; }
+      .hero-blob2 { animation: heroPulse 8s ease-in-out 2s infinite; }
+    `}</style>
+
     <div className={`lp min-h-screen overflow-x-hidden ${isLight ? 'lp-light bg-[#f8fafc] text-gray-900' : 'bg-[#080810] text-white'}`}>
 
       {/* ── BACKGROUND ── */}
@@ -290,8 +407,9 @@ export default function Home() {
           <span className="bg-gradient-to-b from-white to-gray-300 bg-clip-text text-transparent block">
             {l.h1a}
           </span>
-          <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent">
-            {l.h1b}
+          <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent inline-block min-h-[1.2em]">
+            {heroWord}
+            <span className="opacity-80 animate-pulse">|</span>
           </span>
         </h1>
 
@@ -311,101 +429,50 @@ export default function Home() {
 
         <p className="text-sm text-gray-600 mb-20">{l.freeNote}</p>
 
-        {/* AI Demo preview */}
+        {/* Hero image */}
         <div className="relative mx-auto max-w-4xl">
-          <div className="absolute inset-0 bg-gradient-to-t from-[#080810] via-transparent to-transparent z-10 pointer-events-none" style={{top:'70%'}}/>
-          <div className="bg-gray-900/60 border border-white/10 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-sm">
-            {/* Browser bar */}
-            <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/5 bg-white/[0.02]">
-              <div className="w-3 h-3 rounded-full bg-red-500/70"/>
-              <div className="w-3 h-3 rounded-full bg-yellow-500/70"/>
-              <div className="w-3 h-3 rounded-full bg-green-500/70"/>
-              <div className="flex-1 bg-gray-800/60 rounded-full h-6 mx-6 flex items-center px-4">
-                <span className="text-gray-500 text-xs">kabinetim.uz/dashboard/kadrlar</span>
-              </div>
-            </div>
-            {/* Content */}
-            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Left: sidebar + stats */}
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: lang==='ru'?'Кадры':lang==='oz'?'Кадрлар':'Kadrlar', val: '15', color: 'bg-blue-900/60 text-blue-300' },
-                    { label: lang==='ru'?'Договоры':lang==='oz'?'Шартномалар':'Shartnomalar', val: '32', color: 'bg-emerald-900/60 text-emerald-300' },
-                    { label: lang==='ru'?'Бухг.':lang==='oz'?'Бухг.':'Buxg.', val: '8', color: 'bg-violet-900/60 text-violet-300' },
-                    { label: lang==='ru'?'Котиба':lang==='oz'?'Котиба':'Kotiba', val: '12', color: 'bg-orange-900/60 text-orange-300' },
-                  ].map((c,i)=>(
-                    <div key={i} className={`${c.color} rounded-xl p-3 text-left border border-white/5`}>
-                      <div className="text-xl font-black">{c.val}</div>
-                      <div className="text-xs opacity-70 mt-0.5">{c.label}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
-                  {[
-                    { name: lang==='ru'?'Трудовой договор':lang==='oz'?'Меҳнат шартномаси':'Mehnat shartnomasi', status: lang==='ru'?'Готово':lang==='oz'?'Тайёр':'Tayyor', color: 'text-emerald-400' },
-                    { name: lang==='ru'?'Приказ об отпуске':lang==='oz'?'Таътил буйруғи':'Ta\'til buyrug\'i', status: 'AI', color: 'text-blue-400' },
-                    { name: lang==='ru'?'Акт выпол. работ':lang==='oz'?'Далолатнома':'Dalolatnoma', status: lang==='ru'?'Готово':lang==='oz'?'Тайёр':'Tayyor', color: 'text-emerald-400' },
-                  ].map((item,i)=>(
-                    <div key={i} className="flex items-center justify-between py-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-blue-900/60 rounded-lg flex-shrink-0"/>
-                        <span className="text-xs text-gray-300">{item.name}</span>
-                      </div>
-                      <span className={`text-xs font-bold ${item.color} bg-gray-700/50 px-2 py-0.5 rounded-full`}>{item.status}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Right: AI chat */}
-              <div className="bg-gray-800/40 rounded-xl p-3 space-y-2.5 border border-white/5">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <Bot className="w-3.5 h-3.5 text-white"/>
-                  </div>
-                  <span className="text-xs font-semibold text-blue-300">Kadrlar AI</span>
-                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full ml-auto"/>
-                </div>
-                {/* User message */}
-                <div className="flex justify-end">
-                  <div className="bg-blue-600/30 border border-blue-500/30 rounded-xl rounded-tr-sm px-3 py-2 max-w-[80%]">
-                    <p className="text-xs text-gray-200 leading-relaxed">
-                      {lang==='ru' ? 'Договор для Ахмедова на 3 месяца, оклад 2,500,000' : lang==='oz' ? 'Аҳмедов учун 3 ойлик, 2 500 000 маош' : "Ahmedov uchun 3 oylik, 2 500 000 maosh"}
-                    </p>
-                  </div>
-                </div>
-                {/* AI message */}
-                <div className="flex gap-2">
-                  <div className="w-6 h-6 bg-blue-600 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5">
-                    <Bot className="w-3 h-3 text-white"/>
-                  </div>
-                  <div className="bg-gray-700/50 border border-white/5 rounded-xl rounded-tl-sm px-3 py-2 flex-1">
-                    <p className="text-xs text-gray-300 leading-relaxed font-mono">
-                      {lang==='ru' ? 'ТРУДОВОЙ ДОГОВОР\n\nРаботник: Ахмедов...\nОклад: 2 500 000 сум\nСрок: 3 месяца...' : lang==='oz' ? 'МЕҲНАТ ШАРТНОМАСИ\n\nХодим: Аҳмедов...\nМаош: 2 500 000 сўм...' : "MEHNAT SHARTNOMASI\n\nXodim: Ahmedov...\nMaosh: 2 500 000 so'm..."}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-1.5 mt-2">
-                  <div className="flex-1 bg-gray-700/40 rounded-lg px-2.5 py-1.5 text-xs text-gray-500">
-                    {lang==='ru' ? 'Сообщение...' : lang==='oz' ? 'Хабар...' : 'Xabar...'}
-                  </div>
-                  <button className="bg-blue-600 rounded-lg px-3 py-1.5">
-                    <ArrowRight className="w-3.5 h-3.5"/>
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#080810] via-transparent to-transparent z-10 pointer-events-none" style={{top:'65%'}}/>
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 ring-1 ring-white/5">
+            <Image
+              src="/img-hero.png"
+              alt="Kabinetim.uz dashboard"
+              width={1200}
+              height={700}
+              className="w-full h-auto object-cover"
+              priority
+            />
           </div>
+          {/* Glow */}
+          <div className="absolute -inset-4 bg-blue-600/10 rounded-3xl blur-3xl -z-10 pointer-events-none"/>
         </div>
       </section>
 
+      {/* ── MARQUEE ── */}
+      <div className="relative border-y border-white/5 py-4 overflow-hidden bg-white/[0.01]">
+        <div className="flex whitespace-nowrap marquee-track gap-0">
+          {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+            <span key={i} className="inline-flex items-center gap-2 text-xs text-gray-500 px-5 border-r border-white/5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500/60 flex-shrink-0"/>
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* ── STATS ── */}
-      <section className="relative border-y border-white/5 py-12 bg-white/[0.015]">
+      <section className="relative border-y border-white/5 py-14 bg-white/[0.015]">
         <div className="max-w-5xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {l.statsValues.map((val, i) => (
-            <div key={i} className="group">
-              <div className="text-4xl font-black bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent mb-2 group-hover:from-blue-300 group-hover:to-blue-500 transition-all duration-300">{val}</div>
-              <div className="text-gray-500 text-sm">{l.statsLabels[i]}</div>
+          {[
+            { val: <CountUp end={30} suffix="+" />, label: l.statsLabels[0], delay: '0ms' },
+            { val: '< 2 min',                       label: l.statsLabels[1], delay: '100ms' },
+            { val: <CountUp end={4} />,              label: l.statsLabels[2], delay: '200ms' },
+            { val: lang === 'ru' ? 'Много' : lang === 'oz' ? "Ko'p" : "Ko'p", label: l.statsLabels[3], delay: '300ms' },
+          ].map((s, i) => (
+            <div key={i} className="fadein group" style={{ transitionDelay: s.delay }}>
+              <div className="text-4xl font-black bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent mb-2 group-hover:from-blue-300 group-hover:to-blue-500 transition-all duration-300">
+                {s.val}
+              </div>
+              <div className="text-gray-500 text-sm">{s.label}</div>
             </div>
           ))}
         </div>
@@ -413,7 +480,7 @@ export default function Home() {
 
       {/* ── DEPARTMENTS ── */}
       <section id="depts" className="relative max-w-7xl mx-auto px-5 py-28">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 fadein">
           <div className="inline-flex items-center gap-2 text-cyan-400 text-sm font-medium mb-4">
             <Briefcase className="w-4 h-4"/> {l.deptTag}
           </div>
@@ -427,7 +494,8 @@ export default function Home() {
           {l.depts.map((dept, i) => {
             const st = DEPT_STYLES[i]
             return (
-              <div key={i} className={`group relative bg-gradient-to-br ${st.gradient} border ${st.border} rounded-3xl p-8 hover:scale-[1.01] transition-all duration-300`}>
+              <div key={i} className={`fadein group relative bg-gradient-to-br ${st.gradient} border ${st.border} rounded-3xl p-8 hover:scale-[1.01] transition-all duration-300`}
+                style={{ transitionDelay: `${i * 120}ms` }}>
                 <div className="flex items-start gap-5 mb-6">
                   <div className={`w-14 h-14 ${st.iconBg} rounded-2xl flex items-center justify-center ${st.iconColor} flex-shrink-0`}>
                     {DEPT_ICONS[i]}
@@ -454,7 +522,7 @@ export default function Home() {
       {/* ── FEATURES ── */}
       <section id="features" className="relative border-y border-white/5 bg-white/[0.015] py-28">
         <div className="max-w-7xl mx-auto px-5">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 fadein">
             <div className="inline-flex items-center gap-2 text-blue-400 text-sm font-medium mb-4">
               <Zap className="w-4 h-4"/> {l.featuresTag}
             </div>
@@ -467,7 +535,8 @@ export default function Home() {
             {l.features.map((f, i) => {
               const st = FEATURES_STYLES[i]
               return (
-                <div key={i} className={`group bg-gradient-to-br ${st.gradient} border ${st.border} rounded-2xl p-7 hover:scale-[1.02] transition-all duration-300`}>
+                <div key={i} className={`fadein group bg-gradient-to-br ${st.gradient} border ${st.border} rounded-2xl p-7 hover:scale-[1.02] transition-all duration-300`}
+                  style={{ transitionDelay: `${i * 80}ms` }}>
                   <div className={`w-14 h-14 ${st.iconBg} rounded-2xl flex items-center justify-center ${st.iconColor} mb-6`}>
                     {FEATURES_ICONS[i]}
                   </div>
@@ -482,7 +551,7 @@ export default function Home() {
 
       {/* ── HOW IT WORKS ── */}
       <section id="how" className="relative max-w-5xl mx-auto px-5 py-28">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 fadein">
           <div className="inline-flex items-center gap-2 text-purple-400 text-sm font-medium mb-4">
             <Clock className="w-4 h-4"/> {l.howTag}
           </div>
@@ -490,6 +559,18 @@ export default function Home() {
             {l.howTitle}
           </h2>
         </div>
+        {/* How it works image */}
+        <div className="relative mx-auto max-w-3xl mb-16 rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-purple-900/20">
+          <Image
+            src="/img-how.png"
+            alt="Qanday ishlaydi"
+            width={900}
+            height={400}
+            className="w-full h-auto object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#080810]/50 via-transparent to-transparent pointer-events-none"/>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
           <div className="hidden md:block absolute top-10 left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] h-px bg-gradient-to-r from-blue-600/50 via-purple-600/50 to-emerald-600/50"/>
           {l.steps.map((s, i) => {
@@ -499,7 +580,7 @@ export default function Home() {
               { color: 'from-emerald-600 to-teal-600', shadow: 'shadow-emerald-900/40' },
             ][i]
             return (
-              <div key={i} className="relative text-center group">
+              <div key={i} className="fadein relative text-center group" style={{ transitionDelay: `${i * 150}ms` }}>
                 <div className={`w-20 h-20 bg-gradient-to-br ${colors.color} rounded-3xl flex items-center justify-center text-2xl font-black mx-auto mb-8 shadow-xl ${colors.shadow} group-hover:scale-110 transition-transform duration-300`}>
                   {String(i+1).padStart(2,'0')}
                 </div>
@@ -514,7 +595,7 @@ export default function Home() {
       {/* ── AI DEMO SECTION ── */}
       <section className="relative border-y border-white/5 bg-white/[0.015] py-28">
         <div className="max-w-6xl mx-auto px-5">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 fadein">
             <div className="inline-flex items-center gap-2 text-yellow-400 text-sm font-medium mb-4">
               <MessageSquare className="w-4 h-4"/> {l.aiDemoTag}
             </div>
@@ -525,104 +606,72 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            {/* Chat panel */}
-            <div className="bg-gray-900/70 border border-white/10 rounded-3xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-white/5 bg-white/[0.02] flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-white"/>
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-white">Kadrlar AI</div>
-                  <div className="text-xs text-emerald-400 flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"/>
-                    {lang==='ru' ? 'Онлайн' : lang==='oz' ? 'Онлайн' : 'Onlayn'}
-                  </div>
-                </div>
-              </div>
-              <div className="p-5 space-y-4">
-                {/* User message */}
-                <div className="flex justify-end">
-                  <div className="bg-blue-600/25 border border-blue-500/25 rounded-2xl rounded-tr-sm px-4 py-3 max-w-[85%]">
-                    <p className="text-sm text-gray-200 leading-relaxed">{l.aiPrompt}</p>
-                  </div>
-                </div>
-                {/* AI response */}
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex-shrink-0 flex items-center justify-center">
-                    <Bot className="w-4 h-4 text-white"/>
-                  </div>
-                  <div className="bg-gray-800/60 border border-white/5 rounded-2xl rounded-tl-sm px-4 py-3 flex-1">
-                    <pre className="text-xs text-gray-300 leading-relaxed font-mono whitespace-pre-wrap">{l.aiReply}</pre>
-                  </div>
-                </div>
-              </div>
-              <div className="px-5 pb-5">
-                <div className="flex gap-2">
-                  <div className="flex-1 bg-gray-800/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-500">
-                    {lang==='ru' ? 'Опишите документ...' : lang==='oz' ? 'Ҳужжатни тавсифланг...' : "Hujjatni tasvirlab bering..."}
-                  </div>
-                  <button className="bg-blue-600 hover:bg-blue-500 rounded-xl px-4 py-2.5 transition">
-                    <ArrowRight className="w-4 h-4"/>
-                  </button>
-                </div>
-              </div>
+            {/* AI chat image */}
+            <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-blue-900/20">
+              <Image
+                src="/img-ai.png"
+                alt="AI hujjat yaratish"
+                width={720}
+                height={520}
+                className="w-full h-auto object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#080810]/60 via-transparent to-transparent pointer-events-none"/>
             </div>
 
-            {/* Result panel */}
-            <div className="bg-white rounded-3xl p-8 shadow-2xl shadow-blue-900/20">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-600"/>
-                  <span className="font-bold text-gray-800 text-sm">
-                    {lang==='ru' ? 'Трудовой договор.docx' : lang==='oz' ? 'Меҳнат шартномаси.docx' : 'Mehnat shartnomasi.docx'}
-                  </span>
-                </div>
-                <div className="flex gap-1.5">
-                  <div className="h-7 px-3 bg-blue-600 text-white text-xs rounded-lg flex items-center gap-1 font-medium">
-                    <Download className="w-3 h-3"/> Word
-                  </div>
-                  <div className="h-7 px-3 bg-red-600 text-white text-xs rounded-lg flex items-center gap-1 font-medium">
-                    <Download className="w-3 h-3"/> PDF
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-center font-black text-gray-900 text-base mb-4">
-                  {lang==='ru' ? 'ТРУДОВОЙ ДОГОВОР' : lang==='oz' ? 'МЕҲНАТ ШАРТНОМАСИ' : 'MEHNAT SHARTNOMASI'}
-                </div>
-                {[
-                  { w: 'w-full', dark: true },
-                  { w: 'w-4/5', dark: false },
-                  { w: 'w-full', dark: false },
-                  { w: 'w-3/4', dark: false },
-                  { w: 'w-full', dark: false },
-                  { w: 'w-5/6', dark: false },
-                  { w: 'w-full', dark: false },
-                  { w: 'w-2/3', dark: false },
-                ].map((line, i) => (
-                  <div key={i} className={`h-2 ${line.dark ? 'bg-gray-400' : 'bg-gray-200'} rounded-full ${line.w}`}/>
-                ))}
-                <div className="mt-6 pt-4 border-t border-gray-200 grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="h-1.5 w-20 bg-gray-200 rounded mb-1"/>
-                    <div className="h-1.5 w-28 bg-gray-300 rounded"/>
-                    <div className="mt-4 h-8 w-24 border-b-2 border-gray-400"/>
-                  </div>
-                  <div>
-                    <div className="h-1.5 w-20 bg-gray-200 rounded mb-1"/>
-                    <div className="h-1.5 w-28 bg-gray-300 rounded"/>
-                    <div className="mt-4 h-8 w-24 border-b-2 border-gray-400"/>
-                  </div>
-                </div>
-              </div>
+            {/* Dashboard image */}
+            <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-purple-900/20">
+              <Image
+                src="/img-dashboard.png"
+                alt="Dashboard ko'rinishi"
+                width={720}
+                height={520}
+                className="w-full h-auto object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#080810]/60 via-transparent to-transparent pointer-events-none"/>
             </div>
           </div>
         </div>
       </section>
 
+      {/* ── TESTIMONIALS ── */}
+      <section className="relative max-w-6xl mx-auto px-5 py-24">
+        <div className="text-center mb-14 fadein">
+          <div className="inline-flex items-center gap-2 text-amber-400 text-sm font-medium mb-4">
+            <Star className="w-4 h-4"/>
+            {lang === 'ru' ? 'ОТЗЫВЫ' : lang === 'oz' ? 'ФИКРLAR' : 'MIJOZLAR FIKRI'}
+          </div>
+          <h2 className="text-5xl font-black bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent mb-4">
+            {lang === 'ru' ? 'Что говорят пользователи' : lang === 'oz' ? 'Foydalanuvchilar nima deydi' : "Foydalanuvchilar nima deydi"}
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {TESTIMONIALS.map((t, i) => (
+            <div key={i} className="fadein bg-white/[0.03] border border-white/10 rounded-3xl p-7 hover:border-white/20 hover:bg-white/[0.05] transition-all duration-300"
+              style={{ transitionDelay: `${i * 120}ms` }}>
+              {/* Stars */}
+              <div className="flex gap-0.5 mb-5">
+                {[1,2,3,4,5].map(s => <svg key={s} className="w-4 h-4 fill-amber-400" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}
+              </div>
+              {/* Text */}
+              <p className="text-gray-300 text-sm leading-relaxed mb-6">&ldquo;{t.text[lang]}&rdquo;</p>
+              {/* Author */}
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full ${t.color} flex items-center justify-center text-xs font-bold text-white flex-shrink-0`}>
+                  {t.avatar}
+                </div>
+                <div>
+                  <div className="text-white font-semibold text-sm">{t.name}</div>
+                  <div className="text-gray-500 text-xs">{t.role[lang]} · {t.company}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── PRICING ── */}
       <section id="pricing" className="relative max-w-6xl mx-auto px-5 py-28">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 fadein">
           <div className="inline-flex items-center gap-2 text-emerald-400 text-sm font-medium mb-4">
             <Star className="w-4 h-4"/> {l.pricingTag}
           </div>
@@ -634,7 +683,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* FREE */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-8 hover:border-white/20 transition-all">
+          <div className="fadein bg-white/[0.03] border border-white/10 rounded-3xl p-8 hover:border-white/20 transition-all" style={{ transitionDelay: '0ms' }}>
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-9 h-9 bg-gray-700 rounded-xl flex items-center justify-center">
@@ -660,7 +709,7 @@ export default function Home() {
           </div>
 
           {/* STANDARD */}
-          <div className="relative bg-gradient-to-b from-blue-600/20 to-blue-900/10 border border-blue-500/40 rounded-3xl p-8 shadow-2xl shadow-blue-900/25 scale-[1.02]">
+          <div className="fadein relative bg-gradient-to-b from-blue-600/20 to-blue-900/10 border border-blue-500/40 rounded-3xl p-8 shadow-2xl shadow-blue-900/25 scale-[1.02]" style={{ transitionDelay: '120ms' }}>
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs font-black px-6 py-2 rounded-full shadow-lg">
               {l.popular}
             </div>
@@ -689,7 +738,7 @@ export default function Home() {
           </div>
 
           {/* AI PRO */}
-          <div className="relative bg-gradient-to-b from-purple-600/20 to-purple-900/10 border border-purple-500/30 rounded-3xl p-8 hover:border-purple-500/50 transition-all">
+          <div className="fadein relative bg-gradient-to-b from-purple-600/20 to-purple-900/10 border border-purple-500/30 rounded-3xl p-8 hover:border-purple-500/50 transition-all" style={{ transitionDelay: '240ms' }}>
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-black px-6 py-2 rounded-full shadow-lg">
               {l.premium}
             </div>
@@ -733,34 +782,62 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="space-y-3">
-              {[
-                { label: lang==='ru'?'Организация':lang==='oz'?'Ташкилот':"Tashkilot", value: '"JAMSHIDBEK NUR KURGAN" MCHJ' },
-                { label: 'STIR', value: '307367795' },
-                { label: lang==='ru'?'Расчётный счёт':lang==='oz'?'Ҳисоб рақами':"Hisob raqami", value: '20208000505219713001' },
-                { label: lang==='ru'?'Банк':lang==='oz'?'Банк':'Bank', value: '"Biznesni rivojlantirish banki" ATB Bosh ofisi' },
-                { label: 'MFO', value: '01037' },
-              ].map((row, i) => (
-                <div key={i} className="flex items-start justify-between gap-4 py-2.5 border-b border-white/5 last:border-0">
-                  <span className="text-gray-500 text-sm flex-shrink-0">{row.label}</span>
-                  <span className="text-white text-sm font-medium text-right">{row.value}</span>
+
+            {/* Rekvizitlar — niqoblangan */}
+            <div className="relative">
+              {/* Blur overlay */}
+              <div className="absolute inset-0 z-10 rounded-2xl backdrop-blur-md bg-[#0B1220]/60 flex flex-col items-center justify-center gap-3">
+                <div className="w-11 h-11 bg-emerald-500/15 border border-emerald-500/30 rounded-2xl flex items-center justify-center">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                  </svg>
                 </div>
-              ))}
+                <p className="text-white font-semibold text-sm text-center px-4">
+                  {lang==='ru'
+                    ? 'Реквизиты доступны после подписки'
+                    : lang==='oz'
+                    ? 'Реквизитлар обунадан сўнг кўринади'
+                    : "Rekvizitlar obunadan so'ng ko'rinadi"}
+                </p>
+                <p className="text-gray-400 text-xs text-center px-6">
+                  {lang==='ru'
+                    ? 'Напишите нам в Telegram — отправим реквизиты'
+                    : lang==='oz'
+                    ? "Telegram'da yozing — rekvizitlarni yuboramiz"
+                    : "Telegramda yozing — rekvizitlarni yuboramiz"}
+                </p>
+              </div>
+              {/* Blurred content beneath */}
+              <div className="space-y-3 select-none pointer-events-none" aria-hidden>
+                {[
+                  { label: 'Tashkilot', value: '██████████████ MCHJ' },
+                  { label: 'STIR',      value: '█████████' },
+                  { label: 'Hisob raqami', value: '████████████████████' },
+                  { label: 'Bank',      value: '████████████████████' },
+                  { label: 'MFO',       value: '█████' },
+                ].map((row, i) => (
+                  <div key={i} className="flex items-start justify-between gap-4 py-2.5 border-b border-white/5 last:border-0">
+                    <span className="text-gray-500 text-sm flex-shrink-0">{row.label}</span>
+                    <span className="text-white/20 text-sm font-medium text-right tracking-wider">{row.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* Aloqa — Telegram */}
             <div className="mt-6 pt-5 border-t border-white/5 flex items-center gap-3 bg-white/[0.03] rounded-xl p-4">
               <div className="w-9 h-9 bg-blue-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-blue-400 text-base">✉</span>
+                <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.88 13.47l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.268.089z"/>
+                </svg>
               </div>
               <div className="flex-1">
-                <p className="text-gray-300 text-sm">
-                  {lang==='ru'
-                    ? 'После оплаты отправьте чек на:'
-                    : lang==='oz'
-                    ? "To'lovdan so'ng chekni yuboring:"
-                    : "To'lovdan so'ng chekni yuboring:"}
+                <p className="text-gray-400 text-xs mb-1">
+                  {lang==='ru' ? 'Написать и получить реквизиты:' : lang==='oz' ? "Yozish va rekvizit olish:" : "Yozish va rekvizit olish:"}
                 </p>
-                <a href="tel:+998979291970" className="text-blue-400 font-bold text-base hover:text-blue-300 transition">
-                  +998 97 929 19 70
+                <a href="https://t.me/Alisher_All" target="_blank" rel="noopener noreferrer"
+                  className="text-blue-400 font-bold text-base hover:text-blue-300 transition">
+                  @Alisher_All
                 </a>
               </div>
             </div>
@@ -772,7 +849,7 @@ export default function Home() {
       <section className="relative border-y border-white/5 bg-white/[0.015] py-14">
         <div className="max-w-5xl mx-auto px-5 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
           {[
-            { icon: <Lock className="w-6 h-6"/>, color: 'text-emerald-400', bg: 'bg-emerald-500/10',
+            { icon: <Lock className="w-6 h-6"/>, color: 'text-emerald-400', bg: 'bg-emerald-500/10', delay: '0ms',
               title: lang==='ru'?'Данные в безопасности':lang==='oz'?'Маълумотлар хавфсиз':'Ma\'lumotlar xavfsiz',
               desc: lang==='ru'?'Supabase RLS защита. Каждый видит только своё.':lang==='oz'?'Supabase RLS ҳимояси.':'Supabase RLS himoyasi. Har biri faqat o\'zini ko\'radi.' },
             { icon: <Shield className="w-6 h-6"/>, color: 'text-blue-400', bg: 'bg-blue-500/10',
@@ -782,7 +859,7 @@ export default function Home() {
               title: lang==='ru'?'Всегда доступно':lang==='oz'?'Доим мавжуд':'Doim mavjud',
               desc: lang==='ru'?'99.9% uptime. Vercel + Supabase инфраструктура.':lang==='oz'?'99.9% uptime кафолати.':'99.9% uptime kafolati. Vercel + Supabase.' },
           ].map((item, i) => (
-            <div key={i} className="flex flex-col items-center">
+            <div key={i} className="fadein flex flex-col items-center" style={{ transitionDelay: `${i * 120}ms` }}>
               <div className={`w-14 h-14 ${item.bg} rounded-2xl flex items-center justify-center ${item.color} mb-4`}>
                 {item.icon}
               </div>
@@ -794,10 +871,20 @@ export default function Home() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="relative py-32">
+      <section className="relative py-32 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <Image
+            src="/img-cta.png"
+            alt=""
+            fill
+            className="object-cover opacity-10"
+            aria-hidden
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#080810]/80 via-transparent to-[#080810]/80"/>
+        </div>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/8 to-transparent pointer-events-none"/>
-        <div className="max-w-3xl mx-auto px-5 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl mb-8 shadow-2xl shadow-blue-900/50">
+        <div className="max-w-3xl mx-auto px-5 text-center fadein">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl mb-8 shadow-2xl shadow-blue-900/50" style={{ animation: 'heroPulse 3s ease-in-out infinite' }}>
             <Sparkles className="w-8 h-8 text-white"/>
           </div>
           <h2 className="text-5xl md:text-6xl font-black mb-6 bg-gradient-to-b from-white to-gray-300 bg-clip-text text-transparent">
@@ -830,5 +917,6 @@ export default function Home() {
         </div>
       </footer>
     </div>
+    </>
   )
 }

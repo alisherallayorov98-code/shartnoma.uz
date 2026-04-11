@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useLang } from '@/lib/LanguageContext'
-import { tr, type Lang } from '@/lib/i18n'
+import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../../context'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 import { useToast } from '@/lib/toast'
@@ -27,6 +27,7 @@ export default function YangiShablon() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { activeOrg } = useDashboard()
   const { toast } = useToast()
 
@@ -112,7 +113,7 @@ export default function YangiShablon() {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
         </svg>
-        Shablonlar
+        {T(t.tplNew.back)}
       </Link>
 
       <div className="flex items-center gap-3">
@@ -122,8 +123,8 @@ export default function YangiShablon() {
           </svg>
         </div>
         <div>
-          <h1 className="text-lg font-bold text-white">Yangi shablon</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Bo'lim va bandlarga bo'lib yozing — avtomatik formatlashtiriladi</p>
+          <h1 className="text-lg font-bold text-white">{T(t.tplNew.title)}</h1>
+          <p className="text-xs text-gray-500 mt-0.5">{T(t.tplNew.subtitle)}</p>
         </div>
       </div>
 
@@ -131,16 +132,16 @@ export default function YangiShablon() {
 
         {/* Meta */}
         <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-white">Asosiy ma'lumotlar</h2>
+          <h2 className="text-sm font-semibold text-white">{T(t.tplNew.metaTitle)}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Shablon nomi *</label>
+              <label className="block text-xs text-gray-400 mb-1.5">{T(t.tplNew.nameLabel)}</label>
               <input required value={meta.name} onChange={e => setMeta(m => ({ ...m, name: e.target.value }))}
                 className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-600 placeholder-gray-600 transition"
-                placeholder="Masalan: Tovar sotib olish shartnomasi"/>
+                placeholder={T(t.tplNew.namePlh)}/>
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Shartnoma turi</label>
+              <label className="block text-xs text-gray-400 mb-1.5">{T(t.tplNew.typeLabel)}</label>
               <select value={meta.type} onChange={e => setMeta(m => ({ ...m, type: e.target.value }))}
                 className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-600 cursor-pointer transition">
                 {CONTRACT_TYPE_LIST.map(([k, v]) => <option key={k} value={k}>{v[lang as 'uz'|'oz'|'ru'] || k}</option>)}
@@ -148,16 +149,16 @@ export default function YangiShablon() {
             </div>
           </div>
           <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Tavsif</label>
+            <label className="block text-xs text-gray-400 mb-1.5">{T(t.tplNew.descLabel)}</label>
             <input value={meta.description} onChange={e => setMeta(m => ({ ...m, description: e.target.value }))}
               className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-600 placeholder-gray-600 transition"
-              placeholder="Ushbu shablon haqida qisqacha tavsif..."/>
+              placeholder={T(t.tplNew.descPlh)}/>
           </div>
         </div>
 
         {/* Variables hint */}
         <div className="flex items-center gap-2 flex-wrap px-1">
-          <span className="text-xs text-gray-500">O'zgaruvchilar:</span>
+          <span className="text-xs text-gray-500">{T(t.tplNew.variables)}</span>
           {VARS.map(v => (
             <button key={v} type="button" onClick={() => insertVar(v)}
               className="text-xs bg-[#111827] hover:bg-[#1F2937] border border-[#1E293B] hover:border-blue-600/40 text-blue-400 hover:text-blue-300 px-2 py-1 rounded font-mono transition">
@@ -178,7 +179,7 @@ export default function YangiShablon() {
                   value={bolim.sarlavha}
                   onChange={e => updateSarlavha(bi, e.target.value)}
                   className="flex-1 bg-transparent text-white text-sm font-bold uppercase tracking-wide focus:outline-none placeholder-gray-600"
-                  placeholder="BO'LIM NOMI (masalan: SHARTNOMA PREDMETI)"
+                  placeholder={T(t.tplNew.sectionPlh)}
                 />
                 {bolimlar.length > 1 && (
                   <button type="button" onClick={() => removeBolim(bi)}
@@ -219,7 +220,7 @@ export default function YangiShablon() {
               <div className="px-4 py-2.5 border-t border-[#1E293B]">
                 <button type="button" onClick={() => addBand(bi)}
                   className="text-xs text-blue-400 hover:text-blue-300 transition">
-                  + Band qo'shish
+                  {T(t.tplNew.addBand)}
                 </button>
               </div>
             </div>
@@ -231,7 +232,7 @@ export default function YangiShablon() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
             </svg>
-            Bo'lim qo'shish
+            {T(t.tplNew.addBolim)}
           </button>
         </div>
 
@@ -239,12 +240,12 @@ export default function YangiShablon() {
         <div className="flex items-center justify-between pt-1">
           <Link href="/dashboard/shablonlar"
             className="px-4 py-2.5 bg-[#1F2937] hover:bg-[#2D3748] border border-[#1E293B] text-gray-300 hover:text-white rounded-xl text-sm transition">
-            Bekor qilish
+            {T(t.tplNew.cancel)}
           </Link>
           <button type="submit" disabled={saving}
             className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white rounded-xl text-sm font-semibold transition">
             {saving && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>}
-            Saqlash
+            {T(t.tplNew.save)}
           </button>
         </div>
 

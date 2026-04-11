@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useDashboard } from '../context'
+import { useLang } from '@/lib/LanguageContext'
+import { t, tr, type Lang } from '@/lib/i18n'
 import { fetchAi } from '@/lib/fetchAi'
 import { saveAiDocument } from '@/lib/aiDocuments'
 import { downloadRasmiyXatWord, downloadFirmenniyBlank } from '@/lib/downloadUtils'
@@ -185,6 +187,8 @@ const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-l
 
 export default function KotibaPage() {
   const { activeOrg, hasAiAccess, isFree, openUpgradeModal, cps } = useDashboard()
+  const { lang } = useLang()
+  const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const [selected, setSelected] = useState<KotibaFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [result, setResult] = useState<string | null>(null)
@@ -273,14 +277,14 @@ export default function KotibaPage() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-600/10 border border-blue-600/30 rounded-xl flex items-center justify-center text-xl">🤖</div>
             <div>
-              <h1 className="text-xl font-bold text-white">Kotiba AI</h1>
-              <p className="text-gray-500 text-sm">Rasmiy hujjatlarni AI yordamida bir zumda tayyorlang</p>
+              <h1 className="text-xl font-bold text-white">{T({ uz: 'Kotiba AI', oz: 'Котиба AI', ru: 'Секретарь AI' })}</h1>
+              <p className="text-gray-500 text-sm">{T({ uz: 'Rasmiy hujjatlarni AI yordamida bir zumda tayyorlang', oz: 'Расмий ҳужжатларни AI ёрдамида бир зумда тайёрланг', ru: 'Готовьте официальные документы мгновенно с помощью AI' })}</p>
             </div>
           </div>
           {(isFree || !hasAiAccess()) && (
             <button onClick={openUpgradeModal}
               className={`text-white text-sm font-semibold px-4 py-2 rounded-lg transition ${isFree ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
-              {isFree ? '🔒 Obuna olish →' : '✦ AI Pro olish →'}
+              {isFree ? T(t.aiPage.getSubBtn) : T(t.aiPage.getAiProBtn)}
             </button>
           )}
         </div>
@@ -289,24 +293,24 @@ export default function KotibaPage() {
         {isFree && (
           <div className="bg-orange-600/10 border border-orange-600/30 rounded-2xl p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-white font-semibold text-sm mb-0.5">🔒 Obuna talab qilinadi</div>
-              <div className="text-gray-400 text-xs">Kotiba hujjatlarini yaratish Standart yoki AI Pro tarifida ishlaydi</div>
+              <div className="text-white font-semibold text-sm mb-0.5">{T(t.aiPage.subRequired)}</div>
+              <div className="text-gray-400 text-xs">{T({ uz: 'Kotiba hujjatlarini yaratish Standart yoki AI Pro tarifida ishlaydi', oz: 'Котиба ҳужжатларини яратиш Стандарт ёки AI Pro тарифида ишлайди', ru: 'Создание документов Котиба — тарифы Стандарт или AI Pro' })}</div>
             </div>
             <button onClick={openUpgradeModal}
               className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-              Obuna olish →
+              {T(t.aiPage.getSubBtn)}
             </button>
           </div>
         )}
         {!isFree && !hasAiAccess() && (
           <div className="bg-blue-600/10 border border-blue-600/30 rounded-2xl p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="text-white font-semibold text-sm mb-0.5">✦ AI Pro tarifida ishlaydi</div>
-              <div className="text-gray-400 text-xs">Barcha kotiba hujjatlari Claude AI yordamida bir zumda tayyorlanadi</div>
+              <div className="text-white font-semibold text-sm mb-0.5">{T(t.aiPage.aiProTitle)}</div>
+              <div className="text-gray-400 text-xs">{T({ uz: 'Barcha kotiba hujjatlari Claude AI yordamida bir zumda tayyorlanadi', oz: 'Барча котиба ҳужжатлари Claude AI ёрдамида бир зумда тайёрланади', ru: 'Все документы Котиба готовятся мгновенно с помощью Claude AI' })}</div>
             </div>
             <button onClick={openUpgradeModal}
               className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-              AI Pro olish →
+              {T(t.aiPage.getAiProBtn)}
             </button>
           </div>
         )}
@@ -332,7 +336,7 @@ export default function KotibaPage() {
             <div className="flex items-center gap-3 px-5 py-4 border-b border-[#1E293B] bg-[#111827]">
               <button onClick={() => { setSelected(null); setResult(null); setError('') }}
                 className="text-gray-500 hover:text-white text-sm flex items-center gap-1.5 transition">
-                ← Orqaga
+                {T(t.aiPage.back)}
               </button>
               <div className="w-px h-4 bg-[#1E293B]"/>
               <div className="flex items-center gap-2">
@@ -350,7 +354,7 @@ export default function KotibaPage() {
               ) : selected === 'tashkilot_rekvizitlari' ? (
                 activeOrg
                   ? <RekvizitlarViewer org={activeOrg} />
-                  : <p className="text-gray-400 text-sm">Avval tashkilot tanlang.</p>
+                  : <p className="text-gray-400 text-sm">{T(t.aiPage.errorNoOrg)}</p>
               ) : selected === 'buyruq' ? (
                 <BuyruqMaker
                   orgName={activeOrg?.name || ''} orgDirector={activeOrg?.director_name || ''}
@@ -426,8 +430,8 @@ export default function KotibaPage() {
                       <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                      </svg>AI ishlamoqda…</>
-                    ) : <>🤖 AI bilan tayyorlash</>}
+                      </svg>{T(t.aiPage.preparing)}</>
+                    ) : <>{T(t.aiPage.generateAi)}</>}
                   </button>
                 </>
               )}
@@ -457,7 +461,7 @@ export default function KotibaPage() {
                       })}
                       className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
                     >
-                      🏢 Firmenniy blanks (Word)
+                      {T({ uz: '🏢 Firmenniy blank (Word)', oz: '🏢 Фирменний бланк (Word)', ru: '🏢 Фирменный бланк (Word)' })}
                     </button>
                   )}
                 </div>

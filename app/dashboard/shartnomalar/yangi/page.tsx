@@ -343,7 +343,7 @@ export default function YangiShartnoma() {
       try {
         const res = await fetch(`/api/company-lookup?inn=${digits}`)
         const apiData = await res.json()
-        if (!res.ok) { toast(apiData.error || "Bu STIR bo'yicha ma'lumot topilmadi", 'error'); return }
+        if (!res.ok) { toast(apiData.error || T(t.yangiPage.stirNotFound), 'error'); return }
         const co = apiData.company
         const { data: { session } } = await supabase.auth.getSession()
         const { data: saved, error: saveErr } = await supabase.from('counterparties').insert({
@@ -361,19 +361,19 @@ export default function YangiShartnoma() {
               setForm(f => ({ ...f, counterparty_id: (found as Counterparty).id }))
               setCpSearch((found as Counterparty).name)
               setCpDropOpen(false)
-              toast(`Bazadan topildi: ${(found as Counterparty).name}`, 'success')
+              toast(`${T(t.yangiPage.foundInBase)}: ${(found as Counterparty).name}`, 'success')
               return
             }
           }
-          toast('Saqlashda xato: ' + saveErr.message, 'error'); return
+          toast(T(t.mobilePage.saveError) + ': ' + saveErr.message, 'error'); return
         }
         setLocalCps(prev => [...prev, saved as Counterparty])
         setForm(f => ({ ...f, counterparty_id: (saved as Counterparty).id }))
         setCpSearch((saved as Counterparty).name)
         setCpDropOpen(false)
-        const src = apiData.source === 'global_db' ? 'Bazadan topildi' : 'Soliq API dan olindi'
+        const src = apiData.source === 'global_db' ? T(t.yangiPage.foundInBase) : T(t.yangiPage.fromSoliqApi)
         toast(`${src}: ${co.name}`, 'success')
-      } catch { toast("So'rovda xatolik", 'error') }
+      } catch { toast(T(t.yangiPage.requestError), 'error') }
       finally { setCpStirLoading(false) }
       return
     }
@@ -390,21 +390,21 @@ export default function YangiShartnoma() {
 
   async function lookupStirNewCp() {
     const inn = newCp.inn.trim()
-    if (!inn || !/^\d{9}$/.test(inn)) { toast("STIR 9 raqamdan iborat bo'lishi kerak", 'error'); return }
+    if (!inn || !/^\d{9}$/.test(inn)) { toast(T(t.yangiPage.stirFormat), 'error'); return }
     setCpStirLoading(true)
     try {
       const res = await fetch(`/api/stir?stir=${inn}`)
       const data = await res.json()
-      if (!res.ok) { toast(data.error || "STIR ma'lumot topilmadi", 'error'); return }
+      if (!res.ok) { toast(data.error || T(t.yangiPage.stirNotFound2), 'error'); return }
       const co = data.company
       setNewCp(p => ({ ...p, name: co.name || p.name, director_name: co.director_name || p.director_name, address: co.address || p.address, qqsreg: co.qqsreg || p.qqsreg, oked: co.oked || p.oked }))
-      toast(co.status === 'active' ? "Ma'lumotlar to'ldirildi" : "⚠ Tashkilot faol emas!", co.status === 'inactive' ? 'error' : 'success')
-    } catch { toast("STIR so'rovida xatolik", 'error') }
+      toast(co.status === 'active' ? T(t.yangiPage.dataFilled) : T(t.yangiPage.orgInactive), co.status === 'inactive' ? 'error' : 'success')
+    } catch { toast(T(t.yangiPage.stirRequestError), 'error') }
     finally { setCpStirLoading(false) }
   }
 
   async function handleQuickAddCp() {
-    if (!newCp.name.trim()) { toast('Tashkilot nomi kiritilishi shart', 'error'); return }
+    if (!newCp.name.trim()) { toast(T(t.yangiPage.cpNameRequired), 'error'); return }
     setSavingCp(true)
     const { data: { session } } = await supabase.auth.getSession()
     const { data, error } = await supabase.from('counterparties').insert({
@@ -414,7 +414,7 @@ export default function YangiShartnoma() {
       oked: newCp.oked.trim(), user_id: session!.user.id,
     }).select().single()
     setSavingCp(false)
-    if (error) { toast('Xato: ' + error.message, 'error'); return }
+    if (error) { toast(T(t.mobilePage.saveError2) + ': ' + error.message, 'error'); return }
     if (data) {
       setLocalCps(prev => [...prev, data as Counterparty])
       setForm(f => ({ ...f, counterparty_id: data.id }))
@@ -427,8 +427,8 @@ export default function YangiShartnoma() {
   // ── Validation ────────────────────────────────────────────────────────────────
 
   function validateStep1(): boolean {
-    if (!form.organization_id) { toast("Tashkilotni tanlang", 'error'); return false }
-    if (!form.counterparty_id) { toast("Kontragentni tanlang", 'error'); return false }
+    if (!form.organization_id) { toast(T(t.yangiPage.selectOrgErr), 'error'); return false }
+    if (!form.counterparty_id) { toast(T(t.yangiPage.selectCpErr), 'error'); return false }
     return true
   }
 
@@ -521,13 +521,13 @@ export default function YangiShartnoma() {
 
     const { data: inserted, error } = await supabase.from('contracts').insert(payload).select('id').single()
     setSaving(false)
-    if (error) { toast(`Xato: ${error.message}`, 'error'); return }
+    if (error) { toast(`${T(t.mobilePage.saveError2)}: ${error.message}`, 'error'); return }
     if (inserted) logAudit('create', 'contracts', inserted.id, { contract_number: payload.contract_number, contract_type: payload.contract_type })
     if (subscription) {
       await supabase.from('subscriptions').update({ contracts_used: (subscription.contracts_used || 0) + 1 }).eq('id', subscription.id)
     }
     await reloadContracts()
-    toast("Shartnoma muvaffaqiyatli saqlandi", 'success')
+    toast(T(t.yangiPage.savedMsg), 'success')
     router.push('/dashboard/shartnomalar')
   }
 
@@ -620,12 +620,12 @@ export default function YangiShartnoma() {
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
             </svg>
-            Shartnomalar
+            {T(t.nav.contracts)}
           </button>
           <span className="text-gray-600 text-xs">/</span>
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: selectedTypeMeta?.color || '#3B82F6' }}/>
-            <span className="text-xs text-white font-medium">Yangi shartnoma</span>
+            <span className="text-xs text-white font-medium">{T(t.yangiPage.newContract)}</span>
             <span className="text-xs text-gray-500">— {(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]}</span>
           </div>
         </div>
@@ -666,27 +666,27 @@ export default function YangiShartnoma() {
               <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                   <div>
-                    <label className={lbl}>Shartnoma raqami <span className="text-red-400">*</span></label>
+                    <label className={lbl}>{T(t.yangiPage.numLabel)} <span className="text-red-400">*</span></label>
                     <input value={form.contract_number} onChange={e => setForm(f => ({ ...f, contract_number: e.target.value }))}
                       className={inp} placeholder="2024/001" />
                   </div>
                   <div>
-                    <label className={lbl}>Tuzilish sanasi</label>
+                    <label className={lbl}>{T(t.yangiPage.dateLabel)}</label>
                     <input type="date" value={form.contract_date} onChange={e => setForm(f => ({ ...f, contract_date: e.target.value }))} className={inp} />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className={lbl} style={{marginBottom:0}}>Tuzilgan joy</label>
+                      <label className={lbl} style={{marginBottom:0}}>{T(t.yangiPage.cityLabel)}</label>
                       <button type="button" onClick={() => { setCityInput(form.city); setCityModalOpen(true) }}
                         className="text-[10px] text-gray-500 hover:text-blue-400 transition flex items-center gap-1">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        Standartni o'zgartirish
+                        {T(t.yangiPage.changeDefault)}
                       </button>
                     </div>
                     <CityPicker value={form.city} onChange={v => setForm(f => ({ ...f, city: v }))} />
                   </div>
                   <div>
-                    <label className={lbl}>Shartnoma summasi</label>
+                    <label className={lbl}>{T(t.yangiPage.amountLabel)}</label>
                     <div className="flex gap-2">
                       <input type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
                         className={inp + ' flex-1'} placeholder="0" min="0" />
@@ -707,7 +707,7 @@ export default function YangiShartnoma() {
 
                 {/* Contract type - compact row */}
                 <div className="border-t border-[#1E293B] pt-3">
-                  <label className={lbl + ' mb-2'}>Shartnoma turi</label>
+                  <label className={lbl + ' mb-2'}>{T(t.yangiPage.typeLabel)}</label>
                   <div className="flex flex-wrap gap-1.5">
                     {CONTRACT_TYPES.map(ct => {
                       const active = form.contract_type === ct.key
@@ -733,10 +733,10 @@ export default function YangiShartnoma() {
                 {/* Left: Org rekvizitlar */}
                 <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
                   <div className="px-4 py-3 border-b border-[#1E293B] flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Sizning ma&apos;lumotlaringiz</h3>
+                    <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wider">{T(t.yangiPage.yourInfo)}</h3>
                     <select value={form.organization_id} onChange={e => setForm(f => ({ ...f, organization_id: e.target.value }))}
                       className="bg-[#0F172A] border border-[#1E293B] text-gray-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-600 max-w-[180px]">
-                      <option value="">Tanlang...</option>
+                      <option value="">{T(t.yangiPage.selectOrgOption)}</option>
                       {orgs.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}
                     </select>
                   </div>
@@ -765,7 +765,7 @@ export default function YangiShartnoma() {
                     </div>
                   ) : (
                     <div className="p-8 text-center text-gray-500 text-sm">
-                      Tashkilotni tanlang
+                      {T(t.yangiPage.selectOrgEmpty)}
                     </div>
                   )}
                 </div>
@@ -773,7 +773,7 @@ export default function YangiShartnoma() {
                 {/* Right: CP rekvizitlar */}
                 <div className="bg-[#111827] border border-[#1E293B] rounded-xl overflow-hidden">
                   <div className="px-4 py-3 border-b border-[#1E293B]">
-                    <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Kontragent ma&apos;lumotlari</h3>
+                    <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">{T(t.yangiPage.cpInfoTitle)}</h3>
                     <div className="relative" ref={cpDropRef}>
                       <input
                         value={cpSearch}
@@ -789,7 +789,7 @@ export default function YangiShartnoma() {
                           if (e.key === 'Escape') setCpDropOpen(false)
                         }}
                         onFocus={() => { if (!form.counterparty_id && cpSearch.trim()) setCpDropOpen(true) }}
-                        placeholder="STIR (9 raqam) yoki nomi..."
+                        placeholder={T(t.yangiPage.cpSearchPlh)}
                         disabled={cpStirLoading}
                         className={`w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-600 placeholder-gray-500 transition ${cpStirLoading ? 'opacity-60 cursor-wait' : ''}`}
                       />
@@ -819,7 +819,7 @@ export default function YangiShartnoma() {
                   <div className="divide-y divide-[#1E293B]">
                     {selectedCp?.stir_status === 'inactive' && (
                       <div className="flex items-center gap-1.5 text-xs text-red-400 bg-red-900/20 px-4 py-2">
-                        <span>⚠</span><span>Bu tashkilot Soliq&apos;da <strong>faol emas</strong></span>
+                        <span>⚠</span><span>{T(t.yangiPage.cpInactive)}</span>
                       </div>
                     )}
                     {selectedCp && (([
@@ -851,31 +851,31 @@ export default function YangiShartnoma() {
                 {(form.contract_type === 'oldi_sotdi' || form.contract_type === 'daval') && (
                   <div className="bg-[#111827] border border-amber-600/40 rounded-xl p-4">
                     <label className="block text-xs text-amber-400 mb-1.5 font-semibold">
-                      Mahsulot / xizmat nomi <span className="text-red-400">*</span>
+                      {T(t.yangiPage.productLabel)} <span className="text-red-400">*</span>
                     </label>
                     <input value={form.product_name} onChange={e => setForm(f => ({ ...f, product_name: e.target.value }))}
                       className={`${inp} ${!form.product_name ? 'border-amber-600/50 focus:border-amber-500' : ''}`}
-                      placeholder="Tovar yoki xizmat nomini kiriting" />
+                      placeholder={T(t.yangiPage.productPlh)} />
                     {!form.product_name && (
-                      <p className="text-[11px] text-amber-600 mt-1">Bu maydon shartnoma matnida ishlatiladi</p>
+                      <p className="text-[11px] text-amber-600 mt-1">{T(t.yangiPage.productHint)}</p>
                     )}
                   </div>
                 )}
                 <div className={`bg-[#111827] border border-[#1E293B] rounded-xl p-4 ${!(form.contract_type === 'oldi_sotdi' || form.contract_type === 'daval') ? 'lg:col-span-2' : ''}`}>
                   <div className="flex items-center justify-between mb-3">
-                    <label className={lbl + ' mb-0'}>Shablon</label>
+                    <label className={lbl + ' mb-0'}>{T(t.yangiPage.templateLabel)}</label>
                     <div className="flex rounded-lg overflow-hidden border border-[#1E293B]">
                       <button type="button" onClick={() => setUseTemplate(true)}
-                        className={`px-3 py-1 text-xs transition ${useTemplate ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}>Shablon</button>
+                        className={`px-3 py-1 text-xs transition ${useTemplate ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}>{T(t.yangiPage.templateLabel)}</button>
                       <button type="button" onClick={() => setUseTemplate(false)}
-                        className={`px-3 py-1 text-xs transition ${!useTemplate ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}>Qo&apos;lda</button>
+                        className={`px-3 py-1 text-xs transition ${!useTemplate ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}>{T(t.yangiPage.manualLabel)}</button>
                     </div>
                   </div>
                   {useTemplate ? (
                     <div className="flex flex-wrap gap-2">
                       <button type="button" onClick={() => setSelectedTemplate('auto')}
                         className={`px-3 py-2 rounded-lg text-xs border transition ${selectedTemplate === 'auto' ? 'border-blue-500 bg-blue-600/10 text-blue-400' : 'border-[#1E293B] text-gray-300 hover:border-blue-600/50'}`}>
-                        Avtomatik ({(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]})
+                        {T(t.yangiPage.autoPrefix)} ({(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]})
                       </button>
                       {allTemplates.map(tpl => (
                         <button key={tpl.id} type="button" onClick={() => { setSelectedTemplate(tpl.id); setForm(f => ({ ...f, content: tpl.content })) }}
@@ -886,7 +886,7 @@ export default function YangiShartnoma() {
                     </div>
                   ) : (
                     <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                      className={inp} rows={5} placeholder="Shartnoma matnini bu yerga kiriting..." />
+                      className={inp} rows={5} placeholder={T(t.yangiPage.contentPlh)} />
                   )}
                 </div>
               </div>
@@ -905,147 +905,147 @@ export default function YangiShartnoma() {
                     </svg>
                   </div>
                   <div>
-                    <h2 className="text-sm font-semibold text-white">Qo&apos;shimcha ma&apos;lumotlar</h2>
-                    <p className="text-xs text-gray-500">{(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]} uchun maxsus shartlar</p>
+                    <h2 className="text-sm font-semibold text-white">{T(t.yangiPage.additionalTitle)}</h2>
+                    <p className="text-xs text-gray-500">{(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]} {T(t.yangiPage.additionalSuffix)}</p>
                   </div>
                 </div>
                 <div className="p-5 space-y-5">
                 <div className="space-y-4">
 
                   {form.contract_type === 'ijara' && (<>
-                    <div><label className={lbl}>Ijara ob&apos;ekti manzili</label>
+                    <div><label className={lbl}>{T(t.yangiPage.ijaraAddress)}</label>
                       <input value={form.ijara_manzil || ''} onChange={e => setForm(f => ({ ...f, ijara_manzil: e.target.value }))} className={inp} placeholder="Toshkent sh., Yunusobod t., ..."/></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className={lbl}>Maydon (m²)</label>
+                      <div><label className={lbl}>{T(t.yangiPage.area)}</label>
                         <input value={form.ijara_maydon || ''} onChange={e => setForm(f => ({ ...f, ijara_maydon: e.target.value }))} className={inp} placeholder="50"/></div>
-                      <div><label className={lbl}>Oylik to&apos;lov (so&apos;m)</label>
+                      <div><label className={lbl}>{T(t.yangiPage.monthlyPayment)}</label>
                         <input type="number" value={form.oylik_tolov || ''} onChange={e => setForm(f => ({ ...f, oylik_tolov: e.target.value }))} className={inp} placeholder="0"/></div>
                     </div>
-                    <div><label className={lbl}>Ijara muddati</label>
+                    <div><label className={lbl}>{T(t.yangiPage.ijaraDuration)}</label>
                       <input value={form.ijara_muddat || ''} onChange={e => setForm(f => ({ ...f, ijara_muddat: e.target.value }))} className={inp} placeholder="12 oy"/></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className={lbl}>Boshlanish sanasi</label>
+                      <div><label className={lbl}>{T(t.yangiPage.startDate)}</label>
                         <input type="date" value={form.ijara_boshlanish || ''} onChange={e => setForm(f => ({ ...f, ijara_boshlanish: e.target.value }))} className={inp}/></div>
-                      <div><label className={lbl}>Tugash sanasi</label>
+                      <div><label className={lbl}>{T(t.yangiPage.endDate)}</label>
                         <input type="date" value={form.ijara_tugash || ''} onChange={e => setForm(f => ({ ...f, ijara_tugash: e.target.value }))} className={inp}/></div>
                     </div>
                   </>)}
 
                   {form.contract_type === 'xizmat' && (<>
-                    <div><label className={lbl}>Xizmat tavsifi</label>
-                      <textarea value={form.xizmat_tavsif || ''} onChange={e => setForm(f => ({ ...f, xizmat_tavsif: e.target.value }))} className={inp} rows={3} placeholder="Ko'rsatiladigan xizmat haqida..."/></div>
+                    <div><label className={lbl}>{T(t.yangiPage.serviceDesc)}</label>
+                      <textarea value={form.xizmat_tavsif || ''} onChange={e => setForm(f => ({ ...f, xizmat_tavsif: e.target.value }))} className={inp} rows={3} placeholder={T(t.yangiPage.serviceDescPlh)}/></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className={lbl}>Boshlanish sanasi</label>
+                      <div><label className={lbl}>{T(t.yangiPage.startDate)}</label>
                         <input type="date" value={form.xizmat_boshlanish || ''} onChange={e => setForm(f => ({ ...f, xizmat_boshlanish: e.target.value }))} className={inp}/></div>
-                      <div><label className={lbl}>Tugash sanasi</label>
+                      <div><label className={lbl}>{T(t.yangiPage.endDate)}</label>
                         <input type="date" value={form.xizmat_tugash || ''} onChange={e => setForm(f => ({ ...f, xizmat_tugash: e.target.value }))} className={inp}/></div>
                     </div>
-                    <div><label className={lbl}>To&apos;lov tartibi</label>
-                      <input value={form.xizmat_tolov || ''} onChange={e => setForm(f => ({ ...f, xizmat_tolov: e.target.value }))} className={inp} placeholder="Masalan: 50% avans, qolgan 50% bajarilgandan keyin"/></div>
+                    <div><label className={lbl}>{T(t.yangiPage.paymentOrder)}</label>
+                      <input value={form.xizmat_tolov || ''} onChange={e => setForm(f => ({ ...f, xizmat_tolov: e.target.value }))} className={inp} placeholder={T(t.yangiPage.paymentOrderPlh)}/></div>
                   </>)}
 
                   {form.contract_type === 'pudrat' && (<>
-                    <div><label className={lbl}>Ish joyi (ob&apos;ekt)</label>
+                    <div><label className={lbl}>{T(t.yangiPage.workPlace)}</label>
                       <input value={form.pudrat_obekt || ''} onChange={e => setForm(f => ({ ...f, pudrat_obekt: e.target.value }))} className={inp} placeholder="Toshkent sh., ..."/></div>
-                    <div><label className={lbl}>Ishlar tavsifi</label>
-                      <textarea value={form.pudrat_tavsif || ''} onChange={e => setForm(f => ({ ...f, pudrat_tavsif: e.target.value }))} className={inp} rows={3} placeholder="Bajarilishi kerak bo'lgan ishlar..."/></div>
+                    <div><label className={lbl}>{T(t.yangiPage.worksDesc)}</label>
+                      <textarea value={form.pudrat_tavsif || ''} onChange={e => setForm(f => ({ ...f, pudrat_tavsif: e.target.value }))} className={inp} rows={3} placeholder={T(t.yangiPage.worksDescPlh)}/></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className={lbl}>Boshlanish sanasi</label>
+                      <div><label className={lbl}>{T(t.yangiPage.startDate)}</label>
                         <input type="date" value={form.pudrat_boshlanish || ''} onChange={e => setForm(f => ({ ...f, pudrat_boshlanish: e.target.value }))} className={inp}/></div>
-                      <div><label className={lbl}>Tugash sanasi</label>
+                      <div><label className={lbl}>{T(t.yangiPage.endDate)}</label>
                         <input type="date" value={form.pudrat_tugash || ''} onChange={e => setForm(f => ({ ...f, pudrat_tugash: e.target.value }))} className={inp}/></div>
                     </div>
                   </>)}
 
                   {form.contract_type === 'moliyaviy' && (<>
-                    <div><label className={lbl}>Qarz maqsadi</label>
-                      <input value={form.qarz_maqsad || ''} onChange={e => setForm(f => ({ ...f, qarz_maqsad: e.target.value }))} className={inp} placeholder="Qarz olish maqsadi..."/></div>
+                    <div><label className={lbl}>{T(t.yangiPage.loanPurpose)}</label>
+                      <input value={form.qarz_maqsad || ''} onChange={e => setForm(f => ({ ...f, qarz_maqsad: e.target.value }))} className={inp} placeholder={T(t.yangiPage.loanPurposePlh)}/></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className={lbl}>Foiz stavkasi</label>
-                        <input value={form.qarz_foiz || ''} onChange={e => setForm(f => ({ ...f, qarz_foiz: e.target.value }))} className={inp} placeholder="Foizsiz yoki yillik X%"/></div>
-                      <div><label className={lbl}>Qaytarish muddati</label>
+                      <div><label className={lbl}>{T(t.yangiPage.interestRate)}</label>
+                        <input value={form.qarz_foiz || ''} onChange={e => setForm(f => ({ ...f, qarz_foiz: e.target.value }))} className={inp} placeholder={T(t.yangiPage.interestRatePlh)}/></div>
+                      <div><label className={lbl}>{T(t.yangiPage.returnPeriod)}</label>
                         <input value={form.qarz_muddat || ''} onChange={e => setForm(f => ({ ...f, qarz_muddat: e.target.value }))} className={inp} placeholder="12 oy"/></div>
                     </div>
                   </>)}
 
                   {form.contract_type === 'daval' && (<>
-                    <div><label className={lbl}>Daval material</label>
-                      <input value={form.daval_material || ''} onChange={e => setForm(f => ({ ...f, daval_material: e.target.value }))} className={inp} placeholder="Xom ashyo turi va miqdori"/></div>
-                    <div><label className={lbl}>Tayyor mahsulot</label>
-                      <input value={form.daval_mahsulot || ''} onChange={e => setForm(f => ({ ...f, daval_mahsulot: e.target.value }))} className={inp} placeholder="Tayyor mahsulot turi"/></div>
+                    <div><label className={lbl}>{T(t.yangiPage.davalMaterial)}</label>
+                      <input value={form.daval_material || ''} onChange={e => setForm(f => ({ ...f, daval_material: e.target.value }))} className={inp} placeholder={T(t.yangiPage.davalMaterialPlh)}/></div>
+                    <div><label className={lbl}>{T(t.yangiPage.readyProduct)}</label>
+                      <input value={form.daval_mahsulot || ''} onChange={e => setForm(f => ({ ...f, daval_mahsulot: e.target.value }))} className={inp} placeholder={T(t.yangiPage.readyProductPlh)}/></div>
                   </>)}
 
                   {form.contract_type === 'xalqaro' && (<>
-                    <div><label className={lbl}>Incoterms 2020</label>
+                    <div><label className={lbl}>{T(t.yangiPage.incotermsLabel)}</label>
                       <input value={form.incoterms || ''} onChange={e => setForm(f => ({ ...f, incoterms: e.target.value }))} className={inp} placeholder="FOB, CIF, DAP, ..."/></div>
-                    <div><label className={lbl}>Yetkazib berish joyi</label>
+                    <div><label className={lbl}>{T(t.yangiPage.deliveryPlace)}</label>
                       <input value={form.yetkazish_joy || ''} onChange={e => setForm(f => ({ ...f, yetkazish_joy: e.target.value }))} className={inp} placeholder="Port / shahar"/></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className={lbl}>To&apos;lov usuli</label>
-                        <input value={form.tolov_usuli || ''} onChange={e => setForm(f => ({ ...f, tolov_usuli: e.target.value }))} className={inp} placeholder="Bank o'tkazma / Akkreditiv"/></div>
-                      <div><label className={lbl}>Valyuta</label>
+                      <div><label className={lbl}>{T(t.yangiPage.paymentMethod)}</label>
+                        <input value={form.tolov_usuli || ''} onChange={e => setForm(f => ({ ...f, tolov_usuli: e.target.value }))} className={inp} placeholder="Bank o&apos;tkazma / Akkreditiv"/></div>
+                      <div><label className={lbl}>{T(t.yangiPage.currency)}</label>
                         <input value={form.valyuta || ''} onChange={e => setForm(f => ({ ...f, valyuta: e.target.value }))} className={inp} placeholder="USD / EUR / UZS"/></div>
                     </div>
                   </>)}
 
                   {form.contract_type === 'qoshimcha' && (<>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className={lbl}>Asosiy shartnoma raqami</label>
+                      <div><label className={lbl}>{T(t.yangiPage.mainContractNum)}</label>
                         <input value={form.asosiy_raqam || ''} onChange={e => setForm(f => ({ ...f, asosiy_raqam: e.target.value }))} className={inp} placeholder="2024/001"/></div>
-                      <div><label className={lbl}>Asosiy shartnoma sanasi</label>
+                      <div><label className={lbl}>{T(t.yangiPage.mainContractDate)}</label>
                         <input type="date" value={form.asosiy_sana || ''} onChange={e => setForm(f => ({ ...f, asosiy_sana: e.target.value }))} className={inp}/></div>
                     </div>
-                    <div><label className={lbl}>Yangi tugash sanasi</label>
+                    <div><label className={lbl}>{T(t.yangiPage.newEndDate)}</label>
                       <input type="date" value={form.yangi_muddat || ''} onChange={e => setForm(f => ({ ...f, yangi_muddat: e.target.value }))} className={inp}/>
-                      <p className="text-xs text-gray-600 mt-1">To&apos;ldirilsa — muddat uzaytirish bandi avtomatik qo&apos;shiladi</p></div>
-                    <div><label className={lbl}>Boshqa o&apos;zgartirishlar</label>
-                      <textarea value={form.ozgartirish || ''} onChange={e => setForm(f => ({ ...f, ozgartirish: e.target.value }))} className={inp} rows={3} placeholder="Narx, miqdor yoki boshqa shartlar o'zgartirilsa..."/></div>
+                      <p className="text-xs text-gray-600 mt-1">{T(t.yangiPage.newEndDateHint)}</p></div>
+                    <div><label className={lbl}>{T(t.yangiPage.otherChanges)}</label>
+                      <textarea value={form.ozgartirish || ''} onChange={e => setForm(f => ({ ...f, ozgartirish: e.target.value }))} className={inp} rows={3} placeholder={T(t.yangiPage.otherChangesPlh)}/></div>
                   </>)}
 
                   {form.contract_type === 'oldi_sotdi' && (
-                    <div><label className={lbl}>Yetkazib berish muddati</label>
-                      <input value={form.yetkazish_muddat || ''} onChange={e => setForm(f => ({ ...f, yetkazish_muddat: e.target.value }))} className={inp} placeholder="Masalan: 20 ish kuni, 30 kalendar kun"/>
-                      <p className="text-xs text-gray-600 mt-1">Bo&apos;sh qoldirilsa: "20 (yigirma) ish kuni" ishlatiladi</p></div>
+                    <div><label className={lbl}>{T(t.yangiPage.deliveryDuration)}</label>
+                      <input value={form.yetkazish_muddat || ''} onChange={e => setForm(f => ({ ...f, yetkazish_muddat: e.target.value }))} className={inp} placeholder={T(t.yangiPage.deliveryDurationPlh)}/>
+                      <p className="text-xs text-gray-600 mt-1">{T(t.yangiPage.deliveryDurationHint)}</p></div>
                   )}
 
                   {form.contract_type === 'agentlik' && (<>
-                    <div><label className={lbl}>Agent vazifasi</label>
-                      <textarea value={form.xizmat_tavsif || ''} onChange={e => setForm(f => ({ ...f, xizmat_tavsif: e.target.value }))} className={inp} rows={2} placeholder="Masalan: tovarlarni sotish, mijozlar topish..."/></div>
+                    <div><label className={lbl}>{T(t.yangiPage.agentTask)}</label>
+                      <textarea value={form.xizmat_tavsif || ''} onChange={e => setForm(f => ({ ...f, xizmat_tavsif: e.target.value }))} className={inp} rows={2} placeholder={T(t.yangiPage.agentTaskPlh)}/></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className={lbl}>Agentlik haqi (%)</label>
-                        <input value={form.qarz_foiz || ''} onChange={e => setForm(f => ({ ...f, qarz_foiz: e.target.value }))} className={inp} placeholder="Masalan: 5"/></div>
-                      <div><label className={lbl}>Hudud</label>
+                      <div><label className={lbl}>{T(t.yangiPage.agentFee)}</label>
+                        <input value={form.qarz_foiz || ''} onChange={e => setForm(f => ({ ...f, qarz_foiz: e.target.value }))} className={inp} placeholder="5"/></div>
+                      <div><label className={lbl}>{T(t.yangiPage.region)}</label>
                         <input value={form.yetkazish_joy || ''} onChange={e => setForm(f => ({ ...f, yetkazish_joy: e.target.value }))} className={inp} placeholder="Masalan: Toshkent viloyati"/></div>
                     </div>
                   </>)}
 
                   {form.contract_type === 'transport' && (<>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className={lbl}>Yuklash manzili</label>
-                        <input value={form.ijara_manzil || ''} onChange={e => setForm(f => ({ ...f, ijara_manzil: e.target.value }))} className={inp} placeholder="Shahar, ko'cha..."/></div>
-                      <div><label className={lbl}>Yetkazish manzili</label>
-                        <input value={form.yetkazish_joy || ''} onChange={e => setForm(f => ({ ...f, yetkazish_joy: e.target.value }))} className={inp} placeholder="Shahar, ko'cha..."/></div>
+                      <div><label className={lbl}>{T(t.yangiPage.loadAddress)}</label>
+                        <input value={form.ijara_manzil || ''} onChange={e => setForm(f => ({ ...f, ijara_manzil: e.target.value }))} className={inp} placeholder={T(t.yangiPage.addressPlh)}/></div>
+                      <div><label className={lbl}>{T(t.yangiPage.deliveryAddress)}</label>
+                        <input value={form.yetkazish_joy || ''} onChange={e => setForm(f => ({ ...f, yetkazish_joy: e.target.value }))} className={inp} placeholder={T(t.yangiPage.addressPlh)}/></div>
                     </div>
-                    <div><label className={lbl}>Yuk turi / tavsifi</label>
+                    <div><label className={lbl}>{T(t.yangiPage.cargoType)}</label>
                       <input value={form.xizmat_tavsif || ''} onChange={e => setForm(f => ({ ...f, xizmat_tavsif: e.target.value }))} className={inp} placeholder="Masalan: qurilish materiallari, oziq-ovqat..."/></div>
                   </>)}
 
                   {form.contract_type === 'lizing' && (<>
-                    <div><label className={lbl}>Lizing ob&apos;ekti</label>
+                    <div><label className={lbl}>{T(t.yangiPage.lizingObject)}</label>
                       <input value={form.pudrat_obekt || ''} onChange={e => setForm(f => ({ ...f, pudrat_obekt: e.target.value }))} className={inp} placeholder="Masalan: Nexia 3 avtomobili, CNC stanogi..."/></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className={lbl}>Lizing muddati</label>
+                      <div><label className={lbl}>{T(t.yangiPage.lizingDuration)}</label>
                         <input value={form.ijara_muddat || ''} onChange={e => setForm(f => ({ ...f, ijara_muddat: e.target.value }))} className={inp} placeholder="Masalan: 36 oy"/></div>
-                      <div><label className={lbl}>Boshlang&apos;ich badal (%)</label>
-                        <input value={form.qarz_foiz || ''} onChange={e => setForm(f => ({ ...f, qarz_foiz: e.target.value }))} className={inp} placeholder="Masalan: 20"/></div>
+                      <div><label className={lbl}>{T(t.yangiPage.initialPayment)}</label>
+                        <input value={form.qarz_foiz || ''} onChange={e => setForm(f => ({ ...f, qarz_foiz: e.target.value }))} className={inp} placeholder="20"/></div>
                     </div>
-                    <div><label className={lbl}>Yillik foiz stavkasi (%)</label>
-                      <input value={form.oylik_tolov || ''} onChange={e => setForm(f => ({ ...f, oylik_tolov: e.target.value }))} className={inp} placeholder="Masalan: 18"/></div>
+                    <div><label className={lbl}>{T(t.yangiPage.annualRate)}</label>
+                      <input value={form.oylik_tolov || ''} onChange={e => setForm(f => ({ ...f, oylik_tolov: e.target.value }))} className={inp} placeholder="18"/></div>
                   </>)}
 
                   {form.contract_type === 'boshqa' && (
-                    <div><label className={lbl}>Shartnoma matni</label>
-                      <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} className={inp} rows={10} placeholder="Shartnoma matnini bu yerga kiriting..."/></div>
+                    <div><label className={lbl}>{T(t.yangiPage.contractText)}</label>
+                      <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} className={inp} rows={10} placeholder={T(t.yangiPage.contentPlh)}/></div>
                   )}
 
                   {/* QQS */}
@@ -1059,17 +1059,17 @@ export default function YangiShartnoma() {
                           </div>
                           <span className="text-sm text-gray-300 font-medium">QQS</span>
                           {form.qqs_enabled
-                            ? <span className="text-xs text-green-400 bg-green-900/20 border border-green-700/30 px-2 py-0.5 rounded-full">Yoqilgan</span>
-                            : <span className="text-xs text-gray-500 bg-[#1F2937] border border-[#1E293B] px-2 py-0.5 rounded-full">O'chirilgan</span>
+                            ? <span className="text-xs text-green-400 bg-green-900/20 border border-green-700/30 px-2 py-0.5 rounded-full">{T(t.yangiPage.qqsEnabled)}</span>
+                            : <span className="text-xs text-gray-500 bg-[#1F2937] border border-[#1E293B] px-2 py-0.5 rounded-full">{T(t.yangiPage.qqsDisabled)}</span>
                           }
                         </label>
                         {selectedOrg?.qqsreg && !form.qqs_enabled && (
-                          <p className="text-[11px] text-amber-500 mt-1 ml-12">Tashkilot QQS to&apos;lovchi, lekin bu shartnomada o&apos;chirilgan</p>
+                          <p className="text-[11px] text-amber-500 mt-1 ml-12">{T(t.yangiPage.qqsOrgWarning)}</p>
                         )}
                       </div>
                       {form.qqs_enabled && (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">Stavka:</span>
+                          <span className="text-xs text-gray-500">{T(t.yangiPage.qqsRate)}</span>
                           <select value={form.qqs_rate} onChange={e => setForm(f => ({ ...f, qqs_rate: parseInt(e.target.value) }))}
                             className="bg-[#0B1220] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:border-blue-600 cursor-pointer">
                             <option value={12}>12%</option><option value={15}>15%</option><option value={0}>0%</option>
@@ -1089,11 +1089,11 @@ export default function YangiShartnoma() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold text-white">Bo&apos;limlar tahriri</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Shartnoma bo&apos;limlari va bandlarini tahrirlang</p>
+                  <h2 className="text-sm font-semibold text-white">{T(t.yangiPage.sectionsTitle)}</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{T(t.yangiPage.sectionsSubtitle)}</p>
                 </div>
                 <button type="button" onClick={addBolim} className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 border border-blue-600/30 px-3 py-1.5 rounded-lg transition">
-                  + Bo&apos;lim qo&apos;shish
+                  {T(t.yangiPage.addSection)}
                 </button>
               </div>
               {getStructureForEdit().bolimlar.map((bolim, bi) => (
@@ -1101,7 +1101,7 @@ export default function YangiShartnoma() {
                   <div className="flex items-center gap-2">
                     <input value={bolim.sarlavha} onChange={e => updateBolim(bi, e.target.value)}
                       className="flex-1 bg-[#0B1220] border border-[#1E293B] text-white font-semibold text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600"
-                      placeholder={`${bi + 1}. Bo'lim nomi`}/>
+                      placeholder={`${bi + 1}. ${T(t.yangiPage.sectionPlh)}`}/>
                     <button type="button" onClick={() => removeBolim(bi)} className="w-7 h-7 flex items-center justify-center rounded text-red-400 hover:bg-red-400/10">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
@@ -1111,7 +1111,7 @@ export default function YangiShartnoma() {
                       <span className="text-xs text-gray-500 pt-2.5 min-w-[36px] flex-shrink-0 font-mono">{bi + 1}.{bdi + 1}</span>
                       <textarea value={band.matn} onChange={e => updateBand(bi, bdi, e.target.value)}
                         className="flex-1 bg-[#0F172A] border border-[#1E293B] text-gray-200 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-600 resize-y leading-relaxed"
-                        rows={3} placeholder="Band matni..."/>
+                        rows={3} placeholder={T(t.yangiPage.bandPlh)}/>
                       <button type="button" onClick={() => removeBand(bi, bdi)} className="w-6 h-6 mt-1 flex-shrink-0 flex items-center justify-center rounded text-gray-500 hover:text-red-400">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                       </button>
@@ -1124,8 +1124,8 @@ export default function YangiShartnoma() {
               ))}
               {getStructureForEdit().bolimlar.length === 0 && (
                 <div className="text-center py-12 text-gray-500 text-sm bg-[#111827] rounded-xl border border-[#1E293B]">
-                  <p>Bo&apos;limlar yo&apos;q</p>
-                  <button type="button" onClick={addBolim} className="mt-2 text-blue-400 hover:text-blue-300 text-xs">+ Bo&apos;lim qo&apos;shish</button>
+                  <p>{T(t.yangiPage.noSections)}</p>
+                  <button type="button" onClick={addBolim} className="mt-2 text-blue-400 hover:text-blue-300 text-xs">{T(t.yangiPage.addSection)}</button>
                 </div>
               )}
             </div>
@@ -1136,11 +1136,11 @@ export default function YangiShartnoma() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold text-white">Spesifikatsiya</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Mahsulot / xizmat ro&apos;yxati</p>
+                  <h2 className="text-sm font-semibold text-white">{T(t.yangiPage.specTitle)}</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{T(t.yangiPage.specSubtitle)}</p>
                 </div>
                 <button type="button" onClick={addSpecItem} className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 border border-blue-600/30 px-3 py-1.5 rounded-lg transition">
-                  + Qator qo&apos;shish
+                  {T(t.yangiPage.addRow)}
                 </button>
               </div>
 
@@ -1151,14 +1151,14 @@ export default function YangiShartnoma() {
                       <thead>
                         <tr className="bg-[#0B1220] text-gray-400 border-b border-[#1E293B]">
                           <th className="text-center py-3 px-3 w-8">№</th>
-                          <th className="text-left py-3 px-3 min-w-[180px]">Tovarlar (ish, xizmatlar) nomi</th>
-                          <th className="text-center py-3 px-3 w-24">O&apos;lchov birligi</th>
-                          <th className="text-right py-3 px-3 w-20">Miqdori</th>
-                          <th className="text-right py-3 px-3 w-32">Narxi (so&apos;m)</th>
-                          <th className="text-right py-3 px-3 w-32">Qiymati</th>
-                          <th className="text-center py-3 px-3 w-24">QQS stavkasi</th>
-                          <th className="text-right py-3 px-3 w-32">QQS summasi</th>
-                          <th className="text-right py-3 px-3 w-36">Jami (QQS bilan)</th>
+                          <th className="text-left py-3 px-3 min-w-[180px]">{T(t.yangiPage.specNameHeader)}</th>
+                          <th className="text-center py-3 px-3 w-24">{T(t.yangiPage.specUnitHeader)}</th>
+                          <th className="text-right py-3 px-3 w-20">{T(t.yangiPage.specQtyHeader)}</th>
+                          <th className="text-right py-3 px-3 w-32">{T(t.yangiPage.specPriceHeader)}</th>
+                          <th className="text-right py-3 px-3 w-32">{T(t.yangiPage.specValueHeader)}</th>
+                          <th className="text-center py-3 px-3 w-24">{T(t.yangiPage.specQqsRateHeader)}</th>
+                          <th className="text-right py-3 px-3 w-32">{T(t.yangiPage.specQqsSumHeader)}</th>
+                          <th className="text-right py-3 px-3 w-36">{T(t.yangiPage.specTotalHeader)}</th>
                           <th className="w-8"></th>
                         </tr>
                       </thead>
@@ -1169,7 +1169,7 @@ export default function YangiShartnoma() {
                             <tr key={i} className="border-b border-[#1E293B] hover:bg-[#1F2937] transition">
                               <td className="py-2 px-3 text-center text-gray-500">{i + 1}</td>
                               <td className="py-2 px-3">
-                                <input value={item.nomi} onChange={e => updateSpecItem(i, 'nomi', e.target.value)} className={inp2} placeholder="Tovar nomi..."/>
+                                <input value={item.nomi} onChange={e => updateSpecItem(i, 'nomi', e.target.value)} className={inp2} placeholder={T(t.yangiPage.specItemPlh)}/>
                               </td>
                               <td className="py-2 px-3"><BirlikPicker value={item.birlik} onChange={v => updateSpecItem(i, 'birlik', v)}/></td>
                               <td className="py-2 px-3">
@@ -1183,9 +1183,9 @@ export default function YangiShartnoma() {
                               </td>
                               <td className="py-2 px-3">
                                 <select value={item.qqs_foiz} onChange={e => updateSpecItem(i, 'qqs_foiz', e.target.value)} className={inp2 + ' text-center'}>
-                                  <option value="siz">QQSsiz</option><option value="0">0%</option>
+                                  <option value="siz">{T(t.yangiPage.qqsSiz)}</option><option value="0">0%</option>
                                   <option value="12">12%</option><option value="15">15%</option>
-                                  <option value="all">Barchasi uchun</option>
+                                  <option value="all">{T(t.yangiPage.qqsAll)}</option>
                                 </select>
                               </td>
                               <td className="py-2 px-3 text-right text-gray-300">
@@ -1203,7 +1203,7 @@ export default function YangiShartnoma() {
                           )
                         })}
                         <tr className="bg-[#0B1220] font-semibold text-gray-200 border-t border-[#1E293B]">
-                          <td colSpan={5} className="py-2.5 px-3 text-right text-xs text-gray-400">Jami:</td>
+                          <td colSpan={5} className="py-2.5 px-3 text-right text-xs text-gray-400">{T(t.yangiPage.totalLabel)}</td>
                           <td className="py-2.5 px-3 text-right text-white text-xs">{specBase.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                           <td></td>
                           <td className="py-2.5 px-3 text-right text-yellow-400 text-xs">{specQqs.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -1216,8 +1216,8 @@ export default function YangiShartnoma() {
                 </div>
               ) : (
                 <div className="text-center py-16 text-gray-500 text-sm bg-[#111827] rounded-xl border border-[#1E293B]">
-                  <p>Spesifikatsiya bo&apos;sh</p>
-                  <button type="button" onClick={addSpecItem} className="mt-2 text-blue-400 hover:text-blue-300 text-xs">+ Qator qo&apos;shish</button>
+                  <p>{T(t.yangiPage.specEmpty)}</p>
+                  <button type="button" onClick={addSpecItem} className="mt-2 text-blue-400 hover:text-blue-300 text-xs">{T(t.yangiPage.addRow)}</button>
                 </div>
               )}
 
@@ -1225,17 +1225,17 @@ export default function YangiShartnoma() {
                 <div className="flex justify-end">
                   <div className="bg-[#111827] border border-[#1E293B] rounded-xl p-4 min-w-64 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Soliqsiz jami:</span>
+                      <span className="text-gray-400">{T(t.yangiPage.subtotalLabel)}</span>
                       <span className="text-white">{specBase.toLocaleString()} so&apos;m</span>
                     </div>
                     {specQqs > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">QQS jami:</span>
+                        <span className="text-gray-400">{T(t.yangiPage.qqsTotalLabel)}</span>
                         <span className="text-yellow-400">{specQqs.toLocaleString()} so&apos;m</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm font-semibold border-t border-[#1E293B] pt-2">
-                      <span className="text-gray-300">Jami:</span>
+                      <span className="text-gray-300">{T(t.yangiPage.totalLabel)}</span>
                       <span className="text-white text-base">{specTotal.toLocaleString()} so&apos;m</span>
                     </div>
                     <div className="text-xs text-gray-500">{numberToWords(specTotal, 'uz')} so&apos;m</div>
@@ -1254,19 +1254,19 @@ export default function YangiShartnoma() {
                 <button type="button" onClick={() => setStep(s => s - 1)}
                   className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-400 hover:text-white bg-[#1E293B] hover:bg-[#273549] rounded-lg transition border border-[#273549]">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
-                  Orqaga
+                  {T(t.yangiPage.backBtn)}
                 </button>
               )}
             </div>
             <div className="flex items-center gap-3">
               <button type="button" onClick={() => router.push('/dashboard/shartnomalar')}
                 className="px-4 py-2.5 text-sm text-gray-500 hover:text-gray-300 transition rounded-lg hover:bg-[#1E293B]">
-                Bekor qilish
+                {T(t.yangiPage.cancelBtn)}
               </button>
               {step < 4 ? (
                 <button type="button" onClick={goNext}
                   className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition">
-                  Keyingi
+                  {T(t.yangiPage.nextBtn)}
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
                 </button>
               ) : (
@@ -1274,13 +1274,13 @@ export default function YangiShartnoma() {
                   <button type="button" onClick={openPreview}
                     className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-[#1E293B] hover:bg-[#273549] text-gray-300 hover:text-white rounded-lg transition border border-[#273549]">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                    Ko&apos;rish
+                    {T(t.yangiPage.previewBtn)}
                   </button>
                   <button type="button" disabled={saving} onClick={handleSave}
                     className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition">
                     {saving
-                      ? <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Saqlanmoqda...</>
-                      : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>Saqlash</>}
+                      ? <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>{T(t.yangiPage.savingBtn)}</>
+                      : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>{T(t.yangiPage.saveBtn)}</>}
                   </button>
                 </>
               )}
@@ -1294,14 +1294,14 @@ export default function YangiShartnoma() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
           <div className="bg-[#111827] border border-[#1E293B] rounded-2xl w-full max-w-lg shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E293B]">
-              <h3 className="text-base font-semibold text-white">Yangi kontragent</h3>
+              <h3 className="text-base font-semibold text-white">{T(t.yangiPage.newCpTitle)}</h3>
               <button type="button" onClick={() => setQuickAddCp(false)} className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#1F2937] transition text-xl">×</button>
             </div>
             <div className="p-6 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
-                  <label className="block text-xs text-gray-400 mb-1">Tashkilot nomi <span className="text-red-400">*</span></label>
-                  <input value={newCp.name} onChange={e => setNewCp(p => ({ ...p, name: e.target.value }))} placeholder="Masalan: ALFA MCHJ"
+                  <label className="block text-xs text-gray-400 mb-1">{T(t.yangiPage.cpNameLabel)} <span className="text-red-400">*</span></label>
+                  <input value={newCp.name} onChange={e => setNewCp(p => ({ ...p, name: e.target.value }))} placeholder={T(t.yangiPage.cpNamePlh)}
                     className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600"/>
                 </div>
                 <div>
@@ -1310,30 +1310,30 @@ export default function YangiShartnoma() {
                     <input value={newCp.inn} onChange={e => setNewCp(p => ({ ...p, inn: e.target.value }))} placeholder="123456789" maxLength={9}
                       className="flex-1 bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600"/>
                     <button type="button" disabled={cpStirLoading || !newCp.inn} onClick={lookupStirNewCp}
-                      className="px-2.5 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600/30 text-blue-400 rounded-lg text-xs disabled:opacity-40 transition flex-shrink-0" title="Soliqdan ma'lumot olish">
+                      className="px-2.5 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600/30 text-blue-400 rounded-lg text-xs disabled:opacity-40 transition flex-shrink-0" title={T(t.yangiPage.stirNotFound)}>
                       {cpStirLoading ? '...' : '🔍'}
                     </button>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">9 raqam kiriting va 🔍 bosing</p>
+                  <p className="text-xs text-gray-600 mt-1">{T(t.yangiPage.cpInnHint)}</p>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Rahbar F.I.O</label>
-                  <input value={newCp.director_name} onChange={e => setNewCp(p => ({ ...p, director_name: e.target.value }))} placeholder="Rahbar ismi"
+                  <label className="block text-xs text-gray-400 mb-1">{T(t.yangiPage.cpDirectorLabel)}</label>
+                  <input value={newCp.director_name} onChange={e => setNewCp(p => ({ ...p, director_name: e.target.value }))} placeholder={T(t.yangiPage.cpDirectorPlh)}
                     className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600"/>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-xs text-gray-400 mb-1">Manzil</label>
-                  <input value={newCp.address} onChange={e => setNewCp(p => ({ ...p, address: e.target.value }))} placeholder="Toshkent sh., ..."
+                  <label className="block text-xs text-gray-400 mb-1">{T(t.yangiPage.cpAddressLabel)}</label>
+                  <input value={newCp.address} onChange={e => setNewCp(p => ({ ...p, address: e.target.value }))} placeholder={T(t.yangiPage.cpAddressPlh)}
                     className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600"/>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Telefon</label>
+                  <label className="block text-xs text-gray-400 mb-1">{T(t.yangiPage.cpPhoneLabel)}</label>
                   <input value={newCp.phone} onChange={e => setNewCp(p => ({ ...p, phone: formatPhoneUz(e.target.value) }))} placeholder="+998 90 123-45-67"
                     className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600"/>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">Bank nomi</label>
-                  <input value={newCp.bank_name} onChange={e => setNewCp(p => ({ ...p, bank_name: e.target.value }))} placeholder="Ipak yo'li bank"
+                  <label className="block text-xs text-gray-400 mb-1">{T(t.yangiPage.cpBankLabel)}</label>
+                  <input value={newCp.bank_name} onChange={e => setNewCp(p => ({ ...p, bank_name: e.target.value }))} placeholder={T(t.yangiPage.cpBankPlh)}
                     className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600"/>
                 </div>
                 <div>
@@ -1346,7 +1346,7 @@ export default function YangiShartnoma() {
                     className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600"/>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-xs text-gray-400 mb-1">Hisob raqami</label>
+                  <label className="block text-xs text-gray-400 mb-1">{T(t.yangiPage.cpAccountLabel)}</label>
                   <input value={newCp.bank_account} onChange={e => setNewCp(p => ({ ...p, bank_account: e.target.value }))} placeholder="20208000000000000000"
                     className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 text-gray-200 text-sm px-3 py-2 rounded-lg focus:outline-none placeholder-gray-600"/>
                 </div>
@@ -1355,11 +1355,11 @@ export default function YangiShartnoma() {
             <div className="flex gap-3 px-6 py-4 border-t border-[#1E293B]">
               <button type="button" onClick={handleQuickAddCp} disabled={savingCp}
                 className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm py-2.5 rounded-lg font-semibold transition">
-                {savingCp ? 'Saqlanmoqda...' : 'Saqlash'}
+                {savingCp ? T(t.yangiPage.cpSaving) : T(t.yangiPage.cpSaveBtn)}
               </button>
               <button type="button" onClick={() => setQuickAddCp(false)}
                 className="px-5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 text-sm py-2.5 rounded-lg transition">
-                Bekor
+                {T(t.yangiPage.cpCancelBtn)}
               </button>
             </div>
           </div>
@@ -1374,14 +1374,14 @@ export default function YangiShartnoma() {
             <div className="flex items-center justify-between px-6 py-3 bg-gray-100 border-b border-gray-200 flex-shrink-0">
               <div>
                 <h3 className="text-sm font-semibold text-gray-800">
-                  {(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]} — Ko&apos;rinish
+                  {(CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type]} — {T(t.yangiPage.previewTitle)}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">No {form.contract_number} · {form.contract_date}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => window.print()}
                   className="px-3 py-1.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition">
-                  Chop etish
+                  {T(t.yangiPage.printBtn)}
                 </button>
                 <button type="button" onClick={() => setPreviewOpen(false)}
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition text-xl">
@@ -1396,11 +1396,11 @@ export default function YangiShartnoma() {
                 <div className="flex justify-between mb-6 text-sm">
                   <div>
                     <div className="font-semibold">{form.city}</div>
-                    <div className="text-[10px] text-gray-500">(shartnoma tuzish joyi)</div>
+                    <div className="text-[10px] text-gray-500">{T(t.yangiPage.previewCityLabel)}</div>
                   </div>
                   <div className="text-right">
                     <div>{form.contract_date}</div>
-                    <div className="text-[10px] text-gray-500">(shartnoma tuzish sanasi)</div>
+                    <div className="text-[10px] text-gray-500">{T(t.yangiPage.previewDateLabel)}</div>
                   </div>
                 </div>
                 {/* Content */}
@@ -1410,18 +1410,18 @@ export default function YangiShartnoma() {
                 {/* Spec items */}
                 {form.spec_items.length > 0 && (
                   <div className="mt-6">
-                    <h4 className="font-semibold text-sm mb-3 text-center">Spesifikatsiya (1-ilova)</h4>
+                    <h4 className="font-semibold text-sm mb-3 text-center">{T(t.yangiPage.specAppendixTitle)}</h4>
                     <table className="w-full border-collapse text-xs border border-gray-400">
                       <thead>
                         <tr className="bg-gray-100">
                           <th className="border border-gray-400 px-2 py-1 text-center">№</th>
-                          <th className="border border-gray-400 px-2 py-1 text-left">Nomi</th>
-                          <th className="border border-gray-400 px-2 py-1 text-center">O&apos;lchov</th>
-                          <th className="border border-gray-400 px-2 py-1 text-right">Miqdor</th>
-                          <th className="border border-gray-400 px-2 py-1 text-right">Narxi</th>
-                          <th className="border border-gray-400 px-2 py-1 text-center">QQS</th>
-                          <th className="border border-gray-400 px-2 py-1 text-right">QQS summasi</th>
-                          <th className="border border-gray-400 px-2 py-1 text-right">Jami</th>
+                          <th className="border border-gray-400 px-2 py-1 text-left">{T(t.yangiPage.specNomiCol)}</th>
+                          <th className="border border-gray-400 px-2 py-1 text-center">{T(t.yangiPage.specUnitCol)}</th>
+                          <th className="border border-gray-400 px-2 py-1 text-right">{T(t.yangiPage.specQtyCol)}</th>
+                          <th className="border border-gray-400 px-2 py-1 text-right">{T(t.yangiPage.specPriceCol)}</th>
+                          <th className="border border-gray-400 px-2 py-1 text-center">{T(t.yangiPage.specQqsCol)}</th>
+                          <th className="border border-gray-400 px-2 py-1 text-right">{T(t.yangiPage.specQqsSumCol)}</th>
+                          <th className="border border-gray-400 px-2 py-1 text-right">{T(t.yangiPage.specTotalCol)}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1438,7 +1438,7 @@ export default function YangiShartnoma() {
                           </tr>
                         ))}
                         <tr className="bg-gray-50 font-semibold">
-                          <td colSpan={7} className="border border-gray-400 px-2 py-1.5 text-right">Jami:</td>
+                          <td colSpan={7} className="border border-gray-400 px-2 py-1.5 text-right">{T(t.yangiPage.totalLabel)}</td>
                           <td className="border border-gray-400 px-2 py-1.5 text-right">
                             {form.spec_items.reduce((s, i) => s + i.summa, 0).toLocaleString()} so&apos;m
                           </td>
@@ -1450,10 +1450,10 @@ export default function YangiShartnoma() {
                 {/* Rekvizitlar */}
                 {(selectedOrg || selectedCp) && (
                   <div className="mt-8 pt-4 border-t border-gray-300">
-                    <h4 className="font-semibold text-sm mb-4 text-center uppercase tracking-wide">Tomonlarning yuridik manzillari va rekvizitlari</h4>
+                    <h4 className="font-semibold text-sm mb-4 text-center uppercase tracking-wide">{T(t.yangiPage.rekvTitle)}</h4>
                     <div className="grid grid-cols-2 gap-8 text-xs">
                       <div>
-                        <div className="font-semibold mb-2 text-sm">Ijrochi</div>
+                        <div className="font-semibold mb-2 text-sm">{T(t.yangiPage.executor)}</div>
                         {selectedOrg && [
                           ['Nomi:', selectedOrg.name],
                           ['Manzil:', selectedOrg.address],
@@ -1470,13 +1470,13 @@ export default function YangiShartnoma() {
                           </div>
                         ) : null)}
                         <div className="mt-6 pt-4 border-t border-gray-300">
-                          <div className="font-medium mb-1">Rahbar: {selectedOrg?.director_name}</div>
+                          <div className="font-medium mb-1">{T(t.yangiPage.directorLabel)} {selectedOrg?.director_name}</div>
                           <div className="border-b border-black w-40 mt-8 mb-1"/>
-                          <div className="text-[10px] text-gray-500">Imzo / M.O.</div>
+                          <div className="text-[10px] text-gray-500">{T(t.yangiPage.signatureLabel)}</div>
                         </div>
                       </div>
                       <div>
-                        <div className="font-semibold mb-2 text-sm">Buyurtmachi</div>
+                        <div className="font-semibold mb-2 text-sm">{T(t.yangiPage.customer)}</div>
                         {selectedCp && [
                           ['Nomi:', selectedCp.name],
                           ['Manzil:', selectedCp.address],
@@ -1493,9 +1493,9 @@ export default function YangiShartnoma() {
                           </div>
                         ) : null)}
                         <div className="mt-6 pt-4 border-t border-gray-300">
-                          <div className="font-medium mb-1">Rahbar: {selectedCp?.director_name}</div>
+                          <div className="font-medium mb-1">{T(t.yangiPage.directorLabel)} {selectedCp?.director_name}</div>
                           <div className="border-b border-black w-40 mt-8 mb-1"/>
-                          <div className="text-[10px] text-gray-500">Imzo / M.O.</div>
+                          <div className="text-[10px] text-gray-500">{T(t.yangiPage.signatureLabel)}</div>
                         </div>
                       </div>
                     </div>
@@ -1519,14 +1519,14 @@ export default function YangiShartnoma() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Shartnoma tuzish joyi</h3>
-                  <p className="text-xs text-gray-500">Bir marta kiriting — keyingi barchaga avtomatik qo'yiladi</p>
+                  <h3 className="text-sm font-semibold text-white">{T(t.yangiPage.cityModalTitle)}</h3>
+                  <p className="text-xs text-gray-500">{T(t.yangiPage.cityModalSubtitle)}</p>
                 </div>
               </div>
             </div>
             <div className="px-6 py-5 space-y-4">
               <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Shahar / tuman</label>
+                <label className="block text-xs text-gray-400 mb-1.5">{T(t.yangiPage.cityFieldLabel)}</label>
                 <input
                   autoFocus
                   value={cityInput}
@@ -1540,9 +1540,9 @@ export default function YangiShartnoma() {
                     }
                   }}
                   className="w-full bg-[#0F172A] border border-[#1E293B] focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 text-gray-200 text-sm px-3 py-2.5 rounded-lg focus:outline-none placeholder-gray-600"
-                  placeholder="Masalan: Toshkent shahri"
+                  placeholder={T(t.yangiPage.cityPlh)}
                 />
-                <p className="text-xs text-gray-600 mt-1.5">Bu sozlama faqat sizning qurilmangizda saqlanadi. Keyinchalik "Tuzilgan joy" yonidagi ⚙ orqali o'zgartirishingiz mumkin.</p>
+                <p className="text-xs text-gray-600 mt-1.5">{T(t.yangiPage.cityHint)}</p>
               </div>
               <div className="flex gap-2">
                 <button type="button"
@@ -1553,7 +1553,7 @@ export default function YangiShartnoma() {
                     setCityModalOpen(false)
                   }}
                   className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm py-2.5 rounded-lg font-semibold transition">
-                  Saqlash
+                  {T(t.yangiPage.saveBtn)}
                 </button>
                 <button type="button" onClick={() => {
                     const city = cityInput.trim() || orgCityDefault(activeOrg)
@@ -1562,7 +1562,7 @@ export default function YangiShartnoma() {
                     setCityModalOpen(false)
                   }}
                   className="px-4 bg-[#1F2937] hover:bg-[#2D3748] border border-[#1E293B] text-gray-300 text-sm py-2.5 rounded-lg transition">
-                  O'tkazib yuborish
+                  {T(t.yangiPage.skipBtn)}
                 </button>
               </div>
             </div>

@@ -114,7 +114,7 @@ export function DashboardSidebar() {
                 <Link href="/dashboard/tashkilotlar"
                   onClick={() => setOrgDropdown(false)}
                   className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-[#1F2937] transition text-sm text-gray-300">
-                  <span>🏢</span> Tashkilotlarni boshqarish
+                  <span>🏢</span> {T(t.sidebar.manageOrgs)}
                 </Link>
               </div>
             </div>
@@ -127,7 +127,7 @@ export function DashboardSidebar() {
         <div className="px-2 pt-1.5">
           <div className="bg-[#1F2937] rounded-lg px-2.5 py-1.5">
             <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-gray-400">Tarif: <span className="text-white font-medium">{quota.plan}</span></span>
+              <span className="text-gray-400">{T(t.sidebar.planLabel)}: <span className="text-white font-medium">{quota.plan}</span></span>
               {quota.limit && <span className="text-gray-400">{quota.used}/{quota.limit}</span>}
             </div>
             {quota.limit && (
@@ -138,7 +138,7 @@ export function DashboardSidebar() {
                 </div>
                 {quota.percent! >= 80 && (
                   <button onClick={openUpgradeModal} className="text-xs text-yellow-400 mt-1.5 hover:text-yellow-300">
-                    ⚡ Tarifni yaxshilash →
+                    {T(t.sidebar.upgrade)}
                   </button>
                 )}
               </>
@@ -148,7 +148,7 @@ export function DashboardSidebar() {
               <div className={`mt-1.5 text-xs flex items-center gap-1 ${subDaysLeft !== null && subDaysLeft <= 5 ? 'text-red-400' : subDaysLeft !== null && subDaysLeft <= 15 ? 'text-yellow-400' : 'text-gray-500'}`}>
                 <span>{subDaysLeft !== null && subDaysLeft <= 5 ? '🔴' : subDaysLeft !== null && subDaysLeft <= 15 ? '🟡' : '📅'}</span>
                 <span>
-                  {new Date(subscription.period_end).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short', year: 'numeric' })} gacha
+                  {new Date(subscription.period_end).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', { day: 'numeric', month: 'short', year: 'numeric' })} {T(t.sidebar.until)}
                 </span>
               </div>
             )}
