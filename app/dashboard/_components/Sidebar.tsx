@@ -158,9 +158,9 @@ export function DashboardSidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-1.5 space-y-0.5 overflow-hidden">
-        {/* Tez shartnoma — mobil uchun alohida tugma */}
+        {/* Tez shartnoma — faqat mobil qurilmalarda ko'rinadi */}
         <Link href="/dashboard/mobile"
-          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+          className={`md:hidden w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all ${
             isActive('/dashboard/mobile')
               ? 'bg-green-600 text-white shadow-lg'
               : 'text-green-400 hover:bg-green-900/30 hover:text-green-300 border border-green-900/40'

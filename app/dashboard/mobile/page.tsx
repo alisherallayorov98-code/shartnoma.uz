@@ -354,9 +354,12 @@ export default function MobilePage() {
         >
           ←
         </button>
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-white font-bold text-base leading-tight">Tez shartnoma</h1>
-          <p className="text-gray-500 text-xs">{activeOrg?.name || 'Tashkilot tanlanmagan'}</p>
+          <p className="text-gray-400 text-xs truncate">{activeOrg?.name || 'Tashkilot tanlanmagan'}</p>
+          {activeOrg?.bank_name && (
+            <p className="text-gray-600 text-[10px] truncate">{activeOrg.bank_name} · MFO: {activeOrg.mfo}</p>
+          )}
         </div>
       </div>
 
@@ -370,14 +373,21 @@ export default function MobilePage() {
           <div ref={cpRef} className="relative">
             {selectedCp ? (
               <div
-                className="flex items-center justify-between px-4 py-3.5 bg-[#111827] border border-blue-600 rounded-2xl cursor-pointer"
+                className="px-4 py-3.5 bg-[#111827] border border-blue-600 rounded-2xl cursor-pointer"
                 onClick={() => { setSelectedCp(null); setCpQuery(''); setCpOpen(true) }}
               >
-                <div>
+                <div className="flex items-center justify-between">
                   <div className="text-white font-medium text-sm">{selectedCp.name}</div>
-                  {selectedCp.inn && <div className="text-gray-500 text-xs mt-0.5">INN: {selectedCp.inn}</div>}
+                  <span className="text-gray-500 text-xs ml-2 flex-shrink-0">✕</span>
                 </div>
-                <span className="text-gray-500 text-xs">✕</span>
+                {selectedCp.inn && <div className="text-gray-500 text-xs mt-0.5">INN: {selectedCp.inn}</div>}
+                {selectedCp.director_name && <div className="text-gray-500 text-xs">Rahbar: {selectedCp.director_name}</div>}
+                {selectedCp.bank_name && (
+                  <div className="text-gray-600 text-xs mt-1.5 border-t border-[#1E293B] pt-1.5 space-y-0.5">
+                    <div>{selectedCp.bank_name}{selectedCp.mfo ? ` · MFO: ${selectedCp.mfo}` : ''}</div>
+                    {selectedCp.bank_account && <div>H/r: {selectedCp.bank_account}</div>}
+                  </div>
+                )}
               </div>
             ) : (
               <>
