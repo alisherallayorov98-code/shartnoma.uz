@@ -1086,19 +1086,105 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="border-t border-white/5 py-12">
-        <div className="max-w-7xl mx-auto px-5 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center font-black text-xs">S</div>
-            <span className="font-black bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Kabinetim.uz</span>
+      <footer className="border-t border-white/5 bg-white/[0.01]">
+        <div className="max-w-7xl mx-auto px-5 pt-16 pb-8">
+
+          {/* Top grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
+
+            {/* Brand col */}
+            <div className="lg:col-span-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center font-black text-sm shadow-lg shadow-blue-900/40">S</div>
+                <span className="font-black text-lg bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Kabinetim.uz</span>
+              </div>
+              <p className="text-gray-500 text-sm leading-relaxed mb-5">
+                {lang==='ru'
+                  ? "O'zbekiston's first AI document management system for business."
+                  : lang==='oz'
+                  ? "O'zbekistonning birinchi AI hujjat boshqaruv tizimi."
+                  : "O'zbekistonning birinchi AI hujjat boshqaruv tizimi."}
+              </p>
+              {/* Telegram */}
+              <a href="https://t.me/Alisher_All" target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:text-blue-300 hover:border-blue-400/40 px-4 py-2 rounded-xl text-sm transition">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.88 13.47l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.268.089z"/>
+                </svg>
+                @Alisher_All
+              </a>
+            </div>
+
+            {/* Product col */}
+            <div>
+              <h4 className="text-white font-bold text-sm mb-5">
+                {lang==='ru' ? 'Продукт' : 'Mahsulot'}
+              </h4>
+              <ul className="space-y-3">
+                {[
+                  { label: l.nav[0], href: '#features' },
+                  { label: l.nav[1], href: '#depts' },
+                  { label: l.nav[2], href: '#pricing' },
+                  { label: lang==='ru'?'Сравнение':lang==='oz'?'Taqqoslash':'Taqqoslash', href: '#' },
+                  { label: 'FAQ', href: '#' },
+                ].map((item, i) => (
+                  <li key={i}>
+                    <a href={item.href} className="text-gray-500 hover:text-gray-300 text-sm transition">{item.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Departments col */}
+            <div>
+              <h4 className="text-white font-bold text-sm mb-5">
+                {lang==='ru' ? 'Отделы' : lang==='oz' ? "Bo'limlar" : "Bo'limlar"}
+              </h4>
+              <ul className="space-y-3">
+                {[
+                  lang==='ru'?'Кадры':'Kadrlar',
+                  lang==='ru'?'Бухгалтер':'Buxgalter',
+                  lang==='ru'?'Секретарь':'Kotiba',
+                  lang==='ru'?'Юрист AI':'Yurist AI',
+                  lang==='ru'?'Шаблоны':'Shablonlar',
+                ].map((item, i) => (
+                  <li key={i}>
+                    <span className="text-gray-500 text-sm">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Account col */}
+            <div>
+              <h4 className="text-white font-bold text-sm mb-5">
+                {lang==='ru' ? 'Аккаунт' : 'Hisob'}
+              </h4>
+              <ul className="space-y-3">
+                <li><Link href="/login"  className="text-gray-500 hover:text-gray-300 text-sm transition">{l.login}</Link></li>
+                <li><Link href="/signup" className="text-gray-500 hover:text-gray-300 text-sm transition">{l.footerLinks[3]}</Link></li>
+                <li>
+                  <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-full">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"/>
+                    {lang==='ru'?'Сервис работает':'Xizmat ishlayapti'}
+                  </span>
+                </li>
+              </ul>
+            </div>
           </div>
-          <div className="flex gap-8 text-sm text-gray-500">
-            <a href="#features" className="hover:text-white transition">{l.footerLinks[0]}</a>
-            <a href="#pricing" className="hover:text-white transition">{l.footerLinks[1]}</a>
-            <Link href="/login" className="hover:text-white transition">{l.footerLinks[2]}</Link>
-            <Link href="/signup" className="hover:text-white transition">{l.footerLinks[3]}</Link>
+
+          {/* Bottom bar */}
+          <div className="border-t border-white/5 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-gray-600 text-sm">© 2026 Kabinetim.uz — {lang==='ru'?'Все права защищены':lang==='oz'?"Barcha huquqlar himoyalangan":"Barcha huquqlar himoyalangan"}</p>
+            <div className="flex gap-1">
+              {(Object.keys(LANG_LABELS) as Lang[]).map(lng => (
+                <button key={lng} onClick={() => setLang(lng)}
+                  className={`px-2.5 py-1 text-xs rounded-lg transition ${lang===lng ? 'bg-blue-600/30 text-blue-300 border border-blue-500/30' : 'text-gray-600 hover:text-gray-400'}`}>
+                  {LANG_LABELS[lng]}
+                </button>
+              ))}
+            </div>
           </div>
-          <p className="text-gray-600 text-sm">© 2026 Kabinetim.uz</p>
         </div>
       </footer>
     </div>
