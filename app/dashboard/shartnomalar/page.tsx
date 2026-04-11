@@ -384,25 +384,7 @@ export default function ShartnomalarPage() {
 
   // ── Edit contract ──────────────────────────────────────────────────────────
   function openEditContract(c: Contract) {
-    const form: ContractForm = {
-      id: c.id,
-      contract_number: c.contract_number,
-      contract_date: c.contract_date,
-      contract_type: c.contract_type,
-      amount: String(c.amount || ''),
-      organization_id: c.organization_id,
-      counterparty_id: c.counterparty_id,
-      status: c.status,
-      content: c.content || '',
-      city: c.city || '',
-      product_name: c.product_name || '',
-      spec_items: c.spec_items || [],
-      qqs_enabled: c.qqs_enabled || false,
-      qqs_rate: c.qqs_rate || 12,
-      ...(c.extra_data || {}),
-    }
-    setContractForm(form)
-    setModal('contract')
+    router.push(`/dashboard/shartnomalar/${c.id}/edit`)
   }
 
   // ── Delete contract ────────────────────────────────────────────────────────
