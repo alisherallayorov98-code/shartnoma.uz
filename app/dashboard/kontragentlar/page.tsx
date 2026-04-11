@@ -25,15 +25,23 @@ function cpCompleteness(cp: { name: string; inn: string; director_name: string; 
 const CSV_HEADERS = ['name', 'inn', 'director_name', 'bank_name', 'bank_account', 'mfo', 'address', 'phone', 'qqsreg']
 const CSV_LABELS  = ['Tashkilot nomi *', 'INN (9 raqam)', 'Rahbar F.I.O', 'Bank nomi', 'Hisob raqami (20 raqam)', 'MFO (5 raqam)', 'Manzil', 'Telefon', 'QQS raqami']
 
-function downloadTemplate() {
-  const header = CSV_LABELS.join(';')
-  const sample = ['"ALFA SAVDO" MCHJ', '123456789', 'Rahimov Jasur Aliyevich', 'Xalq banki', '20208000000000000000', '00873', 'Toshkent sh., Chilonzor tumani', '+998901234567', ''].join(';')
-  const bom = '\uFEFF'
-  const csv = bom + header + '\n' + sample
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = 'kontragentlar_shablon.csv'; a.click()
-  URL.revokeObjectURL(url)
+async function downloadTemplate() {
+  const XLSX = await import('xlsx')
+  const ws = XLSX.utils.aoa_to_sheet([
+    CSV_LABELS,
+    ['"ALFA SAVDO" MCHJ', '123456789', 'Rahimov Jasur Aliyevich', 'Xalq banki', '20208000000000000000', '00873', 'Toshkent sh., Chilonzor tumani', '+998901234567', ''],
+  ])
+  // INN, Hisob raqami, MFO, Telefon, QQS — text formatida (raqamlarni Excel o'zgartirmasin)
+  const textCols = [1, 4, 5, 7, 8] // B, E, F, H, I
+  for (let row = 1; row <= 1; row++) {
+    for (const col of textCols) {
+      const addr = XLSX.utils.encode_cell({ r: row, c: col })
+      if (ws[addr]) ws[addr].t = 's'
+    }
+  }
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Kontragentlar')
+  XLSX.writeFile(wb, 'kontragentlar_shablon.xlsx')
 }
 
 function parseCsv(text: string): Record<string, string>[] {
@@ -238,9 +246,28 @@ export default function KontragentlarPage() {
     reloadCps()
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+      const XLSX = await import('xlsx')
+      const buf = await file.arrayBuffer()
+      const wb = XLSX.read(buf, { type: 'array', cellText: true, cellDates: false })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const data = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1, raw: false }) as string[][]
+      if (data.length < 2) { toast("Fayl bo'sh yoki noto'g'ri format", 'error'); return }
+      const rows = data.slice(1).map(cells => {
+        const obj: Record<string, string> = {}
+        CSV_HEADERS.forEach((h, i) => { obj[h] = String(cells[i] ?? '').trim() })
+        return obj
+      }).filter(r => r.name?.trim())
+      if (rows.length === 0) { toast("Fayl bo'sh yoki noto'g'ri format", 'error'); return }
+      setImportRows(rows)
+      if (fileRef.current) fileRef.current.value = ''
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = ev => {
       const text = ev.target?.result as string
@@ -302,7 +329,7 @@ export default function KontragentlarPage() {
             </svg>
             Shablon
           </button>
-          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
+          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileChange} />
           <button onClick={() => { setStirBulkModal(true); setStirResults([]); setStirInput(''); setStirBulkDone(false) }}
             className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition">
             <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
