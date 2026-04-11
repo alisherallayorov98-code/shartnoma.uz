@@ -420,51 +420,41 @@ export default function EditShartnoma() {
       await supabase.from('counterparties').update(cpEdits).eq('id', cp.id)
     }
 
-    let content = form.content
-    if (!content) {
-      const extra: Record<string, string> = {}
-      if (form.product_name) extra.TOVAR_NOMI = form.product_name
-      extra.YETKAZISH_MUDDAT = form.yetkazish_muddat || '20 (yigirma) ish kuni'
-      extra.QOLDIQ_QIYMAT = '___'
-      if (form.xizmat_tavsif) extra.AGENT_VAZIFA = form.xizmat_tavsif
-      if (form.qarz_foiz) extra.AGENT_FOZ = form.qarz_foiz
-      if (form.yetkazish_joy) extra.AGENT_HUDUD = form.yetkazish_joy
-      if (form.ijara_manzil) { extra.YETKAZISH_JOY = form.ijara_manzil; extra.QABUL_JOY = form.yetkazish_joy || '___' }
-      if (form.pudrat_obekt) extra.LIZING_OBEKT = form.pudrat_obekt
-      if (form.ijara_muddat) extra.LIZING_MUDDAT = form.ijara_muddat
-      if (form.oylik_tolov) extra.LIZING_FOIZ = form.oylik_tolov
-      if (form.qarz_foiz) extra.BOSHLANGICH_BADAL = form.qarz_foiz
-      if (form.asosiy_raqam) extra.ASOSIY_RAQAM = form.asosiy_raqam
-      if (form.asosiy_sana) extra.ASOSIY_SANA = form.asosiy_sana.split('-').reverse().join('.') + '-yil'
-      const parts: string[] = []
-      if (form.yangi_muddat) parts.push(`Asosiy shartnomaning amal qilish muddati ${form.yangi_muddat.split('-').reverse().join('.')}-yil gacha uzaytirilsin`)
-      if (form.ozgartirish) parts.push(form.ozgartirish)
-      if (parts.length) extra.OZGARTIRISH = parts.join('. ')
+    const extra: Record<string, string> = {}
+    if (form.product_name) extra.TOVAR_NOMI = form.product_name
+    extra.YETKAZISH_MUDDAT = form.yetkazish_muddat || '20 (yigirma) ish kuni'
+    extra.QOLDIQ_QIYMAT = '___'
+    if (form.xizmat_tavsif) extra.AGENT_VAZIFA = form.xizmat_tavsif
+    if (form.qarz_foiz) extra.AGENT_FOZ = form.qarz_foiz
+    if (form.yetkazish_joy) extra.AGENT_HUDUD = form.yetkazish_joy
+    if (form.ijara_manzil) { extra.YETKAZISH_JOY = form.ijara_manzil; extra.QABUL_JOY = form.yetkazish_joy || '___' }
+    if (form.pudrat_obekt) extra.LIZING_OBEKT = form.pudrat_obekt
+    if (form.ijara_muddat) extra.LIZING_MUDDAT = form.ijara_muddat
+    if (form.oylik_tolov) extra.LIZING_FOIZ = form.oylik_tolov
+    if (form.qarz_foiz) extra.BOSHLANGICH_BADAL = form.qarz_foiz
+    if (form.asosiy_raqam) extra.ASOSIY_RAQAM = form.asosiy_raqam
+    if (form.asosiy_sana) extra.ASOSIY_SANA = form.asosiy_sana.split('-').reverse().join('.') + '-yil'
+    const parts: string[] = []
+    if (form.yangi_muddat) parts.push(`Asosiy shartnomaning amal qilish muddati ${form.yangi_muddat.split('-').reverse().join('.')}-yil gacha uzaytirilsin`)
+    if (form.ozgartirish) parts.push(form.ozgartirish)
+    if (parts.length) extra.OZGARTIRISH = parts.join('. ')
 
-      const structure = editStructure && structureUserEdited
-        ? editStructure
-        : getStructure(form.contract_type, {
-            contract_number: form.contract_number, contract_date: form.contract_date,
-            city: form.city, org_name: org?.name || '', org_inn: org?.inn || '',
-            org_director: org?.director_name || '', cp_name: cp?.name || '',
-            cp_inn: cp?.inn || '', cp_director: cp?.director_name || '',
-            amount, amount_text: amount > 0 ? numberToWords(amount, 'uz') + " so'm" : '___', extra,
-          })
-      content = structureToText(structure, {
-        type_name: (CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type] || form.contract_type,
-        number: form.contract_number, date: form.contract_date, city: form.city, org, cp,
-        contract_type: form.contract_type,
-        spec_items: form.spec_items.length > 0 ? form.spec_items : undefined,
-      })
-      if (lang === 'oz') content = latinToCyrillic(content)
-    } else {
-      const defaultBank = bankAccounts.find(b => b.is_default) || bankAccounts[0]
-      content = fillPlaceholders(content, {
-        ...form, contract_number: form.contract_number, contract_date: form.contract_date,
-        city: form.city, amount, organizations: org, counterparties: cp,
-        org_bank: defaultBank ? { bank_name: defaultBank.bank_name, account_number: defaultBank.account_number, mfo: defaultBank.mfo } : null,
-      })
-    }
+    const structure = editStructure && structureUserEdited
+      ? editStructure
+      : getStructure(form.contract_type, {
+          contract_number: form.contract_number, contract_date: form.contract_date,
+          city: form.city, org_name: org?.name || '', org_inn: org?.inn || '',
+          org_director: org?.director_name || '', cp_name: cp?.name || '',
+          cp_inn: cp?.inn || '', cp_director: cp?.director_name || '',
+          amount, amount_text: amount > 0 ? numberToWords(amount, 'uz') + " so'm" : '___', extra,
+        })
+    let content = structureToText(structure, {
+      type_name: (CONTRACT_TYPE_NAMES as Record<string, string>)[form.contract_type] || form.contract_type,
+      number: form.contract_number, date: form.contract_date, city: form.city, org, cp,
+      contract_type: form.contract_type,
+      spec_items: form.spec_items.length > 0 ? form.spec_items : undefined,
+    })
+    if (lang === 'oz') content = latinToCyrillic(content)
 
     const extra_data: Record<string, string> = {}
     const extraKeys: (keyof ContractForm)[] = [
