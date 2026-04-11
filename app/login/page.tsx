@@ -55,9 +55,9 @@ const KEYFRAMES = `
 `
 
 const FLOAT_CARDS = [
-  { icon: '🔐', title: 'E-IMZO', desc: 'Xavfsiz imzolash', colorFrom: 'rgba(59,130,246,0.15)', colorTo: 'rgba(37,99,235,0.06)', border: 'rgba(59,130,246,0.25)', cls: 'login-float-1', top: '12%', left: '8%' },
-  { icon: '📄', title: '12,400+', desc: 'Shartnoma yaratildi', colorFrom: 'rgba(139,92,246,0.15)', colorTo: 'rgba(109,40,217,0.06)', border: 'rgba(139,92,246,0.25)', cls: 'login-float-2', top: '40%', right: '6%' },
-  { icon: '🤖', title: 'AI Yurist', desc: 'Doim yoningizda', colorFrom: 'rgba(16,185,129,0.15)', colorTo: 'rgba(5,150,105,0.06)', border: 'rgba(16,185,129,0.25)', cls: 'login-float-3', bottom: '20%', left: '5%' },
+  { icon: '🔐', title: 'E-IMZO', desc: 'Xavfsiz imzolash', colorFrom: 'rgba(59,130,246,0.15)', colorTo: 'rgba(37,99,235,0.06)', border: 'rgba(59,130,246,0.25)', cls: 'login-float-1', top: '6%', right: '4%' },
+  { icon: '📄', title: '12,400+', desc: 'Shartnoma yaratildi', colorFrom: 'rgba(139,92,246,0.15)', colorTo: 'rgba(109,40,217,0.06)', border: 'rgba(139,92,246,0.25)', cls: 'login-float-2', top: '44%', right: '4%' },
+  { icon: '🤖', title: 'AI Yurist', desc: 'Doim yoningizda', colorFrom: 'rgba(16,185,129,0.15)', colorTo: 'rgba(5,150,105,0.06)', border: 'rgba(16,185,129,0.25)', cls: 'login-float-3', bottom: '6%', right: '4%' },
 ]
 
 const STATS = [
@@ -116,33 +116,41 @@ export default function LoginPage() {
         {/* ── LEFT PANEL (visual) ─────────────────────────────────────────── */}
         <div className="hidden lg:flex flex-1 relative overflow-hidden">
 
+          {/* Background photo — very dim */}
+          <img src="/city-bg.jpg" alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+            style={{ filter: 'brightness(0.12) saturate(0.4) hue-rotate(200deg)', objectPosition: 'center' }}/>
+
+          {/* Dark overlay on top of photo */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(135deg, rgba(6,13,26,0.88) 0%, rgba(10,20,50,0.82) 100%)' }}/>
+
+          {/* Dot pattern */}
+          <div className="absolute inset-0 opacity-[0.07] pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.7) 1px, transparent 1px)', backgroundSize: '28px 28px' }}/>
+
           {/* Animated blobs */}
           <div className="absolute w-[520px] h-[520px] rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%)', top: '-160px', left: '-100px', animation: 'blobPulse 12s ease-in-out infinite' }}/>
+            style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.20) 0%, transparent 70%)', top: '-160px', left: '-100px', animation: 'blobPulse 12s ease-in-out infinite' }}/>
           <div className="absolute w-[400px] h-[400px] rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.13) 0%, transparent 70%)', bottom: '-80px', left: '30%', animation: 'blobPulse2 15s ease-in-out infinite' }}/>
+            style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.14) 0%, transparent 70%)', bottom: '-80px', left: '30%', animation: 'blobPulse2 15s ease-in-out infinite' }}/>
           <div className="absolute w-[300px] h-[300px] rounded-full pointer-events-none"
             style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.10) 0%, transparent 70%)', top: '40%', right: '-60px' }}/>
 
-          {/* Grid */}
-          <div className="absolute inset-0 opacity-[0.025]"
-            style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '44px 44px' }}/>
-
-          {/* Floating cards */}
+          {/* Floating cards — right edge, behind text */}
           {FLOAT_CARDS.map((card, i) => (
-            <div key={i} className={`absolute ${card.cls}`}
+            <div key={i} className={`absolute z-[5] ${card.cls}`}
               style={{ top: card.top, left: (card as { left?: string }).left, right: (card as { right?: string }).right, bottom: (card as { bottom?: string }).bottom }}>
-              <div className="backdrop-blur-xl rounded-2xl px-4 py-3.5 shadow-xl min-w-[150px]"
+              <div className="backdrop-blur-xl rounded-2xl px-4 py-3.5 shadow-xl min-w-[140px]"
                 style={{ background: `linear-gradient(135deg, ${card.colorFrom}, ${card.colorTo})`, border: `1px solid ${card.border}` }}>
-                <div className="text-2xl mb-1.5">{card.icon}</div>
+                <div className="text-xl mb-1.5">{card.icon}</div>
                 <div className="text-white text-sm font-bold">{card.title}</div>
                 <div className="text-gray-400 text-xs mt-0.5">{card.desc}</div>
               </div>
             </div>
           ))}
 
-          {/* Main content */}
-          <div className="relative z-10 flex flex-col justify-center px-14 py-12 w-full">
+          {/* Main content — z-10 so text is always above cards */}
+          <div className="relative z-10 flex flex-col justify-center px-14 py-12 w-full" style={{ maxWidth: 'calc(100% - 170px)' }}>
             <div className="max-w-md">
 
               {/* Badge */}
