@@ -1016,9 +1016,15 @@ export default function ProfilPage() {
             {!stirSyncLoading && stirSyncResult?.status === 'ok' && (
               <div className="space-y-4">
                 {stirSyncResult.founders.length === 0 ? (
-                  <div className="py-8 text-center space-y-2">
+                  <div className="py-8 text-center space-y-3">
                     <div className="text-3xl">📭</div>
-                    <p className="text-sm text-gray-400">Soliq ma'lumotlarida ta'sischilar topilmadi</p>
+                    <p className="text-sm text-white font-medium">Soliq API ta'sischilarni qaytarmadi</p>
+                    <p className="text-xs text-gray-500 max-w-xs mx-auto">Bu tashkilot uchun ta'sischilar ma'lumoti soliq bazasida mavjud emas yoki API tomonidan berilmayapti.</p>
+                    <p className="text-xs text-blue-400">Ta'sischilarni qo'lda qo'shishingiz mumkin ↓</p>
+                    <button onClick={() => setStirSyncOpen(false)}
+                      className="mt-2 text-xs px-4 py-2 rounded-lg bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/30 transition">
+                      Qo'lda qo'shish
+                    </button>
                   </div>
                 ) : (
                   <>

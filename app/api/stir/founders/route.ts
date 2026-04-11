@@ -6,40 +6,81 @@ const SOLIQ_API_URL = process.env.SOLIQ_API_URL || ''
 export type StirFounder = { full_name: string; ulush: number }
 
 // Ta'sischilarni API javobidan ajratib olish.
-// API to'liq ulangach shu yerga to'g'ri field path qo'shiladi.
 function extractFounders(raw: Record<string, unknown>): StirFounder[] | null {
   const str = (v: unknown) => (v != null && v !== '' ? String(v).trim() : '')
   const co = (raw.company ?? {}) as Record<string, unknown>
 
+  // Known field name candidates (expanded)
   const candidates = [
     raw.founders,
     raw.participants,
     raw.shareholders,
     raw.owners,
+    raw.members,
+    raw.companyMembers,
+    raw.capital_members,
+    raw.tasischilar,
+    raw.uchredители,
+    raw.uchreditel,
     co.founders,
     co.participants,
+    co.members,
+    co.companyMembers,
+    co.shareholders,
+    co.owners,
+    co.tasischilar,
+    co.capital_members,
   ]
 
-  for (const list of candidates) {
-    if (!Array.isArray(list) || list.length === 0) continue
-    const mapped: StirFounder[] = list
-      .map((item: Record<string, unknown>) => {
+  function tryMapList(list: unknown[]): StirFounder[] {
+    return list
+      .map((item: unknown) => {
+        const rec = item as Record<string, unknown>
         const full_name =
-          [str(item.lastName), str(item.firstName), str(item.middleName)]
+          [str(rec.lastName), str(rec.firstName), str(rec.middleName)]
             .filter(Boolean)
             .join(' ') ||
-          str(item.name) ||
-          str(item.fullName) ||
-          str(item.full_name)
+          str(rec.fullName) ||
+          str(rec.full_name) ||
+          str(rec.name) ||
+          str(rec.fio) ||
+          str(rec.FIO) ||
+          str(rec.title)
         const ulush =
           parseFloat(
-            String(item.percent ?? item.share ?? item.sharePercent ?? item.ulush ?? 0)
+            String(rec.percent ?? rec.share ?? rec.sharePercent ?? rec.shareSize ??
+                   rec.ulush ?? rec.dol ?? rec.participation ?? 0)
           ) || 0
         return { full_name, ulush }
       })
       .filter((f) => f.full_name)
+  }
+
+  for (const list of candidates) {
+    if (!Array.isArray(list) || list.length === 0) continue
+    const mapped = tryMapList(list)
     if (mapped.length > 0) return mapped
   }
+
+  // Smart fallback: scan ALL array fields in raw and raw.company
+  // looking for any that contain objects with name-like properties
+  function scanObject(obj: Record<string, unknown>): StirFounder[] | null {
+    for (const key of Object.keys(obj)) {
+      const val = obj[key]
+      if (!Array.isArray(val) || val.length === 0) continue
+      if (typeof val[0] !== 'object' || val[0] === null) continue
+      const mapped = tryMapList(val)
+      if (mapped.length > 0) return mapped
+    }
+    return null
+  }
+
+  const fromRaw = scanObject(raw)
+  if (fromRaw) return fromRaw
+
+  const fromCo = scanObject(co)
+  if (fromCo) return fromCo
+
   return null
 }
 

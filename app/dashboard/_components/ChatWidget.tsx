@@ -145,7 +145,7 @@ export default function ChatWidget() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ minHeight: '280px', maxHeight: '360px' }}>
+          <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ minHeight: '280px', maxHeight: '360px', background: '#0b1628' }}>
             {msgs.map((m, i) => (
               <div key={i} className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {m.role === 'assistant' && (
@@ -154,10 +154,10 @@ export default function ChatWidget() {
                 )}
                 <div className={`max-w-[82%] ${m.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
                   <div className={`rounded-2xl px-3 py-2.5 text-sm leading-relaxed ${
-                    m.role === 'user' ? 'rounded-tr-sm text-white' : 'rounded-tl-sm text-gray-200'
+                    m.role === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'
                   }`} style={m.role === 'user'
-                    ? { background: 'linear-gradient(135deg, #4f46e5, #6d28d9)' }
-                    : { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    ? { background: 'linear-gradient(135deg, #4f46e5, #6d28d9)', color: '#fff' }
+                    : { background: '#1e2d4a', border: '1px solid rgba(99,130,255,0.15)', color: '#e2e8f0' }}>
                     {m.content === '' && streaming && i === msgs.length - 1 ? (
                       <div className="flex items-center gap-1">
                         {[0,1,2].map(j => <span key={j} className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: `${j*150}ms` }}/>)}
@@ -166,7 +166,7 @@ export default function ChatWidget() {
                       <span className="whitespace-pre-wrap">{m.content}</span>
                     )}
                   </div>
-                  {m.time && <span className="text-[10px] text-gray-700 px-1">{m.time}</span>}
+                  {m.time && <span className="text-[10px] text-gray-500 px-1">{m.time}</span>}
                 </div>
                 {m.role === 'user' && (
                   <div className="w-6 h-6 rounded-lg shrink-0 mt-0.5 flex items-center justify-center text-xs"

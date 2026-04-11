@@ -20,7 +20,6 @@ const NAV_ITEMS = [
   { key: 'kotiba',          href: '/dashboard/kotiba',        icon: '🗂️', label: t.nav.kotiba },
   { key: 'seif',            href: '/dashboard/seif',          icon: '🔒', label: t.nav.seif },
   { key: 'yangiliklar',     href: '/dashboard/yangiliklar',   icon: '🔔', label: { uz: 'Yangiliklar', oz: 'Янгиликлар', ru: 'Новости' } },
-  { key: 'profile',         href: '/dashboard/profil',        icon: '👤', label: t.nav.profile },
 ]
 
 export function DashboardSidebar() {
@@ -189,6 +188,15 @@ export function DashboardSidebar() {
 
       {/* User / Admin / Logout */}
       <div className="px-2 pb-2 pt-1 border-t border-[#1E293B] space-y-0.5">
+        <Link href="/dashboard/profil"
+          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+            isActive('/dashboard/profil')
+              ? 'bg-blue-600 text-white shadow-lg'
+              : 'text-white/80 hover:bg-white/10 hover:text-white'
+          }`}>
+          <span className="text-sm flex-shrink-0">👤</span>
+          {sidebarOpen && <span className="flex-1 text-left font-medium">{T(t.nav.profile)}</span>}
+        </Link>
         {isAdmin && (
           <a href="/admin" target="_blank" rel="noopener noreferrer"
             className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-red-400 hover:bg-red-900/30 hover:text-red-300 transition">
