@@ -8,6 +8,7 @@ import * as XLSX from 'xlsx'
 
 import AdminLayout from './_components/AdminLayout'
 import AiTab from './_components/AiTab'
+import SupportTab from './_components/SupportTab'
 import ClientsTab from './_components/ClientsTab'
 import PaymentsTab from './_components/PaymentsTab'
 import DemoTab from './_components/DemoTab'
@@ -586,7 +587,8 @@ export default function AdminPage() {
       </div>
 
       {/* ── Tab content ── */}
-      {tab === 'ai' && <AiTab token={tokenRef.current} darkMode={darkMode} />}
+      {tab === 'ai'      && <AiTab      token={tokenRef.current} darkMode={darkMode} />}
+      {tab === 'support' && <SupportTab token={tokenRef.current} darkMode={darkMode} />}
 
       {tab === 'clients' && (
         <ClientsTab

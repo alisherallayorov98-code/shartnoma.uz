@@ -6,6 +6,7 @@ import { DashboardSidebar } from './_components/Sidebar'
 import { TopBar } from './_components/TopBar'
 import ErrorBoundary from './_components/ErrorBoundary'
 import UpgradeModal from './_components/UpgradeModal'
+import ChatWidget from './_components/ChatWidget'
 import { ToastProvider } from '@/lib/toast'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -80,6 +81,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           )}
         </div>
         <UpgradeModal />
+        <ChatWidget />
       </div>
     </div>
   )
