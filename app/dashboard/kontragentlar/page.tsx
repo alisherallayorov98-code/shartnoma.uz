@@ -449,7 +449,8 @@ export default function KontragentlarPage() {
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
                         <button onClick={() => {
                           setEditingCp(cp)
-                          setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: cp.bank_name, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '', oked: cp.oked || '', stir_status: cp.stir_status || '', stir_checked_at: cp.stir_checked_at || '' })
+                          const bankName = (!cp.bank_name && cp.mfo?.length === 5) ? (getBankByMfo(cp.mfo) || '') : (cp.bank_name || '')
+                          setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: bankName, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '', oked: cp.oked || '', stir_status: cp.stir_status || '', stir_checked_at: cp.stir_checked_at || '' })
                           setModal(true)
                         }} className="p-1.5 bg-[#1F2937] hover:bg-blue-700 rounded text-xs text-gray-300" title="Tahrirlash">✎</button>
                         <button onClick={() => deleteCp(cp.id)}
@@ -502,7 +503,8 @@ export default function KontragentlarPage() {
           onClose={() => setCpDetail(null)}
           onEdit={cp => {
             setEditingCp(cp)
-            setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: cp.bank_name, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '', oked: cp.oked || '', stir_status: cp.stir_status || '', stir_checked_at: cp.stir_checked_at || '' })
+            const bankName = (!cp.bank_name && cp.mfo?.length === 5) ? (getBankByMfo(cp.mfo) || '') : (cp.bank_name || '')
+            setCpForm({ name: cp.name, inn: cp.inn, director_name: cp.director_name, bank_name: bankName, bank_account: cp.bank_account, mfo: cp.mfo, address: cp.address, phone: cp.phone || '', qqsreg: cp.qqsreg || '', oked: cp.oked || '', stir_status: cp.stir_status || '', stir_checked_at: cp.stir_checked_at || '' })
             setCpDetail(null); setModal(true)
           }}
           onDelete={id => { setCpDetail(null); deleteCp(id) }}
