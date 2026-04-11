@@ -178,11 +178,12 @@ export default function KontragentlarPage() {
   }
 
   async function runStirBulk() {
-    const LIMIT = 50
+    const LIMIT = 300
+    const CONCURRENCY = 5
     const inns = stirInput.split(/[\n,;\s]+/).map(s => s.replace(/\D/g, '')).filter(s => s.length === 9)
     const unique = [...new Set(inns)].slice(0, LIMIT)
     if (unique.length === 0) { toast("Hech qanday 9 raqamli STIR topilmadi", 'error'); return }
-    if (inns.length > LIMIT) toast(`Bir vaqtda max ${LIMIT} ta. Qolganlarini keyinroq yuklang.`, 'error')
+    if (inns.length > LIMIT) toast(`Bir vaqtda max ${LIMIT} ta. Qolganlarini keyinroq yuklang.`, 'info')
     const existingInns = new Set(cps.map(cp => cp.inn).filter(Boolean))
     const initial: StirResult[] = unique.map(inn => ({
       inn,
@@ -193,12 +194,12 @@ export default function KontragentlarPage() {
     setStirBulkDone(false)
     const { data: { session } } = await supabase.auth.getSession()
     const updated = [...initial]
-    for (let i = 0; i < updated.length; i++) {
-      if (updated[i].status === 'duplicate') continue
+
+    async function fetchOne(i: number) {
+      if (updated[i].status === 'duplicate') return
       updated[i] = { ...updated[i], status: 'loading' }
       setStirResults([...updated])
       try {
-        if (i > 0) await new Promise(r => setTimeout(r, 100))
         const res = await fetch(`/api/company-lookup?inn=${updated[i].inn}`)
         const json = await res.json()
         if (!res.ok || !json.company) {
@@ -221,6 +222,13 @@ export default function KontragentlarPage() {
       }
       setStirResults([...updated])
     }
+
+    // CONCURRENCY ta parallel so'rov
+    for (let i = 0; i < updated.length; i += CONCURRENCY) {
+      const batch = Array.from({ length: Math.min(CONCURRENCY, updated.length - i) }, (_, j) => fetchOne(i + j))
+      await Promise.all(batch)
+    }
+
     setStirBulkRunning(false)
     setStirBulkDone(true)
   }
@@ -617,7 +625,7 @@ export default function KontragentlarPage() {
               {!stirBulkRunning && !stirBulkDone && (
                 <div>
                   <label className="block text-xs text-gray-400 mb-2">
-                    STIR raqamlari — har bir qatorda bitta (maksimum 50 ta)
+                    STIR raqamlari — har bir qatorda bitta (maksimum 300 ta)
                   </label>
                   <textarea
                     value={stirInput}
