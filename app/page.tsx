@@ -348,7 +348,14 @@ export default function Home() {
   const l = LP[lang]
   const isLight = theme === 'light'
 
-  const [mobileMenu, setMobileMenu] = useState(false)
+  const [mobileMenu,  setMobileMenu]  = useState(false)
+  const [activeDept,  setActiveDept]  = useState(0)
+  const [liveCount,   setLiveCount]   = useState(247)
+
+  useEffect(() => {
+    const id = setInterval(() => setLiveCount(c => c + Math.floor(Math.random() * 2) + 1), 4500)
+    return () => clearInterval(id)
+  }, [])
 
   // Hero typing animation
   const [heroWord,    setHeroWord]    = useState('')
@@ -397,6 +404,28 @@ export default function Home() {
       @keyframes heroPulse { 0%,100% { opacity:.15; transform:scale(1); } 50% { opacity:.25; transform:scale(1.08); } }
       .hero-blob { animation: heroPulse 6s ease-in-out infinite; }
       .hero-blob2 { animation: heroPulse 8s ease-in-out 2s infinite; }
+      @keyframes floatBadge {
+        0%,100% { transform: translateY(0px) rotate(-1deg); }
+        50%      { transform: translateY(-8px) rotate(1deg); }
+      }
+      @keyframes floatBadge2 {
+        0%,100% { transform: translateY(0px) rotate(1deg); }
+        50%      { transform: translateY(-10px) rotate(-1deg); }
+      }
+      @keyframes floatBadge3 {
+        0%,100% { transform: translateY(0px) rotate(0deg); }
+        50%      { transform: translateY(-6px) rotate(2deg); }
+      }
+      @keyframes liveCountPop {
+        0%   { transform: scale(1); }
+        50%  { transform: scale(1.12); }
+        100% { transform: scale(1); }
+      }
+      .dept-tab-content { animation: fadeSlideIn .3s ease; }
+      @keyframes fadeSlideIn {
+        from { opacity:0; transform: translateY(10px); }
+        to   { opacity:1; transform: translateY(0); }
+      }
     `}</style>
 
     <div className={`lp min-h-screen overflow-x-hidden ${isLight ? 'lp-light bg-[#f8fafc] text-gray-900' : 'bg-[#080810] text-white'}`}>
@@ -489,9 +518,23 @@ export default function Home() {
 
       {/* ── HERO ── */}
       <section className="relative max-w-7xl mx-auto px-5 pt-24 pb-12 text-center">
-        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-700/30 text-blue-300 text-xs px-5 py-2.5 rounded-full mb-10 backdrop-blur-sm">
+        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-700/30 text-blue-300 text-xs px-5 py-2.5 rounded-full mb-6 backdrop-blur-sm">
           <Sparkles className="w-3.5 h-3.5 text-yellow-400"/>
           {l.badge}
+        </div>
+
+        {/* Live counter */}
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/25 px-4 py-2 rounded-full">
+            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"/>
+            <span className="text-emerald-300 text-sm font-semibold"
+              style={{ animation: 'liveCountPop 4.5s ease-in-out infinite' }}>
+              {liveCount}
+            </span>
+            <span className="text-emerald-400/70 text-sm">
+              {lang==='ru' ? 'документов создано сегодня' : lang==='oz' ? 'ta hujjat bugun yaratildi' : 'ta hujjat bugun yaratildi'}
+            </span>
+          </div>
         </div>
 
         <h1 className="text-5xl md:text-7xl font-black mb-8 leading-[1.08] tracking-tight">
@@ -521,9 +564,78 @@ export default function Home() {
         <p className="text-sm text-gray-600 mb-20">{l.freeNote}</p>
 
         {/* Hero image */}
-        <div className="relative mx-auto max-w-4xl">
+        <div className="relative mx-auto max-w-4xl mt-4">
+
+          {/* Floating badge — top left */}
+          <div className="hidden md:block absolute -top-5 -left-8 z-20 pointer-events-none"
+            style={{ animation: 'floatBadge 5s ease-in-out infinite' }}>
+            <div className="bg-[#0F172A]/95 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3">
+              <div className="w-9 h-9 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Zap className="w-4 h-4 text-blue-400"/>
+              </div>
+              <div className="text-left">
+                <div className="text-white font-bold text-sm">2 daqiqa</div>
+                <div className="text-gray-500 text-xs">{lang==='ru'?'время создания':'yaratish vaqti'}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Floating badge — top right */}
+          <div className="hidden md:block absolute -top-5 -right-8 z-20 pointer-events-none"
+            style={{ animation: 'floatBadge2 6s ease-in-out 1s infinite' }}>
+            <div className="bg-[#0F172A]/95 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3">
+              <div className="w-9 h-9 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-4 h-4 text-emerald-400"/>
+              </div>
+              <div className="text-left">
+                <div className="text-white font-bold text-sm">Word + PDF</div>
+                <div className="text-gray-500 text-xs">{lang==='ru'?'экспорт':'eksport'}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Floating badge — bottom left */}
+          <div className="hidden md:block absolute -bottom-5 -left-6 z-20 pointer-events-none"
+            style={{ animation: 'floatBadge3 7s ease-in-out 0.5s infinite' }}>
+            <div className="bg-[#0F172A]/95 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3">
+              <div className="w-9 h-9 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Bot className="w-4 h-4 text-purple-400"/>
+              </div>
+              <div className="text-left">
+                <div className="text-white font-bold text-sm">AI tayyor</div>
+                <div className="text-gray-500 text-xs">GPT-4 asosida</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Floating badge — bottom right */}
+          <div className="hidden md:block absolute -bottom-5 -right-6 z-20 pointer-events-none"
+            style={{ animation: 'floatBadge 8s ease-in-out 2s infinite' }}>
+            <div className="bg-[#0F172A]/95 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3">
+              <div className="w-9 h-9 bg-amber-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Users className="w-4 h-4 text-amber-400"/>
+              </div>
+              <div className="text-left">
+                <div className="text-white font-bold text-sm">500+</div>
+                <div className="text-gray-500 text-xs">{lang==='ru'?'компаний':'kompaniya'}</div>
+              </div>
+            </div>
+          </div>
+
           <div className="absolute inset-0 bg-gradient-to-t from-[#080810] via-transparent to-transparent z-10 pointer-events-none" style={{top:'65%'}}/>
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 ring-1 ring-white/5">
+          {/* Browser chrome frame */}
+          <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-blue-900/20 border border-white/10 ring-1 ring-white/5">
+            {/* Fake browser bar */}
+            <div className="bg-[#0F172A] border-b border-white/10 px-4 py-2.5 flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-500/60"/>
+                <div className="w-3 h-3 rounded-full bg-yellow-500/60"/>
+                <div className="w-3 h-3 rounded-full bg-emerald-500/60"/>
+              </div>
+              <div className="flex-1 bg-white/5 border border-white/8 rounded-md px-3 py-1 mx-4 text-xs text-gray-500">
+                kabinetim.uz/dashboard
+              </div>
+            </div>
             <Image
               src="/img-hero.png"
               alt="Kabinetim.uz dashboard"
@@ -534,7 +646,8 @@ export default function Home() {
             />
           </div>
           {/* Glow */}
-          <div className="absolute -inset-4 bg-blue-600/10 rounded-3xl blur-3xl -z-10 pointer-events-none"/>
+          <div className="absolute -inset-4 bg-blue-600/15 rounded-3xl blur-3xl -z-10 pointer-events-none"/>
+          <div className="absolute -inset-8 bg-purple-600/8 rounded-3xl blur-3xl -z-10 pointer-events-none"/>
         </div>
       </section>
 
@@ -581,32 +694,66 @@ export default function Home() {
           <p className="text-gray-400 text-lg max-w-xl mx-auto">{l.deptSub}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {l.depts.map((dept, i) => {
-            const st = DEPT_STYLES[i]
-            return (
-              <div key={i} className={`fadein group relative bg-gradient-to-br ${st.gradient} border ${st.border} rounded-3xl p-8 hover:scale-[1.01] transition-all duration-300`}
-                style={{ transitionDelay: `${i * 120}ms` }}>
-                <div className="flex items-start gap-5 mb-6">
-                  <div className={`w-14 h-14 ${st.iconBg} rounded-2xl flex items-center justify-center ${st.iconColor} flex-shrink-0`}>
+        {/* Interactive tabs */}
+        <div className="fadein flex flex-col lg:flex-row gap-4">
+
+          {/* Tab buttons */}
+          <div className="flex lg:flex-col gap-2 lg:w-56 flex-shrink-0">
+            {l.depts.map((dept, i) => {
+              const st = DEPT_STYLES[i]
+              return (
+                <button key={i} onClick={() => setActiveDept(i)}
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all duration-200 w-full ${
+                    activeDept === i
+                      ? `bg-gradient-to-r ${st.gradient} border ${st.border} shadow-lg`
+                      : 'bg-white/[0.03] border border-white/8 hover:bg-white/[0.06] hover:border-white/15'
+                  }`}>
+                  <div className={`w-9 h-9 ${activeDept===i ? st.iconBg : 'bg-white/5'} rounded-xl flex items-center justify-center ${activeDept===i ? st.iconColor : 'text-gray-500'} flex-shrink-0 transition-all`}>
                     {DEPT_ICONS[i]}
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-black text-white mb-1">{dept.name}</h3>
-                    <p className="text-gray-400 text-sm">{dept.desc}</p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {dept.docs.map((doc, j) => (
-                    <span key={j} className={`text-xs px-3 py-1.5 rounded-full ${st.badge} border border-white/5`}>
-                      {doc}
-                    </span>
-                  ))}
-                </div>
-                <div className={`absolute top-6 right-6 w-2 h-2 ${st.dot} rounded-full`}/>
+                  <span className={`font-bold text-sm ${activeDept===i ? 'text-white' : 'text-gray-400'} transition-colors`}>
+                    {dept.name}
+                  </span>
+                  {activeDept === i && (
+                    <div className={`ml-auto w-1.5 h-1.5 ${st.dot} rounded-full flex-shrink-0`}/>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Tab content */}
+          <div className={`flex-1 bg-gradient-to-br ${DEPT_STYLES[activeDept].gradient} border ${DEPT_STYLES[activeDept].border} rounded-3xl p-8 dept-tab-content`}
+            key={activeDept}>
+            <div className="flex items-start gap-5 mb-7">
+              <div className={`w-16 h-16 ${DEPT_STYLES[activeDept].iconBg} rounded-2xl flex items-center justify-center ${DEPT_STYLES[activeDept].iconColor} flex-shrink-0`}>
+                {DEPT_ICONS[activeDept]}
               </div>
-            )
-          })}
+              <div>
+                <h3 className="text-3xl font-black text-white mb-1">{l.depts[activeDept].name}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">{l.depts[activeDept].desc}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2.5">
+              {l.depts[activeDept].docs.map((doc, j) => (
+                <span key={j}
+                  className={`inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl ${DEPT_STYLES[activeDept].badge} border border-white/10 font-medium`}
+                  style={{ animationDelay: `${j * 40}ms` }}>
+                  <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 opacity-70"/>
+                  {doc}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <Link href="/signup"
+                className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${DEPT_STYLES[activeDept].iconBg} ${DEPT_STYLES[activeDept].iconColor} border ${DEPT_STYLES[activeDept].border} hover:scale-[1.03]`}>
+                {lang==='ru'?'Начать бесплатно':lang==='oz'?"Bepul boshlash":"Bepul boshlash"}
+                <ArrowRight className="w-4 h-4"/>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
