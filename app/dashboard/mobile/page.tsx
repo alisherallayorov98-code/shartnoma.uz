@@ -177,7 +177,7 @@ export default function MobilePage() {
         org,
         cp,
         contract_type: contractType,
-      })
+      }, lang)
 
       const payload = {
         contract_number: contractNumber,

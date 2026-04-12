@@ -9,6 +9,12 @@ function cityLabel(city: string): string {
   return `${city} shahri`
 }
 
+// Language-aware city label
+function cityLabelI18n(city: string, lang: 'uz' | 'oz' | 'ru'): string {
+  if (lang === 'ru') return city ? `г. ${city}` : 'г. Ташкент'
+  return cityLabel(city)
+}
+
 // Shablonni to'ldirish uchun ma'lumotlar
 export type TemplateData = {
   contract_number: string
@@ -31,6 +37,17 @@ export function formatDateUz(dateStr: string | undefined): string {
   const parts = dateStr.split('-')
   if (parts.length !== 3) return dateStr
   const [y, m, d] = parts
+  return `${d}.${m}.${y}-yil`
+}
+
+// Language-aware date format
+function formatDateI18n(dateStr: string | undefined, lang: 'uz' | 'oz' | 'ru'): string {
+  if (!dateStr) return '___'
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  const [y, m, d] = parts
+  if (lang === 'ru') return `${d}.${m}.${y} г.`
+  if (lang === 'oz') return `${d}.${m}.${y}-йил`
   return `${d}.${m}.${y}-yil`
 }
 
@@ -859,31 +876,74 @@ type SpecItemForText = {
   summa: number
 }
 
-function buildSpecTable(items: SpecItemForText[], number: string, date: string, org: any, cp: any): string {
+const CONTRACT_TYPE_FULL_NAMES: Record<string, Record<'uz' | 'oz' | 'ru', string>> = {
+  oldi_sotdi: { uz: 'Oldi-sotdi shartnomasi',         oz: 'Олди-сотди шартномаси',         ru: 'Договор купли-продажи' },
+  xizmat:     { uz: "Xizmat ko'rsatish shartnomasi",  oz: 'Хизмат кўрсатиш шартномаси',    ru: 'Договор оказания услуг' },
+  ijara:      { uz: 'Ijara shartnomasi',              oz: 'Ижара шартномаси',               ru: 'Договор аренды' },
+  pudrat:     { uz: 'Pudrat shartnomasi',             oz: 'Пудрат шартномаси',              ru: 'Договор подряда' },
+  qoshimcha:  { uz: "Qo'shimcha shartnoma",           oz: 'Қўшимча шартнома',              ru: 'Дополнительное соглашение' },
+  moliyaviy:  { uz: 'Moliyaviy yordam shartnomasi',   oz: 'Молиявий ёрдам шартномаси',     ru: 'Договор финансовой помощи' },
+  daval:      { uz: 'Daval shartnomasi',              oz: 'Давал шартномаси',               ru: 'Договор давальческой переработки' },
+  xalqaro:    { uz: 'Xalqaro shartnoma',              oz: 'Халқаро шартнома',              ru: 'Международный договор' },
+  agentlik:   { uz: 'Agentlik shartnomasi',           oz: 'Агентлик шартномаси',           ru: 'Агентский договор' },
+  transport:  { uz: 'Transport shartnomasi',          oz: 'Транспорт шартномаси',          ru: 'Договор перевозки' },
+  lizing:     { uz: 'Lizing shartnomasi',             oz: 'Лизинг шартномаси',             ru: 'Договор лизинга' },
+  boshqa:     { uz: 'Boshqa shartnoma',               oz: 'Бошқа шартнома',               ru: 'Иной договор' },
+}
+
+function buildSpecTable(items: SpecItemForText[], number: string, date: string, org: any, cp: any, lang: 'uz' | 'oz' | 'ru' = 'uz'): string {
   const lines: string[] = []
   const sep = '─'.repeat(110)
   const formatNum = (n: number) => n.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const pad = (s: string, w: number) => s.length >= w ? s.slice(0, w) : s + ' '.repeat(w - s.length)
   const rpad = (s: string, w: number) => s.length >= w ? s.slice(0, w) : ' '.repeat(w - s.length) + s
 
+  const L = {
+    ilova:     lang === 'ru' ? 'ПРИЛОЖЕНИЕ 1'                    : lang === 'oz' ? '1-ИЛОВА'                      : '1-ILOVA',
+    kShartn:   lang === 'ru' ? `к Договору №${number}`           : lang === 'oz' ? `№${number}-сонли шартномага`  : `№${number}-sonli shartnomaga`,
+    dan:       lang === 'ru' ? `от ${formatDateI18n(date, lang)}` : lang === 'oz' ? `${formatDateI18n(date, lang)} дан` : `${formatDateUz(date)} dan`,
+    protokol:  lang === 'ru' ? 'ПРОТОКОЛ СОГЛАСОВАНИЯ ЦЕН'       : lang === 'oz' ? 'НАРХНИ КЕЛИШИШ ПРОТОКОЛИ'    : 'NARXNI KELISHISH PROTOKOLI',
+    col1:      lang === 'ru' ? 'Наименование товаров (работ, услуг)' : lang === 'oz' ? 'Товарлар (иш, хизматлар) номи' : 'Tovarlar (ish, xizmatlar) nomi',
+    col2:      lang === 'ru' ? 'Ед.изм.' : lang === 'oz' ? "Ўлчов" : "O'lchov",
+    col3:      lang === 'ru' ? 'Кол-во'  : lang === 'oz' ? 'Миқдори' : 'Miqdori',
+    col4:      lang === 'ru' ? 'Цена'    : lang === 'oz' ? 'Нархи'   : 'Narxi',
+    col5:      lang === 'ru' ? 'Поставка'   : lang === 'oz' ? 'Етказиб бер.' : 'Yetkazib ber.',
+    col6:      lang === 'ru' ? 'НДС%'    : 'QQS%',
+    col7:      lang === 'ru' ? 'Сумма НДС' : lang === 'oz' ? 'QQS sum.' : 'QQS sum.',
+    col8:      lang === 'ru' ? 'Итого (с НДС)' : lang === 'oz' ? 'Жами (QQS билан)' : 'Jami (QQS bilan)',
+    jami:      lang === 'ru' ? 'ИТОГО:'  : lang === 'oz' ? 'ЖАМИ:' : 'JAMI:',
+    sozBilan:  lang === 'ru' ? 'Прописью' : lang === 'oz' ? "So'z bilan" : "So'z bilan",
+    protokolNote: lang === 'ru'
+      ? 'Настоящий Протокол является неотъемлемой частью Договора и составлен в двух экземплярах.'
+      : lang === 'oz'
+      ? 'Ушбу Протокол Шартноманинг ажралмас қисми ҳисобланади ва икки нусхада тузилган.'
+      : "Ushbu Protokol Shartnomaning ajralmas qismi hisoblanadi va ikki nusxada tuzilgan.",
+    sotuvchi:  lang === 'ru' ? 'ПРОДАВЕЦ:' : lang === 'oz' ? 'СОТУВЧИ:' : 'SOTUVCHI:',
+    xaridor:   lang === 'ru' ? 'ПОКУПАТЕЛЬ:' : lang === 'oz' ? 'ХАРИДОР:' : 'XARIDOR:',
+    manzil:    lang === 'ru' ? 'Адрес:'  : lang === 'oz' ? 'Манзил:' : 'Manzil:',
+    rahbar:    lang === 'ru' ? 'Руководитель:' : lang === 'oz' ? 'Раҳбар:' : 'Rahbar:',
+    qqssiz:    lang === 'ru' ? 'Без НДС' : lang === 'oz' ? 'QQSsiz' : 'QQSsiz',
+    sumCurr:   lang === 'ru' ? 'сум' : "so'm",
+  }
+
   lines.push('')
-  lines.push('1-ILOVA')
-  lines.push(`№${number}-sonli shartnomaga`)
-  lines.push(`${formatDateUz(date)} dan`)
+  lines.push(L.ilova)
+  lines.push(L.kShartn)
+  lines.push(L.dan)
   lines.push('')
-  lines.push('NARXNI KELISHISH PROTOKOLI')
+  lines.push(L.protokol)
   lines.push('')
   lines.push(sep)
   lines.push(
     pad('№', 4) +
-    pad('Tovarlar (ish, xizmatlar) nomi', 32) +
-    pad("O'lchov", 10) +
-    rpad('Miqdori', 10) +
-    rpad('Narxi', 16) +
-    rpad('Yetkazib ber.', 18) +
-    rpad('QQS%', 6) +
-    rpad('QQS sum.', 16) +
-    rpad('Jami (QQS bilan)', 20)
+    pad(L.col1, 32) +
+    pad(L.col2, 10) +
+    rpad(L.col3, 10) +
+    rpad(L.col4, 16) +
+    rpad(L.col5, 18) +
+    rpad(L.col6, 6) +
+    rpad(L.col7, 16) +
+    rpad(L.col8, 20)
   )
   lines.push(sep)
 
@@ -900,7 +960,7 @@ function buildSpecTable(items: SpecItemForText[], number: string, date: string, 
       rpad(String(item.miqdori), 10) +
       rpad(formatNum(item.narxi), 16) +
       rpad(formatNum(base), 18) +
-      rpad(item.qqs_foiz === 'siz' ? 'QQSsiz' : item.qqs_foiz + '%', 6) +
+      rpad(item.qqs_foiz === 'siz' ? L.qqssiz : item.qqs_foiz + '%', 6) +
       rpad(formatNum(item.qqs_summa), 16) +
       rpad(formatNum(item.summa), 20)
     )
@@ -908,7 +968,7 @@ function buildSpecTable(items: SpecItemForText[], number: string, date: string, 
 
   lines.push(sep)
   lines.push(
-    pad('JAMI:', 56) +
+    pad(L.jami, 56) +
     rpad(formatNum(totalBase), 18) +
     rpad('', 6) +
     rpad(formatNum(totalQqs), 16) +
@@ -916,36 +976,36 @@ function buildSpecTable(items: SpecItemForText[], number: string, date: string, 
   )
   lines.push(sep)
   lines.push('')
-  lines.push(`So'z bilan: ${numberToWords(Math.round(totalSum), 'uz')} so'm`)
+  lines.push(`${L.sozBilan}: ${numberToWords(Math.round(totalSum), lang)} ${L.sumCurr}`)
   lines.push('')
-  lines.push('Ushbu Protokol Shartnomaning ajralmas qismi hisoblanadi va ikki nusxada tuzilgan.')
+  lines.push(L.protokolNote)
   lines.push('')
 
   if (org) {
-    lines.push('SOTUVCHI: ' + org.name)
+    lines.push(L.sotuvchi + ' ' + org.name)
     lines.push('STIR: ' + (org.inn || '—'))
-    lines.push('Manzil: ' + (org.address || '—'))
+    lines.push(L.manzil + ' ' + (org.address || '—'))
     lines.push('Bank: ' + (org.bank_name || '—'))
     lines.push('H/r: ' + (org.bank_account || '—'))
     lines.push('MFO: ' + (org.mfo || '—'))
     lines.push('OKED: ' + (org.oked || '—'))
     lines.push('QQS: ' + (org.qqsreg || '—'))
     lines.push('Tel: ' + (org.phone || '—'))
-    lines.push('Rahbar: ' + (org.director_name || '—'))
+    lines.push(L.rahbar + ' ' + (org.director_name || '—'))
     lines.push('_________________ / ' + (org.director_name || '___') + '        M.O.')
   }
   lines.push('')
   if (cp) {
-    lines.push('XARIDOR: ' + cp.name)
+    lines.push(L.xaridor + ' ' + cp.name)
     lines.push('STIR: ' + (cp.inn || '—'))
-    lines.push('Manzil: ' + (cp.address || '—'))
+    lines.push(L.manzil + ' ' + (cp.address || '—'))
     lines.push('Bank: ' + (cp.bank_name || '—'))
     lines.push('H/r: ' + (cp.bank_account || '—'))
     lines.push('MFO: ' + (cp.mfo || '—'))
     lines.push('OKED: ' + (cp.oked || '—'))
     lines.push('QQS: ' + (cp.qqsreg || '—'))
     lines.push('Tel: ' + (cp.phone || '—'))
-    lines.push('Rahbar: ' + (cp.director_name || '—'))
+    lines.push(L.rahbar + ' ' + (cp.director_name || '—'))
     lines.push('_________________ / ' + (cp.director_name || '___') + '        M.O.')
   }
   return lines.join('\n')
@@ -953,13 +1013,17 @@ function buildSpecTable(items: SpecItemForText[], number: string, date: string, 
 
 export function structureToText(
   structure: ContractStructure,
-  header: { type_name: string; number: string; date: string; city: string; org: any; cp: any; contract_type?: string; spec_items?: SpecItemForText[] }
+  header: { type_name: string; number: string; date: string; city: string; org: any; cp: any; contract_type?: string; spec_items?: SpecItemForText[] },
+  lang: 'uz' | 'oz' | 'ru' = 'uz'
 ): string {
   const lines: string[] = []
-  lines.push(header.type_name.toUpperCase())
+  // Use translated full contract type name if available
+  const typeName = (header.contract_type && CONTRACT_TYPE_FULL_NAMES[header.contract_type]?.[lang])
+    || header.type_name
+  lines.push(typeName.toUpperCase())
   lines.push(`№ ${header.number}`)
   lines.push('')
-  lines.push(`${cityLabel(header.city)}${' '.repeat(40)}${formatDateUz(header.date)}`)
+  lines.push(`${cityLabelI18n(header.city, lang)}${' '.repeat(40)}${formatDateI18n(header.date, lang)}`)
   lines.push('')
 
   structure.bolimlar.forEach((bolim, bi) => {
@@ -973,12 +1037,18 @@ export function structureToText(
 
   // 1-ILOVA: spec items mavjud bo'lsa
   if (header.spec_items && header.spec_items.length > 0) {
-    lines.push(buildSpecTable(header.spec_items, header.number, header.date, header.org, header.cp))
+    lines.push(buildSpecTable(header.spec_items, header.number, header.date, header.org, header.cp, lang))
   }
 
-  // ─── Tomonlarning rekvizitlari ─────────────────────────────────────────────
+  // ─── Rekvizitlar ─────────────────────────────────────────────────────────────
+  const rekvTitle  = lang === 'ru' ? 'РЕКВИЗИТЫ СТОРОН'          : lang === 'oz' ? 'ТОМОНЛАРНИНГ РЕКВИЗИТЛАРИ'  : 'TOMONLARNING REKVIZITLARI'
+  const role1      = lang === 'ru' ? 'ЗАКАЗЧИК:'                 : lang === 'oz' ? 'БУЮРТМАЧИ:'                 : 'BUYURTMACHI:'
+  const role2      = lang === 'ru' ? 'ИСПОЛНИТЕЛЬ:'              : lang === 'oz' ? 'ИЖРОЧИ:'                    : 'IJROCHI:'
+  const manzilLbl  = lang === 'ru' ? 'Адрес:'                    : lang === 'oz' ? 'Манзил:'                    : 'Manzil:'
+  const rahbarLbl  = lang === 'ru' ? 'Руководитель:'             : lang === 'oz' ? 'Раҳбар:'                   : 'Rahbar:'
+
   lines.push('')
-  lines.push('TOMONLARNING REKVIZITLARI')
+  lines.push(rekvTitle)
   lines.push('')
 
   const org = header.org
@@ -987,10 +1057,10 @@ export function structureToText(
   if (org || cp) {
     const left = (s: string) => s.padEnd(45)
 
-    lines.push(left('BUYURTMACHI:') + 'IJROCHI:')
+    lines.push(left(role1) + role2)
     lines.push(left(org?.name || '___') + (cp?.name || '___'))
     lines.push(left('STIR: ' + (org?.inn || '___')) + 'STIR: ' + (cp?.inn || '___'))
-    lines.push(left('Manzil: ' + (org?.address || '___')) + 'Manzil: ' + (cp?.address || '___'))
+    lines.push(left(manzilLbl + ' ' + (org?.address || '___')) + manzilLbl + ' ' + (cp?.address || '___'))
     lines.push(left('Bank: ' + (org?.bank_name || '___')) + 'Bank: ' + (cp?.bank_name || '___'))
     lines.push(left('H/R: ' + (org?.bank_account || '___')) + 'H/R: ' + (cp?.bank_account || '___'))
     lines.push(left('MFO: ' + (org?.mfo || '___')) + 'MFO: ' + (cp?.mfo || '___'))
@@ -998,7 +1068,7 @@ export function structureToText(
     lines.push(left('QQS: ' + (org?.qqsreg || '___')) + 'QQS: ' + (cp?.qqsreg || '___'))
     lines.push(left('Tel: ' + (org?.phone || '___')) + 'Tel: ' + (cp?.phone || '___'))
     lines.push('')
-    lines.push(left('Rahbar: ' + (org?.director_name || '___')) + 'Rahbar: ' + (cp?.director_name || '___'))
+    lines.push(left(rahbarLbl + ' ' + (org?.director_name || '___')) + rahbarLbl + ' ' + (cp?.director_name || '___'))
     lines.push('')
     lines.push(left('_________________ M.O.') + '_________________ M.O.')
   }

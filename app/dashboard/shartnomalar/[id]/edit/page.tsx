@@ -451,7 +451,7 @@ export default function EditShartnoma() {
       number: form.contract_number, date: form.contract_date, city: form.city, org, cp,
       contract_type: form.contract_type,
       spec_items: form.spec_items.length > 0 ? form.spec_items : undefined,
-    })
+    }, lang)
     if (lang === 'oz') content = latinToCyrillic(content)
 
     const extra_data: Record<string, string> = {}
@@ -514,7 +514,7 @@ export default function EditShartnoma() {
       number: form.contract_number, date: form.contract_date, city: form.city, org, cp,
       contract_type: form.contract_type,
       spec_items: form.spec_items.length > 0 ? form.spec_items : undefined,
-    })
+    }, lang)
   }
 
   function openPreview() {

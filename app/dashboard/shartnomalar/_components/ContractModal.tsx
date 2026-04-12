@@ -737,8 +737,9 @@ export default function ContractModal({
         city: form.city,
         org,
         cp,
+        contract_type: form.contract_type,
         spec_items: form.spec_items.length > 0 ? form.spec_items : undefined,
-      })
+      }, lang)
       onSave(text)
     } else {
       onSave()

@@ -285,7 +285,7 @@ export default function OmmaviyPage() {
       org,
       cp,
       contract_type: contractType,
-    })
+    }, lang)
 
     if (lang === 'oz') content = latinToCyrillic(content)
     return content
