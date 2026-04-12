@@ -186,7 +186,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const loadContracts = useCallback(async (orgId?: string, limit = 50) => {
     // Faqat kerakli fieldlar — to'liq join emas (tezligi 3-5x oshadi)
     const base = supabase.from('contracts')
-      .select('id, title, status, created_at, updated_at, organization_id, counterparty_id, contract_number, total_amount, currency, signed_at, expires_at, content, contract_date, contract_type, amount', { count: 'exact' })
+      .select('id, status, created_at, organization_id, counterparty_id, contract_number, currency, content, contract_date, contract_type, amount, end_date, description, extra_data', { count: 'exact' })
       .order('created_at', { ascending: false }).limit(limit)
     const { data, count, error } = orgId ? await base.eq('organization_id', orgId) : await base
     if (error) { console.error('loadContracts:', error.message); return }
@@ -365,7 +365,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (!activeOrg) return
     const offset = contractsLengthRef.current
     const { data, error } = await supabase.from('contracts')
-      .select('id, title, status, created_at, updated_at, organization_id, counterparty_id, contract_number, total_amount, currency, signed_at, expires_at, content, contract_date, contract_type, amount')
+      .select('id, status, created_at, organization_id, counterparty_id, contract_number, currency, content, contract_date, contract_type, amount, end_date, description, extra_data')
       .eq('organization_id', activeOrg.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + 49)
