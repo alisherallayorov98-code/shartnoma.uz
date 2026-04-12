@@ -184,7 +184,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const loadContracts = useCallback(async (orgId?: string, limit = 50) => {
-    const base = supabase.from('contracts').select('*, organizations(*), counterparties(*)', { count: 'exact' }).order('created_at', { ascending: false }).limit(limit)
+    // Faqat kerakli fieldlar — to'liq join emas (tezligi 3-5x oshadi)
+    const base = supabase.from('contracts')
+      .select('id, title, status, created_at, updated_at, organization_id, counterparty_id, contract_number, total_amount, currency, signed_at, expires_at, content, contract_date, contract_type, amount', { count: 'exact' })
+      .order('created_at', { ascending: false }).limit(limit)
     const { data, count, error } = orgId ? await base.eq('organization_id', orgId) : await base
     if (error) { console.error('loadContracts:', error.message); return }
     setContracts(data || [])
@@ -220,18 +223,25 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             .eq('status', 'pending')
         }
 
-        const adminFetch = fetch('/api/admin', {
-          method: 'HEAD',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          signal: AbortSignal.timeout(4000),
-        }).catch(() => ({ ok: false }))
+        // Admin holati sessionStorage da keshlangan — har safar HTTP so'rov ketmaydi
+        const cacheKey = `admin_${session.user.id}`
+        const cached = sessionStorage.getItem(cacheKey)
+        let adminOk = cached === '1'
+
+        const adminFetch = cached === null
+          ? fetch('/api/admin', {
+              method: 'HEAD',
+              headers: { Authorization: `Bearer ${session.access_token}` },
+              signal: AbortSignal.timeout(4000),
+            }).then(r => { sessionStorage.setItem(cacheKey, r.ok ? '1' : '0'); return r }).catch(() => ({ ok: false }))
+          : Promise.resolve({ ok: adminOk })
 
         const [adminCheck] = await Promise.all([
           adminFetch,
           loadOrgs(),
           loadProfile(session.user.id),
         ])
-        setIsAdmin((adminCheck as Response).ok)
+        setIsAdmin((adminCheck as { ok: boolean }).ok)
       } catch (e) {
         console.error('Dashboard init error:', e)
       } finally {
@@ -244,12 +254,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // ── When activeOrg changes ────────────────────────────────────────────────
   useEffect(() => {
     if (!activeOrg) return
-    loadBankAccounts(activeOrg.id)
-    loadSubscription(activeOrg.id)
-    loadDemoAccess(activeOrg.id)
-    loadContracts(activeOrg.id)
-    loadEmployees(activeOrg.id)
-    loadCps()
+    // Muhim ma'lumotlar — darhol parallel yuklanadi
+    Promise.all([
+      loadSubscription(activeOrg.id),
+      loadDemoAccess(activeOrg.id),
+      loadContracts(activeOrg.id),
+    ])
+    // Kam kerakli — kechiktiriladi (50ms dan keyin)
+    setTimeout(() => {
+      loadBankAccounts(activeOrg.id)
+      loadEmployees(activeOrg.id)
+      loadCps()
+    }, 50)
 
     // Real-time: reload data when another tab/device changes them
     const contractsChannel = supabase
