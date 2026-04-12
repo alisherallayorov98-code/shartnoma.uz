@@ -458,9 +458,9 @@ export default function ContractModal({
       cp_inn: cp?.inn || '',
       cp_director: cp?.director_name || '',
       amount,
-      amount_text: numberToWords(amount, 'uz') + " so'm",
+      amount_text: numberToWords(amount, lang) + " so'm",
       extra,
-    })
+    }, lang)
   }
 
   function initStructureEdit() {

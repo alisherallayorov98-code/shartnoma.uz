@@ -353,8 +353,8 @@ export default function YangiShartnoma() {
       city: form.city, org_name: org?.name || '', org_inn: org?.inn || '',
       org_director: org?.director_name || '', cp_name: cp?.name || '',
       cp_inn: cp?.inn || '', cp_director: cp?.director_name || '',
-      amount, amount_text: amount > 0 ? numberToWords(amount, 'uz') + " so'm" : '___', extra,
-    })
+      amount, amount_text: amount > 0 ? numberToWords(amount, lang) + " so'm" : '___', extra,
+    }, lang)
   }
 
   function initStructureEdit() {
@@ -773,7 +773,7 @@ export default function YangiShartnoma() {
                       )}
                     </div>
                     {form.amount && parseFloat(form.amount) > 0 && (
-                      <p className="text-[10px] text-gray-500 mt-1 truncate">{numberToWords(parseFloat(form.amount), 'uz')} so&apos;m</p>
+                      <p className="text-[10px] text-gray-500 mt-1 truncate">{numberToWords(parseFloat(form.amount), lang)} so&apos;m</p>
                     )}
                   </div>
                 </div>
@@ -1357,7 +1357,7 @@ export default function YangiShartnoma() {
                       <span className="text-gray-300">{T(t.yangiPage.totalLabel)}</span>
                       <span className="text-white text-base">{specTotal.toLocaleString()} so&apos;m</span>
                     </div>
-                    <div className="text-xs text-gray-500">{numberToWords(specTotal, 'uz')} so&apos;m</div>
+                    <div className="text-xs text-gray-500">{numberToWords(specTotal, lang)} so&apos;m</div>
                   </div>
                 </div>
               )}

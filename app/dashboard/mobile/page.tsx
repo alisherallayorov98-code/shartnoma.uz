@@ -165,7 +165,7 @@ export default function MobilePage() {
         cp_inn: cp.inn || '',
         cp_director: cp.director_name || '',
         amount: numAmount,
-        amount_text: numAmount > 0 ? numberToWords(numAmount, 'uz') + " so'm" : '___',
+        amount_text: numAmount > 0 ? numberToWords(numAmount, lang) + " so'm" : '___',
         extra: {},
       })
 

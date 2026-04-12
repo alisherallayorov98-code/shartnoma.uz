@@ -1,0 +1,194 @@
+{
+  "SHARTNOMA PREDMETI": {
+    "oz": "ШАРТНОМА ПРЕДМЕТИ",
+    "ru": "ПРЕДМЕТ КОНТРАКТА"
+  },
+  "SO'ROVNOMA VA YETKAZIB BERISH SHARTLARI": {
+    "oz": "СУ'РОВНОМА ВА ЙЕТКЗИБ БЕРИШ ШАРТЛАРИ",
+    "ru": "УСЛОВИЯ ЗАКАЗА И ДОСТАВКИ"
+  },
+  "NARX VA TO'LOV TARTIBI": {
+    "oz": "НАРХ ВА ТУ'ЛОВ ТАРТИБИ",
+    "ru": "ЦЕНА И ПОРЯДОК ОПЛАТЫ"
+  },
+  "TOMONLARNING HUQUQ VA MAJBURIYATLARI": {
+    "oz": "ТОМОНЛАРНИНГ ҲУҚУҚ ВА МАЖБУРИЙАТЛАРИ",
+    "ru": "ПРАВА И ОБЯЗАТЕЛЬСТВА СТОРОН"
+  },
+  "TOMONLARNING JAVOBGARLIGI": {
+    "oz": "ТОМОНЛАРНИНГ ЖАВОБГАРЛИГИ",
+    "ru": "ОТВЕТСТВЕННОСТЬ СТОРОН"
+  },
+  "FORS-MAJOR": {
+    "oz": "ФОРС-МАЖОР",
+    "ru": "ФОРС-МАЖОР"
+  },
+  "NIZOLARNI HAL ETISH": {
+    "oz": "НИЗОЛАРНИ ҲАЛ ЭТИШ",
+    "ru": "РАЗРЕШЕНИЕ СПОРОВ"
+  },
+  "SHARTNOMANING AMAL QILISH MUDDATI VA BEKOR QILISH TARTIBI": {
+    "oz": "ШАРТНОМАНИНГ АМАЛ ҚИЛИШ МУДДАТИ ВА БЕКОР ҚИЛИШ ТАРТИБИ",
+    "ru": "СРОК ДЕЙСТВИЯ КОНТРАКТА И ПОРЯДОК РАСТОРЖЕНИЯ"
+  },
+  "XIZMAT KO'RSATISH MUDDATI": {
+    "oz": "ХИЗМАТ КУ'РСАТИШ МУДДАТИ",
+    "ru": "СРОК ПРЕДОСТАВЛЕНИЯ УСЛУГИ"
+  },
+  "XIZMATLARNI QABUL QILISH": {
+    "oz": "ХИЗМАТЛАРНИ ҚАБУЛ ҚИЛИШ",
+    "ru": "ПРИЕМКА УСЛУГ"
+  },
+  "INTELLEKTUAL MULK": {
+    "oz": "ИНТЕЛЛЕКТУАЛ МУЛК",
+    "ru": "ИНТЕЛЛЕКТУАЛЬНАЯ СОБСТВЕННОСТЬ"
+  },
+  "KONFIDENSIALLIK": {
+    "oz": "КОНФИДЕНСИАЛЛИК",
+    "ru": "КОНФИДЕНЦИАЛЬНОСТЬ"
+  },
+  "IJARA MUDDATI": {
+    "oz": "ИЖАРА МУДДАТИ",
+    "ru": "СРОК АРЕНДЫ"
+  },
+  "IJARA HAQI VA TO'LOV TARTIBI": {
+    "oz": "ИЖАРА ҲАҚИ ВА ТУ'ЛОВ ТАРТИБИ",
+    "ru": "РАЗМЕР ПЛАТЕЖЕЙ АРЕНДЫ И ПОРЯДОК ОПЛАТЫ"
+  },
+  "IJARA OB'EKTINI QAYTARISH": {
+    "oz": "ИЖАРА ОБ'ЕКТИНИ ҚАЙТАРИШ",
+    "ru": "ВОЗВРАТ ОБЪЕКТА АРЕНДЫ"
+  },
+  "ISH BAJARISH MUDDATI": {
+    "oz": "ИШ БАЖАРИШ МУДДАТИ",
+    "ru": "СРОК ВЫПОЛНЕНИЯ РАБОТ"
+  },
+  "MATERIALLAR VA RESURSLAR": {
+    "oz": "МАТЕРИАЛЛАР ВА РЕСУРСЛАР",
+    "ru": "МАТЕРИАЛЫ И РЕСУРСЫ"
+  },
+  "ISHLARNI QABUL QILISH": {
+    "oz": "ИШЛАРНИ ҚАБУЛ ҚИЛИШ",
+    "ru": "ПРИЕМКА РАБОТ"
+  },
+  "KAFOLAT": {
+    "oz": "КАФОЛАТ",
+    "ru": "ГАРАНТИЯ"
+  },
+  "QARZNI BERISH TARTIBI": {
+    "oz": "ҚАРЗНИ БЕРИШ ТАРТИБИ",
+    "ru": "ПОРЯДОК ПРЕДОСТАВЛЕНИЯ КРЕДИТА"
+  },
+  "FOIZLAR VA QARZNI QAYTARISH TARTIBI": {
+    "oz": "ФОИЗЛАР ВА ҚАРЗНИ ҚАЙТАРИШ ТАРТИБИ",
+    "ru": "ПОРЯДОК УПЛАТЫ ПРОЦЕНТОВ И ВОЗВРАТА КРЕДИТА"
+  },
+  "XOM ASHYO TOPSHIRISH TARTIBI": {
+    "oz": "ХОМ АШЁ ТОПШИРИШ ТАРТИБИ",
+    "ru": "ПОРЯДОК ПОСТАВКИ СЫРЬЯ"
+  },
+  "TAYYOR MAHSULOTNI TOPSHIRISH": {
+    "oz": "ТАЙЁР МАҲСУЛОТНИ ТОПШИРИШ",
+    "ru": "ПОСТАВКА ГОТОВОЙ ПРОДУКЦИИ"
+  },
+  "FORS-MAJOR VA NIZOLARNI HAL ETISH": {
+    "oz": "ФОРС-МАЖОР ВА НИЗОЛАРНИ ҲАЛ ЭТИШ",
+    "ru": "ФОРС-МАЖОР И РАЗРЕШЕНИЕ СПОРОВ"
+  },
+  "SHARTNOMANING AMAL QILISH MUDDATI": {
+    "oz": "ШАРТНОМАНИНГ АМАЛ ҚИЛИШ МУДДАТИ",
+    "ru": "СРОК ДЕЙСТВИЯ КОНТРАКТА"
+  },
+  "SUBJECT OF THE CONTRACT / SHARTNOMA PREDMETI": {
+    "oz": "ШАРТНОМА ПРЕДМЕТИ",
+    "ru": "ПРЕДМЕТ КОНТРАКТА"
+  },
+  "DELIVERY TERMS / YETKAZIB BERISH SHARTLARI": {
+    "oz": "ЙЕТКЗИБ БЕРИШ ШАРТЛАРИ",
+    "ru": "УСЛОВИЯ ДОСТАВКИ"
+  },
+  "PAYMENT TERMS / TO'LOV SHARTLARI": {
+    "oz": "ТУ'ЛОВ ШАРТЛАРИ",
+    "ru": "УСЛОВИЯ ОПЛАТЫ"
+  },
+  "QUALITY AND WARRANTIES / SIFAT VA KAFOLATLAR": {
+    "oz": "СИФАТ ВА КАФОЛАТЛАР",
+    "ru": "КАЧЕСТВО И ГАРАНТИИ"
+  },
+  "RIGHTS AND OBLIGATIONS / HUQUQ VA MAJBURIYATLAR": {
+    "oz": "ҲУҚУҚ ВА МАЖБУРИЙАТЛАР",
+    "ru": "ПРАВА И ОБЯЗАТЕЛЬСТВА"
+  },
+  "LIABILITY / JAVOBGARLIK": {
+    "oz": "ЖАВОБГАРЛИК",
+    "ru": "ОТВЕТСТВЕННОСТЬ"
+  },
+  "FORCE MAJEURE / FORS-MAJOR": {
+    "oz": "ФОРС-МАЖОР",
+    "ru": "ФОРС-МАЖОР"
+  },
+  "DISPUTE RESOLUTION / NIZOLARNI HAL ETISH": {
+    "oz": "НИЗОЛАРНИ ҲАЛ ЭТИШ",
+    "ru": "РАЗРЕШЕНИЕ СПОРОВ"
+  },
+  "VALIDITY AND GENERAL PROVISIONS / SHARTNOMA MUDDATI": {
+    "oz": "ШАРТНОМА МУДДАТИ",
+    "ru": "СРОК ДЕЙСТВИЯ КОНТРАКТА И ОБЩИЕ ПОЛОЖЕНИЯ"
+  },
+  "ASOSIY SHARTNOMA TO'G'RISIDA MA'LUMOT": {
+    "oz": "АСОСИЙ ШАРТНОМА ТУ'Г'РИСИДА МА'ЛУМОТ",
+    "ru": "ИНФОРМАЦИЯ ОБ ОСНОВНОМ КОНТРАКТЕ"
+  },
+  "KIRITILAYOTGAN O'ZGARTIRISHLAR": {
+    "oz": "КИРИТИЛАЁТГАН У'ЗГАРТИРИШЛАР",
+    "ru": "ВНОСИМЫЕ ИЗМЕНЕНИЯ"
+  },
+  "MOLIYAVIY SHARTLAR": {
+    "oz": "МОЛИЯВИЙ ШАРТЛАР",
+    "ru": "ФИНАНСОВЫЕ УСЛОВИЯ"
+  },
+  "KUCHGA KIRISH TARTIBI": {
+    "oz": "КУЧГА КИРИШ ТАРТИБИ",
+    "ru": "ПОРЯДОК ВСТУПЛЕНИЯ В СИЛУ"
+  },
+  "AGENTNING HUQUQ VA MAJBURIYATLARI": {
+    "oz": "АГЕНТНИНГ ҲУҚУҚ ВА МАЖБУРИЙАТЛАРИ",
+    "ru": "ПРАВА И ОБЯЗАТЕЛЬСТВА АГЕНТА"
+  },
+  "PRINCIPALNING HUQUQ VA MAJBURIYATLARI": {
+    "oz": "ПРИНЦИПАЛНИНГ ҲУҚУҚ ВА МАЖБУРИЙАТЛАРИ",
+    "ru": "ПРАВА И ОБЯЗАТЕЛЬСТВА ПРИНЦИПАЛА"
+  },
+  "AGENTLIK HAQI VA TO'LOV TARTIBI": {
+    "oz": "АГЕНТЛИК ҲАҚИ ВА ТУ'ЛОВ ТАРТИБИ",
+    "ru": "РАЗМЕР КОМИССИИ АГЕНТА И ПОРЯДОК ОПЛАТЫ"
+  },
+  "HISOBOT TARTIBI": {
+    "oz": "ҲИСОБОТ ТАРТИБИ",
+    "ru": "ПОРЯДОК ОТЧЕТНОСТИ"
+  },
+  "YUK TOPSHIRISH VA QABUL QILISH TARTIBI": {
+    "oz": "ЮК ТОПШИРИШ ВА ҚАБУЛ ҚИЛИШ ТАРТИБИ",
+    "ru": "ПОРЯДОК ПЕРЕДАЧИ И ПРИЕМКИ ГРУЗА"
+  },
+  "TASHUVCHINING JAVOBGARLIGI": {
+    "oz": "ТОШУВЧИННИК ЖАВОБГАРЛИГИ",
+    "ru": "ОТВЕТСТВЕННОСТЬ ПЕРЕВОЗЧИКА"
+  },
+  "LIZING TO'LOVLARI TARTIBI": {
+    "oz": "ЛИЗИНГ ТУ'ЛОВЛАРИ ТАРТИБИ",
+    "ru": "ПОРЯДОК ЛИЗИНГОВЫХ ПЛАТЕЖЕЙ"
+  },
+  "LIZING OB'EKTINI FOYDALANISH SHARTLARI": {
+    "oz": "ЛИЗИНГ ОБ'ЕКТИНИ ФОЙДАЛАНИШ ШАРТЛАРИ",
+    "ru": "УСЛОВИЯ ИСПОЛЬЗОВАНИЯ ОБЪЕКТА ЛИЗИНГА"
+  },
+  "MULK HUQUQI VA LIZING MUDDATI TUGASHI": {
+    "oz": "МУЛК ҲУҚУҚИ ВА ЛИЗИНГ МУДДАТИ ТУҒАШИ",
+    "ru": "ПРАВО СОБСТВЕННОСТИ И ОКОНЧАНИЕ СРОКА ЛИЗИНГА"
+  },
+  "TOMONLARNING JAVOBGARLIGI VA NIZOLARNI HAL ETISH": {
+    "oz": "ТОМОНЛАРНИНГ ЖАВОБГАРЛИГИ ВА НИЗОЛАРНИ ҲАЛ ЭТИШ",
+    "ru": "ОТВЕТСТВЕННОСТЬ СТОРОН И РАЗРЕШЕНИЕ СПОРОВ"
+  }
+}

@@ -243,7 +243,7 @@ export default function ShartnomalarPage() {
         cp_inn: cp?.inn || '',
         cp_director: cp?.director_name || '',
         amount,
-        amount_text: amount > 0 ? numberToWords(amount, 'uz') + " so'm" : '___',
+        amount_text: amount > 0 ? numberToWords(amount, lang) + " so'm" : '___',
         extra: (() => {
           const ex: Record<string, string> = {
             YETKAZISH_MUDDAT: contractForm.yetkazish_muddat || '20 (yigirma) ish kuni',
@@ -275,7 +275,7 @@ export default function ShartnomalarPage() {
           if (parts.length) ex.OZGARTIRISH = parts.join('. ')
           return ex
         })(),
-      })
+      }, lang)
       content = structureToText(structure, {
         type_name: (CONTRACT_TYPE_NAMES as Record<string, string>)[contractForm.contract_type] || contractForm.contract_type,
         number: contractForm.contract_number,

@@ -273,9 +273,9 @@ export default function OmmaviyPage() {
       cp_inn: cp.inn || '',
       cp_director: cp.director_name || '',
       amount: amt,
-      amount_text: amt > 0 ? numberToWords(amt, 'uz') + " so'm" : '___',
+      amount_text: amt > 0 ? numberToWords(amt, lang) + " so'm" : '___',
       extra: productName ? { TOVAR_NOMI: productName } : {},
-    })
+    }, lang)
 
     let content = structureToText(structure, {
       type_name: (CONTRACT_TYPE_NAMES as Record<string, string>)[contractType] || contractType,
