@@ -709,7 +709,7 @@ export default function ShartnomalarPage() {
                     {/* Counterparty */}
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <span className="text-sm text-gray-300 truncate max-w-[120px] block">
-                        {c.counterparties?.name || '—'}
+                        {c.counterparties?.name || cps.find(cp => cp.id === c.counterparty_id)?.name || '—'}
                       </span>
                     </td>
                     {/* Amount */}
