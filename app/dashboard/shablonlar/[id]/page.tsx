@@ -155,7 +155,7 @@ export default function TemplateDetailPage() {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
         </svg>
-        Shablonlar
+        {T({ uz: 'Shablonlar', oz: 'Шаблонлар', ru: 'Шаблоны' })}
       </Link>
 
       {/* Header card */}
@@ -172,7 +172,7 @@ export default function TemplateDetailPage() {
                 </span>
                 {!template.isDefault && (
                   <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-600/15 text-blue-400 border border-blue-600/30">
-                    Mening shablonlarim
+                    {T({ uz: 'Mening shablonlarim', oz: 'Менинг шаблонларим', ru: 'Мои шаблоны' })}
                   </span>
                 )}
               </div>
@@ -197,7 +197,7 @@ export default function TemplateDetailPage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
               </svg>
-              Nusxa
+              {T({ uz: 'Nusxa', oz: 'Нусха', ru: 'Копировать' })}
             </button>
             <button
               onClick={useAsContract}
@@ -205,7 +205,7 @@ export default function TemplateDetailPage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
               </svg>
-              Shartnoma yarat
+              {T({ uz: 'Shartnoma yarat', oz: 'Шартнома ярат', ru: 'Создать договор' })}
             </button>
           </div>
         </div>
@@ -264,7 +264,7 @@ export default function TemplateDetailPage() {
         <button
           onClick={useAsContract}
           className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-semibold transition">
-          ✍️ Shartnoma yarat
+          ✍️ {T({ uz: 'Shartnoma yarat', oz: 'Шартнома ярат', ru: 'Создать договор' })}
         </button>
       </div>
     </div>

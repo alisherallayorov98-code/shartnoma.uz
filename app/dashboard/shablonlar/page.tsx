@@ -123,8 +123,8 @@ export default function ShablonlarPage() {
       {/* Header row */}
       <div className="flex items-center gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-white">📑 Shablonlar</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{allTemplates.length} ta shablon</p>
+          <h1 className="text-xl font-bold text-white">📑 {T({ uz: 'Shablonlar', oz: 'Шаблонлар', ru: 'Шаблоны' })}</h1>
+          <p className="text-gray-500 text-sm mt-0.5">{allTemplates.length} {T({ uz: 'ta shablon', oz: 'та шаблон', ru: 'шаблонов' })}</p>
         </div>
 
         {!isFree && (
@@ -213,9 +213,9 @@ export default function ShablonlarPage() {
       <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 flex gap-3">
         <span className="text-xl flex-shrink-0">💡</span>
         <div className="text-sm text-blue-400">
-          <p className="font-medium mb-1">Shablonlar qanday ishlaydi?</p>
+          <p className="font-medium mb-1">{T({ uz: "Shablonlar qanday ishlaydi?", oz: "Шаблонлар қандай ишлайди?", ru: "Как работают шаблоны?" })}</p>
           <p className="text-blue-400 text-xs leading-relaxed">
-            Standart shablonlar O'zbekiston Respublikasi qonunchiligiga muvofiq tayyorlangan. "Tahrirlash" orqali ularni nusxalab o'zingizga moslashtirishingiz mumkin. "+ Shablon qo'shish" bilan yangi shablon yarating.
+            {T({ uz: "Standart shablonlar O'zbekiston Respublikasi qonunchiligiga muvofiq tayyorlangan. \"Tahrirlash\" orqali ularni nusxalab o'zingizga moslashtirishingiz mumkin.", oz: "Стандарт шаблонлар Ўзбекистон Республикаси қонунчилигига мувофиқ тайёрланган. \"Таҳрирлаш\" орқали уларни нусхалаб ўзингизга мослаштиришингиз мумкин.", ru: "Стандартные шаблоны подготовлены в соответствии с законодательством Республики Узбекистан. Через «Редактировать» вы можете скопировать и настроить их под себя." })}
           </p>
         </div>
       </div>
