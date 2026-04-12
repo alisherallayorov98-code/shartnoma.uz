@@ -119,6 +119,79 @@ export default function YangiShartnoma() {
   const [cityModalOpen, setCityModalOpen] = useState(false)
   const [cityInput, setCityInput] = useState('')
 
+  // ── Product name prefs ────────────────────────────────────────────────────
+  const [productTemplates, setProductTemplates] = useState<string[]>([])
+  const [productTplOpen, setProductTplOpen] = useState(false)
+  const [productAutoFilled, setProductAutoFilled] = useState(false)
+  const [newTplInput, setNewTplInput] = useState('')
+  const [showAddTpl, setShowAddTpl] = useState(false)
+  const productTplRef = useRef<HTMLDivElement>(null)
+
+  function productPrefsKey(orgId: string) { return `product_prefs_${orgId || 'default'}` }
+  function loadProductPrefs(orgId: string) {
+    try {
+      const raw = localStorage.getItem(productPrefsKey(orgId))
+      if (!raw) return { default_name: '', templates: [] as string[] }
+      return JSON.parse(raw) as { default_name: string; templates: string[] }
+    } catch { return { default_name: '', templates: [] as string[] } }
+  }
+  function saveProductPrefs(orgId: string, prefs: { default_name: string; templates: string[] }) {
+    localStorage.setItem(productPrefsKey(orgId), JSON.stringify(prefs))
+  }
+
+  useEffect(() => {
+    if (!activeOrg) return
+    const prefs = loadProductPrefs(activeOrg.id)
+    setProductTemplates(prefs.templates || [])
+    if (prefs.default_name) {
+      setForm(f => ({ ...f, product_name: f.product_name || prefs.default_name }))
+      if (!form.product_name) setProductAutoFilled(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOrg?.id])
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (productTplRef.current && !productTplRef.current.contains(e.target as Node)) {
+        setProductTplOpen(false); setShowAddTpl(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function saveProductAsDefault() {
+    if (!activeOrg) return
+    const prefs = loadProductPrefs(activeOrg.id)
+    prefs.default_name = form.product_name
+    saveProductPrefs(activeOrg.id, prefs)
+    toast('Asosiy mahsulot saqlandi', 'success')
+    setProductAutoFilled(false); setProductTplOpen(false)
+  }
+  function addProductTemplate() {
+    if (!activeOrg) return
+    const val = newTplInput.trim()
+    if (!val) return
+    const prefs = loadProductPrefs(activeOrg.id)
+    if (!prefs.templates.includes(val)) {
+      prefs.templates = [...prefs.templates, val]
+      saveProductPrefs(activeOrg.id, prefs)
+      setProductTemplates(prefs.templates)
+    }
+    setNewTplInput(''); setShowAddTpl(false)
+  }
+  function removeProductTemplate(tpl: string) {
+    if (!activeOrg) return
+    const prefs = loadProductPrefs(activeOrg.id)
+    prefs.templates = prefs.templates.filter(t => t !== tpl)
+    saveProductPrefs(activeOrg.id, prefs)
+    setProductTemplates(prefs.templates)
+  }
+  function selectProductTemplate(tpl: string) {
+    setForm(f => ({ ...f, product_name: tpl }))
+    setProductAutoFilled(false); setProductTplOpen(false)
+  }
+
   // Inline edits for org and cp panels
   const [orgEdits, setOrgEdits] = useState<Record<string, string>>({})
   const [cpEdits, setCpEdits] = useState<Record<string, string>>({})
@@ -853,10 +926,56 @@ export default function YangiShartnoma() {
                     <label className="block text-xs text-amber-400 mb-1.5 font-semibold">
                       {T(t.yangiPage.productLabel)} <span className="text-red-400">*</span>
                     </label>
-                    <input value={form.product_name} onChange={e => setForm(f => ({ ...f, product_name: e.target.value }))}
-                      className={`${inp} ${!form.product_name ? 'border-amber-600/50 focus:border-amber-500' : ''}`}
-                      placeholder={T(t.yangiPage.productPlh)} />
-                    {!form.product_name && (
+                    <div className="flex gap-1.5 relative" ref={productTplRef}>
+                      <input value={form.product_name} onChange={e => { setForm(f => ({ ...f, product_name: e.target.value })); setProductAutoFilled(false) }}
+                        className={`${inp} ${!form.product_name ? 'border-amber-600/50 focus:border-amber-500' : ''}`}
+                        placeholder={T(t.yangiPage.productPlh)} />
+                      <button type="button" onClick={() => setProductTplOpen(o => !o)} title="Tezkor shablonlar"
+                        className="flex-shrink-0 w-10 bg-[#0F172A] border border-[#1E293B] rounded-lg flex items-center justify-center text-gray-400 hover:text-amber-400 hover:border-amber-600/50 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </button>
+                      {productTplOpen && (
+                        <div className="absolute z-50 top-full right-0 mt-1 w-72 bg-[#111827] border border-[#1E293B] rounded-xl shadow-2xl overflow-hidden">
+                          <div className="px-3 py-2 border-b border-[#1E293B]">
+                            <span className="text-xs font-medium text-gray-300">Tezkor shablonlar</span>
+                          </div>
+                          {productTemplates.length === 0 && (
+                            <div className="px-3 py-3 text-xs text-gray-500">Hali shablon yo'q. Quyida qo'shing.</div>
+                          )}
+                          {productTemplates.map(tpl => (
+                            <div key={tpl} className="flex items-center gap-1 px-2 py-1.5 hover:bg-[#1F2937] group">
+                              <button type="button" onClick={() => selectProductTemplate(tpl)} className="flex-1 text-left text-sm text-gray-200 truncate">⚡ {tpl}</button>
+                              <button type="button" onClick={() => removeProductTemplate(tpl)} className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 text-xs px-1 transition" title="O'chirish">✕</button>
+                            </div>
+                          ))}
+                          <div className="px-2 py-2 border-t border-[#1E293B]">
+                            {showAddTpl ? (
+                              <div className="flex gap-1">
+                                <input autoFocus value={newTplInput} onChange={e => setNewTplInput(e.target.value)}
+                                  onKeyDown={e => { if (e.key === 'Enter') addProductTemplate(); if (e.key === 'Escape') setShowAddTpl(false) }}
+                                  placeholder="Mahsulot nomi..." className="flex-1 bg-[#0F172A] border border-[#1E293B] text-gray-200 text-xs rounded px-2 py-1 focus:outline-none focus:border-blue-600" />
+                                <button type="button" onClick={addProductTemplate} className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 rounded transition">+</button>
+                              </div>
+                            ) : (
+                              <button type="button" onClick={() => setShowAddTpl(true)} className="w-full text-left text-xs text-blue-400 hover:text-blue-300 transition">+ Yangi shablon qo'shish</button>
+                            )}
+                          </div>
+                          {form.product_name && (
+                            <div className="px-2 py-2 border-t border-[#1E293B]">
+                              <button type="button" onClick={saveProductAsDefault} className="w-full text-left text-xs text-amber-400 hover:text-amber-300 transition">★ "{form.product_name}" — asosiy sifatida saqlash</button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {productAutoFilled ? (
+                      <p className="text-[11px] text-blue-400/80 mt-1 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Tashkilot asosiy mahsulotidan avtomatik to'ldirildi. Kerak bo'lsa tahrirlang.
+                      </p>
+                    ) : !form.product_name && (
                       <p className="text-[11px] text-amber-600 mt-1">{T(t.yangiPage.productHint)}</p>
                     )}
                   </div>
