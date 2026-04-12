@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Org, BankAccount, Counterparty, Contract, Subscription, Employee } from '@/lib/types'
@@ -232,7 +232,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           ? fetch('/api/admin', {
               method: 'HEAD',
               headers: { Authorization: `Bearer ${session.access_token}` },
-              signal: AbortSignal.timeout(4000),
+              signal: AbortSignal.timeout(2000),
             }).then(r => { sessionStorage.setItem(cacheKey, r.ok ? '1' : '0'); return r }).catch(() => ({ ok: false }))
           : Promise.resolve({ ok: adminOk })
 
@@ -261,7 +261,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       loadContracts(activeOrg.id),
     ])
     // Kam kerakli — kechiktiriladi (50ms dan keyin)
-    setTimeout(() => {
+    const deferTimer = setTimeout(() => {
       loadBankAccounts(activeOrg.id)
       loadEmployees(activeOrg.id)
       loadCps()
@@ -299,6 +299,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       .subscribe()
 
     return () => {
+      clearTimeout(deferTimer)
       supabase.removeChannel(contractsChannel)
       supabase.removeChannel(cpsChannel)
       supabase.removeChannel(orgsChannel)
@@ -364,7 +365,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (!activeOrg) return
     const offset = contractsLengthRef.current
     const { data, error } = await supabase.from('contracts')
-      .select('*, organizations(*), counterparties(*)')
+      .select('id, title, status, created_at, updated_at, organization_id, counterparty_id, contract_number, total_amount, currency, signed_at, expires_at, content, contract_date, contract_type, amount')
       .eq('organization_id', activeOrg.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + 49)
@@ -376,21 +377,26 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (activeOrg) await loadSubscription(activeOrg.id)
   }, [loadSubscription, activeOrg?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const ctxValue = useMemo(() => ({
+    userId, userEmail, isAdmin,
+    orgs, activeOrg, bankAccounts, cps, employees, contracts, contractsTotal, subscription, demoAccess, profile,
+    sidebarOpen, setSidebarOpen, orgDropdown, setOrgDropdown,
+    initialLoading,
+    isFree, isDemoActive, isSubValid, subDaysLeft,
+    switchOrg,
+    reloadOrgs, reloadCps, reloadEmployees, reloadContracts, loadMoreContracts, reloadSubscription,
+    canCreateContract, hasAiAccess, getQuotaInfo,
+    openUpgradeModal: () => setUpgradeModalOpen(true),
+    closeUpgradeModal: () => setUpgradeModalOpen(false),
+    upgradeModalOpen,
+    logout,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [userId, userEmail, isAdmin, orgs, activeOrg, bankAccounts, cps, employees, contracts,
+      contractsTotal, subscription, demoAccess, profile, sidebarOpen, orgDropdown,
+      initialLoading, isFree, isDemoActive, isSubValid, subDaysLeft, upgradeModalOpen])
+
   return (
-    <DashboardContext.Provider value={{
-      userId, userEmail, isAdmin,
-      orgs, activeOrg, bankAccounts, cps, employees, contracts, contractsTotal, subscription, demoAccess, profile,
-      sidebarOpen, setSidebarOpen, orgDropdown, setOrgDropdown,
-      initialLoading,
-      isFree, isDemoActive, isSubValid, subDaysLeft,
-      switchOrg,
-      reloadOrgs, reloadCps, reloadEmployees, reloadContracts, loadMoreContracts, reloadSubscription,
-      canCreateContract, hasAiAccess, getQuotaInfo,
-      openUpgradeModal: () => setUpgradeModalOpen(true),
-      closeUpgradeModal: () => setUpgradeModalOpen(false),
-      upgradeModalOpen,
-      logout,
-    }}>
+    <DashboardContext.Provider value={ctxValue}>
       {children}
     </DashboardContext.Provider>
   )
