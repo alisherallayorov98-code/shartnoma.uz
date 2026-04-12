@@ -122,7 +122,7 @@ export default function ViewContractModal({
 
           {/* Contract text */}
           {viewContract.content && (() => {
-            const filled = fillPlaceholders(viewContract.content, viewContract)
+            const filled = fillPlaceholders(viewContract.content, viewContract).replace(/\*\*([^*]+)\*\*/g, '$1')
             const rekvizitIdx = filled.search(/\n[ \t]*(\d+\.\s*)?(TOMONLARNING\s+(REKVIZITLARI|MA['']LUMOTLARI|IMZOLARI)|TOMONLAR\s+(IMZOSI|REKVIZIT))/i)
             const displayText = rekvizitIdx !== -1 ? filled.slice(0, rekvizitIdx) : filled
             return (

@@ -33,12 +33,19 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
 
   function richRuns(text: string, baseBold = false) {
     const base = { font: F, size: DOCX_SIZE.section, color: COLORS.docx.black, italics: false, underline: { type: UnderlineType.NONE } }
-    const pat = /(\d{1,3}(?:\s\d{3})+(?:\s*\([^)]+\))?|\d+[,.]?\d*\s*%|\d+\s*\([^)]+\))/g
+    // Combined pattern: **bold** markers (product name) + numbers/amounts
+    const pat = /(\*\*([^*]+)\*\*|\d{1,3}(?:\s\d{3})+(?:\s*\([^)]+\))?|\d+[,.]?\d*\s*%|\d+\s*\([^)]+\))/g
     const runs = []
     let last = 0, m: RegExpExecArray | null
     while ((m = pat.exec(text)) !== null) {
       if (m.index > last) runs.push(new TextRun({ ...base, text: text.slice(last, m.index), bold: baseBold }))
-      runs.push(new TextRun({ ...base, text: m[0], bold: true, color: 'CC0000' }))
+      if (m[0].startsWith('**')) {
+        // **bold** — mahsulot nomi, qora qalin
+        runs.push(new TextRun({ ...base, text: m[2], bold: true, color: COLORS.docx.black }))
+      } else {
+        // numbers — qizil qalin
+        runs.push(new TextRun({ ...base, text: m[0], bold: true, color: 'CC0000' }))
+      }
       last = m.index + m[0].length
     }
     if (last < text.length) runs.push(new TextRun({ ...base, text: text.slice(last), bold: baseBold }))

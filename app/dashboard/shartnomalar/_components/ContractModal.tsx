@@ -244,6 +244,84 @@ export default function ContractModal({
   const [cpSearch, setCpSearch] = useState('')
   const [cpDropOpen, setCpDropOpen] = useState(false)
   const [useTemplate, setUseTemplate] = useState(true)
+
+  // ── Product name prefs (localStorage) ────────────────────────────────────
+  const [productTemplates, setProductTemplates] = useState<string[]>([])
+  const [productTplOpen, setProductTplOpen] = useState(false)
+  const [productAutoFilled, setProductAutoFilled] = useState(false)
+  const [newTplInput, setNewTplInput] = useState('')
+  const [showAddTpl, setShowAddTpl] = useState(false)
+  const productTplRef = useRef<HTMLDivElement>(null)
+
+  function productPrefsKey() {
+    const orgId = form.organization_id || 'default'
+    return `product_prefs_${orgId}`
+  }
+  function loadProductPrefs() {
+    try {
+      const raw = localStorage.getItem(productPrefsKey())
+      if (!raw) return { default_name: '', templates: [] }
+      return JSON.parse(raw) as { default_name: string; templates: string[] }
+    } catch { return { default_name: '', templates: [] } }
+  }
+  function saveProductPrefs(prefs: { default_name: string; templates: string[] }) {
+    localStorage.setItem(productPrefsKey(), JSON.stringify(prefs))
+  }
+
+  // Load prefs and auto-fill on mount / org change
+  useEffect(() => {
+    const prefs = loadProductPrefs()
+    setProductTemplates(prefs.templates || [])
+    if (!isEdit && !form.product_name && prefs.default_name) {
+      setForm(f => ({ ...f, product_name: prefs.default_name }))
+      setProductAutoFilled(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.organization_id])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (productTplRef.current && !productTplRef.current.contains(e.target as Node)) {
+        setProductTplOpen(false)
+        setShowAddTpl(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function saveAsDefault() {
+    const prefs = loadProductPrefs()
+    prefs.default_name = form.product_name
+    saveProductPrefs(prefs)
+    toast('Asosiy mahsulot saqlandi', 'success')
+    setProductAutoFilled(false)
+    setProductTplOpen(false)
+  }
+  function addTemplate() {
+    const val = newTplInput.trim()
+    if (!val) return
+    const prefs = loadProductPrefs()
+    if (!prefs.templates.includes(val)) {
+      prefs.templates = [...prefs.templates, val]
+      saveProductPrefs(prefs)
+      setProductTemplates(prefs.templates)
+    }
+    setNewTplInput('')
+    setShowAddTpl(false)
+  }
+  function removeTemplate(tpl: string) {
+    const prefs = loadProductPrefs()
+    prefs.templates = prefs.templates.filter(t => t !== tpl)
+    saveProductPrefs(prefs)
+    setProductTemplates(prefs.templates)
+  }
+  function selectTemplate(tpl: string) {
+    setForm(f => ({ ...f, product_name: tpl }))
+    setProductAutoFilled(false)
+    setProductTplOpen(false)
+  }
   const [selectedTemplate, setSelectedTemplate] = useState<string>('auto')
   const [quickAddCp, setQuickAddCp] = useState(false)
   const [newCp, setNewCp] = useState({ name: '', inn: '', director_name: '', address: '', phone: '', bank_name: '', bank_account: '', mfo: '', qqsreg: '', oked: '' })
@@ -975,12 +1053,94 @@ export default function ContractModal({
                 {(form.contract_type === 'oldi_sotdi' || form.contract_type === 'daval') && (
                   <div>
                     <label className={lbl}>{T(t.modal.productName)}</label>
-                    <input
-                      value={form.product_name}
-                      onChange={e => setForm(f => ({ ...f, product_name: e.target.value }))}
-                      className={inp}
-                      placeholder="Tovar yoki xizmat nomi"
-                    />
+                    <div className="flex gap-1.5 relative" ref={productTplRef}>
+                      <input
+                        value={form.product_name}
+                        onChange={e => { setForm(f => ({ ...f, product_name: e.target.value })); setProductAutoFilled(false) }}
+                        className={inp}
+                        placeholder="Tovar yoki xizmat nomi"
+                      />
+                      {/* Templates button */}
+                      <button
+                        type="button"
+                        onClick={() => setProductTplOpen(o => !o)}
+                        title="Tezkor shablonlar"
+                        className="flex-shrink-0 w-9 bg-[#0F172A] border border-[#1E293B] rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-400 hover:border-blue-600/50 transition"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </button>
+                      {/* Dropdown */}
+                      {productTplOpen && (
+                        <div className="absolute z-50 top-full right-0 mt-1 w-72 bg-[#111827] border border-[#1E293B] rounded-xl shadow-2xl overflow-hidden">
+                          <div className="px-3 py-2 border-b border-[#1E293B] flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-300">Tezkor shablonlar</span>
+                          </div>
+                          {productTemplates.length === 0 && (
+                            <div className="px-3 py-3 text-xs text-gray-500">Hali shablon yo'q. Quyida qo'shing.</div>
+                          )}
+                          {productTemplates.map(tpl => (
+                            <div key={tpl} className="flex items-center gap-1 px-2 py-1.5 hover:bg-[#1F2937] group">
+                              <button
+                                type="button"
+                                onClick={() => selectTemplate(tpl)}
+                                className="flex-1 text-left text-sm text-gray-200 truncate"
+                              >
+                                ⚡ {tpl}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeTemplate(tpl)}
+                                className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 text-xs px-1 transition"
+                                title="O'chirish"
+                              >✕</button>
+                            </div>
+                          ))}
+                          {/* Add new template */}
+                          <div className="px-2 py-2 border-t border-[#1E293B]">
+                            {showAddTpl ? (
+                              <div className="flex gap-1">
+                                <input
+                                  autoFocus
+                                  value={newTplInput}
+                                  onChange={e => setNewTplInput(e.target.value)}
+                                  onKeyDown={e => { if (e.key === 'Enter') addTemplate(); if (e.key === 'Escape') setShowAddTpl(false) }}
+                                  placeholder="Mahsulot nomi..."
+                                  className="flex-1 bg-[#0F172A] border border-[#1E293B] text-gray-200 text-xs rounded px-2 py-1 focus:outline-none focus:border-blue-600"
+                                />
+                                <button type="button" onClick={addTemplate} className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 rounded transition">+</button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setShowAddTpl(true)}
+                                className="w-full text-left text-xs text-blue-400 hover:text-blue-300 transition"
+                              >+ Yangi shablon qo'shish</button>
+                            )}
+                          </div>
+                          {/* Save as default */}
+                          {form.product_name && (
+                            <div className="px-2 py-2 border-t border-[#1E293B]">
+                              <button
+                                type="button"
+                                onClick={saveAsDefault}
+                                className="w-full text-left text-xs text-amber-400 hover:text-amber-300 transition"
+                              >★ "{form.product_name}" — asosiy sifatida saqlash</button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {/* Auto-fill hint */}
+                    {productAutoFilled && (
+                      <p className="mt-1 text-[11px] text-blue-400/80 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Tashkilot asosiy mahsulotidan avtomatik to'ldirildi. Kerak bo'lsa tahrirlang.
+                      </p>
+                    )}
                   </div>
                 )}
 

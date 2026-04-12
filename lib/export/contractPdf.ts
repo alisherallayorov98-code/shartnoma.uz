@@ -80,7 +80,7 @@ export async function generateContractPDF(c: Contract): Promise<void> {
     doc.setTextColor(...COLORS.pdf.darkGray)
   }
 
-  const filledContent = fillPlaceholders(c.content || '', c)
+  const filledContent = fillPlaceholders(c.content || '', c).replace(/\*\*([^*]+)\*\*/g, '$1')
   const rekvizitIdx = filledContent.search(/\n[ \t]*(\d+\.\s*)?(TOMONLARNING REKVIZITLARI|TOMONLARNING IMZOLARI|PARTIES' DETAILS)/i)
   const contentForPdf = rekvizitIdx !== -1 ? filledContent.slice(0, rekvizitIdx) : filledContent
   const rawLines = contentForPdf.split('\n')

@@ -110,7 +110,7 @@ export function fillPlaceholders(content: string, c: PlaceholderData): string {
     '{{TOLOV_USULI}}':        c.tolov_usuli || '___',
     '{{VALYUTA}}':            c.valyuta || 'USD',
     // Oldi-sotdi
-    '{{TOVAR_NOMI}}':         c.product_name || '___',
+    '{{TOVAR_NOMI}}':         c.product_name ? `**${c.product_name}**` : '___',
     // Qo'shimcha
     '{{ASOSIY_RAQAM}}':       c.asosiy_raqam || '___',
     '{{ASOSIY_SANA}}':        c.asosiy_sana || '___',
