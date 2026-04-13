@@ -17,9 +17,7 @@ async function verifyAdmin(req: NextRequest): Promise<boolean> {
   const { data: { user } } = await db.auth.getUser(token)
   if (!user) return false
   const { data } = await db.from('admins').select('user_id').eq('user_id', user.id).maybeSingle()
-  if (data) return true
-  const fallbackEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean)
-  return fallbackEmails.includes(user.email ?? '')
+  return !!data
 }
 
 export async function POST(req: NextRequest) {

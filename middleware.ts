@@ -45,5 +45,9 @@ export const config = {
     '/api/jshshir/:path*',
     '/api/ai/:path*',
     '/api/company-lookup/:path*',
+    '/api/chat/:path*',
+    '/api/search/:path*',
+    '/api/extract-text/:path*',
+    '/api/notify/:path*',
   ],
 }
