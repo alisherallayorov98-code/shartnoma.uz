@@ -2,6 +2,20 @@
 
 import { useState, useRef, useEffect } from 'react'
 
+// XSS-safe bold markdown renderer — NO dangerouslySetInnerHTML
+function SafeMarkdown({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/)
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.startsWith('**') && p.endsWith('**')
+          ? <strong key={i}>{p.slice(2, -2)}</strong>
+          : <span key={i}>{p}</span>
+      )}
+    </>
+  )
+}
+
 interface Message {
   role: 'user' | 'assistant'
   content: string
@@ -175,7 +189,7 @@ export default function AiTab({ token, darkMode }: Props) {
               }`} style={msg.role === 'user'
                 ? { background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }
                 : { background: darkMode ? 'rgba(255,255,255,0.04)' : '#f8fafc', border: `1px solid ${darkMode ? 'rgba(255,255,255,0.07)' : '#e2e8f0'}` }}>
-                <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}/>
+                <div className="whitespace-pre-wrap"><SafeMarkdown text={msg.content}/></div>
               </div>
               {msg.role === 'user' && (
                 <div className="w-7 h-7 rounded-lg shrink-0 mt-0.5 flex items-center justify-center text-sm"
@@ -192,8 +206,9 @@ export default function AiTab({ token, darkMode }: Props) {
               <div className={`max-w-[80%] rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed`}
                 style={{ background: darkMode ? 'rgba(255,255,255,0.04)' : '#f8fafc', border: `1px solid ${darkMode ? 'rgba(255,255,255,0.07)' : '#e2e8f0'}` }}>
                 {currentStream ? (
-                  <div className={`whitespace-pre-wrap ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}
-                    dangerouslySetInnerHTML={{ __html: currentStream.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}/>
+                  <div className={`whitespace-pre-wrap ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                    <SafeMarkdown text={currentStream}/>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-1.5">
                     {[0, 1, 2].map(i => (

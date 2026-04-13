@@ -3,6 +3,16 @@ import { NextRequest, NextResponse } from 'next/server'
 const SOLIQ_API_KEY = process.env.SOLIQ_API_KEY || ''
 const SOLIQ_API_URL = process.env.SOLIQ_API_URL || ''
 
+// Per-user rate limit: max 20 req/min
+const _stirRl = new Map<string, { n: number; reset: number }>()
+function checkStirRate(userId: string): boolean {
+  const now = Date.now()
+  const e = _stirRl.get(userId)
+  if (!e || now > e.reset) { _stirRl.set(userId, { n: 1, reset: now + 60_000 }); return true }
+  if (e.n >= 20) return false
+  e.n++; return true
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function normalizeCompany(raw: Record<string, any>) {
   const co   = (raw.company && typeof raw.company === 'object' ? raw.company : {}) as Record<string, any>
@@ -106,6 +116,13 @@ function normalizeCompany(raw: Record<string, any>) {
 }
 
 export async function GET(req: NextRequest) {
+  // Auth is enforced by middleware (cookie-based session)
+  // Rate limit by IP (no userId available without token)
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  if (!checkStirRate(ip)) {
+    return NextResponse.json({ error: "Juda ko'p so'rov, 1 daqiqa kuting" }, { status: 429 })
+  }
+
   const stir = req.nextUrl.searchParams.get('stir')?.trim()
 
   if (!stir) {
