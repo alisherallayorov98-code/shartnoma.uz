@@ -298,12 +298,22 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }, () => { loadEmployees(activeOrg.id) })
       .subscribe()
 
+    // Subscription changes (e.g. payment webhook activates plan)
+    const subsChannel = supabase
+      .channel(`subscriptions:${activeOrg.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'subscriptions',
+        filter: `organization_id=eq.${activeOrg.id}`,
+      }, () => { loadSubscription(activeOrg.id) })
+      .subscribe()
+
     return () => {
       clearTimeout(deferTimer)
       supabase.removeChannel(contractsChannel)
       supabase.removeChannel(cpsChannel)
       supabase.removeChannel(orgsChannel)
       supabase.removeChannel(employeesChannel)
+      supabase.removeChannel(subsChannel)
     }
   }, [activeOrg?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -320,9 +330,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }
 
   function canCreateContract(): boolean {
-    if (!subscription) return (contracts.filter(c => c.organization_id === activeOrg?.id).length < FREE_LIMIT)
+    if (!activeOrg) return false
+    if (!subscription) return contracts.filter(c => c.organization_id === activeOrg.id).length < FREE_LIMIT
     if (subscription.plan === 'free') return subscription.contracts_used < FREE_LIMIT
-    return true
+    return subscription.is_active
   }
 
   function hasAiAccess(): boolean {

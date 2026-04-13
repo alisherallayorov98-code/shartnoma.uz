@@ -68,26 +68,30 @@ export async function POST(req: NextRequest) {
       return ok(id, { transaction: params.id, perform_time: Date.now(), state: 2 })
     }
 
-    const periodEnd = new Date()
-    periodEnd.setMonth(periodEnd.getMonth() + (planInfo?.months ?? 1))
+    const months = planInfo?.months ?? 1
+    const now = new Date()
+
+    // Safe month addition: avoids Jan 31 + 1 month → Feb 31 rollover bug
+    function addMonths(d: Date, m: number): Date {
+      return new Date(d.getFullYear(), d.getMonth() + m, d.getDate())
+    }
 
     const { data: existing } = await db.from('subscriptions')
       .select('id, period_end').eq('organization_id', orgId).single()
 
     if (existing) {
-      const base = new Date(existing.period_end) > new Date() ? new Date(existing.period_end) : new Date()
-      base.setMonth(base.getMonth() + (planInfo?.months ?? 1))
+      const base = new Date(existing.period_end) > now ? new Date(existing.period_end) : now
       await db.from('subscriptions').update({
         plan: planInfo?.plan ?? 'standard',
-        period_end: base.toISOString(),
+        period_end: addMonths(base, months).toISOString(),
         is_active: true,
-        contracts_used: 0,
+        // contracts_used is NOT reset — only resets at billing period boundary
       }).eq('id', existing.id)
     } else {
       await db.from('subscriptions').insert({
         organization_id: orgId,
         plan: planInfo?.plan ?? 'standard',
-        period_end: periodEnd.toISOString(),
+        period_end: addMonths(now, months).toISOString(),
         is_active: true,
         contracts_used: 0,
       })

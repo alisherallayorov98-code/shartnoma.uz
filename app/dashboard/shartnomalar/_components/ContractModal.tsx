@@ -394,9 +394,10 @@ export default function ContractModal({
   function updateSpecItem(i: number, key: keyof SpecItem, val: string | number) {
     setForm(f => {
       let items = [...f.spec_items]
-      // "all" — apply QQS rate to every row
+      // "all" — apply current row's QQS rate to every row
       if (key === 'qqs_foiz' && val === 'all') {
-        items = items.map(it => calcItem({ ...it, qqs_foiz: items[i].qqs_foiz }))
+        const currentRate = items[i].qqs_foiz  // capture BEFORE any mutation
+        items = items.map(it => calcItem({ ...it, qqs_foiz: currentRate }))
         const total = items.reduce((s, it) => s + it.summa, 0)
         return { ...f, spec_items: items, amount: String(total) }
       }

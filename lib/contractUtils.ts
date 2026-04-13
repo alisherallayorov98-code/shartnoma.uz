@@ -43,7 +43,7 @@ export function fillPlaceholders(content: string, c: PlaceholderData): string {
   const amount = Number(c.amount || 0)
   const amountText = amount > 0 ? amount.toLocaleString('uz-UZ') + " so'm" : '___'
   const oylik = Number(c.oylik_tolov || 0)
-  const oylikText = oylik > 0 ? oylik.toLocaleString('uz-UZ') + " so'm" : ''
+  const oylikText = oylik > 0 ? oylik.toLocaleString('uz-UZ') + " so'm" : '___'
 
   const map: Record<string, string> = {
     // Core

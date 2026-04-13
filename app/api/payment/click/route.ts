@@ -77,8 +77,12 @@ export async function POST(req: NextRequest) {
     if (existingPayment) {
       return NextResponse.json({ click_trans_id, merchant_trans_id, merchant_confirm_id: click_trans_id, error: 0, error_note: 'Already processed' })
     }
-    const periodEnd = new Date()
-    periodEnd.setMonth(periodEnd.getMonth() + planInfo.months)
+    const now = new Date()
+
+    // Safe month addition: avoids Jan 31 + 1 month → Feb 31 rollover bug
+    function addMonths(d: Date, m: number): Date {
+      return new Date(d.getFullYear(), d.getMonth() + m, d.getDate())
+    }
 
     // Upsert subscription
     const { data: existing } = await db.from('subscriptions')
@@ -88,19 +92,18 @@ export async function POST(req: NextRequest) {
 
     if (existing) {
       const currentEnd = new Date(existing.period_end)
-      const base = currentEnd > new Date() ? currentEnd : new Date()
-      base.setMonth(base.getMonth() + planInfo.months)
+      const base = currentEnd > now ? currentEnd : now
       await db.from('subscriptions').update({
         plan: planInfo.plan,
-        period_end: base.toISOString(),
+        period_end: addMonths(base, planInfo.months).toISOString(),
         is_active: true,
-        contracts_used: 0,
+        // contracts_used is NOT reset — only resets at billing period boundary
       }).eq('id', existing.id)
     } else {
       await db.from('subscriptions').insert({
         organization_id: orgId,
         plan: planInfo.plan,
-        period_end: periodEnd.toISOString(),
+        period_end: addMonths(now, planInfo.months).toISOString(),
         is_active: true,
         contracts_used: 0,
       })
