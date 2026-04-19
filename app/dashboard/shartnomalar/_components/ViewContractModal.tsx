@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { type Lang } from '@/lib/i18n'
 import { useT } from '@/lib/useT'
 import type { Contract } from '@/lib/types'
@@ -39,6 +40,20 @@ export default function ViewContractModal({
   onToggleSigned, isPremium,
 }: ViewContractModalProps) {
   const T = useT()
+  const [didoxStep, setDidoxStep] = useState<null | 'ready'>(null)
+
+  async function sendToDidox() {
+    // 1. PDF yuklab olish
+    await onGeneratePDF(viewContract)
+    // 2. Kontragent STIR clipboard'ga
+    const cpInn = viewContract.counterparties?.inn || ''
+    if (cpInn) {
+      try { await navigator.clipboard.writeText(cpInn) } catch { /* */ }
+    }
+    // 3. Didox oynasini ochish
+    window.open('https://didox.uz/document_form/000', '_blank', 'noopener')
+    setDidoxStep('ready')
+  }
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -62,6 +77,14 @@ export default function ViewContractModal({
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
               Telegram
             </button>
+            <button onClick={sendToDidox}
+              title="PDF yuklaydi + kontragent STIR nusxalanadi + Didox oynasi ochiladi"
+              className="px-3 py-1.5 text-xs bg-violet-600/20 hover:bg-violet-600/40 border border-violet-600/30 text-violet-300 rounded-lg transition font-semibold flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+              </svg>
+              Didox
+            </button>
             <button onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 rounded-lg transition">
               🖨️ Print
             </button>
@@ -79,6 +102,26 @@ export default function ViewContractModal({
           </div>
         </div>
 
+        {/* Didox instruction banner */}
+        {didoxStep === 'ready' && (
+          <div className="px-6 py-3 bg-violet-900/20 border-b border-violet-700/30 flex items-start gap-3">
+            <span className="text-lg flex-shrink-0">✅</span>
+            <div className="flex-1 text-xs text-violet-300 space-y-1">
+              <p className="font-semibold text-violet-200">Didox oynasi ochildi — 3 qadam qoldi:</p>
+              <p>1. Didox'da <strong>СТИР/ЖШШИР</strong> maydoniga yapishtirib qo'ying
+                {viewContract.counterparties?.inn && (
+                  <span className="ml-2 font-mono bg-violet-900/40 border border-violet-700/40 px-1.5 py-0.5 rounded text-violet-200">
+                    {viewContract.counterparties.inn}
+                  </span>
+                )}
+                {' '}— Enter bosing, Didox qolganini to'ldiradi</p>
+              <p>2. <strong>Файлни шу ерга кўчиринг</strong> maydoniga yuklab olingan PDF'ni birikting</p>
+              <p>3. E-imzo bilan imzolang</p>
+            </div>
+            <button onClick={() => setDidoxStep(null)} className="text-violet-500 hover:text-violet-300 text-lg leading-none flex-shrink-0">×</button>
+          </div>
+        )}
+
         {/* Content */}
         <div className="overflow-y-auto flex-1 p-6">
           {/* Info cards */}
@@ -86,12 +129,12 @@ export default function ViewContractModal({
             <div className="bg-[#0F172A] rounded-xl p-3 border border-[#1E293B]">
               <p className="text-xs text-gray-500 mb-1">Tashkilot</p>
               <p className="text-sm text-white font-medium">{viewContract.organizations?.name || '—'}</p>
-              <p className="text-xs text-gray-500">INN: {viewContract.organizations?.inn || '—'}</p>
+              <p className="text-xs text-gray-500">STIR: {viewContract.organizations?.inn || '—'}</p>
             </div>
             <div className="bg-[#0F172A] rounded-xl p-3 border border-[#1E293B]">
               <p className="text-xs text-gray-500 mb-1">Kontragent</p>
               <p className="text-sm text-white font-medium">{viewContract.counterparties?.name || '—'}</p>
-              <p className="text-xs text-gray-500">INN: {viewContract.counterparties?.inn || '—'}</p>
+              <p className="text-xs text-gray-500">STIR: {viewContract.counterparties?.inn || '—'}</p>
             </div>
             <div className="bg-[#0F172A] rounded-xl p-3 border border-[#1E293B]">
               <p className="text-xs text-gray-500 mb-1">Summa</p>
