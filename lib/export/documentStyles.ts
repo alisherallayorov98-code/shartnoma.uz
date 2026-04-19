@@ -36,8 +36,8 @@ export const PDF_SIZE = {
 export const DOCX_MARGINS = {
   top:    1134, // 2 sm
   bottom: 1134, // 2 sm
-  left:    851, // 1.5 sm (chapdan)
-  right:   851, // 1.5 sm
+  left:   1134, // 2 sm
+  right:  1134, // 2 sm
 } as const
 
 // PDF: millimetr birligida

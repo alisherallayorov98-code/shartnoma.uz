@@ -129,34 +129,36 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
     : cleanedLines.map((line, i, arr) => {
         const t = line.trim()
         const kind = lineKind(line)
-        if (kind === 'empty') return new Paragraph({ text: '', spacing: { after: 0, line: 80 } })
+        if (kind === 'empty') return new Paragraph({ text: '', spacing: { after: 0, line: 120 } })
         if (kind === 'main') return new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing: { before: 120, after: 40 },
+          outlineLevel: 0,
+          spacing: { before: 200, after: 80 },
           children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
         })
         if (kind === 'sub_label') return new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
+          outlineLevel: 1,
           indent: { left: 0, firstLine: 0 },
-          spacing: { before: 20, after: 0 },
+          spacing: { before: 80, after: 40 },
           children: [new TextRun({ text: t, bold: true, underline: {}, size: 24, font: F, color: '000000' })],
         })
         if (kind === 'sub') return new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
           indent: { left: 0, firstLine: 0 },
-          spacing: { before: 0, after: 10, line: DOCX_LINE_SPACING.single },
+          spacing: { before: 0, after: 60, line: DOCX_LINE_SPACING.single },
           children: richRuns(t),
         })
         if (kind === 'label') return new Paragraph({
-          spacing: { before: 60, after: 10 },
-          children: [new TextRun({ text: t, bold: true, size: 22, font: F, color: '000000' })],
+          spacing: { before: 80, after: 40 },
+          children: [new TextRun({ text: t, bold: true, size: 24, font: F, color: '000000' })],
         })
         if (kind === 'bullet') {
           const bt = t.replace(/^[-–•]\s*/, '')
           return new Paragraph({
             alignment: AlignmentType.JUSTIFIED,
             indent: { left: 360, hanging: 180 },
-            spacing: { after: 10, line: DOCX_LINE_SPACING.single },
+            spacing: { after: 60, line: DOCX_LINE_SPACING.single },
             children: richRuns(`– ${bt}`),
           })
         }
@@ -165,7 +167,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
         return new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
           indent: isStart ? { firstLine: 360 } : {},
-          spacing: { after: 10, line: DOCX_LINE_SPACING.single },
+          spacing: { after: 60, line: DOCX_LINE_SPACING.single },
           children: richRuns(t),
         })
       })
@@ -181,7 +183,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
           children: [new Paragraph({
             alignment: AlignmentType.LEFT,
             spacing: { after: 320 },
-            children: [new TextRun({ text: `${c.city || 'Toshkent'} shahri`, size: 22, font: F })],
+            children: [new TextRun({ text: `${c.city || 'Toshkent'} shahri`, size: 24, font: F })],
           })],
         }),
         new TableCell({
@@ -189,8 +191,8 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
           width: { size: 50, type: WidthType.PERCENTAGE },
           children: [new Paragraph({
             alignment: AlignmentType.RIGHT,
-            spacing: { after: 320 },
-            children: [new TextRun({ text: formatDateUz(c.contract_date) || '', size: 22, font: F })],
+            spacing: { after: 200 },
+            children: [new TextRun({ text: formatDateUz(c.contract_date) || '', size: 24, font: F })],
           })],
         }),
       ],
@@ -215,7 +217,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
       margins: { top: 160, bottom: 160, left: 220, right: 220 },
       children: [
         new Paragraph({ children: [new TextRun({ ...B, text: title, size: 24 })], spacing: { after: 80 } }),
-        new Paragraph({ children: [new TextRun({ ...B, text: org?.name || '___', size: 22 })], spacing: { after: 50 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: org?.name || '___', size: 24 })], spacing: { after: 50 } }),
         ...(org?.address ? [new Paragraph({ children: [new TextRun({ ...B, text: `Manzil: ${org.address}`, size: 20 })], spacing: { after: 40 } })] : []),
         ...(org?.bank_account ? [new Paragraph({ children: [new TextRun({ ...B, text: `H/R: ${org.bank_account}`, size: 20 })], spacing: { after: 40 } })] : []),
         ...(org?.bank_name ? [new Paragraph({ children: [new TextRun({ ...B, text: `Bank: ${org.bank_name}`, size: 20 })], spacing: { after: 40 } })] : []),
@@ -239,7 +241,7 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
       margins: { top: 160, bottom: 160, left: 220, right: 220 },
       children: [
         new Paragraph({ children: [new TextRun({ ...B, text: title, size: 24 })], spacing: { after: 80 } }),
-        new Paragraph({ children: [new TextRun({ ...B, text: org?.name || '___', size: 22 })], spacing: { after: 200 } }),
+        new Paragraph({ children: [new TextRun({ ...B, text: org?.name || '___', size: 24 })], spacing: { after: 200 } }),
         new Paragraph({ children: [new TextRun({ ...B, text: `Rahbar: ${org?.director_name || '___'}`, size: 20 })], spacing: { after: 240 } }),
         new Paragraph({ children: [new TextRun({ ...B, text: '_________________________', size: 22 })], spacing: { after: 20 } }),
         new Paragraph({ children: [new TextRun({ ...B, text: 'M.O.', size: 20 })], spacing: { after: 0 } }),
@@ -370,8 +372,8 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
       properties: { page: { margin: { top: DOCX_MARGINS.top, bottom: DOCX_MARGINS.bottom, left: DOCX_MARGINS.left, right: DOCX_MARGINS.right } } },
       footers: { default: footer },
       children: [
-        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [new TextRun({ text: typeName.toUpperCase(), bold: true, size: 32, font: F })] }),
-        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: `№ ${c.contract_number}`, bold: true, size: 26, font: F })] }),
+        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: typeName.toUpperCase(), bold: true, size: 32, font: F })] }),
+        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: `№ ${c.contract_number}`, bold: true, size: 28, font: F })] }),
         cityDateTable,
         ...contentParagraphs,
         new Paragraph({ text: '', spacing: { after: 480 } }),
