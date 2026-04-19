@@ -311,12 +311,12 @@ export const t = {
 
   // ── Kontragentlar tab ─────────────────────────────────────────
   cpTab: {
-    searchPlaceholder: { uz: 'Tashkilot nomi yoki STR (INN)...', oz: 'Ташкилот номи ёки ИНН...', ru: 'Название или ИНН...' },
+    searchPlaceholder: { uz: 'Tashkilot nomi yoki STIR...', oz: 'Ташкилот номи ёки СТИР...', ru: 'Название или СТИР...' },
     noFound:      { uz: 'Kontragent topilmadi',     oz: 'Контрагент топилмади',    ru: 'Контрагенты не найдены' },
     noAdded:      { uz: 'Kontragent qo\'shilmagan', oz: 'Контрагент қўшилмаган',   ru: 'Контрагентов не добавлено' },
-    addBtn:       { uz: '+ Qo\'shish',              oz: '+ Қўшиш',                 ru: '+ Добавить' },
+    addBtn:       { uz: 'Qo\'shish',                oz: 'Қўшиш',                   ru: 'Добавить' },
     colName:      { uz: 'Tashkilot nomi',           oz: 'Ташкилот номи',           ru: 'Название' },
-    colInn:       { uz: 'STR / INN',                oz: 'СТР / ИНН',               ru: 'ИНН' },
+    colInn:       { uz: 'STIR',                     oz: 'СТИР',                    ru: 'СТИР' },
     colDirector:  { uz: 'Rahbar',                   oz: 'Раҳбар',                  ru: 'Руководитель' },
     colBank:      { uz: 'Bank',                     oz: 'Банк',                    ru: 'Банк' },
     colMfo:       { uz: 'MFO',                      oz: 'МФО',                     ru: 'МФО' },

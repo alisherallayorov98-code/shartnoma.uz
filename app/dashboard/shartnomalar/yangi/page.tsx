@@ -255,6 +255,18 @@ export default function YangiShartnoma() {
 
   useEffect(() => { setLocalCps(cps) }, [cps])
 
+  // Pre-fill counterparty from cp_id URL param
+  useEffect(() => {
+    const cpId = searchParams.get('cp_id')
+    if (!cpId || !cps.length) return
+    const found = cps.find(c => c.id === cpId)
+    if (found) {
+      setForm(f => ({ ...f, counterparty_id: found.id }))
+      setCpSearch(found.name)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, cps])
+
   // Auto-fill city when org changes
   useEffect(() => {
     const org = orgs.find(o => o.id === form.organization_id)

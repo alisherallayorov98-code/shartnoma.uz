@@ -23,7 +23,7 @@ function cpCompleteness(cp: { name: string; inn: string; director_name: string; 
 }
 
 const CSV_HEADERS = ['name', 'inn', 'director_name', 'bank_name', 'bank_account', 'mfo', 'address', 'phone', 'qqsreg']
-const CSV_LABELS  = ['Tashkilot nomi *', 'INN (9 raqam)', 'Rahbar F.I.O', 'Bank nomi', 'Hisob raqami (20 raqam)', 'MFO (5 raqam)', 'Manzil', 'Telefon', 'QQS raqami']
+const CSV_LABELS  = ['Tashkilot nomi *', 'STIR (9 raqam)', 'Rahbar F.I.Sh', 'Bank nomi', 'Hisob raqami (20 raqam)', 'MFO (5 raqam)', 'Manzil', 'Telefon', 'QQS raqami']
 
 async function downloadTemplate() {
   const XLSX = await import('xlsx')
@@ -68,7 +68,7 @@ export default function KontragentlarPage() {
   const [saving, setSaving] = useState(false)
   const [modal, setModal] = useState(false)
   const [cpDetail, setCpDetail] = useState<Counterparty | null>(null)
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<{ id: string; name: string } | null>(null)
   const [importRows, setImportRows] = useState<Record<string, string>[] | null>(null)
   const [importing, setImporting] = useState(false)
   const [stirLoading, setStirLoading] = useState(false)
@@ -174,8 +174,9 @@ export default function KontragentlarPage() {
     }
   }
 
-  async function deleteCp(id: string) {
-    setConfirmDeleteId(id)
+  function deleteCp(id: string) {
+    const cp = cps.find(c => c.id === id)
+    setConfirmDeleteId({ id, name: cp?.name ?? '' })
   }
 
   async function doDeleteCp(id: string) {
@@ -340,19 +341,28 @@ export default function KontragentlarPage() {
         <div className="flex items-center gap-2">
           <button onClick={downloadTemplate}
             className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
-            title="Excel shablon yuklab olish">
+            title="Excel shablon yuklab oling, to'ldiring va 'Excel yuklash' orqali import qiling">
             <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
             </svg>
             Shablon
           </button>
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={handleFileChange} />
+          <button onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
+            title="To'ldirilgan Excel shablonni yuklash (.xlsx / .csv)">
+            <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            Excel yuklash
+          </button>
           <button onClick={() => { setStirBulkModal(true); setStirResults([]); setStirInput(''); setStirBulkDone(false) }}
-            className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition">
+            className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-[#0F172A] border border-[#1E293B] text-gray-300 px-3 py-2.5 rounded-lg text-sm transition"
+            title="STIR raqamlarini kiriting — ma'lumotlar Soliq API orqali to'ldiriladi">
             <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
             </svg>
-            Ommaviy yuklash
+            To&apos;plab yuklash
           </button>
           <button onClick={() => { setEditingCp(null); setCpForm(emptyCp); setModal(true) }}
             className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition">
@@ -521,7 +531,7 @@ export default function KontragentlarPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={lbl}>STIR (INN)</label>
+                <label className={lbl}>STIR</label>
                 <div className="flex gap-2">
                   <input className={inp} placeholder="123456789" maxLength={9} value={cpForm.inn} onChange={e => setCpForm({ ...cpForm, inn: filterDigits(e.target.value, 9) })}/>
                   <button type="button" disabled={stirLoading || !cpForm.inn}
@@ -534,7 +544,7 @@ export default function KontragentlarPage() {
                 <p className="text-xs text-gray-600 mt-1">9 raqam kiriting va 🔍 bosing</p>
               </div>
               <div>
-                <label className={lbl}>Direktor F.I.Sh</label>
+                <label className={lbl}>Rahbar F.I.Sh</label>
                 <input className={inp} placeholder="Rahimov Jasur" value={cpForm.director_name} onChange={e => setCpForm({ ...cpForm, director_name: e.target.value })}/>
               </div>
               <div>
@@ -602,7 +612,7 @@ export default function KontragentlarPage() {
                   <tr className="text-gray-500 border-b border-[#1E293B]">
                     <th className="text-left pb-2 pr-3">№</th>
                     <th className="text-left pb-2 pr-3">Tashkilot nomi</th>
-                    <th className="text-left pb-2 pr-3">INN</th>
+                    <th className="text-left pb-2 pr-3">STIR</th>
                     <th className="text-left pb-2 pr-3">Rahbar</th>
                     <th className="text-left pb-2">Bank</th>
                   </tr>
@@ -762,13 +772,17 @@ export default function KontragentlarPage() {
         </div>
       )}
 
-      {confirmDeleteId && (
-        <ConfirmModal
-          message={T(t.msg.deleteCpConfirm)}
-          onConfirm={() => { const id = confirmDeleteId; setConfirmDeleteId(null); doDeleteCp(id) }}
-          onCancel={() => setConfirmDeleteId(null)}
-        />
-      )}
+      {confirmDeleteId && (() => {
+        const linked = cpContractCount.get(confirmDeleteId.id) ?? 0
+        const warning = linked > 0 ? ` (${linked} ta shartnoma bog'liq — o'chirilmaydi, faqat aloqa uziladi)` : ''
+        return (
+          <ConfirmModal
+            message={`"${confirmDeleteId.name}" kontragentini o'chirishni tasdiqlaysizmi?${warning}`}
+            onConfirm={() => { const { id } = confirmDeleteId; setConfirmDeleteId(null); doDeleteCp(id) }}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
+        )
+      })()}
     </div>
   )
 }
