@@ -26,17 +26,46 @@ export async function GET(req: NextRequest) {
     .maybeSingle()
 
   if (cached) {
+    // If bank details missing in global_companies, check organizations table
+    let mfo = cached.mfo || ''
+    let bank_name = cached.bank_name || ''
+    let account = cached.account || ''
+
+    if (!mfo || !bank_name || !account) {
+      const { data: org } = await db
+        .from('organizations')
+        .select('mfo, bank_name, bank_account')
+        .eq('inn', inn)
+        .maybeSingle()
+
+      if (org) {
+        mfo = mfo || org.mfo || ''
+        bank_name = bank_name || org.bank_name || ''
+        account = account || org.bank_account || ''
+
+        // Sync back to global_companies if we got new data
+        if (mfo || bank_name || account) {
+          await db.from('global_companies').update({
+            mfo: mfo || null,
+            bank_name: bank_name || null,
+            account: account || null,
+            updated_at: new Date().toISOString(),
+          }).eq('inn', inn)
+        }
+      }
+    }
+
     return NextResponse.json({
       source: 'global_db',
       company: {
-        name:        cached.name,
-        inn:         cached.inn,
-        director:    cached.director    || '',
-        address:     cached.address     || '',
-        mfo:         cached.mfo         || '',
-        bank_name:   cached.bank_name   || '',
-        account:     cached.account     || '',
-        phone:       cached.phone       || '',
+        name:      cached.name,
+        inn:       cached.inn,
+        director:  cached.director || '',
+        address:   cached.address  || '',
+        mfo,
+        bank_name,
+        account,
+        phone:     cached.phone    || '',
       },
     })
   }
