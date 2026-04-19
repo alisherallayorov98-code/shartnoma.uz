@@ -94,7 +94,7 @@ export default function YuristPage() {
 
   const [hubFeature, setHubFeature] = useState<HubFeature>('xulosa')
   const [hubContract, setHubContract] = useState('')
-  const [hubTargetLang, setHubTargetLang] = useState('ru')
+  const [hubTargetLang, setHubTargetLang] = useState('oz')
   const [hubQuestion, setHubQuestion] = useState('')
   const [hubInstruction, setHubInstruction] = useState('')
   const [hubDescription, setHubDescription] = useState('')
@@ -517,6 +517,11 @@ export default function YuristPage() {
           <div className="space-y-3">
             <div className="h-px bg-[#1E293B]"/>
 
+            {(() => {
+              const sc = contracts.find(c => c.id === hubContract)
+              const ctxSuffix = sc ? ` — #${sc.contract_number || sc.id.slice(0,6)}` : ''
+              return <>
+
             {hubResult._type === 'xulosa' && (
               <XulosaResult
                 xulosa={hubResult.xulosa}
@@ -525,7 +530,7 @@ export default function YuristPage() {
                 summa={hubResult.summa}
                 muhim_bandlar={hubResult.muhim_bandlar}
                 setPreviewText={setPreviewText}
-                onSave={t => saveToDb('xulosa', 'Yurist xulosa', t)}
+                onSave={t => saveToDb('xulosa', `Xulosa${ctxSuffix}`, t)}
               />
             )}
 
@@ -533,7 +538,7 @@ export default function YuristPage() {
               <TarjimaResult
                 tarjima={hubResult.tarjima}
                 setPreviewText={setPreviewText}
-                onSave={t => saveToDb('tarjima', 'Tarjima', t)}
+                onSave={t => saveToDb('tarjima', `Tarjima${ctxSuffix}`, t)}
               />
             )}
 
@@ -543,7 +548,7 @@ export default function YuristPage() {
                 umumiy_baho={hubResult.umumiy_baho}
                 xatolar={hubResult.xatolar}
                 setPreviewText={setPreviewText}
-                onSave={t => saveToDb('grammatika', 'Grammatika tekshiruvi', t)}
+                onSave={t => saveToDb('grammatika', `Grammatika${ctxSuffix}`, t)}
               />
             )}
 
@@ -556,10 +561,10 @@ export default function YuristPage() {
                 yuridik_xatarlar={hubResult.yuridik_xatarlar}
                 tavsiyalar={hubResult.tavsiyalar}
                 hubContract={hubContract}
-                hasContractContent={Boolean(contracts.find(c => c.id === hubContract)?.content?.trim())}
-                onTuzatish={() => runTuzatishDirect(contracts.find(c => c.id === hubContract)?.content || '')}
+                hasContractContent={Boolean(sc?.content?.trim())}
+                onTuzatish={() => runTuzatishDirect(sc?.content || '')}
                 setPreviewText={setPreviewText}
-                onSave={t => saveToDb('tahlil', 'Chuqur tahlil', t)}
+                onSave={t => saveToDb('tahlil', `Chuqur tahlil${ctxSuffix}`, t)}
               />
             )}
 
@@ -569,7 +574,7 @@ export default function YuristPage() {
                 havola={hubResult.havola}
                 hubQuestion={hubQuestion}
                 setPreviewText={setPreviewText}
-                onSave={t => saveToDb('qa', 'Yurist javob', t)}
+                onSave={t => saveToDb('qa', `Savol-Javob${ctxSuffix}`, t)}
               />
             )}
 
@@ -581,7 +586,7 @@ export default function YuristPage() {
                 addingClause={addingClause}
                 addClauseToContract={addClauseToContract}
                 setPreviewText={setPreviewText}
-                onSave={t => saveToDb('clause', 'Yuridik band', t)}
+                onSave={t => saveToDb('clause', `Band qo'shish${ctxSuffix}`, t)}
               />
             )}
 
@@ -621,10 +626,12 @@ export default function YuristPage() {
                 fixEditMode={fixEditMode}
                 setFixEditMode={setFixEditMode}
                 setPreviewText={setPreviewText}
-                onSave={t => saveToDb('tuzatish', 'Tuzatilgan shartnoma', t)}
+                onSave={t => saveToDb('tuzatish', `Tuzatilgan shartnoma${fixFileName ? ` — ${fixFileName}` : ''}`, t)}
                 onSaveToSystem={() => setSaveContractModal({ content: fixEditedText, tur: 'boshqa', raqam: '', sana: new Date().toISOString().slice(0, 10) })}
               />
             )}
+
+            </>})()} {/* end ctxSuffix IIFE */}
 
             <button onClick={() => { setHubResult(null); setHubError(''); setFixEditMode(false) }}
               className="text-xs text-gray-500 hover:text-gray-400 transition">🔄 Qayta bajarish</button>
@@ -646,6 +653,12 @@ export default function YuristPage() {
         </div>
       )}
 
+      {/* AI disclaimer */}
+      <div className="bg-yellow-900/10 border border-yellow-700/20 rounded-xl px-4 py-3 flex gap-3 text-xs text-yellow-600/80">
+        <span className="flex-shrink-0">⚠️</span>
+        <span>{T({ uz: "Yurist AI tavsiyalari ma'lumot maqsadida beriladi — yuridik maslahat hisoblanmaydi. Muhim qarorlar uchun professional yuristga murojaat qiling.", oz: "Юрист AI тавсиялари маълумот мақсадида берилади — юридик маслаҳат ҳисобланмайди. Муҳим қарорлар учун профессионал юристга мурожаат қилинг.", ru: "Рекомендации Юрист AI носят информационный характер и не являются юридической консультацией. Для важных решений обратитесь к профессиональному юристу." })}</span>
+      </div>
+
       {/* Saved documents panel */}
       {activeOrg?.id && (
         <SavedDocumentsPanel orgId={activeOrg.id} section="yurist" accentColor="blue" refreshKey={savedPanelKey} />
@@ -666,7 +679,7 @@ export default function YuristPage() {
                   <label className="block text-xs text-gray-400 mb-1">{T({ uz: 'Shartnoma raqami', oz: 'Шартнома рақами', ru: 'Номер договора' })}</label>
                   <input value={saveContractModal.raqam}
                     onChange={e => setSaveContractModal({ ...saveContractModal, raqam: e.target.value })}
-                    placeholder="2025/01"
+                    placeholder="2026/01"
                     className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600"/>
                 </div>
                 <div>

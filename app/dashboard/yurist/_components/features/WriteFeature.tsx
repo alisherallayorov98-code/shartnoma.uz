@@ -37,7 +37,7 @@ export function WriteInput({
       <div>
         <label className="block text-xs text-gray-400 mb-1">Shartnoma raqami</label>
         <input value={hubWriteDetails.shartnoma_raqam} onChange={e => setHubWriteDetails({ ...hubWriteDetails, shartnoma_raqam: e.target.value })}
-          placeholder="2025/01" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
+          placeholder="2026/01" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
       </div>
       <div>
         <label className="block text-xs text-gray-400 mb-1">Sana</label>
@@ -70,7 +70,7 @@ export function WriteInput({
                   onMouseDown={() => { setWriteCpSearch(cp.name); setHubWriteDetails({ ...hubWriteDetails, cp: cp.name }); setWriteCpOpen(false) }}
                   className="w-full text-left px-3 py-2 hover:bg-[#1F2937] transition border-b border-[#1E293B]/50 last:border-0">
                   <div className="text-sm text-white">{cp.name}</div>
-                  {cp.inn && <div className="text-xs text-gray-500">INN: {cp.inn}</div>}
+                  {cp.inn && <div className="text-xs text-gray-500">STIR: {cp.inn}</div>}
                 </button>
               ))}
             </div>

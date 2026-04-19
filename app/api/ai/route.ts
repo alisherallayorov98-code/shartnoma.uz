@@ -154,6 +154,8 @@ function extractJSON(raw: string): unknown {
   }
 }
 
+export const maxDuration = 60
+
 export async function POST(req: NextRequest) {
   // Auth check
   const auth = await verifyUser(req)

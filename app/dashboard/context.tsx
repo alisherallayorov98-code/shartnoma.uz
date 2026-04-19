@@ -215,12 +215,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         setUserEmail(session.user.email || '')
         setUserId(session.user.id)
 
-        // Accept pending org invites for this user's email
+        // Accept pending org invites — POST avoids email in URL query params (PII)
         if (session.user.email) {
-          await supabase.from('org_members')
-            .update({ user_id: session.user.id, status: 'active' })
-            .eq('invited_email', session.user.email.toLowerCase())
-            .eq('status', 'pending')
+          fetch('/api/accept-invite', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).catch(() => {/* non-critical */})
         }
 
         // Admin holati sessionStorage da keshlangan — har safar HTTP so'rov ketmaydi
