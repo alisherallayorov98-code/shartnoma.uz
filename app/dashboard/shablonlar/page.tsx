@@ -191,10 +191,12 @@ export default function ShablonlarPage() {
             )}
             <div className="flex gap-2 pt-1 border-t border-[#1E293B] flex-wrap">
               <button onClick={() => router.push(`/dashboard/shablonlar/${tpl.id}`)}
+                title="Shablonni ko'rish, Word yuklab olish va shartnoma yaratish"
                 className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
                 {T(t.tplTab.view)}
               </button>
               <button onClick={() => router.push(`/dashboard/shablonlar/${tpl.id}/edit`)}
+                title="Shablonni nusxalab o'zingizga moslang"
                 className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 hover:text-white px-3 py-1.5 rounded-lg transition font-medium">
                 {T(t.btn.edit)}
               </button>

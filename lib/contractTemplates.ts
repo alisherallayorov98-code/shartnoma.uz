@@ -446,7 +446,7 @@ ________________ / {{BUYURTMACHI_RAHBAR}}  ________________ / {{IJROCHI_RAHBAR}}
 3.1. Qarz oluvchi qarzni ___ oy (yil) ichida to'liq qaytarish majburiyatini oladi.
 3.2. Qaytarish jadvalı:
 — Har oyning ___ kuniga qadar oylik to'lov: _______ so'm;
-— Yoki bir mushtda: ________________ sanasiga qadar.
+— Yoki bir yo'la: ________________ sanasiga qadar.
 3.3. Muddatidan oldin qaytarish mumkin, bu haqda 3 (uch) kun oldin xabar berish kerak.
 
 4. MAS'ULIYAT

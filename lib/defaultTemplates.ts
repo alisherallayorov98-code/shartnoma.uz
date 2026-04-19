@@ -429,7 +429,7 @@ c) Ozgina ta'sir qiluvchi nosozliklar — keyingi rejimdagi yangilanishda.
 
 7. MUALLIFLIK HUQUQI VA INTELLEKTUAL MULK
 
-7.1. Ushbu Shartnoma asosida maxsus yaratilgan Dasturiy mahsulot va unga oid barcha intellektual mulk huquqlari — Manba kodi, ikkilik kod (binary), texnik hujjatlar, dizayn fayllari va ma'lumotlar bazasi sxemasi — to'lov to'liq amalga oshirilgandan so'ng Buyurtmachiga to'liq hajmda o'tadi.
+7.1. Ushbu Shartnoma asosida maxsus yaratilgan Dasturiy mahsulot va unga oid barcha intellektual mulk huquqlari — Manba kodi, ikkilik kod (binary), texnik hujjatlar, dizayn fayllari va ma'lumotlar bazasi sxemasi — to'lov to'liq amalga oshirilgandan so'ng Buyurtmachiga to'liq hajmda o'tadi (O'zR FK 1105-moddasi asosida).
 7.2. O'tkazilgan huquqlar cheksiz, muddatsiz va dunyoning istalgan hududida qo'llaniladi.
 7.3. Ijrochi loyiha doirasida ochiq kodli (open-source) kutubxonalar va uchinchi tomon komponentlaridan foydalangan taqdirda ularning litsenziyasi va foydalanish shartlarini Buyurtmachiga yozma ravishda bildiradi.
 7.4. Ijrochi Shartnomadan oldin mavjud bo'lgan va loyihada ishlatilgan o'z xususiy metodologiyasi, frameworklari va vositalarini saqlaydi — ular Buyurtmachiga o'tmaydi, biroq faqat Buyurtmachi loyihasiga doir maqsadlarda ishlatiladi.
@@ -575,7 +575,7 @@ e) Taqdim etilgan ma'lumotlarning to'liqligi va aniqligi uchun javobgarlikni o'z
 
 8. INTELLEKTUAL MULK VA NATIJALAR HUQUQI
 
-8.1. Ushbu Shartnoma asosida maxsus yaratilgan Natijalar (hisobotlar, tahlillar, strategiyalar) va ularga oid mualliflik huquqlari to'lov to'liq amalga oshirilgandan so'ng Buyurtmachiga o'tadi.
+8.1. Ushbu Shartnoma asosida maxsus yaratilgan Natijalar (hisobotlar, tahlillar, strategiyalar) va ularga oid mualliflik huquqlari to'lov to'liq amalga oshirilgandan so'ng Buyurtmachiga o'tadi (O'zR FK 1105-moddasi asosida).
 8.2. Maslahatchi Shartnomadan oldin mavjud bo'lgan professional metodologiyasi, umumiy bilim bazasi va xususiy vositalarini saqlaydi — ular Buyurtmachiga o'tmaydi.
 8.3. Maslahatchi Buyurtmachining yozma roziligi bo'lmasa, Natijalar mazmunini o'z marketing materiallarida keltira olmaydi.
 
@@ -754,7 +754,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu ijara shartnomasi (ke
 
 9. MAXFIYLIK
 
-9.1. Tomonlar Shartnoma shartlari, ijara haqi miqdori va tomonlarning tijorat ma'lumotlarini uchinchi shaxslarga faqat tomonlarning yozma roziligi yoki qonun talabi asosida oshiror qilishi mumkin.
+9.1. Tomonlar Shartnoma shartlari, ijara haqi miqdori va tomonlarning tijorat ma'lumotlarini uchinchi shaxslarga faqat tomonlarning yozma roziligi yoki qonun talabi asosida oshkor qilishi mumkin.
 9.2. Ushbu majburiyat Shartnoma muddati tugagandan keyin ham 2 (ikki) yil davomida kuchda qoladi.
 
 10. NIZOLARNI HAL ETISH
@@ -1151,7 +1151,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu qurilish pudratchilig
 
 11. MAXFIYLIK
 
-11.1. Tomonlar Shartnoma shartlari, narxlar, loyiha hujjatlari va tomonlarning tijorat ma'lumotlarini uchinchi shaxslarga tomonlarning yozma roziligi yoki qonun talabi asosidagina oshiror qilishi mumkin.
+11.1. Tomonlar Shartnoma shartlari, narxlar, loyiha hujjatlari va tomonlarning tijorat ma'lumotlarini uchinchi shaxslarga tomonlarning yozma roziligi yoki qonun talabi asosidagina oshkor qilishi mumkin.
 11.2. Ushbu majburiyat Shartnoma muddati tugagandan keyin ham 3 (uch) yil davomida kuchda qoladi.
 
 12. NIZOLARNI HAL ETISH
@@ -1291,7 +1291,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu foizsiz qarz shartnom
 
 3.1. Qarz oluvchi Qarz miqdorini quyidagi tartibda qaytarish majburiyatini oladi:
 — Qaytarish muddati: {{QARZ_MUDDAT}}.
-— Qaytarish usuli: oylik teng ulushlar / bir mushtda / choraklik to'lovlar (keraklisi chiziladi).
+— Qaytarish usuli: oylik teng ulushlar / bir yo'la / choraklik to'lovlar (keraklisi chiziladi).
 3.2. Har bir to'lov Qarz beruvchining bank hisobvarag'iga naqd pulsiz o'tkazma orqali amalga oshiriladi; to'lov maqsadida "Foizsiz qarz qaytarish, shartnoma № {{RAQAM}}" yoziladi.
 3.3. Muddatidan oldin to'liq yoki qisman qaytarish mumkin; Qarz beruvchiga kamida 3 (uch) ish kuni oldin yozma xabardorlik yuborilishi shart. Muddatidan oldin to'lashda hech qanday jarima yoki qo'shimcha to'lov talab etilmaydi.
 3.4. To'lovning belgilangan sanasiga to'g'ri kelishi bank ish kuniga qarab hisoblanadi; bayram yoki dam olish kunlari to'g'ri kelgan taqdirda to'lov keyingi ish kunida amalga oshiriladi.
@@ -1316,7 +1316,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu foizsiz qarz shartnom
 5. MAS'ULIYAT
 
 5.1. Qarzni belgilangan muddatdan kechiktirib qaytarganligi uchun Qarz oluvchi kechiktirilgan har bir kalendar kun uchun muddati o'tgan summa miqdorining 0,05% miqdorida penya to'laydi.
-5.2. Kechikish 30 (o'ttiz) kalendar kundan oshsa, Qarz beruvchi butun qolgan Qarz summasini va to'plangan penyani bir mushtda undirish talabini qo'yish huquqiga ega.
+5.2. Kechikish 30 (o'ttiz) kalendar kundan oshsa, Qarz beruvchi butun qolgan Qarz summasini va to'plangan penyani bir yo'la undirish talabini qo'yish huquqiga ega.
 5.3. Qarz beruvchi Qarz summasini belgilangan muddatda bermaslik uchun Qarz oluvchiga kechiktirilgan har bir kalendar kun uchun Qarz summasining 0,05% miqdorida penya to'laydi.
 5.4. Qarz mablag'lari maqsadiga xilof ishlatilsa, Qarz beruvchi Shartnomani bir tomonlama bekor qilib, butun Qarz summasini zudlik bilan qaytarishni talab qilish huquqiga ega.
 
@@ -1333,7 +1333,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu foizsiz qarz shartnom
 
 8. MAXFIYLIK
 
-8.1. Tomonlar Shartnoma shartlari, Qarz miqdori va tomonlarning moliyaviy ma'lumotlarini uchinchi shaxslarga tomonlarning yozma roziligi yoki qonun talabi asosidagina oshiror qilishi mumkin.
+8.1. Tomonlar Shartnoma shartlari, Qarz miqdori va tomonlarning moliyaviy ma'lumotlarini uchinchi shaxslarga tomonlarning yozma roziligi yoki qonun talabi asosidagina oshkor qilishi mumkin.
 8.2. Ushbu majburiyat Shartnoma to'liq bajarilgandan keyin ham 3 (uch) yil davomida kuchda qoladi.
 
 9. NIZOLARNI HAL ETISH
@@ -1413,7 +1413,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu foizli qarz shartnoma
 — Qarz summasini belgilangan muddatda va tartibda berish;
 — To'lov jadvalini oldindan (Shartnoma imzolanishida) Qarz oluvchiga taqdim etish;
 — Har bir to'lovdan keyin qolgan qarz qoldig'i haqida so'ralganda ma'lumot berish;
-— Qarz oluvchining moliyaviy ma'lumotlarini uchinchi shaxslarga oshiqmaslik.
+— Qarz oluvchining moliyaviy ma'lumotlarini uchinchi shaxslarga oshkor qilmaslik.
 
 4.2. Qarz oluvchi majburiyatlari:
 — Qarzni faqat belgilangan maqsad uchun sarflash;
@@ -1429,8 +1429,8 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu foizli qarz shartnoma
 5. MAS'ULIYAT
 
 5.1. Oylik to'lovni belgilangan muddatdan kechiktirganligi uchun Qarz oluvchi kechiktirilgan har bir kalendar kun uchun kechiktirilgan summa miqdorining 0,1% miqdorida penya to'laydi.
-5.2. Kechikish ketma-ket 2 (ikki) oylik to'lovni qamrab olsa, Qarz beruvchi qolgan butun Qarz summasini, hisoblangan foizlar va penyalarni bir mushtda undirish talabini qo'yish hamda garov mol-mulkini sotish huquqiga ega.
-5.3. Qarz beruvchi Qarz summasini belgilangan muddatda bermaslik uchun Qarz oluvchiga kechiktirilgan har bir kalendar kun uchun Qarz summasining 0,05% miqdorida penya to'laydi.
+5.2. Kechikish ketma-ket 2 (ikki) oylik to'lovni qamrab olsa, Qarz beruvchi qolgan butun Qarz summasini, hisoblangan foizlar va penyalarni bir yo'la undirish talabini qo'yish hamda garov mol-mulkini sotish huquqiga ega.
+5.3. Qarz beruvchi Qarz summasini belgilangan muddatda bermaslik uchun Qarz oluvchiga kechiktirilgan har bir kalendar kun uchun Qarz summasining 0,1% miqdorida penya to'laydi (FK 327-moddasi asosida).
 5.4. Penya shartnomaviy javobgarlik bilan birga qo'llaniladi va zarar miqdorini qoplash uchun etarli bo'lmasa, qo'shimcha zarar undirish ham talabi qilinishi mumkin.
 
 6. GAROV VA TA'MINOT (IXTIYORIY)
@@ -1449,7 +1449,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu foizli qarz shartnoma
 
 8. MAXFIYLIK
 
-8.1. Tomonlar Shartnoma shartlari, Qarz miqdori, foiz stavkasi va tomonlarning moliyaviy ma'lumotlarini uchinchi shaxslarga tomonlarning yozma roziligi yoki qonun talabi asosidagina oshiror qilishi mumkin.
+8.1. Tomonlar Shartnoma shartlari, Qarz miqdori, foiz stavkasi va tomonlarning moliyaviy ma'lumotlarini uchinchi shaxslarga tomonlarning yozma roziligi yoki qonun talabi asosidagina oshkor qilishi mumkin.
 8.2. Ushbu majburiyat Shartnoma to'liq bajarilgandan keyin ham 3 (uch) yil davomida kuchda qoladi.
 
 9. NIZOLARNI HAL ETISH
@@ -1534,7 +1534,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu daval shartnomasi (ke
 4.2. Qabul-topshiriq dalolatnomasida quyidagilar ko'rsatiladi:
 — Tayyor mahsulotning nomi, miqdori, og'irligi va sifat ko'rsatkichlari;
 — Qayta ishlashdan chiqqan qoldiq materiallar miqdori (agar qaytarilsa);
-— Chiqindi (tullash) miqdori va yo'q qilish usuli;
+— Chiqindi (chiqit) miqdori va yo'q qilish usuli;
 — Sarflangan xom ashyo miqdori (me'yoriy va haqiqiy).
 4.3. Buyurtmachi tayyor mahsulotni 3 (uch) ish kuni ichida tekshirib qabul qiladi yoki asosli kamchiliklarini yozma ravishda bildiradi.
 4.4. Asosli kamchiliklar aniqlanganda Qayta ishlovchi 7 (yetti) ish kuni ichida nuqsonlarni bepul bartaraf etadi (agar xom ashyo sifatiga bog'liq bo'lmasa).
@@ -1583,9 +1583,9 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu daval shartnomasi (ke
 8. BUXGALTERIYA VA SOLIQ MASALALARI
 
 8.1. Daval materiallar Buyurtmachining balansida hisobga olinadi; Qayta ishlovchi ularni balansdan tashqari hisobda (003-schyot) yuritadi.
-8.2. Buyurtmachi tomonidan Qayta ishlovchiga berilayotgan Daval material MX-1 (mol-qabul dalolatnomasi) yoki tomonlar belgilagan shakldagi hujjat asosida rasmiylashtiriladi; QQS hisoblanmaydi (daval material sifatida topshirish QQS bazasiga kiritilmaydi).
+8.2. Buyurtmachi tomonidan Qayta ishlovchiga berilayotgan Daval material MX-1 (mol-qabul dalolatnomasi) yoki tomonlar belgilagan shakldagi hujjat asosida rasmiylashtiriladi; odatda QQS hisoblanmaydi (daval material sifatida topshirish QQS bazasiga kiritilmaydi); biroq soliq rejimingizga qarab buxgalteriyangiz bilan kelishib oling.
 8.3. Qayta ishlash xizmati uchun to'lov Qayta ishlovchi tomonidan QQS soliq to'lovchisi bo'lsa, QQS qo'shilgan holda hisob-faktura taqdim etiladi.
-8.4. Chiqindi va tullash materiallar ikki tomonlama qabul-topshiriq dalolatnomasida qayd etiladi; agar Buyurtmachiga qaytarilsa, alohida yuk xati bilan rasmiylashtiriladi.
+8.4. Chiqindi va chiqit materiallar ikki tomonlama qabul-topshiriq dalolatnomasida qayd etiladi; agar Buyurtmachiga qaytarilsa, alohida yuk xati bilan rasmiylashtiriladi.
 8.5. Har bir topshiruq bo'yicha Qayta ishlovchi quyidagi hujjatlarni taqdim etadi:
 — Ishlab chiqarish hisoboti (sarflangan xom ashyo, chiqim me'yori, tayyor mahsulot miqdori);
 — Qabul-topshiriq dalolatnomasi;
@@ -1593,7 +1593,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu daval shartnomasi (ke
 
 9. MAXFIYLIK VA INTELLEKTUAL MULK
 
-9.1. Tomonlar Shartnoma shartlari, texnologik jarayon, narxlar va ishlab chiqarish hajmlari to'g'risidagi ma'lumotlarni uchinchi shaxslarga oshiror qilmaslik majburiyatini oladi.
+9.1. Tomonlar Shartnoma shartlari, texnologik jarayon, narxlar va ishlab chiqarish hajmlari to'g'risidagi ma'lumotlarni uchinchi shaxslarga oshkor qilmaslik majburiyatini oladi.
 9.2. Qayta ishlovchi Buyurtmachi texnologiyasi va ishlab chiqarish sirlari bo'yicha hech qanday huquq da'vo qilmaydi.
 9.3. Ushbu majburiyat Shartnoma muddati tugagandan keyin ham 3 (uch) yil davomida kuchda qoladi.
 
@@ -1641,11 +1641,11 @@ No {{RAQAM}}
 
 {{SHAHAR}}                                                   "{{SANA}}"
 
-{{BUYURTMACHI}}, a company incorporated under the laws of __________, hereinafter the "Buyer", represented by {{BUYURTMACHI_RAHBAR}}, acting under the Charter, on the one part,
-{{BUYURTMACHI}}, __________ qonunlari asosida ro'yxatdan o'tgan, keyingi o'rinlarda "Xaridor" deb yuritilib, Ustav asosida harakat qiluvchi {{BUYURTMACHI_RAHBAR}} vakili, bir tomondan,
+{{BUYURTMACHI}}, a company incorporated under the laws of the Republic of Uzbekistan, hereinafter the "Buyer", represented by {{BUYURTMACHI_RAHBAR}}, acting under the Charter, on the one part,
+{{BUYURTMACHI}}, O'zbekiston Respublikasi qonunlari asosida ro'yxatdan o'tgan, keyingi o'rinlarda "Xaridor" deb yuritilib, Ustav asosida harakat qiluvchi {{BUYURTMACHI_RAHBAR}} vakili, bir tomondan,
 
-and {{IJROCHI}}, a company incorporated under the laws of __________, hereinafter the "Seller", represented by {{IJROCHI_RAHBAR}}, acting under the Charter, on the other part,
-va {{IJROCHI}}, __________ qonunlari asosida ro'yxatdan o'tgan, keyingi o'rinlarda "Sotuvchi" deb yuritilib, Ustav asosida harakat qiluvchi {{IJROCHI_RAHBAR}} vakili, ikkinchi tomondan,
+and {{IJROCHI}}, a company incorporated under the laws of __________ (davlat/mamlakat), hereinafter the "Seller", represented by {{IJROCHI_RAHBAR}}, acting under the Charter, on the other part,
+va {{IJROCHI}}, __________ (davlat/mamlakat) qonunlari asosida ro'yxatdan o'tgan, keyingi o'rinlarda "Sotuvchi" deb yuritilib, Ustav asosida harakat qiluvchi {{IJROCHI_RAHBAR}} vakili, ikkinchi tomondan,
 
 hereinafter jointly referred to as the "Parties", have concluded this Contract as follows:
 keyingi o'rinlarda birgalikda "Tomonlar" deb yuritilib, ushbu Shartnomani quyidagicha tuzishdi:
@@ -1963,7 +1963,7 @@ birgalikda "Tomonlar" deb atalib, o'zaro hamkorlik to'g'risida ushbu shartnoma (
 
 6. MAXFIYLIK
 
-6.1. Tomonlar hamkorlik davomida olgan barcha tijorat sirlari, texnologiyalar, mijozlar bazasi, moliyaviy ko'rsatkichlar, ichki jarayonlar va boshqa maxfiy ma'lumotlarni (keyingi o'rinlarda "Maxfiy ma'lumot") uchinchi shaxslarga faqat tomonlarning yozma roziligi yoki qonun talabi asosida oshiror qilishi mumkin.
+6.1. Tomonlar hamkorlik davomida olgan barcha tijorat sirlari, texnologiyalar, mijozlar bazasi, moliyaviy ko'rsatkichlar, ichki jarayonlar va boshqa maxfiy ma'lumotlarni (keyingi o'rinlarda "Maxfiy ma'lumot") uchinchi shaxslarga faqat tomonlarning yozma roziligi yoki qonun talabi asosida oshkor qilishi mumkin.
 6.2. Tomonlar Maxfiy ma'lumotni faqat ushbu Shartnoma maqsadlari uchun ishlatadi.
 6.3. Ushbu majburiyat Shartnoma muddati tugagandan keyin ham 5 (besh) yil davomida kuchda qoladi.
 6.4. Maxfiylik majburiyatini buzganlik uchun aybdor Tomon etkazilgan zararni (to'g'ri zarar va foyda ko'rilmagan zarar) to'liq qoplash majburiyatini oladi.
@@ -2024,7 +2024,7 @@ const VOSITACHILIK_SHARTNOMA = `VOSITACHILIK (AGENTLIK) SHARTNOMASI
 
 {{SHAHAR}} shahri                                             "{{SANA}}"
 
-O'zbekiston Respublikasi Fuqarolik Kodeksining 817-828-moddalari (topshiriq va komissiya) asosida,
+O'zbekiston Respublikasi Fuqarolik Kodeksining 817-828-moddalari (topshiriq shartnomasi — FK 817, komissiya shartnomasi — FK 820) asosida (eslatma: O'zR FK da mustaqil "agentlik shartnomasi" instituti mavjud emas; ushbu shartnoma topshiriq yoki komissiya sifatida rasmiylashtirilib, tegishli modda tanlanadi),
 
 {{BUYURTMACHI}} (STIR: {{BUYURTMACHI_INN}}), keyingi o'rinlarda "Prinsipal" deb yuritiladi, {{BUYURTMACHI_RAHBAR}} nomidan harakat qiluvchi, bir tomondan, va
 
@@ -2041,7 +2041,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu agentlik shartnomasi 
 1.2. Agent harakat qilish usuli (keraklisi chiziladi):
 — Prinsipal nomidan va Prinsipal hisobidan (vakillik — FK 817-moddasi); yoki
 — O'z nomidan, lekin Prinsipal hisobidan (komissiya — FK 820-moddasi).
-1.3. Agent Prinsipal nomidan yoki hisobidan tuzgan bitimlarning huquqiy oqibatlari to'g'ridan to'g'ri Prinsipalga tegishli bo'ladi (1.2-bandning birinchi turi bo'lsa); o'z nomidan tuzgan bitimlar uchun Agent shaxsan javob beradi, keyin Prinsipalga o'tkazadi (ikkinchi tur bo'lsa).
+1.3. Agent Prinsipal nomidan yoki hisobidan tuzgan bitimlarning huquqiy oqibatlari to'g'ridan-to'g'ri Prinsipalga tegishli bo'ladi (1.2-bandning birinchi turi bo'lsa); o'z nomidan tuzgan bitimlar uchun Agent shaxsan javob beradi, keyin Prinsipalga o'tkazadi (ikkinchi tur bo'lsa).
 1.4. Agent vakolati ushbu Shartnomaga ilova qilingan ishonchnoma (2-ilova) bilan tasdiqlanadi; ishonchnomaning kuchi va muddati belgilangan vakolat doirasida chegaralanadi.
 
 2. AGENTLIK HAQI VA TO'LOV TARTIBI
@@ -2053,7 +2053,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu agentlik shartnomasi 
 2.2. Shartnoma muddati uchun taxminiy umumiy agentlik haqi: {{SUMMA}} ({{SUMMA_MATN}}) so'm.
 2.3. To'lov tartibi: Agent oyning oxirida hisobot va hisob-faktura taqdim etgandan keyin 5 (besh) ish kuni ichida Prinsipal agentlik haqini Agent ning bank hisobvarag'iga o'tkazadi.
 2.4. Agent ning asoslantirilgan va hujjatlashtirilgan xarajatlari (yo'l, mehmonxona, xabar berish xarajatlari) Prinsipal tomonidan belgilangan cheklov doirasida qoplanadi: oylik __________ so'm gacha.
-2.5. Agentlik haqi Agent tomonidan to'g'ridan to'g'ri uchinchi shaxslardan olingan summalardan ushlab qolish huquqini beradi; Prinsipalga qolgan summa 3 (uch) ish kuni ichida o'tkaziladi.
+2.5. Agentlik haqi Agent tomonidan to'g'ridan-to'g'ri uchinchi shaxslardan olingan summalardan ushlab qolish huquqini beradi; Prinsipalga qolgan summa 3 (uch) ish kuni ichida o'tkaziladi.
 
 3. AGENT NING HISOBDORLIGI
 
@@ -2122,7 +2122,7 @@ birgalikda "Tomonlar" deb atalib, quyidagilar haqida ushbu agentlik shartnomasi 
 
 10. MAXFIYLIK
 
-10.1. Tomonlar Shartnoma shartlari, agentlik haqi, mijozlar bazasi, tijorat sirlari va boshqa maxfiy ma'lumotlarni uchinchi shaxslarga faqat tomonlarning yozma roziligi yoki qonun talabi asosida oshiror qilishi mumkin.
+10.1. Tomonlar Shartnoma shartlari, agentlik haqi, mijozlar bazasi, tijorat sirlari va boshqa maxfiy ma'lumotlarni uchinchi shaxslarga faqat tomonlarning yozma roziligi yoki qonun talabi asosida oshkor qilishi mumkin.
 10.2. Ushbu majburiyat Shartnoma muddati tugagandan keyin ham 3 (uch) yil davomida kuchda qoladi.
 
 11. NIZOLARNI HAL ETISH
@@ -2333,7 +2333,7 @@ export const DEFAULT_TEMPLATES: AppTemplate[] = [
     id: 'dt-moliyaviy-01',
     type: 'moliyaviy',
     name: 'Foizsiz qarz shartnomasi',
-    description: "Yuridik shaxslar o'rtasida foizsiz moliyaviy yordam ko'rsatish uchun. Oylik, choraklik yoki bir mushtda qaytarish varianti belgilangan.",
+    description: "Yuridik shaxslar o'rtasida foizsiz moliyaviy yordam ko'rsatish uchun. Oylik, choraklik yoki bir yo'la qaytarish varianti belgilangan.",
     icon: '💰',
     isDefault: true,
     tags: ['qarz', 'foizsiz', 'moliyaviy yordam'],
