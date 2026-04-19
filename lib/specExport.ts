@@ -1,5 +1,6 @@
 import { cyrillicToLatin } from '@/lib/downloadUtils'
 import { numberToWords, formatDateUz } from '@/lib/contractStructures'
+import type ExcelJS from 'exceljs'
 import type { Specification, Org, Counterparty } from '@/lib/types'
 
 type OrgLike = {
@@ -125,16 +126,24 @@ export async function generateSpecWord(
   const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder }
 
   function orgCell(title: string, org: OrgLike | null | undefined) {
+    const B = { font: F, color: '000000', bold: true }
+    const details: string[] = [
+      org?.address  ? `Manzil: ${org.address}`      : '',
+      org?.bank_name    ? `Bank: ${org.bank_name}`  : '',
+      org?.bank_account ? `H/R: ${org.bank_account}`: '',
+      org?.mfo      ? `MFO: ${org.mfo}`             : '',
+    ].filter(Boolean)
     return new TableCell({
       borders: noBorders,
       margins: { top: 160, bottom: 160, left: 160, right: 160 },
       children: [
-        new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: title, bold: true, size: 24, font: F, underline: {} })] }),
-        new Paragraph({ spacing: { after: 100 }, children: [new TextRun({ text: org?.name || '_______________', bold: true, size: 24, font: F })] }),
-        new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: `Rahbar: ${org?.director_name || '_______________'}`, size: 22, font: F })] }),
-        new Paragraph({ spacing: { after: 200 }, children: [new TextRun({ text: `INN: ${org?.inn || '_______________'}`, size: 22, font: F })] }),
-        new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ text: '_________________________', size: 22, font: F })] }),
-        new Paragraph({ children: [new TextRun({ text: 'M.O.', size: 20, font: F, color: '666666' })] }),
+        new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ ...B, text: title, size: 24, underline: {} })] }),
+        new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ ...B, text: org?.name || '_______________', size: 24 })] }),
+        new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ ...B, text: `INN: ${org?.inn || '___'}`, size: 22 })] }),
+        ...details.map(d => new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ ...B, text: d, size: 20 })] })),
+        new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ ...B, text: `Rahbar: ${org?.director_name || '_______________'}`, size: 22 })] }),
+        new Paragraph({ spacing: { after: 40 }, children: [new TextRun({ ...B, text: '_________________________', size: 22 })] }),
+        new Paragraph({ children: [new TextRun({ ...B, text: 'M.O.', size: 20, color: '666666' })] }),
       ],
     })
   }
@@ -168,7 +177,7 @@ export async function generateSpecWord(
       },
     },
     sections: [{
-      properties: { page: { margin: { top: 1134, bottom: 1134, left: 851, right: 851 } } },
+      properties: { page: { margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 } } },
       footers: { default: footer },
       children: [
         ...(contract ? [
@@ -306,4 +315,103 @@ export async function generateSpecPDF(
   }
 
   doc.save(`spec-${spec.spec_number}.pdf`)
+}
+
+export async function generateSpecExcel(
+  spec: Specification,
+  activeOrg: Org | null,
+  cps: Counterparty[]
+): Promise<void> {
+  const ExcelJS = (await import('exceljs')).default
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Shartnoma.uz'
+
+  const contract = spec.contracts
+  const cpFull = contract?.counterparty_id ? cps.find(c => c.id === contract.counterparty_id) || null : null
+  const cpName = cpFull?.name || contract?.counterparties?.name || '—'
+
+  const ws = wb.addWorksheet('Spesifikatsiya')
+  ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 }
+  ws.properties.defaultRowHeight = 18
+
+  const hBg = '1F3864'
+  const hFg = 'FFFFFF'
+  const totalBg = 'D9E8FF'
+
+  function hdr(cell: ExcelJS.Cell, v: string) {
+    cell.value = v; cell.font = { bold: true, color: { argb: hFg }, name: 'Times New Roman', size: 10 }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: hBg } }
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+  }
+  function dat(cell: ExcelJS.Cell, v: string | number, bold = false, align: ExcelJS.Alignment['horizontal'] = 'left') {
+    cell.value = v; cell.font = { bold, name: 'Times New Roman', size: 10 }
+    cell.alignment = { horizontal: align, vertical: 'middle', wrapText: true }
+    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
+  }
+
+  // Title rows
+  ws.mergeCells('A1:I1')
+  const t1 = ws.getCell('A1'); t1.value = `NARXNI KELISHISH PROTOKOLI №${spec.spec_number}`
+  t1.font = { bold: true, size: 13, name: 'Times New Roman' }; t1.alignment = { horizontal: 'center' }
+  if (contract) {
+    ws.mergeCells('A2:I2')
+    const t2 = ws.getCell('A2'); t2.value = `Shartnoma №${contract.contract_number} ga ilova · ${formatDateUz(contract.contract_date)}`
+    t2.font = { size: 10, name: 'Times New Roman' }; t2.alignment = { horizontal: 'center' }
+  }
+  ws.mergeCells('A3:I3')
+  const t3 = ws.getCell('A3'); t3.value = `Sotuvchi: ${activeOrg?.name || '—'}   |   Xaridor: ${cpName}`
+  t3.font = { size: 10, name: 'Times New Roman', italic: true }; t3.alignment = { horizontal: 'center' }
+
+  const hRow = ws.getRow(4); hRow.height = 32
+  const headers = ['№', 'Nomi', "O'lchov", 'Miqdori', "Narxi (so'm)", 'Asosiy summa', 'QQS %', 'QQS summa', "Jami (so'm)"]
+  headers.forEach((h, i) => hdr(hRow.getCell(i + 1), h))
+
+  const items = Array.isArray(spec.items) ? spec.items : []
+  items.forEach((item, idx) => {
+    const row = ws.getRow(5 + idx); row.height = 16
+    const base = item.miqdori * item.narxi
+    const qqs = item.qqs_foiz === 'siz' ? 'QQSsiz' : `${item.qqs_foiz}%`
+    dat(row.getCell(1), idx + 1, false, 'center')
+    dat(row.getCell(2), item.nomi || '—')
+    dat(row.getCell(3), item.birlik || 'dona', false, 'center')
+    dat(row.getCell(4), item.miqdori, false, 'right')
+    dat(row.getCell(5), item.narxi, false, 'right')
+    dat(row.getCell(6), base, false, 'right')
+    dat(row.getCell(7), qqs, false, 'center')
+    dat(row.getCell(8), item.qqs_summa || 0, false, 'right')
+    dat(row.getCell(9), item.summa || 0, true, 'right')
+    if (idx % 2 === 1) {
+      for (let c = 1; c <= 9; c++) {
+        row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F5F7FF' } }
+      }
+    }
+  })
+
+  const tRow = ws.getRow(5 + items.length); tRow.height = 20
+  const asosiy = items.reduce((s, i) => s + i.miqdori * i.narxi, 0)
+  const qqsJami = items.reduce((s, i) => s + (i.qqs_summa || 0), 0)
+  const grand   = items.reduce((s, i) => s + (i.summa || 0), 0)
+  ws.mergeCells(`A${5 + items.length}:E${5 + items.length}`)
+  const tlCell = tRow.getCell(1); tlCell.value = 'JAMI:'
+  tlCell.font = { bold: true, name: 'Times New Roman', size: 11 }; tlCell.alignment = { horizontal: 'right' }
+  tlCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: totalBg } }
+  dat(tRow.getCell(6), asosiy, true, 'right')
+  tRow.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: totalBg } }
+  dat(tRow.getCell(8), qqsJami, true, 'right')
+  dat(tRow.getCell(9), grand, true, 'right')
+  for (let c = 6; c <= 9; c++) {
+    tRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: totalBg } }
+  }
+
+  ws.columns = [
+    { width: 5 }, { width: 36 }, { width: 10 }, { width: 9 },
+    { width: 14 }, { width: 14 }, { width: 10 }, { width: 12 }, { width: 14 },
+  ]
+
+  const buf = await wb.xlsx.writeBuffer()
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = `spec-${spec.spec_number}.xlsx`; a.click()
+  URL.revokeObjectURL(url)
 }

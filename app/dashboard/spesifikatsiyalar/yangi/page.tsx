@@ -104,17 +104,15 @@ export default function YangiSpesifikatsiyaPage() {
         const n = parseInt(s.spec_number.replace(/\D/g, ''), 10)
         return isNaN(n) ? m : Math.max(m, n)
       }, 0)
-      setSpecNumber(`SPEC-${String(max + 1).padStart(3, '0')}`)
+      setSpecNumber(String(max + 1))
     }
     loadNext()
   }, [editId, activeOrg?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const orgContracts = useMemo(
-    () => cpId
-      ? contracts.filter(c => c.organization_id === activeOrg?.id && c.counterparty_id === cpId)
-      : [],
-    [contracts, activeOrg?.id, cpId]
+    () => contracts.filter(c => c.organization_id === activeOrg?.id),
+    [contracts, activeOrg?.id]
   )
 
   const cpsWithContracts = useMemo(
@@ -233,8 +231,18 @@ export default function YangiSpesifikatsiyaPage() {
             <div>
               <label className={lbl}>Shartnoma raqami</label>
               <select className={inp} value={contractId}
-                onChange={e => setContractId(e.target.value)}
-                disabled={!cpId}>
+                onChange={e => {
+                  const cid = e.target.value
+                  setContractId(cid)
+                  if (cid) {
+                    const found = contracts.find(x => x.id === cid)
+                    if (found?.counterparty_id) {
+                      setCpId(found.counterparty_id)
+                      const foundCp = cps.find(cp => cp.id === found.counterparty_id)
+                      if (foundCp) setCpSearch(foundCp.name)
+                    }
+                  }
+                }}>
                 <option value="">— Tanlang —</option>
                 {orgContracts.map(c => (
                   <option key={c.id} value={c.id}>
@@ -371,6 +379,7 @@ export default function YangiSpesifikatsiyaPage() {
               <span className="text-xs bg-[#1F2937] border border-[#1E293B] text-gray-400 px-2 py-0.5 rounded-full">{items.length} ta</span>
               <button type="button"
                 onClick={() => setTeskaricHisob(v => !v)}
+                title="Yoniq bo'lsa: Jami summani kiritasiz — narx avtomatik hisoblanadi"
                 className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition ${
                   teskaricHisob
                     ? 'bg-blue-600/20 border-blue-600/40 text-blue-400'
@@ -485,12 +494,18 @@ export default function YangiSpesifikatsiyaPage() {
               <tfoot>
                 <tr className="border-t-2 border-[#1E293B] bg-[#0A1628]">
                   <td colSpan={5} className="px-3 py-2.5 text-right text-gray-400 font-semibold whitespace-nowrap">Jami:</td>
-                  <td className="px-2 py-2.5 text-right text-white font-semibold whitespace-nowrap">{asosiy.toLocaleString()}</td>
+                  <td className="px-2 py-2.5 text-right whitespace-nowrap">
+                    <div className="font-semibold text-white">{asosiy.toLocaleString()}</div>
+                    <div className="text-[10px] text-gray-500">QQSsiz</div>
+                  </td>
                   <td/>
                   <td className="px-2 py-2.5 text-right whitespace-nowrap">
                     {qqsJami > 0 ? <span className="text-amber-400 font-semibold">{qqsJami.toLocaleString()}</span> : <span className="text-gray-600">—</span>}
                   </td>
-                  <td className="px-2 py-2.5 text-right font-bold text-white whitespace-nowrap">{grand.toLocaleString()}</td>
+                  <td className="px-2 py-2.5 text-right whitespace-nowrap">
+                    <div className="font-bold text-white">{grand.toLocaleString()}</div>
+                    <div className="text-[10px] text-gray-500">QQS bilan</div>
+                  </td>
                   <td/>
                 </tr>
               </tfoot>

@@ -9,7 +9,8 @@ import { useDashboard } from '../context'
 import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import type { Specification } from '@/lib/types'
-import { generateSpecWord, generateSpecPDF } from '@/lib/specExport'
+import { generateSpecWord, generateSpecPDF, generateSpecExcel } from '@/lib/specExport'
+import { formatDateUz } from '@/lib/contractStructures'
 import { FileText, Plus, Download, Pencil, Trash2 } from 'lucide-react'
 
 export default function SpesifikatsiyalarPage() {
@@ -54,7 +55,7 @@ export default function SpesifikatsiyalarPage() {
 
   const filteredSpecs = useMemo(() => {
     if (!search) return specs
-    const q = search.toLowerCase()
+    const q = search.toLowerCase().replace(/^#/, '')
     return specs.filter(s =>
       s.spec_number.toLowerCase().includes(q) ||
       (s.notes || '').toLowerCase().includes(q) ||
@@ -158,7 +159,7 @@ export default function SpesifikatsiyalarPage() {
                       {total.toLocaleString()} <span className="text-xs text-gray-500">{T(t.overviewTab.som)}</span>
                     </td>
                     <td className="px-4 py-2.5 text-xs text-gray-500">
-                      {new Date(spec.created_at).toLocaleDateString('uz-UZ')}
+                      {formatDateUz(spec.created_at.split('T')[0])}
                     </td>
                     <td className="px-4 py-2.5" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
@@ -169,6 +170,10 @@ export default function SpesifikatsiyalarPage() {
                         <button onClick={() => generateSpecPDF(spec, activeOrg, cps)}
                           className="inline-flex items-center gap-1 text-xs bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg transition font-medium">
                           <Download className="w-3 h-3"/> PDF
+                        </button>
+                        <button onClick={() => generateSpecExcel(spec, activeOrg, cps)}
+                          className="inline-flex items-center gap-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg transition font-medium">
+                          <Download className="w-3 h-3"/> Excel
                         </button>
                         <Link href={`/dashboard/spesifikatsiyalar/yangi?id=${spec.id}`}
                           className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-white px-2 py-1.5 rounded-lg hover:bg-[#1F2937] transition">
@@ -235,6 +240,8 @@ export default function SpesifikatsiyalarPage() {
                   className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition font-semibold">📝 Word</button>
                 <button onClick={() => generateSpecPDF(viewSpec, activeOrg, cps)}
                   className="px-3 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-500 transition font-semibold">📄 PDF</button>
+                <button onClick={() => generateSpecExcel(viewSpec, activeOrg, cps)}
+                  className="px-3 py-1.5 text-xs bg-emerald-700 text-white rounded-lg hover:bg-emerald-600 transition font-semibold">📊 Excel</button>
                 <Link href={`/dashboard/spesifikatsiyalar/yangi?id=${viewSpec.id}`}
                   onClick={() => setViewSpec(null)}
                   className="px-3 py-1.5 text-xs bg-[#1F2937] border border-[#1E293B] text-gray-300 rounded-lg hover:text-white transition">
