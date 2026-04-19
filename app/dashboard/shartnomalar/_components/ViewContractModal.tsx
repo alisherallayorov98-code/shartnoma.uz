@@ -54,7 +54,9 @@ export default function ViewContractModal({
       // Autopilot ishlamoqda — parol panelini ko'rsat
       setShowPwdPanel(true)
     } else {
-      // Manual yo'l
+      // Manual yo'l — eski autopilot bannerni tozala
+      setApStatus(null)
+      setApMsg('')
       await onGeneratePDF(viewContract)
       const cpInn = viewContract.counterparties?.inn || ''
       if (cpInn) { try { await navigator.clipboard.writeText(cpInn) } catch { /* */ } }
@@ -161,7 +163,7 @@ export default function ViewContractModal({
                   type="password"
                   value={eimzoPwd}
                   onChange={e => setEimzoPwd(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && eimzoPwd && runAutopilot()}
+                  onKeyDown={e => e.key === 'Enter' && eimzoPwd && apStatus !== 'loading' && runAutopilot()}
                   placeholder="Kalit paroli..."
                   autoFocus
                   className="flex-1 bg-[#0F172A] border border-violet-700/50 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-violet-500"

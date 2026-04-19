@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """
-Didox Autopilot v3.0 — shartnoma.uz
+Didox Autopilot v3.1 — shartnoma.uz
 ====================================
-Optimallashtirilgan: parallel to'ldirish, smart wait, selector kesh.
-Maqsad: 8-12 soniya (avval: 20-40s).
+Tuzatishlar (v3 → v3.1):
+  * Login saqlanadi (launch_persistent_context)
+  * Popup detection click DAN OLDIN o'rnatiladi (e-imzo modali topiladi)
+  * is_visible(timeout=N) → wait_for(state='visible', timeout=N) (haqiqiy smart wait)
+  * XPath selectorlarga 'xpath=' prefiks
+  * STIR uchun maxsus topish funksiyasi (sender va hamkor STIR ni adashtirmaydi)
+  * Concurrency lock (parallel so'rovlar interleave bo'lmaydi)
+  * Cache faqat _do_fill yakunida saqlanadi (race condition yo'q)
 
-O'rnatish (bir marta):
+O'rnatish:
   pip install playwright
   playwright install chromium
 
@@ -25,27 +31,31 @@ from pathlib import Path
 PORT = 9876
 DIDOX_URL = "https://didox.uz/document_form/000"
 CACHE_FILE = Path.home() / ".didox_autopilot_cache.json"
+PROFILE_DIR = Path.home() / ".didox_autopilot_profile"
 
+_ctx = None  # BrowserContext (persistent)
 _page = None
-_browser = None
 _loop: asyncio.AbstractEventLoop
+_fill_lock = asyncio.Lock()  # bir vaqtda faqat bitta to'ldirish
 
-# Selector keshi: bir marta topilgan selectorni qayta ishlatish
+# Selector keshi
 _sel_cache: dict[str, str] = {}
 
+
+# ── Cache ─────────────────────────────────────────────────────────────────────
 
 def _load_cache():
     global _sel_cache
     try:
         if CACHE_FILE.exists():
-            _sel_cache = json.loads(CACHE_FILE.read_text())
+            _sel_cache = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
     except Exception:
         _sel_cache = {}
 
 
 def _save_cache():
     try:
-        CACHE_FILE.write_text(json.dumps(_sel_cache, ensure_ascii=False, indent=2))
+        CACHE_FILE.write_text(json.dumps(_sel_cache, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception:
         pass
 
@@ -63,14 +73,15 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_response(200); _cors(self); self.end_headers()
 
     def do_GET(self):
-        self._json({"status": "ok", "version": "3.0"} if self.path == "/health" else {"error": "topilmadi"}, 200 if self.path == "/health" else 404)
+        ok = (self.path == "/health")
+        self._json({"status": "ok", "version": "3.1"} if ok else {"error": "topilmadi"}, 200 if ok else 404)
 
     def do_POST(self):
         if self.path != "/fill-didox":
             return self._json({"error": "topilmadi"}, 404)
         n = int(self.headers.get("Content-Length", 0))
         data = json.loads(self.rfile.read(n)) if n else {}
-        fut = asyncio.run_coroutine_threadsafe(_do_fill(data), _loop)
+        fut = asyncio.run_coroutine_threadsafe(_do_fill_locked(data), _loop)
         try:
             result = fut.result(timeout=120)
         except TimeoutError:
@@ -91,30 +102,59 @@ class _Handler(BaseHTTPRequestHandler):
     def log_message(self, *_): pass
 
 
-# ── Smart selector topish (kesh bilan) ───────────────────────────────────────
-
-async def _find_and_cache(page, cache_key: str, selectors: list[str], visible=True):
-    """
-    Keshdan oldin tekshiradi. Topilsa keshga yozadi.
-    Returns: (element | None, selector_used)
-    """
-    # Keshda bor bo'lsa — to'g'ridan to'g'ri
-    cached = _sel_cache.get(cache_key)
-    if cached:
+async def _do_fill_locked(data: dict) -> dict:
+    """Concurrency lock bilan o'rab _do_fill ni chaqiradi."""
+    async with _fill_lock:
         try:
-            el = page.locator(cached).first
-            if await el.count() > 0 and (not visible or await el.is_visible(timeout=500)):
+            return await _do_fill(data)
+        finally:
+            _save_cache()  # faqat yakunida — race condition yo'q
+
+
+# ── Helper: visibility ────────────────────────────────────────────────────────
+
+async def _wait_vis(el, timeout=500) -> bool:
+    """Element visible bo'lguncha kutadi (TIMEOUT ms ichida)."""
+    try:
+        await el.wait_for(state="visible", timeout=timeout)
+        return True
+    except Exception:
+        return False
+
+
+async def _is_vis_now(el) -> bool:
+    """Hozirgi visible holatini darhol qaytaradi (kutmaydi)."""
+    try:
+        return await el.is_visible()
+    except Exception:
+        return False
+
+
+# ── Selector topish + kesh ────────────────────────────────────────────────────
+
+async def _find(page_or_frame, cache_key: str | None, selectors: list[str], visible=True, timeout=500):
+    """
+    Birinchi visible elementni qaytaradi. cache_key berilsa keshlaydi.
+    Returns: (element | None, selector_used | None)
+    """
+    # Keshdan
+    if cache_key and (cached := _sel_cache.get(cache_key)):
+        try:
+            el = page_or_frame.locator(cached).first
+            if await el.count() > 0 and (not visible or await _wait_vis(el, timeout)):
                 return el, cached
         except Exception:
-            del _sel_cache[cache_key]  # eskirgan — o'chiramiz
+            pass
+        # Eskirgan — o'chiramiz
+        _sel_cache.pop(cache_key, None)
 
-    # Qidirish
+    # Yangidan qidirish
     for sel in selectors:
         try:
-            el = page.locator(sel).first
-            if await el.count() > 0 and (not visible or await el.is_visible(timeout=300)):
-                _sel_cache[cache_key] = sel
-                _save_cache()
+            el = page_or_frame.locator(sel).first
+            if await el.count() > 0 and (not visible or await _wait_vis(el, timeout)):
+                if cache_key:
+                    _sel_cache[cache_key] = sel
                 return el, sel
         except Exception:
             continue
@@ -122,8 +162,7 @@ async def _find_and_cache(page, cache_key: str, selectors: list[str], visible=Tr
 
 
 async def _smart_fill(page, cache_key: str, selectors: list[str], value: str) -> bool:
-    """Kesh + parallel bo'lmagan holda ham tez ishlaydi."""
-    el, _ = await _find_and_cache(page, cache_key, selectors)
+    el, _ = await _find(page, cache_key, selectors)
     if el is None:
         return False
     try:
@@ -133,10 +172,62 @@ async def _smart_fill(page, cache_key: str, selectors: list[str], value: str) ->
         return False
 
 
+# ── STIR uchun MAXSUS topish (sender ≠ hamkor) ────────────────────────────────
+
+async def _find_cp_stir(page):
+    """
+    Hamkor STIR maydonini topish.
+    Sahifada 2 ta STIR input bor: birinchi — sender (org), ikkinchi — hamkor.
+    """
+    cached = _sel_cache.get("cp_stir")
+    if cached:
+        try:
+            el = page.locator(cached).first
+            if await el.count() > 0 and await _wait_vis(el, 500):
+                # Maydon bo'sh bo'lishi kerak (kontragent uchun) — bo'sh bo'lmasa eskirgan
+                val = await el.input_value()
+                if not val or len(val) < 9:
+                    return el
+        except Exception:
+            pass
+        _sel_cache.pop("cp_stir", None)
+
+    # Aniq selectorlar — hamkor blokiga mo'ljallangan
+    specific = [
+        '[class*="receiver"] input[placeholder*="СТИР"]',
+        '[class*="receiver"] input[placeholder*="STIR"]',
+        '[class*="partner"] input[placeholder*="СТИР"]',
+        '[class*="counterpart"] input[placeholder*="СТИР"]',
+        '[class*="hamkor"] input[placeholder*="СТИР"]',
+        # XPath: ikkinchi STIR input
+        'xpath=(//input[contains(@placeholder,"СТИР") or contains(@placeholder,"STIR") or contains(@placeholder,"ИНН")])[2]',
+    ]
+    for sel in specific:
+        try:
+            el = page.locator(sel).first
+            if await el.count() > 0 and await _wait_vis(el, 500):
+                _sel_cache["cp_stir"] = sel
+                return el
+        except Exception:
+            continue
+
+    # Fallback: barcha STIR inputlardan ikkinchisini olish (.nth(1))
+    for base_sel in ['input[placeholder*="СТИР"]', 'input[placeholder*="STIR"]', 'input[placeholder*="ИНН"]']:
+        try:
+            els = page.locator(base_sel)
+            if await els.count() >= 2:
+                el = els.nth(1)
+                if await _wait_vis(el, 500):
+                    return el  # generic .nth(1) — keshlamaymiz
+        except Exception:
+            continue
+
+    return None
+
+
 # ── Sana formatlash ───────────────────────────────────────────────────────────
 
 def _fmt(iso: str) -> str:
-    """'2026-04-19' → '19.04.2026'"""
     p = (iso or "")[:10].split("-")
     return f"{p[2]}.{p[1]}.{p[0]}" if len(p) == 3 else iso
 
@@ -160,7 +251,6 @@ async def _do_fill(data: dict) -> dict:
     def log(msg): print(f"  → {msg}"); log_msgs.append(msg)
 
     try:
-        # ── PDF vaqtinchalik faylga (async bilan parallel ketadi) ──────────
         if pdf_b64:
             raw = base64.b64decode(pdf_b64)
             fd, pdf_tmp = tempfile.mkstemp(suffix=".pdf")
@@ -170,17 +260,14 @@ async def _do_fill(data: dict) -> dict:
         t0 = asyncio.get_event_loop().time()
         await _page.bring_to_front()
         await _page.goto(DIDOX_URL, wait_until="commit", timeout=20_000)
-        # "commit" = birinchi byte keldi, DOM qurilishini kutmaymiz
-        # Faqat zarur elementlar paydo bo'lguncha kutamiz
+        # Element paydo bo'lguncha kutamiz (DOM tayyor bo'lguncha emas)
         await _page.wait_for_selector(
             'input, select, [role="combobox"]',
             timeout=10_000
         )
         log(f"Sahifa yuklandi ({asyncio.get_event_loop().time()-t0:.1f}s)")
 
-        # ── 2. Barcha mustaqil fieldlarni PARALLEL to'ldirish ─────────────
-        log("Fieldlar parallel to'ldirilmoqda...")
-
+        # ── 2. Mustaqil fieldlar — PARALLEL ────────────────────────────────
         async def fill_doc_number():
             return await _smart_fill(_page, "doc_number", [
                 'input[placeholder*="Ҳужжат рақами"]',
@@ -215,8 +302,7 @@ async def _do_fill(data: dict) -> dict:
             ], con_date)
 
         async def select_shartnoma_type():
-            # Dropdown ni tanlash
-            el, _ = await _find_and_cache(_page, "type_dropdown", [
+            el, _ = await _find(_page, "type_dropdown", [
                 '[class*="select"]:has-text("Бошқа")',
                 '[class*="select"]:has-text("Boshqa")',
                 '[aria-label*="тур"]', '[aria-label*="tur"]',
@@ -225,25 +311,26 @@ async def _do_fill(data: dict) -> dict:
             ])
             if el is None:
                 return False
-            await el.click()
-            await _page.wait_for_timeout(200)
-            # Variant
-            for opt_sel in [
+            try:
+                await el.click()
+            except Exception:
+                return False
+            # Variant paydo bo'lguncha kutamiz
+            opt_selectors = [
                 '[role="option"]:has-text("Шартнома")',
                 'li:has-text("Шартнома")',
                 '[class*="option"]:has-text("Шартнома")',
-                'div:has-text("Шартнома"):not(:has(*))',
-            ]:
+            ]
+            for opt_sel in opt_selectors:
                 try:
                     opt = _page.locator(opt_sel).first
-                    if await opt.count() > 0 and await opt.is_visible(timeout=500):
+                    if await opt.count() > 0 and await _wait_vis(opt, 800):
                         await opt.click()
                         return True
                 except Exception:
                     continue
             return False
 
-        # Hammasini parallel ishga tushiramiz
         results = await asyncio.gather(
             fill_doc_number(),
             fill_doc_date(),
@@ -252,35 +339,23 @@ async def _do_fill(data: dict) -> dict:
             select_shartnoma_type(),
             return_exceptions=True,
         )
-        filled_ok = sum(1 for r in results if r is True)
-        log(f"Parallel to'ldirish: {filled_ok}/5 ✓")
+        ok_count = sum(1 for r in results if r is True)
+        log(f"Parallel to'ldirish: {ok_count}/5 ✓")
 
-        # ── 3. Hamkor STIR — alohida (network response ni kutadi) ──────────
+        # ── 3. Hamkor STIR (alohida — sender bilan adashmasin) ─────────────
         if cp_inn:
-            stir_el, _ = await _find_and_cache(_page, "cp_stir", [
-                # Hamkor tomonidagi input — ko'pincha o'ng panelda yoki ikkinchi STIR
-                '[class*="receiver"] input[placeholder*="СТИР"]',
-                '[class*="receiver"] input[placeholder*="STIR"]',
-                '[class*="partner"] input[placeholder*="СТИР"]',
-                'input[placeholder*="СТИР/ЖШШИР"]',
-                # Sahifada 2 ta STIR input bo'lsa — ikkinchisi hamkor uchun
-                '(//input[contains(@placeholder,"СТИР")])[2]',
-                'input[placeholder*="СТИР"]',
-                'input[placeholder*="STIR"]',
-                'input[placeholder*="ИНН"]',
-            ])
-
+            stir_el = await _find_cp_stir(_page)
             if stir_el:
                 await stir_el.fill(cp_inn)
-
-                # Smart wait: kompaniya nomi paydo bo'lguncha (fixed 3s o'rniga)
+                await stir_el.press("Enter")
+                # Smart wait: hamkor nomi paydo bo'lguncha
                 try:
                     await _page.wait_for_function(
-                        # Hamkor nomi yuklanganda qandaydir matn paydo bo'ladi
                         """() => {
                             const els = document.querySelectorAll(
                                 '[class*="company"], [class*="receiver"] [class*="name"], '
-                                + '[class*="partner"] [class*="name"], [class*="org-name"]'
+                                + '[class*="partner"] [class*="name"], [class*="org-name"], '
+                                + '[class*="hamkor"] [class*="name"]'
                             );
                             for (const el of els) {
                                 if (el.textContent?.trim().length > 3) return true;
@@ -289,16 +364,15 @@ async def _do_fill(data: dict) -> dict:
                         }""",
                         timeout=5_000
                     )
-                    log(f"Hamkor STIR '{cp_inn}': ✓ (kompaniya yukland)")
+                    log(f"Hamkor STIR '{cp_inn}': ✓ (kompaniya yuklandi)")
                 except Exception:
-                    # 5 soniya ichida kelmasa ham davom etamiz
-                    log(f"Hamkor STIR '{cp_inn}': kiritildi (ma'lumot kutilmoqda)")
+                    log(f"Hamkor STIR '{cp_inn}': kiritildi (ma'lumot kutilmadi)")
             else:
-                log(f"Hamkor STIR: ⚠ maydoni topilmadi")
+                log("Hamkor STIR: ⚠ maydoni topilmadi")
 
         # ── 4. PDF biriktirish ─────────────────────────────────────────────
         if pdf_tmp:
-            fi_el, _ = await _find_and_cache(_page, "file_input", [
+            fi_el, _ = await _find(_page, "file_input", [
                 'input[type="file"]',
                 '[class*="upload"] input[type="file"]',
                 '[class*="attach"] input[type="file"]',
@@ -308,8 +382,7 @@ async def _do_fill(data: dict) -> dict:
 
             if fi_el:
                 await fi_el.set_input_files(pdf_tmp)
-                log("PDF: ✓ biriktirildi")
-                # Fayl yuklanishini kutish (progressbar yo'qolganda)
+                # Upload progress yo'qolguncha kutamiz
                 try:
                     await _page.wait_for_function(
                         "() => !document.querySelector('[class*=\"upload-progress\"], [class*=\"uploading\"]')",
@@ -317,103 +390,134 @@ async def _do_fill(data: dict) -> dict:
                     )
                 except Exception:
                     pass
+                log("PDF: ✓ biriktirildi")
             else:
                 log("PDF: ⚠ fayl maydoni topilmadi")
 
         # ── 5. E-imzo imzolash ─────────────────────────────────────────────
         if password:
-            # Imzolash tugmasi
-            sign_el, _ = await _find_and_cache(_page, "sign_btn", [
+            sign_el, _ = await _find(_page, "sign_btn", [
                 'button:has-text("Имзолаш")',
                 'button:has-text("Imzolash")',
                 'button:has-text("Подписать")',
                 'button:has-text("Sign")',
                 '[class*="sign-btn"]',
-                '[class*="submit-btn"]',
                 'button[type="submit"]',
             ])
 
             if sign_el and await sign_el.is_enabled():
-                await sign_el.click()
-                log("Imzolash tugmasi bosildi")
-
-                # Parol modali paydo bo'lguncha kutamiz
-                pwd_sel = 'input[type="password"]'
-                pwd_el = None
+                # Popup listenerni KLIK DAN OLDIN o'rnatamiz
+                popup_holder = {"popup": None}
+                def _on_popup(p): popup_holder["popup"] = p
+                _page.context.on("page", _on_popup)
 
                 try:
-                    # Asosiy sahifada
-                    await _page.wait_for_selector(pwd_sel, timeout=5_000)
-                    pwd_el = _page.locator(pwd_sel).first
-                except Exception:
-                    pass
+                    await sign_el.click()
+                    log("Imzolash bosildi — parol maydoni qidirilmoqda...")
 
-                # Iframe ichida
-                if pwd_el is None or await pwd_el.count() == 0:
-                    for frame in _page.frames:
+                    # Polling: popup, main page, iframe — qaysi birinchi tayyor bo'lsa
+                    pwd_el = None
+                    sign_target = _page  # parol qaerda — shu yerda confirm bosamiz
+                    deadline = asyncio.get_event_loop().time() + 8.0
+
+                    while asyncio.get_event_loop().time() < deadline:
+                        # 1. Popup
+                        if popup_holder["popup"]:
+                            try:
+                                popup = popup_holder["popup"]
+                                await popup.wait_for_load_state("domcontentloaded", timeout=1500)
+                                cand = popup.locator('input[type="password"]').first
+                                if await cand.count() > 0 and await _is_vis_now(cand):
+                                    pwd_el = cand
+                                    sign_target = popup
+                                    break
+                            except Exception:
+                                pass
+
+                        # 2. Main page modal
                         try:
-                            await frame.wait_for_selector(pwd_sel, timeout=2_000)
-                            pwd_el = frame.locator(pwd_sel).first
-                            break
+                            cand = _page.locator('input[type="password"]').first
+                            if await cand.count() > 0 and await _is_vis_now(cand):
+                                pwd_el = cand
+                                sign_target = _page
+                                break
                         except Exception:
-                            continue
-
-                # Popup oyna
-                if pwd_el is None or await pwd_el.count() == 0:
-                    try:
-                        async with _page.context.expect_page(timeout=3_000) as popup_info:
                             pass
-                        popup = popup_info.value
-                        await popup.wait_for_selector(pwd_sel, timeout=5_000)
-                        pwd_el = popup.locator(pwd_sel).first
-                        await pwd_el.fill(password)
-                        await _click_popup_confirm(popup)
-                        log("E-imzo (popup): ✓ imzolandi")
-                        pwd_el = None  # already handled
+
+                        # 3. Iframe
+                        for frame in _page.frames:
+                            if frame == _page.main_frame:
+                                continue
+                            try:
+                                cand = frame.locator('input[type="password"]').first
+                                if await cand.count() > 0 and await _is_vis_now(cand):
+                                    pwd_el = cand
+                                    sign_target = frame
+                                    break
+                            except Exception:
+                                continue
+                        if pwd_el:
+                            break
+
+                        await asyncio.sleep(0.15)
+                finally:
+                    try:
+                        _page.context.remove_listener("page", _on_popup)
                     except Exception:
                         pass
 
-                if pwd_el and await pwd_el.count() > 0:
+                if pwd_el is None:
+                    log("E-imzo: ⚠ parol maydoni topilmadi (qo'lda imzolang)")
+                else:
                     await pwd_el.fill(password)
-                    # Tasdiqlash
-                    for confirm_sel in [
+                    log("Parol kiritildi")
+
+                    # Tasdiqlash tugmasi (sign_target ichidan qidiramiz)
+                    confirmed = False
+                    for sel in [
                         'button[type="submit"]',
                         'button:has-text("OK")',
                         'button:has-text("Tasdiqlash")',
                         'button:has-text("Тасдиқлаш")',
                         'button:has-text("Подтвердить")',
                         'button:has-text("Кириш")',
+                        'button:has-text("Имзолаш")',
                     ]:
                         try:
-                            btn = _page.locator(confirm_sel).last
-                            if await btn.count() > 0 and await btn.is_visible(timeout=500):
+                            btn = sign_target.locator(sel).last
+                            if await btn.count() > 0 and await _is_vis_now(btn):
                                 await btn.click()
+                                confirmed = True
                                 break
                         except Exception:
                             continue
 
-                    # Imzo tugaguncha kutish
-                    try:
-                        await _page.wait_for_function(
-                            "() => !document.querySelector('input[type=\"password\"]')",
-                            timeout=10_000
-                        )
-                        log("E-imzo: ✓ imzolandi")
-                    except Exception:
-                        log("E-imzo: kutilmoqda...")
-                else:
-                    log("E-imzo: ⚠ parol maydoni topilmadi")
+                    if confirmed:
+                        # Imzo tugaguncha — parol maydoni yo'qolguncha
+                        try:
+                            await _page.wait_for_function(
+                                "() => !document.querySelector('input[type=\"password\"]')",
+                                timeout=10_000
+                            )
+                            log("E-imzo: ✅ imzolandi")
+                        except Exception:
+                            log("E-imzo: kutilmoqda...")
+                    else:
+                        log("E-imzo: ⚠ tasdiqlash tugmasi topilmadi")
             else:
                 log("Imzolash tugmasi: ⚠ topilmadi yoki faol emas")
         else:
             log("E-imzo paroli berilmadi — qo'lda imzolang")
 
         total = asyncio.get_event_loop().time() - t0
-        log(f"Jami vaqt: {total:.1f}s")
+        log(f"Jami: {total:.1f}s")
 
         return {
             "status": "ok",
-            "message": f"✅ Didox to'ldirildi va imzolandi ({total:.0f}s)" if password else f"✅ Forma to'ldirildi ({total:.0f}s) — e-imzo bilan imzolang",
+            "message": (
+                f"✅ Didox to'ldirildi va imzolandi ({total:.0f}s)" if password
+                else f"✅ Forma to'ldirildi ({total:.0f}s) — qo'lda imzolang"
+            ),
             "log": log_msgs,
         }
 
@@ -421,35 +525,39 @@ async def _do_fill(data: dict) -> dict:
         return {"status": "error", "message": str(exc), "log": log_msgs}
     finally:
         if pdf_tmp and os.path.exists(pdf_tmp):
-            os.unlink(pdf_tmp)
+            try:
+                os.unlink(pdf_tmp)
+            except Exception:
+                pass
 
 
-async def _click_popup_confirm(page):
-    for sel in ['button[type="submit"]', 'button:has-text("OK")', 'button:has-text("Tasdiqlash")']:
-        try:
-            btn = page.locator(sel).first
-            if await btn.count() > 0:
-                await btn.click()
-                return
-        except Exception:
-            continue
-
-
-# ── Browser ───────────────────────────────────────────────────────────────────
+# ── Browser (persistent context — login saqlanadi) ───────────────────────────
 
 async def _start_browser():
-    global _page, _browser
+    global _page, _ctx
     from playwright.async_api import async_playwright
 
     pw = await async_playwright().start()
-    _browser = await pw.chromium.launch(
+    PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+
+    _ctx = await pw.chromium.launch_persistent_context(
+        user_data_dir=str(PROFILE_DIR),
         headless=False,
-        args=["--start-maximized", "--disable-blink-features=AutomationControlled"],
+        args=[
+            "--start-maximized",
+            "--disable-blink-features=AutomationControlled",
+            "--no-default-browser-check",
+        ],
+        viewport=None,
+        accept_downloads=True,
     )
-    ctx = await _browser.new_context(viewport=None)
-    _page = await ctx.new_page()
-    await _page.goto("https://didox.uz", wait_until="commit", timeout=15_000)
-    print("  ℹ️  Didox ga login qiling (agar kirgan bo'lmasangiz).")
+    _page = _ctx.pages[0] if _ctx.pages else await _ctx.new_page()
+    try:
+        await _page.goto("https://didox.uz", wait_until="commit", timeout=15_000)
+    except Exception:
+        pass
+    print(f"  💾  Profil saqlanadi: {PROFILE_DIR}")
+    print("  ℹ️   Birinchi marta Didox ga login qiling — keyingi safar avtomatik kiriladi")
 
 
 def main():
@@ -457,7 +565,7 @@ def main():
     _load_cache()
 
     print("━" * 52)
-    print("  🤖  Didox Autopilot  v3.0  |  shartnoma.uz")
+    print("  🤖  Didox Autopilot  v3.1  |  shartnoma.uz")
     print("━" * 52)
     print()
 
@@ -477,7 +585,9 @@ def main():
     try:
         fut.result(timeout=30)
     except Exception as e:
-        print(f"❌  {e}"); input("Enter..."); sys.exit(1)
+        print(f"❌  {e}")
+        input("Enter...")
+        sys.exit(1)
 
     print(f"✅  Brauzer tayyor — kesh: {len(_sel_cache)} ta selector saqlangan")
     print(f"🌐  Server: http://127.0.0.1:{PORT}")
@@ -492,6 +602,7 @@ def main():
         pass
     finally:
         print("\n👋  Yopildi.")
+        _save_cache()
         _loop.call_soon_threadsafe(_loop.stop)
 
 
