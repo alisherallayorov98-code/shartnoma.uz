@@ -16,10 +16,10 @@ const ContractModal  = dynamic(() => import('./_components/ContractModal'),  { s
 const ViewContractModal = dynamic(() => import('./_components/ViewContractModal'), { ssr: false })
 const AiModal        = dynamic(() => import('./_components/AiModal'),        { ssr: false })
 import { latinToCyrillic } from '@/lib/scriptNorm'
-import { fillPlaceholders } from '@/lib/contractUtils'
-import { generateContractDOCX } from '@/lib/export/contractDocx'
+import { fillPlaceholders, formatAmount } from '@/lib/contractUtils'
+import { generateContractDOCX, generateContractPDF } from '@/lib/export/contractDocx'
 import { logAudit } from '@/lib/audit'
-import { FaTelegram, FaFilePdf } from 'react-icons/fa'
+import { FaTelegram } from 'react-icons/fa'
 import { useToast } from '@/lib/toast'
 import ConfirmModal from '../_components/ConfirmModal'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
@@ -657,7 +657,62 @@ export default function ShartnomalarPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* ── Mobile card view ── */}
+          <div className="block sm:hidden space-y-2">
+            {paginated.map((c) => (
+              <div key={c.id} className={`bg-[#111827] border rounded-xl p-4 ${selectedIds.has(c.id) ? 'border-blue-600/50' : 'border-[#1E293B]'}`}>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
+                      className="rounded border-[#1E293B] bg-[#0F172A] accent-blue-600 cursor-pointer shrink-0" />
+                    <span className="text-sm font-semibold text-white truncate">{c.contract_number || '—'}</span>
+                  </div>
+                  <span className={`shrink-0 inline-block px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_COLORS[c.status] || 'bg-gray-700 text-gray-300'}`}>
+                    {STATUSES[c.status] ? T(STATUSES[c.status]) : c.status}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-300 truncate mb-1">
+                  {c.counterparties?.name || cps.find(cp => cp.id === c.counterparty_id)?.name || '—'}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+                  <span>{formatDateUz(c.contract_date)}</span>
+                  {c.amount && <span className="text-white font-medium">{formatAmount(c.amount)}</span>}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button title="Tahrirlash" onClick={() => openEditContract(c)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-yellow-400 hover:bg-yellow-400/10 transition">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  </button>
+                  <button title="Ko'rish" onClick={() => { setViewContract(c); setModal('viewContract') }}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
+                  <button title="Word yuklab olish" onClick={() => generateContractDOCX(c)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-blue-500/10 transition">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
+                      <rect width="24" height="24" rx="3" fill="#2B7CD3"/>
+                      <text x="3.5" y="17" fontFamily="Arial" fontWeight="bold" fontSize="14" fill="white">W</text>
+                    </svg>
+                  </button>
+                  <button title="O'chirish" onClick={() => deleteContract(c.id)}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-400 hover:bg-[#1F2937] transition">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Desktop table view ── */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#1E293B] text-xs text-gray-500 bg-[#0F172A]">
@@ -680,7 +735,7 @@ export default function ShartnomalarPage() {
                     onClick={() => toggleSort('amount')}>
                     {T(t.contracts.amount)}{sortCol === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium">{T(t.contracts.status)}</th>
+                  <th className="text-left px-4 py-3 font-medium min-w-[110px]">{T(t.contracts.status)}</th>
                   <th className="text-left px-4 py-3 font-medium">{T(t.contracts.actions)}</th>
                 </tr>
               </thead>
@@ -717,7 +772,7 @@ export default function ShartnomalarPage() {
                     {/* Amount */}
                     <td className="px-4 py-3 text-right hidden md:table-cell">
                       <span className="text-sm text-white font-medium">
-                        {c.amount ? `${Number(c.amount).toLocaleString()} so'm` : '—'}
+                        {formatAmount(c.amount)}
                       </span>
                     </td>
                     {/* Status */}
@@ -766,16 +821,17 @@ export default function ShartnomalarPage() {
                             <text x="3.5" y="17" fontFamily="Arial" fontWeight="bold" fontSize="14" fill="white">W</text>
                           </svg>
                         </button>
-                        {/* Word → PDF */}
-                        <a
-                          href="https://www.ilovepdf.com/ru/word_to_pdf"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="Word faylni PDF ga o'tkazish"
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-orange-500/10 transition"
+                        {/* PDF */}
+                        <button
+                          title="PDF yuklab olish"
+                          onClick={() => generateContractPDF(c)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 transition"
                         >
-                          <FaFilePdf className="w-4 h-4 text-orange-400" />
-                        </a>
+                          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
+                            <rect width="24" height="24" rx="3" fill="#E53E3E"/>
+                            <text x="1.5" y="17" fontFamily="Arial" fontWeight="bold" fontSize="11" fill="white">PDF</text>
+                          </svg>
+                        </button>
                         {/* AI (ai_pro only) */}
                         {hasAiAccess() && (
                           <button
@@ -847,6 +903,7 @@ export default function ShartnomalarPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
@@ -891,12 +948,18 @@ export default function ShartnomalarPage() {
         </div>
       )}
 
-      {/* ── Total for active contracts ── */}
+      {/* ── Total for filtered contracts ── */}
       {filtered.length > 0 && (
         <div className="mt-3 text-right text-xs text-gray-500">
-          {T(t.contracts.total)}{' '}
+          {statusFilter === 'all'
+            ? T({ uz: 'Faol shartnomalar summa:', oz: 'Фаол шартномалар сумма:', ru: 'Сумма активных договоров:' })
+            : T({ uz: 'Jami summa:', oz: 'Жами сумма:', ru: 'Итого сумма:' })
+          }{' '}
           <span className="text-white font-medium">
-            {filtered.filter(c => c.status === 'active').reduce((s, c) => s + Number(c.amount || 0), 0).toLocaleString()} so'm
+            {statusFilter === 'all'
+              ? formatAmount(filtered.filter(c => c.status === 'active').reduce((s, c) => s + Number(c.amount || 0), 0))
+              : formatAmount(filtered.reduce((s, c) => s + Number(c.amount || 0), 0))
+            }
           </span>
         </div>
       )}
@@ -922,7 +985,7 @@ export default function ShartnomalarPage() {
           viewContract={viewContract}
           onClose={() => setModal(null)}
           onGenerateDOCX={generateContractDOCX}
-          onGeneratePDF={async () => { window.open('https://www.ilovepdf.com/ru/word_to_pdf', '_blank') }}
+          onGeneratePDF={generateContractPDF}
           onSendByTelegram={sendByTelegram}
           onRunAiAnalysis={runAiAnalysis}
           onToggleSigned={toggleSigned}

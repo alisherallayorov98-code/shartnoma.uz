@@ -509,6 +509,7 @@ export default function YangiShartnoma() {
     if (step === 1 && !validateStep1()) return
     if (step === 2) initStructureEdit()
     setStep(s => Math.min(s + 1, 4))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // ── Save ──────────────────────────────────────────────────────────────────────
@@ -651,16 +652,19 @@ export default function YangiShartnoma() {
   const mergedCp = selectedCp ? { ...selectedCp, ...cpEdits } : null
   const filteredCps = (() => {
     const q = cpSearch.toLowerCase().trim()
-    if (!q) return localCps
+    if (!q) return localCps.slice(0, 10)
     const inn_q = q.replace(/\D/g, '')
     return localCps
       .map(cp => {
         const inn = (cp.inn || '').replace(/\D/g, '')
         const name = cp.name.toLowerCase()
+        const dir = (cp.director_name || '').toLowerCase()
         let score = 0
-        if (inn_q && inn.startsWith(inn_q))    score = 3
-        else if (inn_q && inn.includes(inn_q)) score = 2
+        if (inn_q && inn.startsWith(inn_q))    score = 4
+        else if (inn_q && inn.includes(inn_q)) score = 3
+        else if (name.startsWith(q))           score = 2
         else if (name.includes(q))             score = 1
+        else if (dir.includes(q))              score = 1
         return { cp, score }
       })
       .filter(x => x.score > 0)
@@ -708,7 +712,7 @@ export default function YangiShartnoma() {
           {STEPS.map((s, i) => (
             <div key={i} className="flex items-center flex-1 last:flex-none">
               <button type="button"
-                onClick={() => { if (i + 1 === 3) initStructureEdit(); setStep(i + 1) }}
+                onClick={() => { if (i + 1 === 3) initStructureEdit(); setStep(i + 1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                 className={`flex items-center gap-2 py-1 px-2 rounded-lg transition ${step === i + 1 ? 'bg-[#1E293B]' : 'hover:bg-[#1E293B]/50'}`}>
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 transition ${
                   step === i + 1 ? 'bg-blue-600 text-white' : step > i + 1 ? 'bg-blue-600/20 text-blue-400' : 'bg-[#1E293B] text-gray-500'
@@ -741,7 +745,7 @@ export default function YangiShartnoma() {
                   <div>
                     <label className={lbl}>{T(t.yangiPage.numLabel)} <span className="text-red-400">*</span></label>
                     <input value={form.contract_number} onChange={e => setForm(f => ({ ...f, contract_number: e.target.value }))}
-                      className={inp} placeholder="2024/001" />
+                      className={inp} placeholder={`${new Date().getFullYear()}/001`} />
                   </div>
                   <div>
                     <label className={lbl}>{T(t.yangiPage.dateLabel)}</label>
@@ -861,7 +865,7 @@ export default function YangiShartnoma() {
                           if (e.key === 'Enter') { e.preventDefault(); handleCpEnter() }
                           if (e.key === 'Escape') setCpDropOpen(false)
                         }}
-                        onFocus={() => { if (!form.counterparty_id && cpSearch.trim()) setCpDropOpen(true) }}
+                        onFocus={() => { if (!form.counterparty_id) setCpDropOpen(true) }}
                         placeholder={T(t.yangiPage.cpSearchPlh)}
                         disabled={cpStirLoading}
                         className={`w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-600 placeholder-gray-500 transition ${cpStirLoading ? 'opacity-60 cursor-wait' : ''}`}
@@ -874,7 +878,7 @@ export default function YangiShartnoma() {
                           </svg>
                         </div>
                       )}
-                      {cpDropOpen && cpSearch.trim() && !form.counterparty_id && filteredCps.length > 0 && (
+                      {cpDropOpen && !form.counterparty_id && filteredCps.length > 0 && (
                         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#111827] border border-[#1E293B] rounded-xl shadow-2xl max-h-52 overflow-y-auto">
                           {filteredCps.slice(0, 12).map(cp => (
                             <button key={cp.id} type="button"
@@ -1110,7 +1114,7 @@ export default function YangiShartnoma() {
                   {form.contract_type === 'qoshimcha' && (<>
                     <div className="grid grid-cols-2 gap-4">
                       <div><label className={lbl}>{T(t.yangiPage.mainContractNum)}</label>
-                        <input value={form.asosiy_raqam || ''} onChange={e => setForm(f => ({ ...f, asosiy_raqam: e.target.value }))} className={inp} placeholder="2024/001"/></div>
+                        <input value={form.asosiy_raqam || ''} onChange={e => setForm(f => ({ ...f, asosiy_raqam: e.target.value }))} className={inp} placeholder={`${new Date().getFullYear()}/001`}/></div>
                       <div><label className={lbl}>{T(t.yangiPage.mainContractDate)}</label>
                         <input type="date" value={form.asosiy_sana || ''} onChange={e => setForm(f => ({ ...f, asosiy_sana: e.target.value }))} className={inp}/></div>
                     </div>
@@ -1295,7 +1299,7 @@ export default function YangiShartnoma() {
                                 <input type="number" value={item.miqdori} onChange={e => updateSpecItem(i, 'miqdori', parseFloat(e.target.value) || 0)} className={inp2 + ' text-right'} min={0}/>
                               </td>
                               <td className="py-2 px-3">
-                                <input type="number" value={item.narxi} onChange={e => updateSpecItem(i, 'narxi', parseFloat(e.target.value) || 0)} className={inp2 + ' text-right'} min={0}/>
+                                <input type="number" value={item.narxi || ''} onChange={e => updateSpecItem(i, 'narxi', parseFloat(e.target.value) || 0)} className={inp2 + ' text-right'} min={0} placeholder="0.00"/>
                               </td>
                               <td className="py-2 px-3 text-right text-gray-300 font-medium">
                                 {base.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

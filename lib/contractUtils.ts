@@ -1,6 +1,12 @@
 // ─── Contract template placeholder utilities ──────────────────────────────────
 import { formatDateUz } from './contractStructures'
 
+export function formatAmount(amount: number | string | null | undefined): string {
+  const n = Number(amount)
+  if (!amount || isNaN(n) || n === 0) return '—'
+  return n.toLocaleString('uz-UZ') + " so\u2019m"
+}
+
 export type PlaceholderData = {
   contract_number?: string
   contract_date?: string

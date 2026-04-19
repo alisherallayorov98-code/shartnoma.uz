@@ -448,7 +448,7 @@ export default function OmmaviyPage() {
                   className={`text-left px-3 py-2 rounded-lg text-sm transition border ${
                     contractType === key
                       ? 'border-transparent text-white'
-                      : 'border-[#1E293B] text-gray-400 hover:border-gray-600 hover:text-gray-300'
+                      : 'border-transparent text-gray-400 hover:bg-[#1E293B]/40 hover:text-gray-200'
                   }`}
                   style={contractType === key ? { backgroundColor: color + '33', borderColor: color, color } : {}}
                 >

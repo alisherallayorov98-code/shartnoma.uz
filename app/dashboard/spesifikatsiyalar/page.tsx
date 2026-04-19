@@ -9,7 +9,7 @@ import { useDashboard } from '../context'
 import ConfirmModal from '../_components/ConfirmModal'
 import { useToast } from '@/lib/toast'
 import type { Specification } from '@/lib/types'
-import { generateSpecWord } from '@/lib/specExport'
+import { generateSpecWord, generateSpecPDF } from '@/lib/specExport'
 import { FileText, Plus, Download, Pencil, Trash2 } from 'lucide-react'
 
 export default function SpesifikatsiyalarPage() {
@@ -166,6 +166,10 @@ export default function SpesifikatsiyalarPage() {
                           className="inline-flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg transition font-medium">
                           <Download className="w-3 h-3"/> Word
                         </button>
+                        <button onClick={() => generateSpecPDF(spec, activeOrg, cps)}
+                          className="inline-flex items-center gap-1 text-xs bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg transition font-medium">
+                          <Download className="w-3 h-3"/> PDF
+                        </button>
                         <Link href={`/dashboard/spesifikatsiyalar/yangi?id=${spec.id}`}
                           className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-white px-2 py-1.5 rounded-lg hover:bg-[#1F2937] transition">
                           <Pencil className="w-3 h-3"/>
@@ -229,8 +233,8 @@ export default function SpesifikatsiyalarPage() {
               <div className="flex items-center gap-2">
                 <button onClick={() => generateSpecWord(viewSpec, activeOrg, cps)}
                   className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition font-semibold">📝 Word</button>
-                <a href="https://www.ilovepdf.com/ru/word_to_pdf" target="_blank" rel="noopener noreferrer"
-                  className="px-3 py-1.5 text-xs bg-orange-500/10 text-orange-400 rounded-lg hover:bg-orange-500/20 transition">📄 Word→PDF</a>
+                <button onClick={() => generateSpecPDF(viewSpec, activeOrg, cps)}
+                  className="px-3 py-1.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-500 transition font-semibold">📄 PDF</button>
                 <Link href={`/dashboard/spesifikatsiyalar/yangi?id=${viewSpec.id}`}
                   onClick={() => setViewSpec(null)}
                   className="px-3 py-1.5 text-xs bg-[#1F2937] border border-[#1E293B] text-gray-300 rounded-lg hover:text-white transition">

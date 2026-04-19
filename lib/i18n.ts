@@ -903,7 +903,7 @@ export const t = {
     specQtyHeader:     { uz: 'Miqdori',                                    oz: 'Миқдори',                                     ru: 'Количество' },
     specPriceHeader:   { uz: "Narxi (so'm)",                               oz: "Нарxi (сўм)",                                 ru: 'Цена (сум)' },
     specValueHeader:   { uz: 'Qiymati',                                    oz: 'Қиймати',                                     ru: 'Стоимость' },
-    specQqsRateHeader: { uz: 'QQS stavkasi',                               oz: 'ҚҚС ставкаси',                                ru: 'Ставка НДС' },
+    specQqsRateHeader: { uz: 'QQS %',                                      oz: 'ҚҚС %',                                       ru: 'НДС %' },
     specQqsSumHeader:  { uz: 'QQS summasi',                                oz: 'ҚҚС суммаси',                                 ru: 'Сумма НДС' },
     specTotalHeader:   { uz: 'Jami (QQS bilan)',                           oz: 'Жами (ҚҚС билан)',                            ru: 'Итого (с НДС)' },
     specItemPlh:       { uz: 'Tovar nomi...',                              oz: 'Товар номи...',                               ru: 'Название товара...' },

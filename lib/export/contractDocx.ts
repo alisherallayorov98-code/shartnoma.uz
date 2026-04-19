@@ -388,3 +388,22 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
   a.click()
   URL.revokeObjectURL(url)
 }
+
+export async function generateContractPDF(c: Contract): Promise<void> {
+  const blob = await generateContractDOCX(c, true) as Blob
+  const filename = `shartnoma-${c.contract_number || 'yangi'}.docx`
+
+  const form = new FormData()
+  form.append('file', new File([blob], filename, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }))
+
+  const res = await fetch('/api/convert-pdf', { method: 'POST', body: form })
+  if (!res.ok) throw new Error('PDF konversiya xatosi')
+
+  const pdfBlob = await res.blob()
+  const url = URL.createObjectURL(pdfBlob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename.replace('.docx', '.pdf')
+  a.click()
+  URL.revokeObjectURL(url)
+}

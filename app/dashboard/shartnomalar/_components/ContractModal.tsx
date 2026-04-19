@@ -753,16 +753,19 @@ export default function ContractModal({
   const selectedCp = localCps.find(c => c.id === form.counterparty_id)
   const filteredCps = (() => {
     const q = cpSearch.toLowerCase().trim()
-    if (!q) return localCps
+    if (!q) return localCps.slice(0, 10)
     const inn_q = q.replace(/\D/g, '')
     return localCps
       .map(cp => {
         const inn = (cp.inn || '').replace(/\D/g, '')
         const name = cp.name.toLowerCase()
+        const dir = (cp.director_name || '').toLowerCase()
         let score = 0
-        if (inn_q && inn.startsWith(inn_q))    score = 3
-        else if (inn_q && inn.includes(inn_q)) score = 2
+        if (inn_q && inn.startsWith(inn_q))    score = 4
+        else if (inn_q && inn.includes(inn_q)) score = 3
+        else if (name.startsWith(q))           score = 2
         else if (name.includes(q))             score = 1
+        else if (dir.includes(q))              score = 1
         return { cp, score }
       })
       .filter(x => x.score > 0)
@@ -858,7 +861,7 @@ export default function ContractModal({
                       value={form.contract_number}
                       onChange={e => setForm(f => ({ ...f, contract_number: e.target.value }))}
                       className={inp}
-                      placeholder="2024/001"
+                      placeholder={`${new Date().getFullYear()}/001`}
                       required
                     />
                   </div>
@@ -989,8 +992,8 @@ export default function ContractModal({
                         if (e.key === 'Enter') { e.preventDefault(); handleCpEnter() }
                         if (e.key === 'Escape') setCpDropOpen(false)
                       }}
-                      onFocus={() => { if (!form.counterparty_id && cpSearch.trim()) setCpDropOpen(true) }}
-                      placeholder="STIR yoki nomi — Enter bosing..."
+                      onFocus={() => { if (!form.counterparty_id) setCpDropOpen(true) }}
+                      placeholder="STIR yoki nomi..."
                       disabled={cpStirLoading}
                       className={`${inp} ${cpStirLoading ? 'opacity-60 cursor-wait' : ''}`}
                     />
@@ -1002,7 +1005,7 @@ export default function ContractModal({
                         </svg>
                       </div>
                     )}
-                    {cpDropOpen && cpSearch.trim() && !form.counterparty_id && filteredCps.length > 0 && (
+                    {cpDropOpen && !form.counterparty_id && filteredCps.length > 0 && (
                       <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl max-h-60 overflow-y-auto">
                         {filteredCps.slice(0, 12).map(cp => (
                           <button
@@ -1357,7 +1360,7 @@ export default function ContractModal({
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className={lbl}>Asosiy shartnoma raqami</label>
-                        <input value={form.asosiy_raqam || ''} onChange={e => setForm(f => ({ ...f, asosiy_raqam: e.target.value }))} className={inp} placeholder="2024/001" />
+                        <input value={form.asosiy_raqam || ''} onChange={e => setForm(f => ({ ...f, asosiy_raqam: e.target.value }))} className={inp} placeholder={`${new Date().getFullYear()}/001`} />
                       </div>
                       <div>
                         <label className={lbl}>Asosiy shartnoma sanasi</label>
@@ -1574,7 +1577,7 @@ export default function ContractModal({
                           <th className="text-right py-2 px-2 w-16">Miqdori</th>
                           <th className="text-right py-2 px-2 w-28">Narxi (so'm)</th>
                           <th className="text-right py-2 px-2 w-28">Yetkazib berish qiymati</th>
-                          <th className="text-center py-2 px-2 w-20">QQS stavkasi</th>
+                          <th className="text-center py-2 px-2 w-20 whitespace-nowrap">QQS %</th>
                           <th className="text-right py-2 px-2 w-28">QQS summasi</th>
                           <th className="text-right py-2 px-2 w-32">QQS bilan jami</th>
                           <th className="w-6"></th>
@@ -1596,7 +1599,7 @@ export default function ContractModal({
                                 <input type="number" value={item.miqdori} onChange={e => updateSpecItem(i, 'miqdori', parseFloat(e.target.value) || 0)} className={inp2 + ' text-right'} min={0} />
                               </td>
                               <td className="py-1 px-2">
-                                <input type="number" value={item.narxi} onChange={e => updateSpecItem(i, 'narxi', parseFloat(e.target.value) || 0)} className={inp2 + ' text-right'} min={0} />
+                                <input type="number" value={item.narxi || ''} onChange={e => updateSpecItem(i, 'narxi', parseFloat(e.target.value) || 0)} className={inp2 + ' text-right'} min={0} placeholder="0.00" />
                               </td>
                               <td className="py-1 px-2 text-right text-gray-300 font-medium">
                                 {base.toLocaleString('uz-UZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

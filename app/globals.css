@@ -54,6 +54,12 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #2563EB; }
 
 /* ── Focus ring ──────────────────────────────────────────────── */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
 .ds-input {
   background: #0F172A;
   border: 1px solid #1E293B;

@@ -11,6 +11,7 @@ import { useToast } from '@/lib/toast'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
+import AiProgressIndicator from '../_components/AiProgressIndicator'
 import ContractSelector from './_components/ContractSelector'
 import { TarjimaInput, TarjimaResult } from './_components/features/TarjimaFeature'
 import { QaInput, QaResult } from './_components/features/QaFeature'
@@ -46,16 +47,43 @@ type HubResult =
   | ({ _type: 'write' }     & WriteData)
   | ({ _type: 'tuzatish' } & TuzatishData)
 
-const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; needsContract: boolean; premiumOnly: boolean }[] = [
-  { key: 'xulosa',     icon: '📝', name: 'Xulosa',          desc: "Shartnomaning asosiy shartlarini qisqacha bayon qiladi",        needsContract: true,  premiumOnly: false },
-  { key: 'tarjima',    icon: '🌐', name: 'Tarjima',          desc: "Shartnomani boshqa tilga professional tarjima qiladi",          needsContract: true,  premiumOnly: false },
-  { key: 'grammatika', icon: '✏️', name: 'Grammatika',       desc: "Matnidagi imlo, grammatika va uslub xatolarini topadi",        needsContract: true,  premiumOnly: false },
-  { key: 'tahlil',     icon: '📊', name: 'Chuqur tahlil',    desc: "Yuridik xatarlar, zaif tomonlar va baho (A-D)",                needsContract: true,  premiumOnly: true  },
-  { key: 'qa',         icon: '💬', name: 'Savol-Javob',      desc: "Shartnoma haqida istalgan savolga javob beradi",               needsContract: true,  premiumOnly: true  },
-  { key: 'clause',     icon: '➕', name: "Band qo'shish",    desc: "Ko'rsatma asosida yangi band yozib beradi",                    needsContract: false, premiumOnly: true  },
-  { key: 'recommend',  icon: '🎯', name: 'Tur tavsiyasi',    desc: "Vaziyatni ta'riflang — qaysi shartnoma turi mos ekanini aytadi", needsContract: false, premiumOnly: false },
-  { key: 'write',      icon: '✍️', name: 'Shartnoma yoz',   desc: "Ma'lumotlar asosida to'liq shartnoma matnini yozadi",          needsContract: false, premiumOnly: true  },
-  { key: 'tuzatish',  icon: '📎', name: 'Tuzatish',        desc: "Tashqaridan kelgan shartnomani tahlil qilib, kamchiliklarini bartaraf etadi", needsContract: false, premiumOnly: true  },
+const FEATURES: { key: HubFeature; icon: string; name: Record<Lang, string>; desc: Record<Lang, string>; needsContract: boolean; premiumOnly: boolean }[] = [
+  { key: 'xulosa',     icon: '📝',
+    name: { uz: 'Xulosa',          oz: 'Хулоса',           ru: 'Резюме' },
+    desc: { uz: "Shartnomaning asosiy shartlarini qisqacha bayon qiladi", oz: "Шартноманинг асосий шартларини қисқача баён қилади", ru: "Кратко излагает основные условия договора" },
+    needsContract: true,  premiumOnly: false },
+  { key: 'tarjima',    icon: '🌐',
+    name: { uz: 'Tarjima',          oz: 'Таржима',           ru: 'Перевод' },
+    desc: { uz: "Shartnomani boshqa tilga professional tarjima qiladi", oz: "Шартномани бошқа тилга профессионал таржима қилади", ru: "Профессионально переводит договор на другой язык" },
+    needsContract: true,  premiumOnly: false },
+  { key: 'grammatika', icon: '✏️',
+    name: { uz: 'Grammatika',       oz: 'Грамматика',        ru: 'Грамматика' },
+    desc: { uz: "Matnidagi imlo, grammatika va uslub xatolarini topadi", oz: "Матнидаги имло, грамматика ва услуб хатоларини топади", ru: "Находит орфографические, грамматические и стилистические ошибки" },
+    needsContract: true,  premiumOnly: false },
+  { key: 'tahlil',     icon: '📊',
+    name: { uz: 'Chuqur tahlil',    oz: 'Чуқур таҳлил',      ru: 'Глубокий анализ' },
+    desc: { uz: "Yuridik xatarlar, zaif tomonlar va baho (A-D)", oz: "Юридик хатарлар, заиф томонлар ва баҳо (A-D)", ru: "Юридические риски, слабые стороны и оценка (A-D)" },
+    needsContract: true,  premiumOnly: true  },
+  { key: 'qa',         icon: '💬',
+    name: { uz: 'Savol-Javob',      oz: 'Савол-Жавоб',       ru: 'Вопрос-Ответ' },
+    desc: { uz: "Shartnoma haqida istalgan savolga javob beradi", oz: "Шартнома ҳақида исталган саволга жавоб беради", ru: "Отвечает на любой вопрос по договору" },
+    needsContract: true,  premiumOnly: true  },
+  { key: 'clause',     icon: '➕',
+    name: { uz: "Band qo'shish",    oz: 'Банд қўшиш',        ru: 'Добавить пункт' },
+    desc: { uz: "Ko'rsatma asosida yangi band yozib beradi", oz: "Кўрсатма асосида янги банд ёзиб беради", ru: "Составляет новый пункт по инструкции" },
+    needsContract: false, premiumOnly: true  },
+  { key: 'recommend',  icon: '🎯',
+    name: { uz: 'Tur tavsiyasi',    oz: 'Тур тавсияси',      ru: 'Тип договора' },
+    desc: { uz: "Vaziyatni ta'riflang — qaysi shartnoma turi mos ekanini aytadi", oz: "Вазиятни таърифланг — қайси шартнома тури мос эканини айтади", ru: "Опишите ситуацию — подскажет подходящий тип договора" },
+    needsContract: false, premiumOnly: false },
+  { key: 'write',      icon: '✍️',
+    name: { uz: 'Shartnoma yoz',    oz: 'Шартнома ёз',       ru: 'Написать договор' },
+    desc: { uz: "Ma'lumotlar asosida to'liq shartnoma matnini yozadi", oz: "Маълумотлар асосида тўлиқ шартнома матнини ёзади", ru: "Составляет полный текст договора на основе данных" },
+    needsContract: false, premiumOnly: true  },
+  { key: 'tuzatish',   icon: '📎',
+    name: { uz: 'Tuzatish',         oz: 'Тузатиш',           ru: 'Исправление' },
+    desc: { uz: "Tashqaridan kelgan shartnomani tahlil qilib, kamchiliklarini bartaraf etadi", oz: "Ташқаридан келган шартномани таҳлил қилиб, камчиликларини бартараф этади", ru: "Анализирует и исправляет недостатки во внешнем договоре" },
+    needsContract: false, premiumOnly: true  },
 ]
 
 export default function YuristPage() {
@@ -323,8 +351,8 @@ export default function YuristPage() {
                 <span className="absolute top-2 right-2 text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded-full">PRO</span>
               )}
               <div className="text-2xl mb-2">{f.icon}</div>
-              <div className={`text-sm font-semibold mb-1 ${hubFeature === f.key ? 'text-white' : 'text-gray-200'}`}>{f.name}</div>
-              <div className="text-xs text-gray-500 leading-relaxed">{f.desc}</div>
+              <div className={`text-sm font-semibold mb-1 ${hubFeature === f.key ? 'text-white' : 'text-gray-200'}`}>{T(f.name)}</div>
+              <div className="text-xs text-gray-500 leading-relaxed">{T(f.desc)}</div>
             </button>
           )
         })}
@@ -334,7 +362,7 @@ export default function YuristPage() {
       <div className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6 space-y-4">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xl">{sel.icon}</span>
-          <h3 className="font-semibold text-white">{sel.name}</h3>
+          <h3 className="font-semibold text-white">{T(sel.name)}</h3>
           {!hasAiAccess() && (
             <span className="ml-auto text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">{T(t.yuristPage.proBadge)}</span>
           )}
@@ -450,25 +478,19 @@ export default function YuristPage() {
         {canUse && !hubLoading && !hubResult && (
           <button onClick={runHubFeature} disabled={fixFileLoading}
             className="w-full py-3 rounded-xl text-sm font-semibold transition bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 disabled:cursor-not-allowed">
-            {fixFileLoading ? T(t.yuristPage.fileReading) : `${sel.icon} ${sel.name} ${T(t.yuristPage.startBtn)}`}
+            {fixFileLoading ? T(t.yuristPage.fileReading) : `${sel.icon} ${T(sel.name)} ${T(t.yuristPage.startBtn)}`}
           </button>
         )}
 
         {/* Loading */}
-        {hubLoading && (
-          <div className="text-center py-8">
-            <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"/>
-            <div className="text-gray-400 text-sm">{T(t.yuristPage.aiWorking)}</div>
-            <div className="text-gray-500 text-xs mt-1">{T(t.yuristPage.aiWorkingSec)}</div>
-          </div>
-        )}
+        {hubLoading && <AiProgressIndicator />}
 
         {/* Preview modal */}
         {previewText !== null && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setPreviewText(null)}>
             <div className="bg-[#111827] border border-[#1E293B] rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E293B]">
-                <h3 className="font-semibold text-white">👁 {T(t.yuristPage.previewTitle)}: {sel.name}</h3>
+                <h3 className="font-semibold text-white">👁 {T(t.yuristPage.previewTitle)}: {T(sel.name)}</h3>
                 <button onClick={() => setPreviewText(null)} className="text-gray-400 hover:text-white text-xl leading-none">✕</button>
               </div>
               <div className="flex-1 overflow-y-auto p-6">
@@ -477,7 +499,7 @@ export default function YuristPage() {
                 </div>
               </div>
               <div className="px-5 py-4 border-t border-[#1E293B] flex gap-3">
-                <button onClick={() => { downloadTextAsWord(previewText, sel.name); setPreviewText(null) }}
+                <button onClick={() => { downloadTextAsWord(previewText, T(sel.name)); setPreviewText(null) }}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold transition">
                   {T(t.yuristPage.downloadWord)}
                 </button>
