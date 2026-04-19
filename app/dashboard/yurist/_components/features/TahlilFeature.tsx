@@ -16,11 +16,15 @@ export function TahlilResult({
   setPreviewText: (v: string) => void
   onSave: (t: string) => void
 }) {
-  const bahoColor = baho === 'A' ? 'emerald' : baho === 'B' ? 'blue' : baho === 'C' ? 'yellow' : 'red'
+  const bahoClass =
+    baho === 'A' ? { wrap: 'bg-emerald-900/40 border-emerald-700', text: 'text-emerald-400' } :
+    baho === 'B' ? { wrap: 'bg-blue-900/40 border-blue-700',       text: 'text-blue-400'    } :
+    baho === 'C' ? { wrap: 'bg-yellow-900/40 border-yellow-700',   text: 'text-yellow-400'  } :
+                   { wrap: 'bg-red-900/40 border-red-700',         text: 'text-red-400'     }
   return (
     <div className="space-y-3">
-      <div className={`rounded-xl p-4 border flex items-center gap-3 bg-${bahoColor}-900/40 border-${bahoColor}-700`}>
-        <span className={`text-4xl font-black text-${bahoColor}-400`}>{baho}</span>
+      <div className={`rounded-xl p-4 border flex items-center gap-3 ${bahoClass.wrap}`}>
+        <span className={`text-4xl font-black ${bahoClass.text}`}>{baho}</span>
         <div className="text-gray-200 text-sm">{umumiy}</div>
       </div>
       <div className="grid grid-cols-2 gap-2">

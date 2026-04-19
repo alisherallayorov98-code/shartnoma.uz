@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { type FeatureConfig } from '../_config/features'
 
 const inp = 'w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500'
@@ -14,9 +14,9 @@ export default function DocFormFields({
 }: {
   feature: FeatureConfig
   formData: Record<string, string>
-  setFormData: (updater: (prev: Record<string, string>) => Record<string, string>) => void
+  setFormData: React.Dispatch<React.SetStateAction<Record<string, string>>>
   cpSearch: Record<string, string>
-  setCpSearch: (updater: (prev: Record<string, string>) => Record<string, string>) => void
+  setCpSearch: React.Dispatch<React.SetStateAction<Record<string, string>>>
   cpOpen: string | null
   setCpOpen: (v: string | null) => void
   cps: Cp[]
