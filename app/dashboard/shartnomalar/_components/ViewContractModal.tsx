@@ -44,43 +44,59 @@ export default function ViewContractModal({
   const [didoxStep, setDidoxStep] = useState<null | 'ready'>(null)
   const [apStatus, setApStatus] = useState<null | 'loading' | 'ok' | 'error'>(null)
   const [apMsg, setApMsg] = useState('')
+  const [showPwdPanel, setShowPwdPanel] = useState(false)
+  const [eimzoPwd, setEimzoPwd] = useState('')
 
-  async function sendToDidox() {
-    setApStatus('loading')
-    setApMsg('')
-    // Autopilot bor-yo'qligini tekshir (2 soniya timeout)
+  async function handleDidoxClick() {
+    // Avval Autopilot bor-yo'qligini tekshir
     const health = await fetch('http://127.0.0.1:9876/health', { signal: AbortSignal.timeout(2000) }).catch(() => null)
     if (health?.ok) {
-      // Autopilot yo'li — PDF + STIR avtomatik
-      try {
-        const pdfBlob = await generateContractPDFBlob(viewContract)
-        const reader = new FileReader()
-        const pdf_base64: string = await new Promise((res, rej) => {
-          reader.onload = () => res((reader.result as string).split(',')[1])
-          reader.onerror = rej
-          reader.readAsDataURL(pdfBlob)
-        })
-        const resp = await fetch('http://127.0.0.1:9876/fill-didox', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cp_inn: viewContract.counterparties?.inn || '', pdf_base64 }),
-        })
-        const data = await resp.json()
-        setApStatus(data.status === 'ok' ? 'ok' : 'error')
-        setApMsg(data.message || '')
-      } catch (e: unknown) {
-        setApStatus('error')
-        setApMsg(e instanceof Error ? e.message : 'Xatolik')
-      }
+      // Autopilot ishlamoqda — parol panelini ko'rsat
+      setShowPwdPanel(true)
     } else {
-      // Manual yo'l — PDF yuklash + STIR nusxalash + Didox oynasi
-      setApStatus(null)
+      // Manual yo'l
       await onGeneratePDF(viewContract)
       const cpInn = viewContract.counterparties?.inn || ''
       if (cpInn) { try { await navigator.clipboard.writeText(cpInn) } catch { /* */ } }
       window.open('https://didox.uz/document_form/000', '_blank', 'noopener')
       setDidoxStep('ready')
     }
+  }
+
+  async function runAutopilot() {
+    setShowPwdPanel(false)
+    setApStatus('loading')
+    setApMsg('')
+    try {
+      const pdfBlob = await generateContractPDFBlob(viewContract)
+      const reader = new FileReader()
+      const pdf_base64: string = await new Promise((res, rej) => {
+        reader.onload = () => res((reader.result as string).split(',')[1])
+        reader.onerror = rej
+        reader.readAsDataURL(pdfBlob)
+      })
+      const payload = {
+        doc_number:       viewContract.contract_number || '',
+        doc_date:         viewContract.contract_date   || '',
+        contract_number:  viewContract.contract_number || '',
+        contract_date:    viewContract.contract_date   || '',
+        cp_inn:           viewContract.counterparties?.inn || '',
+        eimzo_password:   eimzoPwd,
+        pdf_base64,
+      }
+      const resp = await fetch('http://127.0.0.1:9876/fill-didox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await resp.json()
+      setApStatus(data.status === 'ok' ? 'ok' : 'error')
+      setApMsg(data.message || '')
+    } catch (e: unknown) {
+      setApStatus('error')
+      setApMsg(e instanceof Error ? e.message : 'Xatolik')
+    }
+    setEimzoPwd('')
   }
 
   return (
@@ -105,9 +121,9 @@ export default function ViewContractModal({
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
               Telegram
             </button>
-            <button onClick={sendToDidox}
+            <button onClick={handleDidoxClick}
               disabled={apStatus === 'loading'}
-              title="Autopilot ishlab tursa avtomatik to'ldiradi, aks holda manual yo'l"
+              title="Autopilot ishlab tursa avtomatik to'ldiradi va imzolaydi"
               className="px-3 py-1.5 text-xs bg-violet-600/20 hover:bg-violet-600/40 border border-violet-600/30 text-violet-300 rounded-lg transition font-semibold flex items-center gap-1.5 disabled:opacity-50">
               {apStatus === 'loading'
                 ? <span className="animate-spin inline-block w-3 h-3 border border-violet-400 border-t-transparent rounded-full"/>
@@ -134,7 +150,42 @@ export default function ViewContractModal({
           </div>
         </div>
 
+        {/* E-imzo parol paneli */}
+        {showPwdPanel && (
+          <div className="px-6 py-4 bg-violet-950/40 border-b border-violet-700/30 flex items-center gap-3">
+            <span className="text-xl flex-shrink-0">🔐</span>
+            <div className="flex-1">
+              <p className="text-xs text-violet-200 font-semibold mb-2">E-imzo kaliti paroli</p>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={eimzoPwd}
+                  onChange={e => setEimzoPwd(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && eimzoPwd && runAutopilot()}
+                  placeholder="Kalit paroli..."
+                  autoFocus
+                  className="flex-1 bg-[#0F172A] border border-violet-700/50 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-violet-500"
+                />
+                <button
+                  onClick={runAutopilot}
+                  disabled={!eimzoPwd}
+                  className="px-4 py-1.5 text-xs bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white rounded-lg font-semibold transition"
+                >
+                  Yuborish
+                </button>
+                <button onClick={() => setShowPwdPanel(false)} className="text-violet-500 hover:text-violet-300 text-lg leading-none px-1">×</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Autopilot natija banneri */}
+        {apStatus === 'loading' && (
+          <div className="px-6 py-3 bg-violet-950/30 border-b border-violet-700/20 flex items-center gap-3">
+            <span className="animate-spin inline-block w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full flex-shrink-0"/>
+            <p className="text-xs text-violet-300">Didox forma to'ldirilmoqda — iltimos kuting...</p>
+          </div>
+        )}
         {(apStatus === 'ok' || apStatus === 'error') && (
           <div className={`px-6 py-3 border-b flex items-center gap-3 ${apStatus === 'ok' ? 'bg-emerald-900/20 border-emerald-700/30' : 'bg-red-900/20 border-red-700/30'}`}>
             <span className="text-base flex-shrink-0">{apStatus === 'ok' ? '✅' : '❌'}</span>
