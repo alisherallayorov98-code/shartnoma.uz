@@ -7,6 +7,7 @@ import type { Contract } from '@/lib/types'
 import { fillPlaceholders } from '@/lib/contractUtils'
 import { numberToWords, formatDateUz } from '@/lib/contractStructures'
 import { CONTRACT_TYPE_NAMES } from '@/lib/contractTemplates'
+import { generateContractPDFBlob } from '@/lib/export/contractDocx'
 
 const STATUS_COLORS: Record<string, string> = {
   active:    'bg-green-500/20 text-green-400 border border-green-500/30',
@@ -41,6 +42,50 @@ export default function ViewContractModal({
 }: ViewContractModalProps) {
   const T = useT()
   const [didoxStep, setDidoxStep] = useState<null | 'ready'>(null)
+  const [apStatus, setApStatus] = useState<null | 'loading' | 'ok' | 'error' | 'offline'>(null)
+  const [apMsg, setApMsg] = useState('')
+
+  async function sendToAutopilot() {
+    setApStatus('loading')
+    setApMsg('')
+    try {
+      // Autopilot ishlamoqdami?
+      const health = await fetch('http://127.0.0.1:9876/health', { signal: AbortSignal.timeout(2000) }).catch(() => null)
+      if (!health?.ok) {
+        setApStatus('offline')
+        setApMsg('')
+        return
+      }
+      // PDF blob olish
+      const pdfBlob = await generateContractPDFBlob(viewContract)
+      const reader = new FileReader()
+      const pdf_base64: string = await new Promise((res, rej) => {
+        reader.onload = () => res((reader.result as string).split(',')[1])
+        reader.onerror = rej
+        reader.readAsDataURL(pdfBlob)
+      })
+      const body = {
+        cp_inn: viewContract.counterparties?.inn || '',
+        pdf_base64,
+      }
+      const resp = await fetch('http://127.0.0.1:9876/fill-didox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await resp.json()
+      if (data.status === 'ok') {
+        setApStatus('ok')
+        setApMsg(data.message || 'Forma to\'ldirildi')
+      } else {
+        setApStatus('error')
+        setApMsg(data.message || 'Xatolik')
+      }
+    } catch (e: unknown) {
+      setApStatus('error')
+      setApMsg(e instanceof Error ? e.message : 'Xatolik')
+    }
+  }
 
   async function sendToDidox() {
     // 1. PDF yuklab olish
@@ -85,6 +130,17 @@ export default function ViewContractModal({
               </svg>
               Didox
             </button>
+            <button
+              onClick={sendToAutopilot}
+              disabled={apStatus === 'loading'}
+              title="Didox Autopilot — brauzer ochib, STIR + PDF ni to'ldiradi (localhost:9876)"
+              className="px-3 py-1.5 text-xs bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-600/30 text-emerald-300 rounded-lg transition font-semibold flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {apStatus === 'loading'
+                ? <span className="animate-spin inline-block w-3 h-3 border border-emerald-400 border-t-transparent rounded-full"/>
+                : '🤖'}
+              Autopilot
+            </button>
             <button onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 rounded-lg transition">
               🖨️ Print
             </button>
@@ -101,6 +157,33 @@ export default function ViewContractModal({
             </button>
           </div>
         </div>
+
+        {/* Autopilot status banners */}
+        {apStatus === 'offline' && (
+          <div className="px-6 py-3 bg-slate-900/60 border-b border-slate-700/40 flex items-start gap-3">
+            <span className="text-lg flex-shrink-0">🤖</span>
+            <div className="flex-1 text-xs text-slate-300 space-y-1">
+              <p className="font-semibold text-slate-200">Autopilot ishlamayapti</p>
+              <p>
+                Ishga tushirish uchun:
+                <a href="/didox_autopilot.py" download className="ml-1 text-emerald-400 underline hover:text-emerald-300">didox_autopilot.py</a>
+                {' '}ni yuklab oling, keyin:
+              </p>
+              <p className="font-mono bg-slate-800/60 px-2 py-1 rounded text-slate-200 text-[11px]">
+                pip install playwright &amp;&amp; playwright install chromium<br/>
+                python didox_autopilot.py
+              </p>
+            </div>
+            <button onClick={() => setApStatus(null)} className="text-slate-500 hover:text-slate-300 text-lg leading-none flex-shrink-0">×</button>
+          </div>
+        )}
+        {(apStatus === 'ok' || apStatus === 'error') && (
+          <div className={`px-6 py-3 border-b flex items-start gap-3 ${apStatus === 'ok' ? 'bg-emerald-900/20 border-emerald-700/30' : 'bg-red-900/20 border-red-700/30'}`}>
+            <span className="text-lg flex-shrink-0">{apStatus === 'ok' ? '✅' : '❌'}</span>
+            <p className={`flex-1 text-xs ${apStatus === 'ok' ? 'text-emerald-300' : 'text-red-300'}`}>{apMsg}</p>
+            <button onClick={() => setApStatus(null)} className="text-gray-500 hover:text-gray-300 text-lg leading-none flex-shrink-0">×</button>
+          </div>
+        )}
 
         {/* Didox instruction banner */}
         {didoxStep === 'ready' && (
