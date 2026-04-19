@@ -121,17 +121,45 @@ body {
 [data-theme="light"] [class*="hover:bg-[#0F172A]"]:hover { background-color: #e8eef6 !important; }
 [data-theme="light"] [class*="hover:bg-[#111827]"]:hover { background-color: #f8fafc !important; }
 
-/* ── Sidebar specific ── */
-[data-theme="light"] aside { background-color: #1e3a8a !important; }
-[data-theme="light"] aside * .text-white  { color: #ffffff !important; }
-[data-theme="light"] aside * .text-gray-400 { color: #bfdbfe !important; }
-[data-theme="light"] aside * .text-gray-500 { color: #93c5fd !important; }
-[data-theme="light"] aside [class*="border-[#1E293B]"] { border-color: #1d4ed8 !important; }
-[data-theme="light"] aside [class*="bg-[#0F172A]"] { background-color: #1e40af !important; }
-[data-theme="light"] aside [class*="bg-[#1F2937]"] { background-color: #1e40af !important; }
-[data-theme="light"] aside [class*="bg-[#111827]"] { background-color: #1e3a8a !important; }
-[data-theme="light"] aside [class*="text-gray-200"] { color: #dbeafe !important; }
-[data-theme="light"] aside [class*="text-gray-300"] { color: #bfdbfe !important; }
+/* ── Sidebar specific (light mode — oq sidebar) ── */
+[data-theme="light"] aside                              { background-color: #ffffff !important; }
+[data-theme="light"] aside [class*="border-[#1E293B]"] { border-color: #e2e8f0 !important; }
+[data-theme="light"] aside [class*="border-[#1F2937]"] { border-color: #e2e8f0 !important; }
+
+/* Sidebar backgrounds */
+[data-theme="light"] aside [class*="bg-[#0A1628]"]  { background-color: #ffffff !important; }
+[data-theme="light"] aside [class*="bg-[#0F172A]"]  { background-color: #f1f5f9 !important; }
+[data-theme="light"] aside [class*="bg-[#1F2937]"]  { background-color: #f1f5f9 !important; }
+[data-theme="light"] aside [class*="bg-[#111827]"]  { background-color: #f8fafc !important; }
+[data-theme="light"] aside [class*="bg-[#1E293B]"]  { background-color: #e2e8f0 !important; }
+
+/* Sidebar text */
+[data-theme="light"] aside .text-white              { color: #0f172a !important; }
+[data-theme="light"] aside [class*="text-white\/80"]{ color: #334155 !important; }
+[data-theme="light"] aside .text-gray-200           { color: #334155 !important; }
+[data-theme="light"] aside .text-gray-300           { color: #475569 !important; }
+[data-theme="light"] aside .text-gray-400           { color: #64748b !important; }
+[data-theme="light"] aside .text-gray-500           { color: #94a3b8 !important; }
+
+/* Nav badge (contracts count) — ko'rinishi uchun */
+[data-theme="light"] aside span[class*="bg-[#1E293B]"] {
+  background-color: #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+/* Hover states */
+[data-theme="light"] aside [class*="hover:bg-white\/10"]:hover  { background-color: #f1f5f9 !important; }
+[data-theme="light"] aside [class*="hover:bg-[#1F2937]"]:hover  { background-color: #f1f5f9 !important; }
+[data-theme="light"] aside [class*="hover:bg-red-900"]:hover    { background-color: #fee2e2 !important; }
+
+/* Active nav item — ko'k qoladi */
+[data-theme="light"] aside .bg-blue-600             { background-color: #2563eb !important; }
+[data-theme="light"] aside .bg-blue-600 .text-white { color: #ffffff !important; }
+[data-theme="light"] aside .bg-blue-600 span        { color: #ffffff !important; }
+
+/* Org dropdown */
+[data-theme="light"] aside [class*="bg-blue-900"]   { background-color: #eff6ff !important; }
+[data-theme="light"] aside [class*="text-blue-300"] { color: #2563eb !important; }
 
 /* ══════════════════════════════════════════════════════════════
    LANDING PAGE LIGHT MODE  (.lp-light on root div)
