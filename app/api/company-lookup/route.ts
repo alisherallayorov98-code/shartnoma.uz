@@ -132,34 +132,37 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Admin: global bazaga qo'shish yoki yangilash
+// Authenticated users: global bazaga bank ma'lumot qo'shish yoki yangilash
 export async function POST(req: NextRequest) {
   const auth = req.headers.get('Authorization')?.replace('Bearer ', '')
   if (!auth) return NextResponse.json({ error: 'Ruxsat yo\'q' }, { status: 401 })
 
-  // Admin tekshiruvi
   const db = getDb()
   const { data: { user } } = await db.auth.getUser(auth)
   if (!user) return NextResponse.json({ error: 'Ruxsat yo\'q' }, { status: 401 })
-  const { data: adminRow } = await db.from('admins').select('user_id').eq('user_id', user.id).maybeSingle()
-  const isAdmin = !!adminRow || (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).includes(user.email ?? '')
-  if (!isAdmin) return NextResponse.json({ error: 'Ruxsat yo\'q' }, { status: 403 })
 
   const body = await req.json()
   const { inn, name, director, address, mfo, bank_name, account, phone } = body
 
   if (!inn || !name) return NextResponse.json({ error: 'INN va nomi majburiy' }, { status: 400 })
 
+  // Check if admin to determine source label
+  const { data: adminRow } = await db.from('admins').select('user_id').eq('user_id', user.id).maybeSingle()
+  const source = adminRow ? 'manual' : 'user_org'
+
+  // Only update bank fields if they have values (don't overwrite good data with empty)
+  const existing = await db.from('global_companies').select('mfo,bank_name,account').eq('inn', inn.trim()).maybeSingle()
+  const ex = existing.data as { mfo?: string; bank_name?: string; account?: string } | null ?? {}
   const { error } = await db.from('global_companies').upsert({
     inn: inn.trim(),
     name: name.trim(),
     director: director?.trim() || null,
     address:  address?.trim()  || null,
-    mfo:      mfo?.trim()      || null,
-    bank_name: bank_name?.trim() || null,
-    account:  account?.trim()  || null,
+    mfo:      mfo?.trim()      || (ex.mfo ?? null),
+    bank_name: bank_name?.trim() || (ex.bank_name ?? null),
+    account:  account?.trim()  || (ex.account ?? null),
     phone:    phone?.trim()    || null,
-    source: 'manual',
+    source,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'inn', ignoreDuplicates: false })
 

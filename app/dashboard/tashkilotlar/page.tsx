@@ -123,18 +123,14 @@ export default function TashkilotlarPage() {
     if (editingOrg) {
       const { error } = await supabase.from('organizations').update(orgForm).eq('id', editingOrg.id)
       if (error) { toast(`Xato: ${error.message}`, 'error'); setSaving(false); return }
-      // Sync bank details to global_companies
+      // Sync bank details to global_companies via API
       if (orgForm.inn && (orgForm.bank_name || orgForm.mfo || orgForm.bank_account)) {
-        await supabase.from('global_companies').upsert({
-          inn: orgForm.inn, name: orgForm.name,
-          director: orgForm.director_name || null,
-          address: orgForm.address || null,
-          mfo: orgForm.mfo || null,
-          bank_name: orgForm.bank_name || null,
-          account: orgForm.bank_account || null,
-          source: 'user_org',
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'inn', ignoreDuplicates: false })
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) fetch('/api/company-lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ inn: orgForm.inn, name: orgForm.name, director: orgForm.director_name, address: orgForm.address, mfo: orgForm.mfo, bank_name: orgForm.bank_name, account: orgForm.bank_account }),
+        }).catch(() => {})
       }
     } else {
       const co = soliqExtraData || {}
@@ -176,18 +172,14 @@ export default function TashkilotlarPage() {
       await supabase.from('org_members').insert({
         organization_id: newOrg.id, user_id: userId, role: 'owner', status: 'active'
       })
-      // Sync bank details to global_companies
+      // Sync bank details to global_companies via API
       if (orgForm.inn && (orgForm.bank_name || orgForm.mfo || orgForm.bank_account)) {
-        await supabase.from('global_companies').upsert({
-          inn: orgForm.inn, name: orgForm.name,
-          director: orgForm.director_name || null,
-          address: orgForm.address || null,
-          mfo: orgForm.mfo || null,
-          bank_name: orgForm.bank_name || null,
-          account: orgForm.bank_account || null,
-          source: 'user_org',
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'inn', ignoreDuplicates: false })
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) fetch('/api/company-lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ inn: orgForm.inn, name: orgForm.name, director: orgForm.director_name, address: orgForm.address, mfo: orgForm.mfo, bank_name: orgForm.bank_name, account: orgForm.bank_account }),
+        }).catch(() => {})
       }
     }
     setOrgModal(false); setEditingOrg(null); setOrgForm(emptyOrg); setSaving(false); reloadOrgs()
