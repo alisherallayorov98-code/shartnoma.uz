@@ -206,7 +206,7 @@ export default function YuristPage() {
 
   const cpOptions = Array.from(
     new Map(contractList.map(c => [c.counterparty_id, c.counterparties?.name || '—'])).entries()
-  ).filter(([id]) => id) as [string, string][]
+  ).filter(([id, name]) => id && name !== '—') as [string, string][]
 
   const filteredBycp = hubCp ? contractList.filter(c => c.counterparty_id === hubCp) : contractList
 
