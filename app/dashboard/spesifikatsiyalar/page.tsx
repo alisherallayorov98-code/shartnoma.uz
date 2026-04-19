@@ -21,13 +21,15 @@ export default function SpesifikatsiyalarPage() {
 
   const [specs, setSpecs] = useState<Specification[]>([])
   const [search, setSearch] = useState('')
+  const [filterCp, setFilterCp] = useState('')
+  const [filterYear, setFilterYear] = useState('')
   const [viewSpec, setViewSpec] = useState<Specification | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const [perPage, setPerPage] = useState(20)
   const [specPage, setSpecPage] = useState(1)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setSpecPage(1) }, [search])
+  useEffect(() => { setSpecPage(1) }, [search, filterCp, filterYear])
 
   useEffect(() => {
     if (activeOrg) loadSpecs(activeOrg.id)
@@ -53,16 +55,31 @@ export default function SpesifikatsiyalarPage() {
   }
 
 
+  const specYears = useMemo(() => {
+    const years = new Set(specs.map(s => s.created_at.slice(0, 4)))
+    return Array.from(years).sort((a, b) => b.localeCompare(a))
+  }, [specs])
+
+  const specCpNames = useMemo(() => {
+    const names = new Set(specs.map(s => s.contracts?.counterparties?.name).filter(Boolean) as string[])
+    return Array.from(names).sort()
+  }, [specs])
+
   const filteredSpecs = useMemo(() => {
-    if (!search) return specs
-    const q = search.toLowerCase().replace(/^#/, '')
-    return specs.filter(s =>
-      s.spec_number.toLowerCase().includes(q) ||
-      (s.notes || '').toLowerCase().includes(q) ||
-      (s.contracts?.contract_number || '').toLowerCase().includes(q) ||
-      (s.contracts?.counterparties?.name || '').toLowerCase().includes(q)
-    )
-  }, [specs, search])
+    return specs.filter(s => {
+      if (search) {
+        const q = search.toLowerCase().replace(/^#/, '')
+        const match = s.spec_number.toLowerCase().includes(q) ||
+          (s.notes || '').toLowerCase().includes(q) ||
+          (s.contracts?.contract_number || '').toLowerCase().includes(q) ||
+          (s.contracts?.counterparties?.name || '').toLowerCase().includes(q)
+        if (!match) return false
+      }
+      if (filterCp && s.contracts?.counterparties?.name !== filterCp) return false
+      if (filterYear && !s.created_at.startsWith(filterYear)) return false
+      return true
+    })
+  }, [specs, search, filterCp, filterYear])
 
   const specTotalPages = Math.max(1, Math.ceil(filteredSpecs.length / perPage))
   const safeSpecPage = Math.min(specPage, specTotalPages)
@@ -94,15 +111,37 @@ export default function SpesifikatsiyalarPage() {
         )}
       </div>
 
-      {/* Search */}
+      {/* Search + Filters */}
       {specs.length > 0 && (
-        <div className="relative mb-4">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Raqam, shartnoma, kontragent yoki izoh bo'yicha qidirish…"
-            className="w-full bg-[#111827] border border-[#1E293B] text-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <div className="relative flex-1 min-w-[200px]">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Raqam, shartnoma, kontragent yoki izoh…"
+              className="w-full bg-[#111827] border border-[#1E293B] text-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
+          </div>
+          {specCpNames.length > 1 && (
+            <select value={filterCp} onChange={e => setFilterCp(e.target.value)}
+              className="bg-[#111827] border border-[#1E293B] text-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600">
+              <option value="">Barcha kontragentlar</option>
+              {specCpNames.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          )}
+          {specYears.length > 1 && (
+            <select value={filterYear} onChange={e => setFilterYear(e.target.value)}
+              className="bg-[#111827] border border-[#1E293B] text-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600">
+              <option value="">Barcha yillar</option>
+              {specYears.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          )}
+          {(filterCp || filterYear) && (
+            <button onClick={() => { setFilterCp(''); setFilterYear('') }}
+              className="px-3 py-2 text-xs text-gray-400 hover:text-white bg-[#1F2937] border border-[#1E293B] rounded-lg transition">
+              ✕ Tozalash
+            </button>
+          )}
         </div>
       )}
 

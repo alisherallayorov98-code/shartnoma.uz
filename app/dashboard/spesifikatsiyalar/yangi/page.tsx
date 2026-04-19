@@ -366,6 +366,13 @@ export default function YangiSpesifikatsiyaPage() {
                 </div>
               ))}
             </div>
+            {selectedCp && (!selectedCp.bank_name || !selectedCp.bank_account || !selectedCp.mfo) && (
+              <div className="mt-3 flex items-center gap-2 bg-yellow-900/20 border border-yellow-700/30 rounded-lg px-3 py-2">
+                <span className="text-yellow-500 text-xs">⚠</span>
+                <span className="text-xs text-yellow-400">Bank rekvizitlari to'liq emas — Word faylida bo'sh qoladi.</span>
+                <Link href="/dashboard/kontragentlar" className="text-xs text-blue-400 hover:text-blue-300 underline ml-1">To'ldirish →</Link>
+              </div>
+            )}
           </div>
         </div>
 
@@ -446,16 +453,18 @@ export default function YangiSpesifikatsiyaPage() {
                       <BirlikPicker value={item.birlik} onChange={v => updateItem(i, 'birlik', v)}/>
                     </td>
                     <td className="px-2 py-2">
-                      <input type="number"
+                      <input type="text" inputMode="numeric"
                         className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-1.5 py-1 text-gray-200 focus:outline-none focus:border-blue-500 text-xs text-right"
-                        value={item.miqdori} min={0}
-                        onChange={e => updateItem(i, 'miqdori', parseFloat(e.target.value) || 0)}/>
+                        value={item.miqdori > 0 ? item.miqdori.toLocaleString('uz-UZ') : ''}
+                        onChange={e => updateItem(i, 'miqdori', parseFloat(e.target.value.replace(/\s/g, '').replace(/,/g, '.')) || 0)}
+                        placeholder="0"/>
                     </td>
                     <td className="px-2 py-2">
-                      <input type="number"
+                      <input type="text" inputMode="numeric"
                         className="w-full bg-[#0F172A] border border-[#1E293B] rounded px-1.5 py-1 text-gray-200 focus:outline-none focus:border-blue-500 text-xs text-right"
-                        value={item.narxi} min={0}
-                        onChange={e => updateItem(i, 'narxi', parseFloat(e.target.value) || 0)}/>
+                        value={item.narxi > 0 ? item.narxi.toLocaleString('uz-UZ') : ''}
+                        onChange={e => updateItem(i, 'narxi', parseFloat(e.target.value.replace(/\s/g, '').replace(/,/g, '.')) || 0)}
+                        placeholder="0"/>
                     </td>
                     <td className="px-2 py-2 text-right text-gray-300 whitespace-nowrap">
                       {(item.miqdori * item.narxi).toLocaleString()}
