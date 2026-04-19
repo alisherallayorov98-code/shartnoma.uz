@@ -762,7 +762,7 @@ export const t = {
   // ── Yurist AI sahifasi
   yuristPage: {
     title:       { uz: '⚖️ Yurist AI',                                  oz: '⚖️ Юрист AI',                                   ru: '⚖️ Юрист AI' },
-    subtitle:    { uz: "Claude AI yordamida shartnomalaringizni tahlil qiling, tarjima qiling va takomillashtiring", oz: "Claude AI ёрдамида шартномаларингизни таҳлил қилинг, таржима қилинг ва такомиллаштиринг", ru: "Анализируйте, переводите и улучшайте договоры с помощью Claude AI" },
+    subtitle:    { uz: "Kabinetim AI yordamida shartnomalaringizni tahlil qiling, tarjima qiling va takomillashtiring", oz: "Kabinetim AI ёрдамида шартномаларингизни таҳлил қилинг, таржима қилинг ва такомиллаштиринг", ru: "Анализируйте, переводите и улучшайте договоры с помощью Kabinetim AI" },
     getProBtn:   { uz: '✦ Pro versiyani olish →',                       oz: '✦ Pro версияни олиш →',                         ru: '✦ Получить Pro →' },
     unlimitedBadge: { uz: 'Cheksiz foydalanish',                        oz: 'Чексиз фойдаланиш',                             ru: 'Безлимитное использование' },
     proBadge:    { uz: 'Pro versiya',                                    oz: 'Pro версия',                                    ru: 'Pro версия' },
@@ -770,7 +770,7 @@ export const t = {
     proLockDesc: { uz: 'Yurist AI faqat Standart yoki AI Pro tarifida ishlaydi. Hoziroq ulaning va shartnomalaringizni AI bilan tahlil qiling.', oz: 'Юрист AI фақат Стандарт ёки AI Pro тарифида ишлайди. Ҳозироқ уланинг ва шартномаларингизни AI билан таҳлил қилинг.', ru: 'Yurist AI работает только в тарифах Стандарт или AI Pro. Подключитесь сейчас и анализируйте договоры с AI.' },
     startBtn:    { uz: 'boshlash',                                       oz: 'бошлаш',                                        ru: 'начать' },
     fileReading: { uz: "⏳ Fayl o'qilmoqda...",                          oz: '⏳ Файл ўқилмоқда...',                           ru: '⏳ Чтение файла...' },
-    aiWorking:   { uz: 'Claude AI ishlamoqda...',                       oz: 'Claude AI ишламоқда...',                        ru: 'Claude AI работает...' },
+    aiWorking:   { uz: 'Kabinetim AI ishlamoqda...',                    oz: 'Kabinetim AI ишламоқда...',                     ru: 'Kabinetim AI работает...' },
     aiWorkingSec:{ uz: '~10-20 soniya',                                  oz: '~10-20 сония',                                  ru: '~10-20 секунд' },
     previewTitle:{ uz: "Ko'rish",                                        oz: 'Кўриш',                                         ru: 'Просмотр' },
     downloadWord:{ uz: '📝 Word yuklash',                               oz: '📝 Word юклаш',                                 ru: '📝 Скачать Word' },

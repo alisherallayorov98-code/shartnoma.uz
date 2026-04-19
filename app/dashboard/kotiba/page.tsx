@@ -131,7 +131,7 @@ export default function KotibaPage() {
           <div className="bg-blue-600/10 border border-blue-600/30 rounded-2xl p-4 flex items-center justify-between gap-3">
             <div>
               <div className="text-white font-semibold text-sm mb-0.5">{T(t.aiPage.aiProTitle)}</div>
-              <div className="text-gray-400 text-xs">{T({ uz: 'Barcha kotiba hujjatlari Claude AI yordamida bir zumda tayyorlanadi', oz: 'Барча котиба ҳужжатлари Claude AI ёрдамида бир зумда тайёрланади', ru: 'Все документы Котиба готовятся мгновенно с помощью Claude AI' })}</div>
+              <div className="text-gray-400 text-xs">{T({ uz: 'Barcha kotiba hujjatlari Kabinetim AI yordamida bir zumda tayyorlanadi', oz: 'Барча котиба ҳужжатлари Kabinetim AI ёрдамида бир зумда тайёрланади', ru: 'Все документы Котиба готовятся мгновенно с помощью Kabinetim AI' })}</div>
             </div>
             <button onClick={openUpgradeModal}
               className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">

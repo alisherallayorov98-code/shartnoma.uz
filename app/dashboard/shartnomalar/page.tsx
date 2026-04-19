@@ -708,7 +708,9 @@ export default function ShartnomalarPage() {
                     </td>
                     {/* Counterparty */}
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm text-gray-300 truncate max-w-[120px] block">
+                      <span
+                        title={c.counterparties?.name || cps.find(cp => cp.id === c.counterparty_id)?.name || ''}
+                        className="text-sm text-gray-300 truncate max-w-[180px] block cursor-default">
                         {c.counterparties?.name || cps.find(cp => cp.id === c.counterparty_id)?.name || '—'}
                       </span>
                     </td>
@@ -721,7 +723,7 @@ export default function ShartnomalarPage() {
                     {/* Status */}
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium w-fit ${STATUS_COLORS[c.status] || 'bg-gray-700 text-gray-300'}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_COLORS[c.status] || 'bg-gray-700 text-gray-300'}`}>
                           {STATUSES[c.status] ? T(STATUSES[c.status]) : c.status}
                         </span>
                         <span className="text-xs text-gray-600">
