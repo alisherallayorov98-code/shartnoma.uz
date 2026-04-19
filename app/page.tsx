@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import {
   FileText, Building2, Users, Download, Shield,
   CheckCircle, ArrowRight, Zap, Star, Crown, Sparkles,
@@ -12,6 +13,23 @@ import {
 import { useLang } from '@/lib/LanguageContext'
 import { LANG_LABELS, type Lang } from '@/lib/i18n'
 import { useTheme } from '@/lib/ThemeContext'
+
+// ── Animation variants ───────────────────────────────────────────────────────
+const easeOut = [0.22, 1, 0.36, 1] as [number, number, number, number]
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  show:   { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut as any } },
+}
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1 } },
+}
+const staggerFast = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07 } },
+}
+const spring = { type: 'spring' as const, stiffness: 300, damping: 22 }
 
 const LP: Record<Lang, {
   badge: string; h1a: string; h1b: string; h1c: string
@@ -276,26 +294,41 @@ const FAQ_ITEMS: { q: Record<Lang, string>; a: Record<Lang, string> }[] = [
 function FaqList({ lang }: { lang: Lang }) {
   const [open, setOpen] = useState<number | null>(null)
   return (
-    <div className="space-y-3">
+    <motion.div className="space-y-3"
+      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
+      initial="hidden" whileInView="show" viewport={{ once: true }}>
       {FAQ_ITEMS.map((item, i) => (
-        <div key={i} className="fadein border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-colors"
-          style={{ transitionDelay: `${i * 60}ms` }}>
+        <motion.div key={i}
+          variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22,1,0.36,1] } } }}
+          className="border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-colors">
           <button onClick={() => setOpen(open === i ? null : i)}
             className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left">
             <span className="text-white font-semibold text-sm">{item.q[lang]}</span>
-            <svg className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-300 ${open === i ? 'rotate-180' : ''}`}
+            <motion.svg
+              animate={{ rotate: open === i ? 180 : 0 }}
+              transition={{ duration: 0.25, ease: [0.22,1,0.36,1] }}
+              className="w-5 h-5 text-gray-400 flex-shrink-0"
               fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
-            </svg>
+            </motion.svg>
           </button>
-          {open === i && (
-            <div className="px-6 pb-5 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
-              {item.a[lang]}
-            </div>
-          )}
-        </div>
+          <AnimatePresence initial={false}>
+            {open === i && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.22,1,0.36,1] }}
+                className="overflow-hidden">
+                <div className="px-6 pb-5 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                  {item.a[lang]}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   )
 }
 
@@ -383,62 +416,37 @@ export default function Home() {
     return () => clearTimeout(id)
   }, [heroWord, heroDeleting, heroIdx, lang])
 
-  // Scroll reveal
-  useEffect(() => {
-    const els = document.querySelectorAll('.fadein')
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('fi-visible'); obs.unobserve(e.target) } })
-    }, { threshold: 0.07 })
-    els.forEach(el => obs.observe(el))
-    return () => obs.disconnect()
-  }, [])
+  const heroRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+  const blobY = useTransform(scrollYProgress, [0, 1], [0, 80])
 
   return (
     <>
     <style>{`
-      .fadein { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
-      .fadein.fi-visible { opacity: 1; transform: translateY(0); }
       @keyframes marqueeScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
       .marquee-track { animation: marqueeScroll 28s linear infinite; }
       .marquee-track:hover { animation-play-state: paused; }
-      @keyframes heroPulse { 0%,100% { opacity:.15; transform:scale(1); } 50% { opacity:.25; transform:scale(1.08); } }
-      .hero-blob { animation: heroPulse 6s ease-in-out infinite; }
-      .hero-blob2 { animation: heroPulse 8s ease-in-out 2s infinite; }
-      @keyframes floatBadge {
-        0%,100% { transform: translateY(0px) rotate(-1deg); }
-        50%      { transform: translateY(-8px) rotate(1deg); }
-      }
-      @keyframes floatBadge2 {
-        0%,100% { transform: translateY(0px) rotate(1deg); }
-        50%      { transform: translateY(-10px) rotate(-1deg); }
-      }
-      @keyframes floatBadge3 {
-        0%,100% { transform: translateY(0px) rotate(0deg); }
-        50%      { transform: translateY(-6px) rotate(2deg); }
-      }
-      @keyframes liveCountPop {
-        0%   { transform: scale(1); }
-        50%  { transform: scale(1.12); }
-        100% { transform: scale(1); }
-      }
-      .dept-tab-content { animation: fadeSlideIn .3s ease; }
-      @keyframes fadeSlideIn {
-        from { opacity:0; transform: translateY(10px); }
-        to   { opacity:1; transform: translateY(0); }
-      }
     `}</style>
 
     <div className={`lp min-h-screen overflow-x-hidden ${isLight ? 'lp-light bg-[#f8fafc] text-gray-900' : 'bg-[#080810] text-white'}`}>
 
       {/* ── BACKGROUND ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 left-1/4 w-[600px] h-[600px] bg-blue-600/15 rounded-full blur-[120px]"/>
-        <div className="absolute top-1/2 -right-20 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[100px]"/>
-        <div className="absolute bottom-0 left-1/3 w-[500px] h-[300px] bg-cyan-600/8 rounded-full blur-[100px]"/>
+        <motion.div className="absolute -top-40 left-1/4 w-[600px] h-[600px] bg-blue-600/15 rounded-full blur-[120px]"
+          style={{ y: blobY }}
+          animate={{ scale: [1, 1.08, 1], opacity: [0.15, 0.25, 0.15] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}/>
+        <motion.div className="absolute top-1/2 -right-20 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[100px]"
+          animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.18, 0.1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}/>
+        <motion.div className="absolute bottom-0 left-1/3 w-[500px] h-[300px] bg-cyan-600/8 rounded-full blur-[100px]"
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}/>
       </div>
 
       {/* ── HEADER ── */}
-      <header className="relative border-b border-white/5 sticky top-0 bg-[#080810]/85 backdrop-blur-xl z-50">
+      <motion.header className="relative border-b border-white/5 sticky top-0 bg-[#080810]/85 backdrop-blur-xl z-50"
+        initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
         <div className="max-w-7xl mx-auto px-5 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center font-black text-sm shadow-lg shadow-blue-900/60">
@@ -489,8 +497,11 @@ export default function Home() {
         </div>
 
         {/* Mobile dropdown */}
+        <AnimatePresence>
         {mobileMenu && (
-          <div className="sm:hidden border-t border-white/5 bg-[#080810]/95 backdrop-blur-xl px-5 py-4 space-y-3">
+          <motion.div className="sm:hidden border-t border-white/5 bg-[#080810]/95 backdrop-blur-xl px-5 py-4 space-y-3"
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}>
             <a href="#features" onClick={() => setMobileMenu(false)} className="block text-sm text-gray-300 hover:text-white py-2 border-b border-white/5">{l.nav[0]}</a>
             <a href="#depts"    onClick={() => setMobileMenu(false)} className="block text-sm text-gray-300 hover:text-white py-2 border-b border-white/5">{l.nav[1]}</a>
             <a href="#pricing"  onClick={() => setMobileMenu(false)} className="block text-sm text-gray-300 hover:text-white py-2 border-b border-white/5">{l.nav[2]}</a>
@@ -512,32 +523,36 @@ export default function Home() {
                 {l.cta}
               </Link>
             </div>
-          </div>
+          </motion.div>
         )}
-      </header>
+        </AnimatePresence>
+      </motion.header>
 
       {/* ── HERO ── */}
-      <section className="relative max-w-7xl mx-auto px-5 pt-24 pb-12 text-center">
-        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-700/30 text-blue-300 text-xs px-5 py-2.5 rounded-full mb-6 backdrop-blur-sm">
+      <section ref={heroRef} className="relative max-w-7xl mx-auto px-5 pt-24 pb-12 text-center">
+        <motion.div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-700/30 text-blue-300 text-xs px-5 py-2.5 rounded-full mb-6 backdrop-blur-sm"
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <Sparkles className="w-3.5 h-3.5 text-yellow-400"/>
           {l.badge}
-        </div>
+        </motion.div>
 
         {/* Live counter */}
-        <div className="flex justify-center mb-8">
+        <motion.div className="flex justify-center mb-8"
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
           <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/25 px-4 py-2 rounded-full">
             <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"/>
-            <span className="text-emerald-300 text-sm font-semibold"
-              style={{ animation: 'liveCountPop 4.5s ease-in-out infinite' }}>
+            <motion.span className="text-emerald-300 text-sm font-semibold"
+              animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}>
               {liveCount}
-            </span>
+            </motion.span>
             <span className="text-emerald-400/70 text-sm">
               {lang==='ru' ? 'документов создано сегодня' : lang==='oz' ? 'ta hujjat bugun yaratildi' : 'ta hujjat bugun yaratildi'}
             </span>
           </div>
-        </div>
+        </motion.div>
 
-        <h1 className="text-5xl md:text-7xl font-black mb-8 leading-[1.08] tracking-tight">
+        <motion.h1 className="text-5xl md:text-7xl font-black mb-8 leading-[1.08] tracking-tight"
+          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.6, ease: [0.22,1,0.36,1] }}>
           <span className="bg-gradient-to-b from-white to-gray-300 bg-clip-text text-transparent block">
             {l.h1a}
           </span>
@@ -545,11 +560,15 @@ export default function Home() {
             {heroWord}
             <span className="opacity-80 animate-pulse">|</span>
           </span>
-        </h1>
+        </motion.h1>
 
-        <p className="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed">{l.subtitle}</p>
+        <motion.p className="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed"
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38, duration: 0.6 }}>
+          {l.subtitle}
+        </motion.p>
 
-        <div className="flex gap-4 justify-center flex-wrap mb-16">
+        <motion.div className="flex gap-4 justify-center flex-wrap mb-16"
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }}>
           <Link href="/signup"
             className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 rounded-2xl text-lg font-bold transition shadow-2xl shadow-blue-900/50 flex items-center gap-3">
             {l.cta}
@@ -559,16 +578,21 @@ export default function Home() {
             className="px-8 py-4 border border-white/10 hover:border-white/25 bg-white/5 hover:bg-white/10 rounded-2xl text-lg transition text-gray-300 hover:text-white">
             {l.how}
           </a>
-        </div>
+        </motion.div>
 
-        <p className="text-sm text-gray-600 mb-20">{l.freeNote}</p>
+        <motion.p className="text-sm text-gray-600 mb-20"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65, duration: 0.5 }}>
+          {l.freeNote}
+        </motion.p>
 
         {/* Hero image */}
-        <div className="relative mx-auto max-w-4xl mt-4">
+        <motion.div className="relative mx-auto max-w-4xl mt-4"
+          initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, duration: 0.8, ease: [0.22,1,0.36,1] }}>
 
           {/* Floating badge — top left */}
-          <div className="hidden md:block absolute -top-5 -left-8 z-20 pointer-events-none"
-            style={{ animation: 'floatBadge 5s ease-in-out infinite' }}>
+          <motion.div className="hidden md:block absolute -top-5 -left-8 z-20 pointer-events-none"
+            animate={{ y: [0, -8, 0], rotate: [-1, 1, -1] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
             <div className="bg-[#0F172A]/95 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3">
               <div className="w-9 h-9 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Zap className="w-4 h-4 text-blue-400"/>
@@ -578,11 +602,12 @@ export default function Home() {
                 <div className="text-gray-500 text-xs">{lang==='ru'?'время создания':'yaratish vaqti'}</div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Floating badge — top right */}
-          <div className="hidden md:block absolute -top-5 -right-8 z-20 pointer-events-none"
-            style={{ animation: 'floatBadge2 6s ease-in-out 1s infinite' }}>
+          <motion.div className="hidden md:block absolute -top-5 -right-8 z-20 pointer-events-none"
+            animate={{ y: [0, -10, 0], rotate: [1, -1, 1] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}>
             <div className="bg-[#0F172A]/95 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3">
               <div className="w-9 h-9 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                 <CheckCircle className="w-4 h-4 text-emerald-400"/>
@@ -592,11 +617,12 @@ export default function Home() {
                 <div className="text-gray-500 text-xs">{lang==='ru'?'экспорт':'eksport'}</div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Floating badge — bottom left */}
-          <div className="hidden md:block absolute -bottom-5 -left-6 z-20 pointer-events-none"
-            style={{ animation: 'floatBadge3 7s ease-in-out 0.5s infinite' }}>
+          <motion.div className="hidden md:block absolute -bottom-5 -left-6 z-20 pointer-events-none"
+            animate={{ y: [0, -6, 0], rotate: [0, 2, 0] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}>
             <div className="bg-[#0F172A]/95 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3">
               <div className="w-9 h-9 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Bot className="w-4 h-4 text-purple-400"/>
@@ -606,11 +632,12 @@ export default function Home() {
                 <div className="text-gray-500 text-xs">GPT-4 asosida</div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Floating badge — bottom right */}
-          <div className="hidden md:block absolute -bottom-5 -right-6 z-20 pointer-events-none"
-            style={{ animation: 'floatBadge 8s ease-in-out 2s infinite' }}>
+          <motion.div className="hidden md:block absolute -bottom-5 -right-6 z-20 pointer-events-none"
+            animate={{ y: [0, -8, 0], rotate: [-1, 1, -1] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}>
             <div className="bg-[#0F172A]/95 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3">
               <div className="w-9 h-9 bg-amber-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                 <Users className="w-4 h-4 text-amber-400"/>
@@ -620,7 +647,7 @@ export default function Home() {
                 <div className="text-gray-500 text-xs">{lang==='ru'?'компаний':'kompaniya'}</div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           <div className="absolute inset-0 bg-gradient-to-t from-[#080810] via-transparent to-transparent z-10 pointer-events-none" style={{top:'65%'}}/>
           {/* Browser chrome frame */}
@@ -648,7 +675,7 @@ export default function Home() {
           {/* Glow */}
           <div className="absolute -inset-4 bg-blue-600/15 rounded-3xl blur-3xl -z-10 pointer-events-none"/>
           <div className="absolute -inset-8 bg-purple-600/8 rounded-3xl blur-3xl -z-10 pointer-events-none"/>
-        </div>
+        </motion.div>
       </section>
 
       {/* ── MARQUEE ── */}
@@ -665,26 +692,29 @@ export default function Home() {
 
       {/* ── STATS ── */}
       <section className="relative border-y border-white/5 py-14 bg-white/[0.015]">
-        <div className="max-w-5xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <motion.div className="max-w-5xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-6 text-center"
+          variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.3 }}>
           {[
-            { val: <CountUp end={30} suffix="+" />, label: l.statsLabels[0], delay: '0ms' },
-            { val: '< 2 min',                       label: l.statsLabels[1], delay: '100ms' },
-            { val: <CountUp end={4} />,              label: l.statsLabels[2], delay: '200ms' },
-            { val: lang === 'ru' ? 'Много' : lang === 'oz' ? "Ko'p" : "Ko'p", label: l.statsLabels[3], delay: '300ms' },
+            { val: <CountUp end={30} suffix="+" />, label: l.statsLabels[0] },
+            { val: '< 2 min',                       label: l.statsLabels[1] },
+            { val: <CountUp end={4} />,              label: l.statsLabels[2] },
+            { val: lang === 'ru' ? 'Много' : lang === 'oz' ? "Ko'p" : "Ko'p", label: l.statsLabels[3] },
           ].map((s, i) => (
-            <div key={i} className="fadein group" style={{ transitionDelay: s.delay }}>
+            <motion.div key={i} variants={fadeUp} className="group"
+              whileHover={{ scale: 1.05 }} transition={spring}>
               <div className="text-4xl font-black bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent mb-2 group-hover:from-blue-300 group-hover:to-blue-500 transition-all duration-300">
                 {s.val}
               </div>
               <div className="text-gray-500 text-sm">{s.label}</div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* ── DEPARTMENTS ── */}
       <section id="depts" className="relative max-w-7xl mx-auto px-5 py-28">
-        <div className="text-center mb-16 fadein">
+        <motion.div className="text-center mb-16"
+          variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <div className="inline-flex items-center gap-2 text-cyan-400 text-sm font-medium mb-4">
             <Briefcase className="w-4 h-4"/> {l.deptTag}
           </div>
@@ -692,17 +722,19 @@ export default function Home() {
             {l.deptTitle}
           </h2>
           <p className="text-gray-400 text-lg max-w-xl mx-auto">{l.deptSub}</p>
-        </div>
+        </motion.div>
 
         {/* Interactive tabs */}
-        <div className="fadein flex flex-col lg:flex-row gap-4">
+        <motion.div className="flex flex-col lg:flex-row gap-4"
+          variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
 
           {/* Tab buttons */}
           <div className="flex lg:flex-col gap-2 lg:w-56 flex-shrink-0">
             {l.depts.map((dept, i) => {
               const st = DEPT_STYLES[i]
               return (
-                <button key={i} onClick={() => setActiveDept(i)}
+                <motion.button key={i} onClick={() => setActiveDept(i)}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={spring}
                   className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all duration-200 w-full ${
                     activeDept === i
                       ? `bg-gradient-to-r ${st.gradient} border ${st.border} shadow-lg`
@@ -715,52 +747,64 @@ export default function Home() {
                     {dept.name}
                   </span>
                   {activeDept === i && (
-                    <div className={`ml-auto w-1.5 h-1.5 ${st.dot} rounded-full flex-shrink-0`}/>
+                    <motion.div layoutId="dept-dot" className={`ml-auto w-1.5 h-1.5 ${st.dot} rounded-full flex-shrink-0`}/>
                   )}
-                </button>
+                </motion.button>
               )
             })}
           </div>
 
-          {/* Tab content */}
-          <div className={`flex-1 bg-gradient-to-br ${DEPT_STYLES[activeDept].gradient} border ${DEPT_STYLES[activeDept].border} rounded-3xl p-8 dept-tab-content`}
-            key={activeDept}>
-            <div className="flex items-start gap-5 mb-7">
-              <div className={`w-16 h-16 ${DEPT_STYLES[activeDept].iconBg} rounded-2xl flex items-center justify-center ${DEPT_STYLES[activeDept].iconColor} flex-shrink-0`}>
-                {DEPT_ICONS[activeDept]}
-              </div>
-              <div>
-                <h3 className="text-3xl font-black text-white mb-1">{l.depts[activeDept].name}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{l.depts[activeDept].desc}</p>
-              </div>
-            </div>
+          {/* Tab content - AnimatePresence */}
+          <div className="flex-1 relative">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeDept}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className={`bg-gradient-to-br ${DEPT_STYLES[activeDept].gradient} border ${DEPT_STYLES[activeDept].border} rounded-3xl p-8`}>
+                <div className="flex items-start gap-5 mb-7">
+                  <div className={`w-16 h-16 ${DEPT_STYLES[activeDept].iconBg} rounded-2xl flex items-center justify-center ${DEPT_STYLES[activeDept].iconColor} flex-shrink-0`}>
+                    {DEPT_ICONS[activeDept]}
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-black text-white mb-1">{l.depts[activeDept].name}</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">{l.depts[activeDept].desc}</p>
+                  </div>
+                </div>
 
-            <div className="flex flex-wrap gap-2.5">
-              {l.depts[activeDept].docs.map((doc, j) => (
-                <span key={j}
-                  className={`inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl ${DEPT_STYLES[activeDept].badge} border border-white/10 font-medium`}
-                  style={{ animationDelay: `${j * 40}ms` }}>
-                  <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 opacity-70"/>
-                  {doc}
-                </span>
-              ))}
-            </div>
+                <motion.div className="flex flex-wrap gap-2.5"
+                  variants={staggerFast} initial="hidden" animate="show">
+                  {l.depts[activeDept].docs.map((doc, j) => (
+                    <motion.span key={j} variants={fadeUp}
+                      className={`inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl ${DEPT_STYLES[activeDept].badge} border border-white/10 font-medium`}>
+                      <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 opacity-70"/>
+                      {doc}
+                    </motion.span>
+                  ))}
+                </motion.div>
 
-            <div className="mt-8 pt-6 border-t border-white/10">
-              <Link href="/signup"
-                className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${DEPT_STYLES[activeDept].iconBg} ${DEPT_STYLES[activeDept].iconColor} border ${DEPT_STYLES[activeDept].border} hover:scale-[1.03]`}>
-                {lang==='ru'?'Начать бесплатно':lang==='oz'?"Bepul boshlash":"Bepul boshlash"}
-                <ArrowRight className="w-4 h-4"/>
-              </Link>
-            </div>
+                <div className="mt-8 pt-6 border-t border-white/10">
+                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={spring} className="inline-block">
+                    <Link href="/signup"
+                      className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${DEPT_STYLES[activeDept].iconBg} ${DEPT_STYLES[activeDept].iconColor} border ${DEPT_STYLES[activeDept].border}`}>
+                      {lang==='ru'?'Начать бесплатно':lang==='oz'?"Bepul boshlash":"Bepul boshlash"}
+                      <ArrowRight className="w-4 h-4"/>
+                    </Link>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ── FEATURES ── */}
       <section id="features" className="relative border-y border-white/5 bg-white/[0.015] py-28">
         <div className="max-w-7xl mx-auto px-5">
-          <div className="text-center mb-16 fadein">
+          <motion.div className="text-center mb-16"
+            variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
             <div className="inline-flex items-center gap-2 text-blue-400 text-sm font-medium mb-4">
               <Zap className="w-4 h-4"/> {l.featuresTag}
             </div>
@@ -768,35 +812,38 @@ export default function Home() {
               {l.featuresTitle}
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">{l.featuresSub}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          </motion.div>
+          <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+            variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.1 }}>
             {l.features.map((f, i) => {
               const st = FEATURES_STYLES[i]
               return (
-                <div key={i} className={`fadein group bg-gradient-to-br ${st.gradient} border ${st.border} rounded-2xl p-7 hover:scale-[1.02] transition-all duration-300`}
-                  style={{ transitionDelay: `${i * 80}ms` }}>
+                <motion.div key={i} variants={fadeUp}
+                  whileHover={{ scale: 1.03, y: -4 }} transition={spring}
+                  className={`group bg-gradient-to-br ${st.gradient} border ${st.border} rounded-2xl p-7`}>
                   <div className={`w-14 h-14 ${st.iconBg} rounded-2xl flex items-center justify-center ${st.iconColor} mb-6`}>
                     {FEATURES_ICONS[i]}
                   </div>
                   <h3 className="text-lg font-bold mb-3 text-white">{f.title}</h3>
                   <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
-                </div>
+                </motion.div>
               )
             })}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ── HOW IT WORKS ── */}
       <section id="how" className="relative max-w-5xl mx-auto px-5 py-28">
-        <div className="text-center mb-16 fadein">
+        <motion.div className="text-center mb-16"
+          variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <div className="inline-flex items-center gap-2 text-purple-400 text-sm font-medium mb-4">
             <Clock className="w-4 h-4"/> {l.howTag}
           </div>
           <h2 className="text-5xl font-black bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
             {l.howTitle}
           </h2>
-        </div>
+        </motion.div>
         {/* How it works image */}
         <div className="relative mx-auto max-w-3xl mb-16 rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-purple-900/20">
           <Image
@@ -809,7 +856,8 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#080810]/50 via-transparent to-transparent pointer-events-none"/>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative"
+          variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.2 }}>
           <div className="hidden md:block absolute top-10 left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] h-px bg-gradient-to-r from-blue-600/50 via-purple-600/50 to-emerald-600/50"/>
           {l.steps.map((s, i) => {
             const colors = [
@@ -818,22 +866,26 @@ export default function Home() {
               { color: 'from-emerald-600 to-teal-600', shadow: 'shadow-emerald-900/40' },
             ][i]
             return (
-              <div key={i} className="fadein relative text-center group" style={{ transitionDelay: `${i * 150}ms` }}>
-                <div className={`w-20 h-20 bg-gradient-to-br ${colors.color} rounded-3xl flex items-center justify-center text-2xl font-black mx-auto mb-8 shadow-xl ${colors.shadow} group-hover:scale-110 transition-transform duration-300`}>
+              <motion.div key={i} variants={fadeUp} className="relative text-center group">
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: [0, -3, 3, 0] }}
+                  transition={spring}
+                  className={`w-20 h-20 bg-gradient-to-br ${colors.color} rounded-3xl flex items-center justify-center text-2xl font-black mx-auto mb-8 shadow-xl ${colors.shadow}`}>
                   {String(i+1).padStart(2,'0')}
-                </div>
+                </motion.div>
                 <h3 className="text-xl font-bold mb-4 text-white">{s.title}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">{s.desc}</p>
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       </section>
 
       {/* ── AI DEMO SECTION ── */}
       <section className="relative border-y border-white/5 bg-white/[0.015] py-28">
         <div className="max-w-6xl mx-auto px-5">
-          <div className="text-center mb-16 fadein">
+          <motion.div className="text-center mb-16"
+            variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
             <div className="inline-flex items-center gap-2 text-yellow-400 text-sm font-medium mb-4">
               <MessageSquare className="w-4 h-4"/> {l.aiDemoTag}
             </div>
@@ -841,7 +893,7 @@ export default function Home() {
               {l.aiDemoTitle}
             </h2>
             <p className="text-gray-400 text-lg">{l.aiDemoSub}</p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             {/* AI chat image */}
@@ -873,7 +925,8 @@ export default function Home() {
 
       {/* ── TESTIMONIALS ── */}
       <section className="relative max-w-6xl mx-auto px-5 py-24">
-        <div className="text-center mb-14 fadein">
+        <motion.div className="text-center mb-14"
+          variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <div className="inline-flex items-center gap-2 text-amber-400 text-sm font-medium mb-4">
             <Star className="w-4 h-4"/>
             {lang === 'ru' ? 'ОТЗЫВЫ' : lang === 'oz' ? 'ФИКРLAR' : 'MIJOZLAR FIKRI'}
@@ -881,18 +934,17 @@ export default function Home() {
           <h2 className="text-5xl font-black bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent mb-4">
             {lang === 'ru' ? 'Что говорят пользователи' : lang === 'oz' ? 'Foydalanuvchilar nima deydi' : "Foydalanuvchilar nima deydi"}
           </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        </motion.div>
+        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-5"
+          variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.1 }}>
           {TESTIMONIALS.map((t, i) => (
-            <div key={i} className="fadein bg-white/[0.03] border border-white/10 rounded-3xl p-7 hover:border-white/20 hover:bg-white/[0.05] transition-all duration-300"
-              style={{ transitionDelay: `${i * 120}ms` }}>
-              {/* Stars */}
+            <motion.div key={i} variants={fadeUp}
+              whileHover={{ scale: 1.02, y: -4 }} transition={spring}
+              className="bg-white/[0.03] border border-white/10 rounded-3xl p-7 hover:border-white/20 hover:bg-white/[0.05]">
               <div className="flex gap-0.5 mb-5">
                 {[1,2,3,4,5].map(s => <svg key={s} className="w-4 h-4 fill-amber-400" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}
               </div>
-              {/* Text */}
               <p className="text-gray-300 text-sm leading-relaxed mb-6">&ldquo;{t.text[lang]}&rdquo;</p>
-              {/* Author */}
               <div className="flex items-center gap-3">
                 <Image
                   src={`/testimonial-${i + 1}.png`}
@@ -906,14 +958,15 @@ export default function Home() {
                   <div className="text-gray-500 text-xs">{t.role[lang]} · {t.company}</div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* ── PRICING ── */}
       <section id="pricing" className="relative max-w-6xl mx-auto px-5 py-28">
-        <div className="text-center mb-16 fadein">
+        <motion.div className="text-center mb-16"
+          variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <div className="inline-flex items-center gap-2 text-emerald-400 text-sm font-medium mb-4">
             <Star className="w-4 h-4"/> {l.pricingTag}
           </div>
@@ -921,11 +974,14 @@ export default function Home() {
             {l.pricingTitle}
           </h2>
           <p className="text-gray-400 text-lg">{l.pricingSub}</p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.1 }}>
           {/* FREE */}
-          <div className="fadein bg-white/[0.03] border border-white/10 rounded-3xl p-8 hover:border-white/20 transition-all" style={{ transitionDelay: '0ms' }}>
+          <motion.div variants={fadeUp}
+            whileHover={{ scale: 1.02, y: -4 }} transition={spring}
+            className="bg-white/[0.03] border border-white/10 rounded-3xl p-8 hover:border-white/20">
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-9 h-9 bg-gray-700 rounded-xl flex items-center justify-center">
@@ -948,10 +1004,12 @@ export default function Home() {
             <Link href="/signup" className="block w-full text-center py-3.5 border border-white/10 hover:border-white/25 hover:bg-white/5 rounded-xl text-sm font-bold transition text-gray-300">
               {l.startFree}
             </Link>
-          </div>
+          </motion.div>
 
           {/* STANDARD */}
-          <div className="fadein relative bg-gradient-to-b from-blue-600/20 to-blue-900/10 border border-blue-500/40 rounded-3xl p-8 shadow-2xl shadow-blue-900/25 scale-[1.02]" style={{ transitionDelay: '120ms' }}>
+          <motion.div variants={fadeUp}
+            whileHover={{ scale: 1.04, y: -6 }} transition={spring}
+            className="relative bg-gradient-to-b from-blue-600/20 to-blue-900/10 border border-blue-500/40 rounded-3xl p-8 shadow-2xl shadow-blue-900/25 scale-[1.02]">
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs font-black px-6 py-2 rounded-full shadow-lg">
               {l.popular}
             </div>
@@ -977,10 +1035,12 @@ export default function Home() {
             <Link href="/signup" className="block w-full text-center py-3.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 rounded-xl text-sm font-black transition shadow-lg shadow-blue-900/40">
               {l.start}
             </Link>
-          </div>
+          </motion.div>
 
           {/* AI PRO */}
-          <div className="fadein relative bg-gradient-to-b from-purple-600/20 to-purple-900/10 border border-purple-500/30 rounded-3xl p-8 hover:border-purple-500/50 transition-all" style={{ transitionDelay: '240ms' }}>
+          <motion.div variants={fadeUp}
+            whileHover={{ scale: 1.02, y: -4 }} transition={spring}
+            className="relative bg-gradient-to-b from-purple-600/20 to-purple-900/10 border border-purple-500/30 rounded-3xl p-8 hover:border-purple-500/50">
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-black px-6 py-2 rounded-full shadow-lg">
               {l.premium}
             </div>
@@ -1006,8 +1066,8 @@ export default function Home() {
             <Link href="/signup" className="block w-full text-center py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl text-sm font-black transition shadow-lg shadow-purple-900/40">
               {l.signup}
             </Link>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
         {/* ── PAYMENT DETAILS ── */}
         <div className="mt-14 max-w-2xl mx-auto">
           <div className="bg-gradient-to-br from-emerald-900/20 to-emerald-950/10 border border-emerald-700/30 rounded-3xl p-8">
@@ -1089,9 +1149,10 @@ export default function Home() {
 
       {/* ── TRUST STRIP ── */}
       <section className="relative border-y border-white/5 bg-white/[0.015] py-14">
-        <div className="max-w-5xl mx-auto px-5 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+        <motion.div className="max-w-5xl mx-auto px-5 grid grid-cols-1 md:grid-cols-3 gap-8 text-center"
+          variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.3 }}>
           {[
-            { icon: <Lock className="w-6 h-6"/>, color: 'text-emerald-400', bg: 'bg-emerald-500/10', delay: '0ms',
+            { icon: <Lock className="w-6 h-6"/>, color: 'text-emerald-400', bg: 'bg-emerald-500/10',
               title: lang==='ru'?'Данные в безопасности':lang==='oz'?'Маълумотлар хавфсиз':'Ma\'lumotlar xavfsiz',
               desc: lang==='ru'?'Supabase RLS защита. Каждый видит только своё.':lang==='oz'?'Supabase RLS ҳимояси.':'Supabase RLS himoyasi. Har biri faqat o\'zini ko\'radi.' },
             { icon: <Shield className="w-6 h-6"/>, color: 'text-blue-400', bg: 'bg-blue-500/10',
@@ -1101,20 +1162,22 @@ export default function Home() {
               title: lang==='ru'?'Всегда доступно':lang==='oz'?'Доим мавжуд':'Doim mavjud',
               desc: lang==='ru'?'99.9% uptime. Vercel + Supabase инфраструктура.':lang==='oz'?'99.9% uptime кафолати.':'99.9% uptime kafolati. Vercel + Supabase.' },
           ].map((item, i) => (
-            <div key={i} className="fadein flex flex-col items-center" style={{ transitionDelay: `${i * 120}ms` }}>
+            <motion.div key={i} variants={fadeUp} className="flex flex-col items-center"
+              whileHover={{ scale: 1.04 }} transition={spring}>
               <div className={`w-14 h-14 ${item.bg} rounded-2xl flex items-center justify-center ${item.color} mb-4`}>
                 {item.icon}
               </div>
               <h3 className="font-bold text-white mb-2">{item.title}</h3>
               <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* ── COMPARISON TABLE ── */}
       <section className="relative max-w-4xl mx-auto px-5 py-24">
-        <div className="text-center mb-14 fadein">
+        <motion.div className="text-center mb-14"
+          variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <div className="inline-flex items-center gap-2 text-blue-400 text-sm font-medium mb-4">
             <Zap className="w-4 h-4"/>
             {lang==='ru' ? 'СРАВНЕНИЕ' : lang==='oz' ? 'TAQQOSLASH' : 'TAQQOSLASH'}
@@ -1125,9 +1188,10 @@ export default function Home() {
           <p className="text-gray-500 text-base">
             {lang==='ru' ? 'Почему тысячи компаний переходят на автоматизацию' : lang==='oz' ? "Nima uchun minglab kompaniyalar avtomatizatsiyaga o'tmoqda" : "Nima uchun minglab kompaniyalar avtomatizatsiyaga o'tmoqda"}
           </p>
-        </div>
+        </motion.div>
 
-        <div className="fadein overflow-hidden rounded-2xl border border-white/10">
+        <motion.div className="overflow-hidden rounded-2xl border border-white/10"
+          variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
           {/* Header row */}
           <div className="grid grid-cols-3 bg-white/[0.05] border-b border-white/10">
             <div className="px-5 py-4 text-sm font-semibold text-gray-400">
@@ -1184,12 +1248,13 @@ export default function Home() {
               <div className="px-5 py-3.5 text-sm text-red-400/80 text-center">{row.them}</div>
             </div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* ── FAQ ── */}
       <section className="relative max-w-3xl mx-auto px-5 pb-24">
-        <div className="text-center mb-14 fadein">
+        <motion.div className="text-center mb-14"
+          variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <div className="inline-flex items-center gap-2 text-purple-400 text-sm font-medium mb-4">
             <MessageSquare className="w-4 h-4"/>
             FAQ
@@ -1197,7 +1262,7 @@ export default function Home() {
           <h2 className="text-4xl md:text-5xl font-black bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
             {lang==='ru' ? 'Частые вопросы' : lang==='oz' ? "Ko'p so'raladigan savollar" : "Ko'p so'raladigan savollar"}
           </h2>
-        </div>
+        </motion.div>
 
         <FaqList lang={lang} />
       </section>
@@ -1215,21 +1280,27 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-[#080810]/80 via-transparent to-[#080810]/80"/>
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/8 to-transparent pointer-events-none"/>
-        <div className="max-w-3xl mx-auto px-5 text-center fadein">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl mb-8 shadow-2xl shadow-blue-900/50" style={{ animation: 'heroPulse 3s ease-in-out infinite' }}>
+        <motion.div className="max-w-3xl mx-auto px-5 text-center"
+          variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true }}>
+          <motion.div variants={fadeUp}
+            className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl mb-8 shadow-2xl shadow-blue-900/50"
+            animate={{ scale: [1, 1.08, 1], opacity: [0.85, 1, 0.85] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
             <Sparkles className="w-8 h-8 text-white"/>
-          </div>
-          <h2 className="text-5xl md:text-6xl font-black mb-6 bg-gradient-to-b from-white to-gray-300 bg-clip-text text-transparent">
+          </motion.div>
+          <motion.h2 variants={fadeUp} className="text-5xl md:text-6xl font-black mb-6 bg-gradient-to-b from-white to-gray-300 bg-clip-text text-transparent">
             {l.ctaTitle}
-          </h2>
-          <p className="text-gray-400 text-xl mb-12 leading-relaxed max-w-xl mx-auto">{l.ctaSub}</p>
-          <Link href="/signup"
-            className="inline-flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 rounded-2xl text-xl font-black transition shadow-2xl shadow-blue-900/50 hover:shadow-blue-900/70">
-            {l.ctaBtn}
-            <ChevronRight className="w-6 h-6"/>
-          </Link>
-          <p className="text-gray-600 text-sm mt-6">{l.ctaNote}</p>
-        </div>
+          </motion.h2>
+          <motion.p variants={fadeUp} className="text-gray-400 text-xl mb-12 leading-relaxed max-w-xl mx-auto">{l.ctaSub}</motion.p>
+          <motion.div variants={fadeUp} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={spring} className="inline-block">
+            <Link href="/signup"
+              className="inline-flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 rounded-2xl text-xl font-black transition shadow-2xl shadow-blue-900/50 hover:shadow-blue-900/70">
+              {l.ctaBtn}
+              <ChevronRight className="w-6 h-6"/>
+            </Link>
+          </motion.div>
+          <motion.p variants={fadeUp} className="text-gray-600 text-sm mt-6">{l.ctaNote}</motion.p>
+        </motion.div>
       </section>
 
       {/* ── FOOTER ── */}
