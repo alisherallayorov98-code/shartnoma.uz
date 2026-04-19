@@ -364,6 +364,8 @@ export async function generateContractDOCX(c: Contract, returnBlob = false): Pro
   ] : []
 
   const doc = new Document({
+    creator: 'Shartnoma.uz',
+    description: `${typeName} № ${c.contract_number}`,
     sections: [{
       properties: { page: { margin: { top: DOCX_MARGINS.top, bottom: DOCX_MARGINS.bottom, left: DOCX_MARGINS.left, right: DOCX_MARGINS.right } } },
       footers: { default: footer },

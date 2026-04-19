@@ -186,7 +186,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const loadContracts = useCallback(async (orgId?: string, limit = 50) => {
     // Faqat kerakli fieldlar — to'liq join emas (tezligi 3-5x oshadi)
     const base = supabase.from('contracts')
-      .select('id, status, created_at, organization_id, counterparty_id, contract_number, currency, content, contract_date, contract_type, amount, end_date, description, extra_data, signed_us, signed_cp, spec_items, organizations(name,inn,address,director_name,bank_name,bank_account,mfo), counterparties(name,inn,address,director_name,bank_name,bank_account,mfo)', { count: 'exact' })
+      .select('id, status, created_at, organization_id, counterparty_id, contract_number, currency, content, contract_date, contract_type, amount, end_date, description, extra_data, signed_us, signed_cp, spec_items, city, product_name, organizations(name,inn,address,director_name,bank_name,bank_account,mfo), counterparties(name,inn,address,director_name,bank_name,bank_account,mfo)', { count: 'exact' })
       .order('created_at', { ascending: false }).limit(limit)
     const { data, count, error } = orgId ? await base.eq('organization_id', orgId) : await base
     if (error) { console.error('loadContracts:', error.message); return }
@@ -376,7 +376,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (!activeOrg) return
     const offset = contractsLengthRef.current
     const { data, error } = await supabase.from('contracts')
-      .select('id, status, created_at, organization_id, counterparty_id, contract_number, currency, content, contract_date, contract_type, amount, end_date, description, extra_data, signed_us, signed_cp, spec_items, organizations(name,inn,address,director_name,bank_name,bank_account,mfo), counterparties(name,inn,address,director_name,bank_name,bank_account,mfo)')
+      .select('id, status, created_at, organization_id, counterparty_id, contract_number, currency, content, contract_date, contract_type, amount, end_date, description, extra_data, signed_us, signed_cp, spec_items, city, product_name, organizations(name,inn,address,director_name,bank_name,bank_account,mfo), counterparties(name,inn,address,director_name,bank_name,bank_account,mfo)')
       .eq('organization_id', activeOrg.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + 49)
