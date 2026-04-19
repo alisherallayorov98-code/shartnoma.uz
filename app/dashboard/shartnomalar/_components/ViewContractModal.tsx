@@ -42,62 +42,45 @@ export default function ViewContractModal({
 }: ViewContractModalProps) {
   const T = useT()
   const [didoxStep, setDidoxStep] = useState<null | 'ready'>(null)
-  const [apStatus, setApStatus] = useState<null | 'loading' | 'ok' | 'error' | 'offline'>(null)
+  const [apStatus, setApStatus] = useState<null | 'loading' | 'ok' | 'error'>(null)
   const [apMsg, setApMsg] = useState('')
 
-  async function sendToAutopilot() {
+  async function sendToDidox() {
     setApStatus('loading')
     setApMsg('')
-    try {
-      // Autopilot ishlamoqdami?
-      const health = await fetch('http://127.0.0.1:9876/health', { signal: AbortSignal.timeout(2000) }).catch(() => null)
-      if (!health?.ok) {
-        setApStatus('offline')
-        setApMsg('')
-        return
-      }
-      // PDF blob olish
-      const pdfBlob = await generateContractPDFBlob(viewContract)
-      const reader = new FileReader()
-      const pdf_base64: string = await new Promise((res, rej) => {
-        reader.onload = () => res((reader.result as string).split(',')[1])
-        reader.onerror = rej
-        reader.readAsDataURL(pdfBlob)
-      })
-      const body = {
-        cp_inn: viewContract.counterparties?.inn || '',
-        pdf_base64,
-      }
-      const resp = await fetch('http://127.0.0.1:9876/fill-didox', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      const data = await resp.json()
-      if (data.status === 'ok') {
-        setApStatus('ok')
-        setApMsg(data.message || 'Forma to\'ldirildi')
-      } else {
+    // Autopilot bor-yo'qligini tekshir (2 soniya timeout)
+    const health = await fetch('http://127.0.0.1:9876/health', { signal: AbortSignal.timeout(2000) }).catch(() => null)
+    if (health?.ok) {
+      // Autopilot yo'li — PDF + STIR avtomatik
+      try {
+        const pdfBlob = await generateContractPDFBlob(viewContract)
+        const reader = new FileReader()
+        const pdf_base64: string = await new Promise((res, rej) => {
+          reader.onload = () => res((reader.result as string).split(',')[1])
+          reader.onerror = rej
+          reader.readAsDataURL(pdfBlob)
+        })
+        const resp = await fetch('http://127.0.0.1:9876/fill-didox', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cp_inn: viewContract.counterparties?.inn || '', pdf_base64 }),
+        })
+        const data = await resp.json()
+        setApStatus(data.status === 'ok' ? 'ok' : 'error')
+        setApMsg(data.message || '')
+      } catch (e: unknown) {
         setApStatus('error')
-        setApMsg(data.message || 'Xatolik')
+        setApMsg(e instanceof Error ? e.message : 'Xatolik')
       }
-    } catch (e: unknown) {
-      setApStatus('error')
-      setApMsg(e instanceof Error ? e.message : 'Xatolik')
+    } else {
+      // Manual yo'l — PDF yuklash + STIR nusxalash + Didox oynasi
+      setApStatus(null)
+      await onGeneratePDF(viewContract)
+      const cpInn = viewContract.counterparties?.inn || ''
+      if (cpInn) { try { await navigator.clipboard.writeText(cpInn) } catch { /* */ } }
+      window.open('https://didox.uz/document_form/000', '_blank', 'noopener')
+      setDidoxStep('ready')
     }
-  }
-
-  async function sendToDidox() {
-    // 1. PDF yuklab olish
-    await onGeneratePDF(viewContract)
-    // 2. Kontragent STIR clipboard'ga
-    const cpInn = viewContract.counterparties?.inn || ''
-    if (cpInn) {
-      try { await navigator.clipboard.writeText(cpInn) } catch { /* */ }
-    }
-    // 3. Didox oynasini ochish
-    window.open('https://didox.uz/document_form/000', '_blank', 'noopener')
-    setDidoxStep('ready')
   }
 
   return (
@@ -123,23 +106,16 @@ export default function ViewContractModal({
               Telegram
             </button>
             <button onClick={sendToDidox}
-              title="PDF yuklaydi + kontragent STIR nusxalanadi + Didox oynasi ochiladi"
-              className="px-3 py-1.5 text-xs bg-violet-600/20 hover:bg-violet-600/40 border border-violet-600/30 text-violet-300 rounded-lg transition font-semibold flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-              </svg>
-              Didox
-            </button>
-            <button
-              onClick={sendToAutopilot}
               disabled={apStatus === 'loading'}
-              title="Didox Autopilot — brauzer ochib, STIR + PDF ni to'ldiradi (localhost:9876)"
-              className="px-3 py-1.5 text-xs bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-600/30 text-emerald-300 rounded-lg transition font-semibold flex items-center gap-1.5 disabled:opacity-50"
-            >
+              title="Autopilot ishlab tursa avtomatik to'ldiradi, aks holda manual yo'l"
+              className="px-3 py-1.5 text-xs bg-violet-600/20 hover:bg-violet-600/40 border border-violet-600/30 text-violet-300 rounded-lg transition font-semibold flex items-center gap-1.5 disabled:opacity-50">
               {apStatus === 'loading'
-                ? <span className="animate-spin inline-block w-3 h-3 border border-emerald-400 border-t-transparent rounded-full"/>
-                : '🤖'}
-              Autopilot
+                ? <span className="animate-spin inline-block w-3 h-3 border border-violet-400 border-t-transparent rounded-full"/>
+                : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                  </svg>
+              }
+              Didox
             </button>
             <button onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 rounded-lg transition">
               🖨️ Print
@@ -158,28 +134,10 @@ export default function ViewContractModal({
           </div>
         </div>
 
-        {/* Autopilot status banners */}
-        {apStatus === 'offline' && (
-          <div className="px-6 py-3 bg-slate-900/60 border-b border-slate-700/40 flex items-start gap-3">
-            <span className="text-lg flex-shrink-0">🤖</span>
-            <div className="flex-1 text-xs text-slate-300 space-y-1">
-              <p className="font-semibold text-slate-200">Autopilot ishlamayapti</p>
-              <p>
-                Ishga tushirish uchun:
-                <a href="/didox_autopilot.py" download className="ml-1 text-emerald-400 underline hover:text-emerald-300">didox_autopilot.py</a>
-                {' '}ni yuklab oling, keyin:
-              </p>
-              <p className="font-mono bg-slate-800/60 px-2 py-1 rounded text-slate-200 text-[11px]">
-                pip install playwright &amp;&amp; playwright install chromium<br/>
-                python didox_autopilot.py
-              </p>
-            </div>
-            <button onClick={() => setApStatus(null)} className="text-slate-500 hover:text-slate-300 text-lg leading-none flex-shrink-0">×</button>
-          </div>
-        )}
+        {/* Autopilot natija banneri */}
         {(apStatus === 'ok' || apStatus === 'error') && (
-          <div className={`px-6 py-3 border-b flex items-start gap-3 ${apStatus === 'ok' ? 'bg-emerald-900/20 border-emerald-700/30' : 'bg-red-900/20 border-red-700/30'}`}>
-            <span className="text-lg flex-shrink-0">{apStatus === 'ok' ? '✅' : '❌'}</span>
+          <div className={`px-6 py-3 border-b flex items-center gap-3 ${apStatus === 'ok' ? 'bg-emerald-900/20 border-emerald-700/30' : 'bg-red-900/20 border-red-700/30'}`}>
+            <span className="text-base flex-shrink-0">{apStatus === 'ok' ? '✅' : '❌'}</span>
             <p className={`flex-1 text-xs ${apStatus === 'ok' ? 'text-emerald-300' : 'text-red-300'}`}>{apMsg}</p>
             <button onClick={() => setApStatus(null)} className="text-gray-500 hover:text-gray-300 text-lg leading-none flex-shrink-0">×</button>
           </div>
