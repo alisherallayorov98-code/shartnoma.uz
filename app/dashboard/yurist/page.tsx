@@ -11,30 +11,40 @@ import { useToast } from '@/lib/toast'
 import { CONTRACT_TYPES_I18N } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import SavedDocumentsPanel from '../_components/SavedDocumentsPanel'
+import ContractSelector from './_components/ContractSelector'
+import { TarjimaInput, TarjimaResult } from './_components/features/TarjimaFeature'
+import { QaInput, QaResult } from './_components/features/QaFeature'
+import { ClauseInput, ClauseResult } from './_components/features/ClauseFeature'
+import { RecommendInput, RecommendResult } from './_components/features/RecommendFeature'
+import { XulosaResult } from './_components/features/XulosaFeature'
+import { GrammatikResult } from './_components/features/GrammatikFeature'
+import { TahlilResult } from './_components/features/TahlilFeature'
+import { WriteInput, WriteResult } from './_components/features/WriteFeature'
+import { TuzatishInput, TuzatishResult } from './_components/features/TuzatishFeature'
 
 type HubFeature = 'xulosa' | 'tarjima' | 'grammatika' | 'tahlil' | 'qa' | 'clause' | 'recommend' | 'write' | 'tuzatish'
 
 // ─── Typed results per feature ────────────────────────────────────────────────
-type XulosaResult    = { xulosa: string; asosiy_shartlar?: string[]; muddat?: string; summa?: string; muhim_bandlar?: string[] }
-type TarjimaResult   = { tarjima: string }
-type GrammatikResult = { xatolar_soni?: number; umumiy_baho?: string; xatolar: { xato: string; togri: string; izoh: string }[] }
-type TahlilResult    = { baho: string; umumiy: string; kuchli_tomonlar?: string[]; zaif_tomonlar?: string[]; yuridik_xatarlar?: { daraja: string; tavsif: string }[]; tavsiyalar?: string[] }
-type QaResult        = { javob: string; havola?: string }
-type ClauseResult    = { band: string; band_nomi?: string }
-type RecommendResult = { tur?: string; tur_nomi?: string; tavsiya: string; sabab?: string; qoshimcha_maslahat?: string }
-type WriteResult     = { shartnoma: string; bandlar_soni?: number }
-type TuzatishResult  = { tuzatilgan_shartnoma: string; ozgartirishlar: { original: string; fixed: string; izoh: string }[]; ozgartirishlar_soni?: number; umumiy_baho?: string }
+type XulosaData    = { xulosa: string; asosiy_shartlar?: string[]; muddat?: string; summa?: string; muhim_bandlar?: string[] }
+type TarjimaData   = { tarjima: string }
+type GrammatikData = { xatolar_soni?: number; umumiy_baho?: string; xatolar: { xato: string; togri: string; izoh: string }[] }
+type TahlilData    = { baho: string; umumiy: string; kuchli_tomonlar?: string[]; zaif_tomonlar?: string[]; yuridik_xatarlar?: { daraja: string; tavsif: string }[]; tavsiyalar?: string[] }
+type QaData        = { javob: string; havola?: string }
+type ClauseData    = { band: string; band_nomi?: string }
+type RecommendData = { tur?: string; tur_nomi?: string; tavsiya: string; sabab?: string; qoshimcha_maslahat?: string }
+type WriteData     = { shartnoma: string; bandlar_soni?: number }
+type TuzatishData  = { tuzatilgan_shartnoma: string; ozgartirishlar: { original: string; fixed: string; izoh: string }[]; ozgartirishlar_soni?: number; umumiy_baho?: string }
 
 type HubResult =
-  | ({ _type: 'xulosa' }    & XulosaResult)
-  | ({ _type: 'tarjima' }   & TarjimaResult)
-  | ({ _type: 'grammatika'} & GrammatikResult)
-  | ({ _type: 'tahlil' }    & TahlilResult)
-  | ({ _type: 'qa' }        & QaResult)
-  | ({ _type: 'clause' }    & ClauseResult)
-  | ({ _type: 'recommend' } & RecommendResult)
-  | ({ _type: 'write' }     & WriteResult)
-  | ({ _type: 'tuzatish' } & TuzatishResult)
+  | ({ _type: 'xulosa' }    & XulosaData)
+  | ({ _type: 'tarjima' }   & TarjimaData)
+  | ({ _type: 'grammatika'} & GrammatikData)
+  | ({ _type: 'tahlil' }    & TahlilData)
+  | ({ _type: 'qa' }        & QaData)
+  | ({ _type: 'clause' }    & ClauseData)
+  | ({ _type: 'recommend' } & RecommendData)
+  | ({ _type: 'write' }     & WriteData)
+  | ({ _type: 'tuzatish' } & TuzatishData)
 
 const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; needsContract: boolean; premiumOnly: boolean }[] = [
   { key: 'xulosa',     icon: '📝', name: 'Xulosa',          desc: "Shartnomaning asosiy shartlarini qisqacha bayon qiladi",        needsContract: true,  premiumOnly: false },
@@ -47,41 +57,6 @@ const FEATURES: { key: HubFeature; icon: string; name: string; desc: string; nee
   { key: 'write',      icon: '✍️', name: 'Shartnoma yoz',   desc: "Ma'lumotlar asosida to'liq shartnoma matnini yozadi",          needsContract: false, premiumOnly: true  },
   { key: 'tuzatish',  icon: '📎', name: 'Tuzatish',        desc: "Tashqaridan kelgan shartnomani tahlil qilib, kamchiliklarini bartaraf etadi", needsContract: false, premiumOnly: true  },
 ]
-
-
-// ─── ResultActions: download/copy/save tugmalari ─────────────────────────────
-function ResultActions({
-  text, label, onPreview, onSave,
-}: {
-  text: string; label: string
-  onPreview: (t: string) => void
-  onSave: (t: string) => void
-}) {
-  return (
-    <div className="flex gap-2 flex-wrap">
-      <button onClick={() => onPreview(text)}
-        className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">
-        👁 Ko&apos;rish
-      </button>
-      <button onClick={() => downloadTextAsWord(text, label)}
-        className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold transition">
-        📝 Word
-      </button>
-      <a href="https://www.ilovepdf.com/ru/word_to_pdf" target="_blank" rel="noopener noreferrer"
-        className="text-xs bg-[#1F2937] hover:bg-[#111827] border border-[#1E293B] text-gray-300 px-2.5 py-1 rounded-lg transition">
-        📄 Word→PDF
-      </a>
-      <button onClick={() => navigator.clipboard.writeText(text).catch(() => {})}
-        className="text-xs text-gray-500 hover:text-gray-300 transition">
-        📋 Nusxa
-      </button>
-      <button onClick={() => onSave(text)}
-        className="text-xs bg-green-700 hover:bg-green-600 text-white px-2.5 py-1 rounded-lg transition">
-        💾 Saqlash
-      </button>
-    </div>
-  )
-}
 
 export default function YuristPage() {
   const { lang } = useLang()
@@ -194,7 +169,7 @@ export default function YuristPage() {
       const result = data.result
       if (!result || typeof result !== 'object') { setHubError("AI bo'sh natija qaytardi."); return }
       setHubResult({ _type: 'tuzatish', ...result } as HubResult)
-      setFixEditedText((result as TuzatishResult).tuzatilgan_shartnoma || '')
+      setFixEditedText((result as TuzatishData).tuzatilgan_shartnoma || '')
     } catch {
       setHubError('Serverga ulanishda xatolik')
     } finally {
@@ -229,10 +204,9 @@ export default function YuristPage() {
     }
   }
 
-  // Unique counterparties from contractList
   const cpOptions = Array.from(
     new Map(contractList.map(c => [c.counterparty_id, c.counterparties?.name || '—'])).entries()
-  ).filter(([id]) => id)
+  ).filter(([id]) => id) as [string, string][]
 
   const filteredBycp = hubCp ? contractList.filter(c => c.counterparty_id === hubCp) : contractList
 
@@ -295,7 +269,7 @@ export default function YuristPage() {
         return
       }
       setHubResult({ _type: hubFeature, ...result } as HubResult)
-      if (hubFeature === 'tuzatish') setFixEditedText((result as TuzatishResult).tuzatilgan_shartnoma || '')
+      if (hubFeature === 'tuzatish') setFixEditedText((result as TuzatishData).tuzatilgan_shartnoma || '')
     } catch {
       setHubError('Serverga ulanishda xatolik')
     } finally {
@@ -367,238 +341,80 @@ export default function YuristPage() {
         </div>
 
         {/* Contract selector */}
-        {sel.needsContract && (() => {
-          const contractsWithContent = filteredBycp.filter(c => c.content?.trim())
-          const selectedHasContent = filteredBycp.find(c => c.id === hubContract)?.content?.trim()
-          return (
-            <div className="space-y-3">
-              {/* Counterparty filter */}
-              {cpOptions.length > 0 && (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">Kontragent</label>
-                  <select value={hubCp} onChange={e => { setHubCp(e.target.value); setHubContract(''); setHubResult(null); setHubError('') }}
-                    className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
-                    <option value="">{T(t.yuristPage.allCps)}</option>
-                    {cpOptions.map(([id, name]) => (
-                      <option key={id} value={id}>{name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              {/* Contract filter */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  {T({ uz: 'Shartnoma tanlang', oz: 'Шартнома танланг', ru: 'Выберите договор' })}
-                  {contractsWithContent.length === 0 && filteredBycp.length > 0 && (
-                    <span className="ml-2 text-amber-400">{T(t.yuristPage.noContentWarn)}</span>
-                  )}
-                </label>
-                <select value={hubContract} onChange={e => { setHubContract(e.target.value); setHubResult(null); setHubError('') }}
-                  className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
-                  <option value="">{T(t.yuristPage.selectContract)}</option>
-                  {filteredBycp.map(c => {
-                    const hasContent = Boolean(c.content?.trim())
-                    return (
-                      <option key={c.id} value={c.id} disabled={!hasContent}>
-                        {hasContent ? '✓' : '✗'} #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]}{!hubCp ? ` · ${c.counterparties?.name || '—'}` : ''}{!hasContent ? ` ${T(t.yuristPage.noContractText)}` : ''}
-                      </option>
-                    )
-                  })}
-                </select>
-                {hubContract && !selectedHasContent && (
-                  <p className="text-amber-400 text-xs mt-1">{T(t.yuristPage.noTextWarn)}</p>
-                )}
-              </div>
-            </div>
-          )
-        })()}
+        {sel.needsContract && (
+          <ContractSelector
+            lang={lang}
+            contracts={filteredBycp}
+            cpOptions={cpOptions}
+            hubCp={hubCp}
+            hubContract={hubContract}
+            setHubCp={setHubCp}
+            setHubContract={setHubContract}
+            setHubResult={() => setHubResult(null)}
+            setHubError={setHubError}
+          />
+        )}
 
-        {/* Tarjima - til tanlash */}
+        {/* Feature-specific inputs */}
         {hubFeature === 'tarjima' && (
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Tarjima tili</label>
-            <div className="flex gap-2">
-              {[['ru', 'Ruscha'], ['oz', "O'zbek (Kirill)"], ['en', 'English']].map(([v, l]) => (
-                <button key={v} onClick={() => setHubTargetLang(v)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${hubTargetLang === v ? 'bg-blue-600 text-white' : 'bg-[#1F2937] border border-[#1E293B] text-gray-400 hover:text-white'}`}>
-                  {l}
-                </button>
-              ))}
-            </div>
-          </div>
+          <TarjimaInput hubTargetLang={hubTargetLang} setHubTargetLang={setHubTargetLang} />
         )}
 
-        {/* Savol-javob */}
         {hubFeature === 'qa' && (
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Savolingiz</label>
-            <div className="flex gap-2">
-              <input value={hubQuestion} onChange={e => setHubQuestion(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !hubLoading) { e.preventDefault(); setHubResult(null); runHubFeature() } }}
-                placeholder="Masalan: Bu shartnomada jarima bandi bormi? (Enter → yuborish)"
-                className="flex-1 bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
-              {hubResult && !hubLoading && (
-                <button onClick={() => { setHubResult(null); setHubError(''); runHubFeature() }}
-                  className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                  ↩ Yuborish
-                </button>
-              )}
-            </div>
-          </div>
+          <QaInput
+            hubQuestion={hubQuestion}
+            setHubQuestion={setHubQuestion}
+            hubResult={Boolean(hubResult)}
+            hubLoading={hubLoading}
+            runHubFeature={runHubFeature}
+            setHubResult={() => setHubResult(null)}
+          />
         )}
 
-        {/* Band qo'shish */}
         {hubFeature === 'clause' && (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">{T({ uz: 'Kontragent (ixtiyoriy)', oz: 'Контрагент (ихтиёрий)', ru: 'Контрагент (необязательно)' })}</label>
-              <select value={hubCp} onChange={e => { setHubCp(e.target.value); setHubContract(''); setHubResult(null) }}
-                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
-                <option value="">{T(t.yuristPage.allCps)}</option>
-                {cpOptions.map(([id, name]) => (
-                  <option key={id} value={id}>{name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">{T({ uz: "Shartnoma (ixtiyoriy — band shu shartnomaga qo'shiladi)", oz: "Шартнома (ихтиёрий — банд шу шартномага қўшилади)", ru: "Договор (необязательно — пункт добавится к этому договору)" })}</label>
-              <select value={hubContract} onChange={e => { setHubContract(e.target.value); setHubResult(null) }}
-                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
-                <option value="">{T({ uz: '— Shartnoma tanlanmagan —', oz: '— Шартнома танланмаган —', ru: '— Договор не выбран —' })}</option>
-                {filteredBycp.map(c => (
-                  <option key={c.id} value={c.id}>
-                    #{c.contract_number} · {CONTRACT_TYPES_I18N[c.contract_type]?.[lang]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Ko'rsatma</label>
-              <input value={hubInstruction} onChange={e => setHubInstruction(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !hubLoading) { e.preventDefault(); setHubResult(null); runHubFeature() } }}
-                placeholder="Masalan: Kechikish uchun 0.1% kunlik jarima bandi qo'sh (Enter → yuborish)"
-                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
-            </div>
-          </div>
+          <ClauseInput
+            lang={lang}
+            hubCp={hubCp}
+            setHubCp={setHubCp}
+            hubContract={hubContract}
+            setHubContract={setHubContract}
+            setHubResult={() => setHubResult(null)}
+            hubInstruction={hubInstruction}
+            setHubInstruction={setHubInstruction}
+            hubLoading={hubLoading}
+            runHubFeature={runHubFeature}
+            cpOptions={cpOptions}
+            filteredContracts={filteredBycp}
+          />
         )}
 
-        {/* Tur tavsiyasi */}
         {hubFeature === 'recommend' && (
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Vaziyatni ta'riflang</label>
-            <textarea value={hubDescription} onChange={e => setHubDescription(e.target.value)} rows={3}
-              placeholder="Masalan: Kompaniyam boshqa firmaga 3 oy davomida ofis ijaraga bermoqchi..."
-              className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500 resize-none"/>
-          </div>
+          <RecommendInput hubDescription={hubDescription} setHubDescription={setHubDescription} />
         )}
 
-        {/* Shartnoma yozish */}
         {hubFeature === 'write' && (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Shartnoma turi</label>
-              <select value={hubWriteDetails.tur} onChange={e => setHubWriteDetails({ ...hubWriteDetails, tur: e.target.value })}
-                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 cursor-pointer">
-                {Object.entries(CONTRACT_TYPES_I18N).map(([k, v]) => <option key={k} value={k}>{v[lang]}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Summa</label>
-              <input value={hubWriteDetails.summa} onChange={e => setHubWriteDetails({ ...hubWriteDetails, summa: e.target.value })}
-                placeholder="10 000 000 so'm" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Shartnoma raqami</label>
-              <input value={hubWriteDetails.shartnoma_raqam} onChange={e => setHubWriteDetails({ ...hubWriteDetails, shartnoma_raqam: e.target.value })}
-                placeholder="2025/01" className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"/>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Sana</label>
-              <input type="date" value={hubWriteDetails.sana} onChange={e => setHubWriteDetails({ ...hubWriteDetails, sana: e.target.value })}
-                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20"/>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Birinchi tomon</label>
-              <div className="w-full bg-[#0F172A] border border-[#1E293B] rounded-lg px-3 py-2 text-sm text-white flex items-center gap-2">
-                <span className="text-green-400 text-xs">✓</span>
-                <span>{activeOrg?.name || '—'}</span>
-                {activeOrg?.inn && <span className="text-gray-500 text-xs ml-auto">INN: {activeOrg.inn}</span>}
-              </div>
-            </div>
-            <div className="relative">
-              <label className="block text-xs text-gray-400 mb-1">Ikkinchi tomon (kontragent)</label>
-              <input
-                type="text"
-                value={writeCpSearch}
-                onFocus={() => setWriteCpOpen(true)}
-                onChange={e => { setWriteCpSearch(e.target.value); setWriteCpOpen(true); setHubWriteDetails({ ...hubWriteDetails, cp: e.target.value }) }}
-                onBlur={() => setTimeout(() => setWriteCpOpen(false), 150)}
-                placeholder="Kontragent nomi yoki tanlang…"
-                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500"
-                autoComplete="off"
-              />
-              {writeCpOpen && (() => {
-                const filtered = cps.filter(c =>
-                  !writeCpSearch || c.name.toLowerCase().includes(writeCpSearch.toLowerCase())
-                ).slice(0, 8)
-                return filtered.length > 0 ? (
-                  <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-[#111827] border border-[#1E293B] rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
-                    {filtered.map(cp => (
-                      <button key={cp.id} type="button"
-                        onMouseDown={() => {
-                          setWriteCpSearch(cp.name)
-                          setHubWriteDetails({ ...hubWriteDetails, cp: cp.name })
-                          setWriteCpOpen(false)
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-[#1F2937] transition border-b border-[#1E293B]/50 last:border-0">
-                        <div className="text-sm text-white">{cp.name}</div>
-                        {cp.inn && <div className="text-xs text-gray-500">INN: {cp.inn}</div>}
-                      </button>
-                    ))}
-                  </div>
-                ) : null
-              })()}
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs text-gray-400 mb-1">Qo'shimcha shartlar (ixtiyoriy)</label>
-              <textarea value={hubWriteDetails.extra} onChange={e => setHubWriteDetails({ ...hubWriteDetails, extra: e.target.value })} rows={2}
-                placeholder="Masalan: To'lov muddati 30 kun, yetkazib berish Toshkentda..."
-                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500 resize-none"/>
-            </div>
-          </div>
+          <WriteInput
+            lang={lang}
+            hubWriteDetails={hubWriteDetails}
+            setHubWriteDetails={setHubWriteDetails}
+            writeCpSearch={writeCpSearch}
+            setWriteCpSearch={setWriteCpSearch}
+            writeCpOpen={writeCpOpen}
+            setWriteCpOpen={setWriteCpOpen}
+            activeOrgName={activeOrg?.name}
+            activeOrgInn={activeOrg?.inn}
+            cps={cps}
+          />
         )}
 
-        {/* Shartnoma tuzatish - fayl yuklash */}
         {hubFeature === 'tuzatish' && (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Shartnoma faylini yuklang</label>
-              <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-[#1E293B] rounded-xl cursor-pointer hover:border-blue-600/50 transition bg-[#0F172A]">
-                <input type="file" accept=".txt,.docx" className="hidden"
-                  onChange={e => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]) }}/>
-                {fixFileName ? (
-                  <div className="text-center px-4">
-                    <div className="text-2xl mb-1">📄</div>
-                    <div className="text-sm text-white truncate">{fixFileName}</div>
-                    {fixFileLoading && <div className="text-xs text-blue-400 mt-1">⏳ O'qilmoqda...</div>}
-                    {fixContent && !fixFileLoading && <div className="text-xs text-green-400 mt-1">✓ {fixContent.length.toLocaleString()} belgi o'qildi</div>}
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <div className="text-2xl mb-1">📎</div>
-                    <div className="text-sm text-gray-400">Fayl yuklash uchun bosing</div>
-                    <div className="text-xs text-gray-600 mt-1">.docx yoki .txt</div>
-                  </div>
-                )}
-              </label>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Yoki matnni to&apos;g&apos;ridan-to&apos;g&apos;ri yapishtirib qo&apos;ying</label>
-              <textarea value={fixContent} onChange={e => setFixContent(e.target.value)} rows={5}
-                placeholder="Shartnoma matnini bu yerga yapishtirib qo'ying..."
-                className="w-full bg-[#0F172A] border border-[#1E293B] text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 placeholder-gray-500 resize-none"/>
-            </div>
-          </div>
+          <TuzatishInput
+            fixContent={fixContent}
+            setFixContent={setFixContent}
+            fixFileName={fixFileName}
+            fixFileLoading={fixFileLoading}
+            handleFileUpload={handleFileUpload}
+          />
         )}
 
         {/* Error */}
@@ -674,271 +490,118 @@ export default function YuristPage() {
           </div>
         )}
 
-        {/* Result */}
+        {/* Results */}
         {hubResult && !hubLoading && (
           <div className="space-y-3">
             <div className="h-px bg-[#1E293B]"/>
 
             {hubResult._type === 'xulosa' && (
-              <div className="space-y-3">
-                <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
-                  <div className="text-xs text-gray-500 mb-1">Xulosa</div>
-                  <div className="text-white text-sm leading-relaxed">{String(hubResult.xulosa || '')}</div>
-                </div>
-                {(hubResult.asosiy_shartlar as string[])?.length > 0 && (
-                  <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
-                    <div className="text-xs text-gray-500 mb-2">Asosiy shartlar</div>
-                    {(hubResult.asosiy_shartlar as string[]).map((s, i) => <div key={i} className="text-sm text-gray-200">• {s}</div>)}
-                  </div>
-                )}
-                <div className="flex gap-3">
-                  {Boolean(hubResult.muddat) && <div className="bg-blue-900/40 border border-blue-800/40 rounded-xl px-4 py-3 flex-1"><div className="text-xs text-gray-500">Muddat</div><div className="text-white text-sm">{String(hubResult.muddat)}</div></div>}
-                  {Boolean(hubResult.summa)  && <div className="bg-emerald-900/40 border border-emerald-800/40 rounded-xl px-4 py-3 flex-1"><div className="text-xs text-gray-500">Summa</div><div className="text-white text-sm">{String(hubResult.summa)}</div></div>}
-                </div>
-                {(hubResult.muhim_bandlar as string[])?.length > 0 && (
-                  <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
-                    <div className="text-xs text-gray-500 mb-2">📌 Muhim bandlar</div>
-                    {(hubResult.muhim_bandlar as string[]).map((s, i) => <div key={i} className="text-sm text-gray-200">• {s}</div>)}
-                  </div>
-                )}
-                <ResultActions text={hubResult.xulosa} label="xulosa" onPreview={setPreviewText} onSave={t => saveToDb('xulosa', 'Yurist xulosa', t)} />
-              </div>
+              <XulosaResult
+                xulosa={hubResult.xulosa}
+                asosiy_shartlar={hubResult.asosiy_shartlar}
+                muddat={hubResult.muddat}
+                summa={hubResult.summa}
+                muhim_bandlar={hubResult.muhim_bandlar}
+                setPreviewText={setPreviewText}
+                onSave={t => saveToDb('xulosa', 'Yurist xulosa', t)}
+              />
             )}
 
-            {hubResult?._type === 'tarjima' && (
-              <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                  <div className="text-xs text-gray-500">Tarjima</div>
-                  <ResultActions text={hubResult.tarjima} label="tarjima" onPreview={setPreviewText} onSave={t => saveToDb('tarjima', 'Tarjima', t)} />
-                </div>
-                <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.tarjima || '')}</pre>
-              </div>
+            {hubResult._type === 'tarjima' && (
+              <TarjimaResult
+                tarjima={hubResult.tarjima}
+                setPreviewText={setPreviewText}
+                onSave={t => saveToDb('tarjima', 'Tarjima', t)}
+              />
             )}
 
             {hubResult._type === 'grammatika' && (
-              <div className="space-y-3">
-                <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 flex items-center gap-3">
-                  <span className="text-2xl">✏️</span>
-                  <div>
-                    <div className="text-white font-semibold">{Number(hubResult.xatolar_soni ?? (hubResult.xatolar as unknown[])?.length ?? 0)} ta xato</div>
-                    <div className="text-gray-400 text-xs">{String(hubResult.umumiy_baho || '')}</div>
-                  </div>
-                </div>
-                {(hubResult.xatolar as { xato: string; togri: string; izoh: string }[])?.map((x, i) => (
-                  <div key={i} className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-red-400 text-sm line-through">{x.xato}</span>
-                      <span className="text-gray-500">→</span>
-                      <span className="text-emerald-400 text-sm font-medium">{x.togri}</span>
-                    </div>
-                    <div className="text-gray-500 text-xs">{x.izoh}</div>
-                  </div>
-                ))}
-                <ResultActions
-                  text={[
-                    `Grammatika tekshiruvi: ${Number(hubResult.xatolar_soni ?? (hubResult.xatolar as unknown[])?.length ?? 0)} ta xato`,
-                    hubResult.umumiy_baho ? `Umumiy baho: ${hubResult.umumiy_baho}` : '',
-                    (hubResult.xatolar as { xato: string; togri: string; izoh: string }[])?.length
-                      ? `\nXatolar:\n${(hubResult.xatolar as { xato: string; togri: string; izoh: string }[]).map(x => `❌ ${x.xato} → ✅ ${x.togri}\n   ${x.izoh}`).join('\n')}`
-                      : '',
-                  ].filter(Boolean).join('\n')}
-                  label="grammatika" onPreview={setPreviewText} onSave={t => saveToDb('grammatika', 'Grammatika tekshiruvi', t)}
-                />
-              </div>
+              <GrammatikResult
+                xatolar_soni={hubResult.xatolar_soni}
+                umumiy_baho={hubResult.umumiy_baho}
+                xatolar={hubResult.xatolar}
+                setPreviewText={setPreviewText}
+                onSave={t => saveToDb('grammatika', 'Grammatika tekshiruvi', t)}
+              />
             )}
 
             {hubResult._type === 'tahlil' && (
-              <div className="space-y-3">
-                <div className={`rounded-xl p-4 border flex items-center gap-3 ${
-                  String(hubResult.baho) === 'A' ? 'bg-emerald-900/40 border-emerald-700' :
-                  String(hubResult.baho) === 'B' ? 'bg-blue-900/40 border-blue-700' :
-                  String(hubResult.baho) === 'C' ? 'bg-yellow-900/40 border-yellow-700' : 'bg-red-900/40 border-red-700'
-                }`}>
-                  <span className={`text-4xl font-black ${
-                    String(hubResult.baho) === 'A' ? 'text-emerald-400' :
-                    String(hubResult.baho) === 'B' ? 'text-blue-400' :
-                    String(hubResult.baho) === 'C' ? 'text-yellow-400' : 'text-red-400'
-                  }`}>{String(hubResult.baho)}</span>
-                  <div className="text-gray-200 text-sm">{String(hubResult.umumiy || '')}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {(hubResult.kuchli_tomonlar as string[])?.length > 0 && (
-                    <div className="bg-emerald-900/20 border border-emerald-800/40 rounded-xl p-3">
-                      <div className="text-xs text-emerald-400 mb-1.5">✅ Kuchli tomonlar</div>
-                      {(hubResult.kuchli_tomonlar as string[]).map((s, i) => <div key={i} className="text-xs text-gray-200">• {s}</div>)}
-                    </div>
-                  )}
-                  {(hubResult.zaif_tomonlar as string[])?.length > 0 && (
-                    <div className="bg-yellow-900/20 border border-yellow-800/40 rounded-xl p-3">
-                      <div className="text-xs text-yellow-400 mb-1.5">⚠️ Zaif tomonlar</div>
-                      {(hubResult.zaif_tomonlar as string[]).map((s, i) => <div key={i} className="text-xs text-gray-200">• {s}</div>)}
-                    </div>
-                  )}
-                </div>
-                {(hubResult.yuridik_xatarlar as { daraja: string; tavsif: string }[])?.map((x, i) => (
-                  <div key={i} className="flex items-start gap-2 bg-[#0F172A] border border-[#1E293B] rounded-xl p-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 mt-0.5 ${x.daraja.match(/yuqori|высок|юқори/i) ? 'bg-red-900 text-red-300' : x.daraja.match(/rta|редний|ўрта/i) ? 'bg-yellow-900 text-yellow-300' : 'bg-[#1F2937] text-gray-200'}`}>{x.daraja}</span>
-                    <span className="text-gray-200 text-sm">{x.tavsif}</span>
-                  </div>
-                ))}
-                {(hubResult.tavsiyalar as string[])?.map((s, i) => <div key={i} className="text-gray-200 text-sm">• {s}</div>)}
-                <ResultActions
-                  text={[
-                    `Baho: ${hubResult.baho}`,
-                    hubResult.umumiy,
-                    (hubResult.kuchli_tomonlar as string[])?.length ? `\nKuchli tomonlar:\n${(hubResult.kuchli_tomonlar as string[]).map(s => '• ' + s).join('\n')}` : '',
-                    (hubResult.zaif_tomonlar as string[])?.length ? `\nZaif tomonlar:\n${(hubResult.zaif_tomonlar as string[]).map(s => '• ' + s).join('\n')}` : '',
-                    (hubResult.yuridik_xatarlar as { daraja: string; tavsif: string }[])?.length ? `\nYuridik xatarlar:\n${(hubResult.yuridik_xatarlar as { daraja: string; tavsif: string }[]).map(x => `[${x.daraja}] ${x.tavsif}`).join('\n')}` : '',
-                    (hubResult.tavsiyalar as string[])?.length ? `\nTavsiyalar:\n${(hubResult.tavsiyalar as string[]).map(s => '• ' + s).join('\n')}` : '',
-                  ].filter(Boolean).join('\n')}
-                  label="tahlil" onPreview={setPreviewText} onSave={t => saveToDb('tahlil', 'Chuqur tahlil', t)}
-                />
-                {hubContract && contracts.find(c => c.id === hubContract)?.content?.trim() && (
-                  <button
-                    onClick={() => runTuzatishDirect(contracts.find(c => c.id === hubContract)?.content || '')}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold border border-orange-600/50 text-orange-400 hover:bg-orange-900/20 transition">
-                    🔧 Ushbu kamchiliklarni shartnomada tuzatish →
-                  </button>
-                )}
-              </div>
+              <TahlilResult
+                baho={hubResult.baho}
+                umumiy={hubResult.umumiy}
+                kuchli_tomonlar={hubResult.kuchli_tomonlar}
+                zaif_tomonlar={hubResult.zaif_tomonlar}
+                yuridik_xatarlar={hubResult.yuridik_xatarlar}
+                tavsiyalar={hubResult.tavsiyalar}
+                hubContract={hubContract}
+                hasContractContent={Boolean(contracts.find(c => c.id === hubContract)?.content?.trim())}
+                onTuzatish={() => runTuzatishDirect(contracts.find(c => c.id === hubContract)?.content || '')}
+                setPreviewText={setPreviewText}
+                onSave={t => saveToDb('tahlil', 'Chuqur tahlil', t)}
+              />
             )}
 
-            {hubResult?._type === 'qa' && (
-              <div className="space-y-2">
-                <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4">
-                  <div className="text-xs text-blue-400 mb-2 flex items-center justify-between">
-                    <span>💬 Javob</span>
-                    <span className="text-gray-500 text-xs">{hubQuestion}</span>
-                  </div>
-                  {hubResult.javob
-                    ? <div className="text-white text-sm leading-relaxed">{String(hubResult.javob)}</div>
-                    : <div className="text-gray-500 text-sm italic">AI javob qaytarmadi. Yana urinib ko'ring.</div>
-                  }
-                </div>
-                {Boolean(hubResult.havola) && String(hubResult.havola) !== 'shartnomaning qaysi bandiga tegishli' && (
-                  <div className="text-gray-500 text-xs">📍 {String(hubResult.havola)}</div>
-                )}
-                <ResultActions
-                  text={[
-                    `Savol: ${hubQuestion}`,
-                    `Javob: ${String(hubResult.javob || '')}`,
-                    hubResult.havola && String(hubResult.havola) !== 'shartnomaning qaysi bandiga tegishli' ? `📍 ${String(hubResult.havola)}` : '',
-                  ].filter(Boolean).join('\n')}
-                  label="savol-javob" onPreview={setPreviewText} onSave={t => saveToDb('qa', 'Yurist javob', t)}
-                />
-              </div>
+            {hubResult._type === 'qa' && (
+              <QaResult
+                javob={hubResult.javob}
+                havola={hubResult.havola}
+                hubQuestion={hubQuestion}
+                setPreviewText={setPreviewText}
+                onSave={t => saveToDb('qa', 'Yurist javob', t)}
+              />
             )}
 
-            {hubResult?._type === 'clause' && (
-              <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 space-y-3">
-                {Boolean(hubResult.band_nomi) && <div className="text-blue-400 text-xs font-semibold">{String(hubResult.band_nomi)}</div>}
-                <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.band || '')}</pre>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <ResultActions text={hubResult.band} label="band" onPreview={setPreviewText} onSave={t => saveToDb('clause', 'Yuridik band', t)} />
-                  {hubContract && (
-                    <button onClick={() => addClauseToContract(String(hubResult.band || ''))} disabled={addingClause}
-                      className="text-xs bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg font-semibold transition">
-                      {addingClause ? "⏳ Qo'shilmoqda…" : "➕ Shartnomaga qo'shish"}
-                    </button>
-                  )}
-                </div>
-                {!hubContract && (
-                  <div className="text-xs text-gray-500">💡 Bandni shartnomaga qo'shish uchun yuqorida shartnoma tanlang</div>
-                )}
-              </div>
+            {hubResult._type === 'clause' && (
+              <ClauseResult
+                band={hubResult.band}
+                band_nomi={hubResult.band_nomi}
+                hubContract={hubContract}
+                addingClause={addingClause}
+                addClauseToContract={addClauseToContract}
+                setPreviewText={setPreviewText}
+                onSave={t => saveToDb('clause', 'Yuridik band', t)}
+              />
             )}
 
-            {hubResult?._type === 'recommend' && (
-              <div className="space-y-3">
-                <div className="bg-blue-600/10 border border-blue-600/30 rounded-xl p-4 flex items-center gap-3">
-                  <span className="text-3xl">🎯</span>
-                  <div>
-                    <div className="text-xs text-gray-500">Tavsiya etilgan tur</div>
-                    <div className="text-white font-bold">{String(hubResult.tur_nomi || hubResult.tur || '')}</div>
-                  </div>
-                </div>
-                <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 text-sm text-gray-200 leading-relaxed">{String(hubResult.tavsiya || '')}</div>
-                {Boolean(hubResult.sabab) && <div className="text-gray-500 text-xs">💡 {String(hubResult.sabab)}</div>}
-                {Boolean(hubResult.qoshimcha_maslahat) && <div className="text-gray-500 text-xs">📌 {String(hubResult.qoshimcha_maslahat)}</div>}
-                <button onClick={() => { setHubFeature('write'); setHubWriteDetails({ ...hubWriteDetails, tur: String(hubResult.tur || 'oldi_sotdi'), org: activeOrg?.name || '' }); setHubResult(null) }}
-                  className="bg-orange-500 hover:bg-orange-600 text-white text-sm px-4 py-2 rounded-xl transition">
-                  ✍️ Shu tur bo'yicha shartnoma yoz →
-                </button>
-              </div>
+            {hubResult._type === 'recommend' && (
+              <RecommendResult
+                tur={hubResult.tur}
+                tur_nomi={hubResult.tur_nomi}
+                tavsiya={hubResult.tavsiya}
+                sabab={hubResult.sabab}
+                qoshimcha_maslahat={hubResult.qoshimcha_maslahat}
+                onWriteWithTur={tur => { setHubFeature('write'); setHubWriteDetails({ ...hubWriteDetails, tur, org: activeOrg?.name || '' }); setHubResult(null) }}
+                setPreviewText={setPreviewText}
+                onSave={t => saveToDb('recommend', 'Tur tavsiyasi', t)}
+              />
             )}
 
-            {hubResult?._type === 'write' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="text-xs text-gray-500">{Number(hubResult.bandlar_soni || 0)} ta band</div>
-                  <ResultActions text={hubResult.shartnoma} label="shartnoma" onPreview={setPreviewText} onSave={t => saveToDb('write', 'AI shartnoma', t)} />
-                </div>
-                <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 max-h-96 overflow-y-auto">
-                  <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{String(hubResult.shartnoma || '')}</pre>
-                </div>
-                <button
-                  onClick={() => setSaveContractModal({ content: hubResult.shartnoma, tur: hubWriteDetails.tur, raqam: hubWriteDetails.shartnoma_raqam, sana: hubWriteDetails.sana })}
-                  className="w-full py-2.5 rounded-xl text-sm font-semibold border border-emerald-600/50 text-emerald-400 hover:bg-emerald-900/30 transition">
-                  📂 Tizimga shartnoma sifatida saqlash →
-                </button>
-              </div>
+            {hubResult._type === 'write' && (
+              <WriteResult
+                shartnoma={hubResult.shartnoma}
+                bandlar_soni={hubResult.bandlar_soni}
+                tur={hubWriteDetails.tur}
+                shartnoma_raqam={hubWriteDetails.shartnoma_raqam}
+                sana={hubWriteDetails.sana}
+                setPreviewText={setPreviewText}
+                onSave={t => saveToDb('write', 'AI shartnoma', t)}
+                onSaveToSystem={() => setSaveContractModal({ content: hubResult.shartnoma, tur: hubWriteDetails.tur, raqam: hubWriteDetails.shartnoma_raqam, sana: hubWriteDetails.sana })}
+              />
             )}
 
-            {hubResult?._type === 'tuzatish' && (
-              <div className="space-y-4">
-                {/* Summary */}
-                <div className="bg-emerald-900/30 border border-emerald-700/40 rounded-xl p-4 flex items-center gap-3">
-                  <span className="text-2xl">✅</span>
-                  <div>
-                    <div className="text-white font-semibold">
-                      {Number(hubResult.ozgartirishlar_soni || hubResult.ozgartirishlar?.length || 0)} ta o&apos;zgarish kiritildi
-                    </div>
-                    {Boolean(hubResult.umumiy_baho) && <div className="text-gray-400 text-xs mt-0.5">{String(hubResult.umumiy_baho)}</div>}
-                  </div>
-                </div>
-
-                {/* Changes list */}
-                {(hubResult.ozgartirishlar as { original: string; fixed: string; izoh: string }[])?.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="text-xs text-gray-500 font-semibold uppercase tracking-wide">O&apos;zgartirishlar ro&apos;yxati</div>
-                    <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-                      {(hubResult.ozgartirishlar as { original: string; fixed: string; izoh: string }[]).map((o, i) => (
-                        <div key={i} className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-3 space-y-1">
-                          {Boolean(o.original) && <div className="text-xs text-red-400 line-through leading-relaxed">{o.original}</div>}
-                          <div className="text-xs text-emerald-400 leading-relaxed">→ {o.fixed}</div>
-                          {Boolean(o.izoh) && <div className="text-xs text-gray-500 leading-relaxed">{o.izoh}</div>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Corrected contract - view / edit */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Tuzatilgan shartnoma</div>
-                    <button onClick={() => setFixEditMode(!fixEditMode)}
-                      className="text-xs text-blue-400 hover:text-blue-300 transition px-2 py-1 rounded-lg bg-blue-600/10">
-                      {fixEditMode ? '👁 Ko\'rish' : '✏️ Tahrirlash'}
-                    </button>
-                  </div>
-                  {fixEditMode ? (
-                    <textarea value={fixEditedText} onChange={e => setFixEditedText(e.target.value)} rows={16}
-                      className="w-full bg-white text-gray-900 rounded-xl px-5 py-4 text-sm font-serif leading-relaxed resize-y border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                  ) : (
-                    <div className="bg-[#0F172A] border border-[#1E293B] rounded-xl p-4 max-h-96 overflow-y-auto">
-                      <pre className="text-white text-sm leading-relaxed whitespace-pre-wrap font-sans">{fixEditedText}</pre>
-                    </div>
-                  )}
-                </div>
-
-                <ResultActions text={fixEditedText} label="tuzatilgan_shartnoma" onPreview={setPreviewText} onSave={t => saveToDb('tuzatish', 'Tuzatilgan shartnoma', t)} />
-                <button
-                  onClick={() => setSaveContractModal({ content: fixEditedText, tur: 'boshqa', raqam: '', sana: new Date().toISOString().slice(0, 10) })}
-                  className="w-full py-2.5 rounded-xl text-sm font-semibold border border-emerald-600/50 text-emerald-400 hover:bg-emerald-900/30 transition">
-                  📂 Tizimga shartnoma sifatida saqlash →
-                </button>
-              </div>
+            {hubResult._type === 'tuzatish' && (
+              <TuzatishResult
+                ozgartirishlar_soni={hubResult.ozgartirishlar_soni}
+                umumiy_baho={hubResult.umumiy_baho}
+                ozgartirishlar={hubResult.ozgartirishlar}
+                fixEditedText={fixEditedText}
+                setFixEditedText={setFixEditedText}
+                fixEditMode={fixEditMode}
+                setFixEditMode={setFixEditMode}
+                setPreviewText={setPreviewText}
+                onSave={t => saveToDb('tuzatish', 'Tuzatilgan shartnoma', t)}
+                onSaveToSystem={() => setSaveContractModal({ content: fixEditedText, tur: 'boshqa', raqam: '', sana: new Date().toISOString().slice(0, 10) })}
+              />
             )}
 
             <button onClick={() => { setHubResult(null); setHubError(''); setFixEditMode(false) }}
