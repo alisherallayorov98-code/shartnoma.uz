@@ -98,7 +98,9 @@ export default function EditTemplatePage() {
       setLoading(false)
       return
     }
-    supabase.from('custom_templates').select('*').eq('id', id).single()
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    if (!isUuid) { setLoading(false); return }
+    supabase.from('custom_templates').select('*').eq('id', id).maybeSingle()
       .then(({ data }) => {
         if (data) {
           setOriginal({ id: data.id, type: data.type, name: data.name, description: data.description || '', content: data.content, isDefault: false, icon: '📄', tags: [] })

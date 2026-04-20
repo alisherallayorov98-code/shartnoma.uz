@@ -157,8 +157,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const loadDemoAccess = useCallback(async (orgId: string) => {
     const { data, error } = await supabase.from('demo_access').select('expires_at')
       .eq('organization_id', orgId).eq('is_active', true)
-      .gt('expires_at', new Date().toISOString()).single()
-    if (error && error.code !== 'PGRST116') { console.error('loadDemoAccess:', error.message); return }
+      .gt('expires_at', new Date().toISOString()).maybeSingle()
+    if (error) { console.error('loadDemoAccess:', error.message); return }
     setDemoAccess(data || null)
   }, [])
 

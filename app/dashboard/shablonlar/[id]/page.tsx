@@ -99,8 +99,11 @@ export default function TemplateDetailPage() {
     const def = DEFAULT_TEMPLATES.find(t => t.id === id)
     if (def) { setTemplate(def); setLoading(false); return }
 
-    // Try DB
-    supabase.from('custom_templates').select('*').eq('id', id).single()
+    // Skip DB query if id is not a UUID (avoids 400 from Postgres)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    if (!isUuid) { setLoading(false); return }
+
+    supabase.from('custom_templates').select('*').eq('id', id).maybeSingle()
       .then(({ data }) => {
         if (data) {
           setTemplate({
