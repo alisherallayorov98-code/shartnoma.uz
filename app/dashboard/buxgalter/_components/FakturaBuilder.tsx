@@ -218,7 +218,7 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
                 ]),
                 rekvCell([
                   p('Bosh buxgalter:', { size: 20, after: 20 }),
-                  p('_________________ / ___', { size: 20, after: 0 }),
+                  p(`_________________ / ${org?.chief_accountant || '___'}`, { size: 20, after: 0 }),
                 ]),
                 rekvCell([
                   p(`Sana: ${sana}`, { size: 20, after: 0 }),
@@ -268,7 +268,9 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs text-gray-400 mb-1">Faktura raqami</label>
-          <input type="text" value={fakRaqam} onChange={e => setFakRaqam(e.target.value)} placeholder="2025/04-001" className={inp} />
+          <input type="text" value={fakRaqam} onChange={e => setFakRaqam(e.target.value)}
+            placeholder={`${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}-001`}
+            className={inp} />
         </div>
         <div>
           <label className="block text-xs text-gray-400 mb-1">Sana</label>
@@ -308,7 +310,13 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
         </div>
         <div>
           <label className="block text-xs text-gray-400 mb-1">Xaridor INN</label>
-          <input type="text" value={xaridorInn} onChange={e => setXaridorInn(e.target.value)} placeholder="123456789" className={inp} />
+          <input type="text" value={xaridorInn}
+            onChange={e => setXaridorInn(e.target.value.replace(/\D/g, '').slice(0, 9))}
+            placeholder="123456789" inputMode="numeric" maxLength={9}
+            className={inp + (xaridorInn && xaridorInn.length !== 9 ? ' border-amber-600/50' : '')} />
+          {xaridorInn && xaridorInn.length !== 9 && (
+            <div className="text-xs text-amber-500/80 mt-1">INN — 9 ta raqamdan iborat bo&apos;lishi kerak</div>
+          )}
         </div>
       </div>
 
@@ -330,15 +338,15 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
         </div>
         <div className="space-y-2">
           {/* Header */}
-          <div className="hidden sm:grid grid-cols-[2fr_60px_55px_95px_55px_85px_72px_78px_24px] gap-2 text-xs text-gray-500 px-1">
+          <div className="hidden sm:grid grid-cols-[minmax(160px,2.5fr)_60px_55px_100px_60px_85px_75px_80px_24px] gap-2 text-xs text-gray-500 px-1">
             <span>Nomi</span><span>Birlik</span><span>Miqdor</span><span>Narxi (so&apos;m)</span><span>QQS</span>
-            <span className="text-right">Sozsiz</span><span className="text-right">QQS summa</span><span className="text-right">Jami</span><span/>
+            <span className="text-right">QQSsiz</span><span className="text-right">QQS summa</span><span className="text-right">Jami</span><span/>
           </div>
           {items.map((it, idx) => {
             const c = calcItem(it)
             return (
               <div key={it.id} className="bg-[#0F172A] border border-[#1E293B] rounded-lg p-2">
-                <div className="grid grid-cols-1 sm:grid-cols-[2fr_60px_55px_95px_55px_85px_72px_78px_24px] gap-2 items-center">
+                <div className="grid grid-cols-1 sm:grid-cols-[minmax(160px,2.5fr)_60px_55px_100px_60px_85px_75px_80px_24px] gap-2 items-center">
                   <input type="text" value={it.nomi} onChange={e => updateItem(it.id, 'nomi', e.target.value)}
                     placeholder={`${idx + 1}. Mahsulot nomi`} className={inpSm} />
                   <select value={it.birlik} onChange={e => updateItem(it.id, 'birlik', e.target.value)} className={inpSm}>
@@ -351,7 +359,7 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
                     placeholder="0" className={inpSm} />
                   <select value={it.qqs} onChange={e => updateItem(it.id, 'qqs', e.target.value as QqsFoiz)} className={inpSm}>
                     <option value="12">12%</option>
-                    <option value="15">15%</option>
+                    <option value="15">15% (eski)</option>
                     <option value="0">0%</option>
                     <option value="siz">QQSsiz</option>
                   </select>

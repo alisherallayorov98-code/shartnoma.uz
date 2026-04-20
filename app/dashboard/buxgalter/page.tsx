@@ -135,7 +135,7 @@ const FEATURES: FeatureConfig[] = [
       { key: 'shartnoma_sana', label: "Shartnoma sanasi", placeholder: "2024-11-22", type: 'date' },
       { key: 'shartnoma_band', label: "Jarima belgilangan band", placeholder: "6.3" },
       { key: 'qarz_summasi', label: "Asosiy qarz (so'm)", placeholder: "35 000 000" },
-      { key: 'tolov_muddat', label: "To'lov muddati (shartnoma bo'yicha)", placeholder: "2025-01-15" },
+      { key: 'tolov_muddat', label: "To'lov muddati (shartnoma bo'yicha)", placeholder: "2025-01-15", type: 'date', hint: "Bo'sh qoldirsangiz, shartnoma sanasi olinadi" },
       { key: 'hisoblash_sana', label: "Peni hisoblash sanasi (bugun)", placeholder: "2025-04-10", type: 'date' },
       { key: 'kechikish_kun', label: "Kechikish kunlari (avtomatik hisoblanadi)", placeholder: "84", hint: "To'lov muddati bilan hisoblash sanasi orasidagi kunlar" },
       { key: 'jarima_foiz', label: "Kunlik jarima foizi (%)", placeholder: "0.1" },
@@ -220,9 +220,10 @@ export default function BuxgalterPage() {
   function updateFormData(patch: Record<string, string>) {
     setFormData(prev => {
       const next = { ...prev, ...patch }
-      // Auto-calc kechikish_kun for jarima_hisobi
+      // Auto-calc kechikish_kun for jarima_hisobi (fallback: shartnoma_sana if tolov_muddat empty)
       if (selected === 'jarima_hisobi') {
-        const muddat = next.tolov_muddat || prev.tolov_muddat
+        const muddat = (next.tolov_muddat || prev.tolov_muddat || '').trim()
+          || (next.shartnoma_sana || prev.shartnoma_sana || '').trim()
         const hisob = next.hisoblash_sana || prev.hisoblash_sana
         if (muddat && hisob) {
           const d1 = new Date(muddat)
@@ -245,6 +246,11 @@ export default function BuxgalterPage() {
     setError('')
     setResult(null)
 
+    // If a qarzdor/kontragent name was entered, look up the full counterparty record
+    // and pass its INN/bank/MFO/director to the AI so the document is fully populated
+    const cpName = (formData.qarzdor || formData.kontragent || formData.kontragentar_ism || '').trim().toLowerCase()
+    const matchedCp = cpName ? cps.find(c => c.name.trim().toLowerCase() === cpName) : null
+
     try {
       const res = await fetchAi({
         type: currentFeature.apiType!,
@@ -258,6 +264,14 @@ export default function BuxgalterPage() {
           bank_account: activeOrg.bank_account,
           mfo: activeOrg.mfo,
           tashkilot_manzil: activeOrg.address || '',
+          chief_accountant: activeOrg.chief_accountant || '',
+          // Qarzdor (kontragent) full reqvisits
+          qarzdor_inn: matchedCp?.inn || '',
+          qarzdor_bank: matchedCp?.bank_name || '',
+          qarzdor_hr: matchedCp?.bank_account || '',
+          qarzdor_mfo: matchedCp?.mfo || '',
+          qarzdor_direktor: matchedCp?.director_name || '',
+          qarzdor_manzil: matchedCp?.address || '',
         },
       })
 
@@ -272,11 +286,14 @@ export default function BuxgalterPage() {
       setResult(text)
 
       if (text && activeOrg) {
+        // Title shows kontragent name when present, so saved-docs list is distinguishable
+        const cpForTitle = (formData.qarzdor || formData.kontragent || formData.kontragentar_ism || '').trim()
+        const docTitle = cpForTitle ? `${currentFeature.title} — ${cpForTitle}` : currentFeature.title
         saveAiDocument({
           organization_id: activeOrg.id,
           section: 'buxgalter',
           feature_key: selected!,
-          title: currentFeature.title,
+          title: docTitle,
           content: text,
           meta: {},
         }).then(() => setSavedKey(k => k + 1)).catch(console.error)

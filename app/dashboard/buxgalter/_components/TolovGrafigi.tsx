@@ -9,9 +9,17 @@ type TolovTuri = 'foizsiz' | 'teng' | 'kamayuvchi'
 type Row = { num: number; sana: string; asosiy: number; foiz: number; jami: number; qoldiq: number; izoh?: string }
 
 function addMonths(dateStr: string, months: number): string {
-  const d = new Date(dateStr + 'T00:00:00')
-  d.setMonth(d.getMonth() + months)
-  return d.toISOString().split('T')[0]
+  // Local-date arithmetic — toISOString() shifts to UTC and breaks dates in UTC+N
+  const [y, m, d] = dateStr.split('-').map(Number)
+  if (!y || !m || !d) return dateStr
+  const dt = new Date(y, m - 1 + months, d)
+  // If the target month has fewer days, JS rolls forward — clamp to last day of target month
+  const targetMonth = ((m - 1 + months) % 12 + 12) % 12
+  if (dt.getMonth() !== targetMonth) dt.setDate(0) // last day of previous month = last day of target
+  const yy = dt.getFullYear()
+  const mm = String(dt.getMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getDate()).padStart(2, '0')
+  return `${yy}-${mm}-${dd}`
 }
 function fmt(n: number): string { return Math.round(n).toLocaleString('uz-UZ') }
 
@@ -293,9 +301,9 @@ export default function TolovGrafigi({ org, cps }: Props) {
         {/* Kontragent */}
         <div className="relative" ref={cpRef}>
           <label className="block text-xs text-gray-400 mb-1">Kontragent</label>
-          <input type="text" value={cpOpen ? cpSearch : kontragent}
+          <input type="text" value={kontragent}
             onFocus={() => { setCpOpen(true); setCpSearch(kontragent) }}
-            onChange={e => { setCpSearch(e.target.value); setCpOpen(true) }}
+            onChange={e => { setKontragent(e.target.value); setCpSearch(e.target.value); setCpOpen(true) }}
             placeholder="Kontragent nomi" className={inp} autoComplete="off"
           />
           {cpOpen && filtered.length > 0 && (

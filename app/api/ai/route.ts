@@ -815,7 +815,11 @@ KREDITOR:
 Tashkilot: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'})
 Rahbar: ${d.direktor || '___'}
 
-QARZDOR: ${d.qarzdor || '___'}
+QARZDOR:
+Tashkilot: ${d.qarzdor || '___'} (INN: ${d.qarzdor_inn || '___'})
+Rahbar: ${d.qarzdor_direktor || '___'}
+Bank: ${d.qarzdor_bank || '___'}, H/R: ${d.qarzdor_hr || '___'}, MFO: ${d.qarzdor_mfo || '___'}
+
 QARZ SUMMASI: ${qarz} so'm
 SHARTNOMA: ${d.shartnoma_raqam || '___'}
 MUDDATI O'TGAN: ${muddat} kun
@@ -854,7 +858,7 @@ TALABNOMA TUZILMASI:
    1. Asosiy qarz ${qarz} so'mni to'lash;
    2. Kechiktirilganlik uchun jarima ___ so'mni to'lash;
    3. Jami: ___ so'mni quyidagi bank rekvizitlariga o'tkazish so'raladi:
-      Bank: ___, H/R: ___, MFO: ___
+      Bank: ${d.bank_name || '___'}, H/R: ${d.bank_account || '___'}, MFO: ${d.mfo || '___'}
 
 7. OGOHLANTIRISH (agar sud ko'rsatilgan bo'lsa):
    Agar belgilangan muddatda to'lov amalga oshirilmasa, "${d.tashkilot || '___'}" tashkiloti O'zbekiston Respublikasi Iqtisodiy sudiga da'vo arizasi bilan murojaat qilishga va barcha sud xarajatlarini qarzdordan undirishga majbur bo'ladi.
@@ -1565,11 +1569,16 @@ Tashkilot: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'})
 Rahbar: ${d.direktor || '___'}
 Bank: ${d.bank_name || '___'}, H/R: ${d.bank_account || '___'}, MFO: ${d.mfo || '___'}
 
-QARZDOR: ${d.qarzdor || '___'}
+QARZDOR:
+Tashkilot: ${d.qarzdor || '___'} (INN: ${d.qarzdor_inn || '___'})
+Rahbar: ${d.qarzdor_direktor || '___'}
+Bank: ${d.qarzdor_bank || '___'}, H/R: ${d.qarzdor_hr || '___'}, MFO: ${d.qarzdor_mfo || '___'}
+${d.qarzdor_manzil ? `Manzil: ${d.qarzdor_manzil}` : ''}
+
 SHARTNOMA: ${d.shartnoma_raqam || '___'}
 ASOSIY QARZ: ${d.qarz_summasi || '___'} so'm
 SHARTNOMA SANASI: ${d.shartnoma_sana || '___'}
-TO'LOV MUDDATI (shartnoma bo'yicha): ${d.tolov_muddat || '___'}
+TO'LOV MUDDATI (shartnoma bo'yicha): ${d.tolov_muddat || d.shartnoma_sana || '___'}
 HAQIQIY TO'LOV SANASI / HISOBLASH SANASI: ${d.hisoblash_sana || '___'}
 KECHIKISH KUNLARI: ${kunlar} kun
 KUNLIK JARIMA: ${d.jarima_foiz || '0.1'}% (shartnoma ${d.shartnoma_band || '___'}-bandi)
@@ -1596,7 +1605,7 @@ HUJJAT TUZILMASI:
 4. JADVALLI HISOB-KITOB:
    | Ko'rsatkich | Qiymat |
    | Asosiy qarz summasi | ${qarz.toLocaleString('uz-UZ')} so'm |
-   | To'lov muddati (shartnoma) | ${d.tolov_muddat || '___'} |
+   | To'lov muddati (shartnoma) | ${d.tolov_muddat || d.shartnoma_sana || '___'} |
    | Haqiqiy to'lov / Hisoblash sanasi | ${d.hisoblash_sana || '___'} |
    | Kechikish kunlari | ${kunlar} kun |
    | Kunlik jarima stavkasi | ${d.jarima_foiz || '0.1'}% |
@@ -1607,13 +1616,13 @@ HUJJAT TUZILMASI:
 5. XULOSAVIY QISM:
    Yuqoridagi hisob-kitobga asosan "${d.qarzdor || '___'}" tashkilotidan quyidagi summa undirish zarur:
    – Asosiy qarz: ${qarz.toLocaleString('uz-UZ')} so'm
-   – Jarima (peni) ${d.tolov_muddat || '___'} – ${d.hisoblash_sana || '___'} davri uchun: ${peni.toLocaleString('uz-UZ')} so'm
+   – Jarima (peni) ${d.tolov_muddat || d.shartnoma_sana || '___'} – ${d.hisoblash_sana || '___'} davri uchun: ${peni.toLocaleString('uz-UZ')} so'm
    – JAMI: ${jami.toLocaleString('uz-UZ')} so'm (${jami > 0 ? 'so\'zlar bilan: [yozing]' : 'nol'})
 
    Agar ${d.oxirgi_muddat || '10 (o\'n) ish kuni'} ichida to'lov amalga oshirilmasa, iqtisodiy sudga murojaat qilinadi.
 
 6. IMZO:
-   "${d.tashkilot || '___'}" bosh buxgalteri: _________________ / ___
+   "${d.tashkilot || '___'}" bosh buxgalteri: _________________ / ${d.chief_accountant || '___'}
    Rahbari: _________________ / ${d.direktor || '___'}
    M.O.   Sana: _______________
 
