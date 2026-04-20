@@ -1328,8 +1328,13 @@ ${jOnly}
     // ── TABRIKLASH XATI ─────────────────────────────────────
     else if (type === 'tabriklash_xat') {
       const d = details || {}
+      const _now = new Date()
+      const _curYear = _now.getFullYear()
+      const _curMonths = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr']
+      const _curDate = `${_now.getDate()} ${_curMonths[_now.getMonth()]} ${_curYear} yil`
       prompt = `Siz rasmiy ish yuritish uslubini biladigan professional kotib yordamchisiz. Quyidagi ma'lumotlar asosida rasmiy, samimiy va chiroyli tabriklash xati yarating.
 
+JORIY SANA: ${_curDate} (joriy yil: ${_curYear})
 TASHKILOT: ${d.tashkilot || '___'} (INN: ${d.tashkilot_inn || '___'})
 RAHBAR: ${d.direktor || '___'}
 KIMGA: ${d.kimga || '___'}
@@ -1343,10 +1348,10 @@ HUJJAT TUZILMASI:
 4. Murojaat (hurmatli...)
 5. Tabrik matni: samimiy, rasmiy uslubda, hamkorlikni qadrlab
 6. Kelajakka ezgu tilaklar
-7. Imzo bloki
+7. Imzo bloki — sana qismida HAR DOIM "${_curDate}" yozing, o'zingizdan boshqa yil yoki sana o'ylab topmang.
 
 Ton: rasmiy lekin iliq, samimiy. 150-200 so'z.
-\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin.
+\nMUHIM: Faqat berilgan ma'lumotlardan foydalaning. Ko'rsatilmagan joylar uchun ___ ishlating. Hech qanday ma'lumot o'ylab topilmasin. Sana qismida faqat ${_curYear} yilini ishlating, eski yillarni ishlatmang.
 ${jOnly}
 {"tabriklash_xat":"to'liq tabriklash xati matni..."}`
     }

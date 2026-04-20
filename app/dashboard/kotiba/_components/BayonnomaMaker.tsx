@@ -71,6 +71,10 @@ const n2w: Record<number, string> = {
 }
 function numWord(n: number) { return n2w[n] ? `${n} (${n2w[n]})` : String(n) }
 
+function cleanOrgName(n: string): string {
+  return (n || '').replace(/^["'«»"" ]+|["'«»"" ]+$/g, '').trim()
+}
+
 function fmtSana(iso: string) {
   if (!iso) return '___'
   const d = new Date(iso)
@@ -97,6 +101,7 @@ function generateText(
   specific: Record<string, string | boolean>,
   orgName: string, orgInn: string, direktorName: string
 ): string {
+  orgName = cleanOrgName(orgName)
   const sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
   const sana = fmtSana(common.sana)
   const n = common.tasischilar.length || 1
@@ -364,12 +369,7 @@ ${sep}
 
 ${qarorlar}
 
-   OVOZ BERISH:
-   Yoqlab  — ${numWord(n)}
-   Qarshi  — 0 (nol)
-   Betaraf — 0 (nol)
-
-   Qaror yagona ovoz bilan qabul qilindi.
+${isYagona ? `   Qaror yagona ta'sischi tomonidan bir ovozdan qabul qilindi.` : `   OVOZ BERISH:\n   Yoqlab  — ${numWord(n)}\n   Qarshi  — 0 (nol)\n   Betaraf — 0 (nol)\n\n   Qaror yagona ovoz bilan qabul qilindi.`}
 
    Mas'ul ijrochi: ${masulIjrochi} — "${orgName}" Direktori
    Muddat: ${sana}dan boshlab ${muddat}
@@ -539,8 +539,8 @@ export default function BayonnomaMaker({ orgName, orgInn, direktorName, onSaved 
   const [common, setCommon] = useState<CommonForm>({
     bay_raqam: '1', sana: new Date().toISOString().split('T')[0],
     boshlanish_vaqt: '10:00', tugash_vaqt: '11:00',
-    joy: `"${orgName}" bosh ofisi, Toshkent shahri`,
-    yig_tur: 'navbatdagi', kotib: '',
+    joy: `"${cleanOrgName(orgName)}" bosh ofisi, Toshkent shahri`,
+    yig_tur: 'navbatdagi', kotib: direktorName || '',
     tasischilar: [{ ism: '', ulush: '100%' }],
   })
 
