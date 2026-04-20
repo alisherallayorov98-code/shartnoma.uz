@@ -808,7 +808,7 @@ export default function KadrlarPage() {
                 .map(field => (
                   <div key={field.key} className={field.textarea ? 'sm:col-span-2' : ''}>
                     <label className="block text-xs text-gray-400 mb-1">
-                      {field.label}
+                      {field.label.replace(/\s*\(ixtiyoriy\)\s*$/i, '')}
                       {field.optional && <span className="text-gray-500 ml-1">{T(t.aiPage.optional)}</span>}
                     </label>
                     {field.textarea ? (

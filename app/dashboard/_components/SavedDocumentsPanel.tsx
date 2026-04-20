@@ -32,6 +32,9 @@ const FEATURE_META: Record<string, { label: string; icon: string; color: string 
   buyruq_lavozim:         { label: "Buyruq: Lavozim",          icon: '⬆️', color: 'bg-indigo-900/40 text-indigo-300' },
   buyruq_mukofot:         { label: 'Buyruq: Mukofot',          icon: '🏆', color: 'bg-amber-900/40 text-amber-300' },
   buyruq_jazo:            { label: 'Buyruq: Jazo',             icon: '⚠️', color: 'bg-orange-900/40 text-orange-300' },
+  safari_buyruq:          { label: 'Buyruq: Xizmat safari',    icon: '✈️', color: 'bg-sky-900/40 text-sky-300' },
+  qoshimcha_kelishuv:     { label: "Qo'shimcha kelishuv",      icon: '📎', color: 'bg-blue-900/40 text-blue-300' },
+  mehnat_daftarcha:       { label: 'Mehnat daftarcha yozuvi',   icon: '📒', color: 'bg-emerald-900/40 text-emerald-300' },
   ishonchnoma:            { label: 'Ishonchnoma',              icon: '🤝', color: 'bg-cyan-900/40 text-cyan-300' },
   lavozim_yoriqnoma:      { label: "Lavozim yo'riqnomasi",     icon: '📖', color: 'bg-slate-700/40 text-slate-300' },
   // Buxgalter
