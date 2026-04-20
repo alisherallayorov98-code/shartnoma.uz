@@ -4,7 +4,7 @@
  * Asoslar:
  *  — O'zbekiston Respublikasi Mehnat kodeksi (MK), 2022-yil tahririda
  *  — O'zbekiston Respublikasi Fuqarolik kodeksi (FK)
- *  — "Tijorat siri to'g'risida"gi O'zR Qonuni (2008-yil 11-dekabr, № ЗРУ-190)
+ *  — "Tijorat siri to'g'risida"gi O'zR Qonuni (2008-yil 11-dekabr, O'RQ-190-son)
  *  — "Hujjatlashtirish va hujjatlar aylanmasi" davlat standarti (O'z DSt 1212)
  */
 
@@ -60,6 +60,7 @@ export function tplMehnatShartnoma(f: F, org: Org, tur: string): string {
   const masofaBand = tur === 'masofaviy' ? `
 2.4. Xodim ishni masofadan (remote) bajaradi. Muloqot kanallari, hisobot shakli
      va ish natijalarini topshirish tartibi ish beruvchi direktivi bilan belgilanadi.` : ''
+  const sanitarBand = tur === 'masofaviy' ? '2.5' : '2.4'
 
   const sinovBand = (f.sinov && f.sinov.trim()) ? `
 
@@ -84,7 +85,7 @@ ${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Ish beruvchi" deb yuritiladi,
 direktori ${org.director_name} tomonidan vakilligi qilinadi,
 
-va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, '_______________')},
 JSHSHIR: ${blank(f.jshshir, '______________')},
 yashash manzili: ${blank(f.xodim_manzil)},
 keyingi o'rinlarda "Xodim" deb yuritiladi,
@@ -112,7 +113,7 @@ quyidagi mehnat shartnomasini tuzdik:
      barcha vazifalarni bajaradi.
 2.2. Xodimning ish vaqti: ${ish_v}.
 2.3. Haftalik ish vaqti: ${hafta_s} soat (MK 112-moddasi).${masofaBand}
-2.5. Xodim O'zbekiston Respublikasi qonunchiligida nazarda tutilgan sanitar-gigiyena,
+${sanitarBand}. Xodim O'zbekiston Respublikasi qonunchiligida nazarda tutilgan sanitar-gigiyena,
      mehnat xavfsizligi va yong'in xavfsizligi qoidalariga rioya qiladi.
 ${sinovBand}
 
@@ -129,7 +130,7 @@ ${asosiyRaqam}.4. O'zbekiston Respublikasi qonunchiligida belgilangan jismoniy s
      daromad solig'i (12 %) va ijtimoiy sug'urta badallari (1 %) ushlab qolinib,
      davlat byudjetiga va Pensiya jamg'armasiga o'tkaziladi.
 ${asosiyRaqam}.5. Ish haqi belgilangan muddatda to'lanmagan taqdirda ish beruvchi
-     MK 153-moddasiga muvofiq moliyaviy javobgarlik ko'radi.
+     MK 155-moddasiga muvofiq moliyaviy javobgarlik ko'radi.
 ${asosiyRaqam}.6. Yillik mehnat natijalari va tashkilot moliyaviy imkoniyatlariga qarab
      qo'shimcha mukofot to'lash mumkin (mukofot ish haqining ajralmas qismi emas).
 
@@ -203,7 +204,7 @@ ${parseInt(asosiyRaqam)+5}. MAXFIYLIK VA TIJORAT SIRI
 ════════════════════════════════════════════════════════════════
 
 ${parseInt(asosiyRaqam)+5}.1. Quyidagi ma'lumotlar tijorat siri deb hisoblanadi va
-     "Tijorat siri to'g'risida"gi Qonun (2008-yil, № ЗРУ-190) himoyasi ostida turadi:
+     "Tijorat siri to'g'risida"gi Qonun (2008-yil, O'RQ-190-son) himoyasi ostida turadi:
      — mijozlar bazasi, shartnomalar, kelishuvlar va narxlar;
      — moliyaviy ma'lumotlar, ish haqlar, daromad va xarajatlar;
      — texnologik jarayonlar, dasturiy ta'minot va biznes-modellar;
@@ -274,7 +275,7 @@ TOMONLARNING REKVIZITLARI VA IMZOLARI
 
 ISH BERUVCHI:                              XODIM:
 ${org.name}                                ${blank(f.xodim_ism)}
-INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
+INN: ${org.inn}                            Pasport: ${blank(f.passport, '_______________')}
 Manzil: ${blank(f.org_manzil)}             JSHSHIR: ${blank(f.jshshir, '______________')}
 Tel: ${blank(f.org_tel)}                   Manzil: ${blank(f.xodim_manzil)}
 Hisob: ${blank(f.org_hisob)}               Tel: ${blank(f.xodim_tel)}
@@ -303,7 +304,7 @@ ${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Ish beruvchi" deb yuritiladi,
 direktori ${org.director_name} tomonidan vakilligi qilinadi,
 
-va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, '_______________')},
 JSHSHIR: ${blank(f.jshshir, '______________')},
 yashash manzili: ${blank(f.xodim_manzil)},
 keyingi o'rinlarda "Xodim" deb yuritiladi,
@@ -390,7 +391,7 @@ tashqi o'rindoshlik mehnat shartnomasini tuzdik:
 
 ISH BERUVCHI:                              XODIM:
 ${org.name}                                ${blank(f.xodim_ism)}
-INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
+INN: ${org.inn}                            Pasport: ${blank(f.passport, '_______________')}
 Manzil: ${blank(f.org_manzil)}             JSHSHIR: ${blank(f.jshshir, '______________')}
 Tel: ${blank(f.org_tel)}                   Manzil: ${blank(f.xodim_manzil)}
                                            Tel: ${blank(f.xodim_tel)}
@@ -419,7 +420,7 @@ ${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Buyurtmachi" deb yuritiladi,
 direktori ${org.director_name} tomonidan vakilligi qilinadi,
 
-va fuqaro ${blank(f.ijrochi_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+va fuqaro ${blank(f.ijrochi_ism)}, pasport: ${blank(f.passport, '_______________')},
 JSHSHIR: ${blank(f.ijrochi_jshshir, '______________')},
 STIR: ${blank(f.ijrochi_stir, '___________')},
 yashash manzili: ${blank(f.ijrochi_manzil)},
@@ -553,7 +554,7 @@ TOMONLARNING REKVIZITLARI
 
 BUYURTMACHI:                               IJROCHI:
 ${org.name}                                ${blank(f.ijrochi_ism)}
-INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
+INN: ${org.inn}                            Pasport: ${blank(f.passport, '_______________')}
 Manzil: ${blank(f.org_manzil)}             JSHSHIR: ${blank(f.ijrochi_jshshir, '______________')}
 Tel: ${blank(f.org_tel)}                   STIR: ${blank(f.ijrochi_stir)}
 Hisob: ${blank(f.org_hisob)}               Manzil: ${blank(f.ijrochi_manzil)}
@@ -569,7 +570,7 @@ M.O.                                       Sana: ${sana}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 4. MAXFIYLIK (KONFIDENSIALLIK / NDA) SHARTNOMASI
-// Huquqiy asos: "Tijorat siri to'g'risida"gi Qonun (2008, № ЗРУ-190);
+// Huquqiy asos: "Tijorat siri to'g'risida"gi Qonun (2008, O'RQ-190-son);
 //               FK 14-moddasi; Shaxsiy ma'lumotlar to'g'risida"gi Qonun (2019)
 // ═══════════════════════════════════════════════════════════════════════════════
 export function tplMaxfiylik(f: F, org: Org): string {
@@ -586,13 +587,13 @@ ${blank(f.shahar, 'Toshkent')} shahri                             "${sana}"
 ${org.name} (INN: ${org.inn}), keyingi o'rinlarda "Tashkilot" deb yuritiladi,
 direktori ${org.director_name} tomonidan vakilligi qilinadi,
 
-va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, 'AA 0000000')},
+va fuqaro ${blank(f.xodim_ism)}, pasport: ${blank(f.passport, '_______________')},
 JSHSHIR: ${blank(f.jshshir, '______________')},
 lavozim: "${blank(f.lavozim)}",
 keyingi o'rinlarda "Xodim" deb yuritiladi,
 
 "Tijorat siri to'g'risida"gi O'zbekiston Respublikasi Qonuni (2008-yil 11-dekabr,
-№ ЗРУ-190), "Shaxsiy ma'lumotlar to'g'risida"gi Qonun (2019-yil 2-iyul, № ЗРУ-547)
+O'RQ-190-son), "Shaxsiy ma'lumotlar to'g'risida"gi Qonun (2019-yil 2-iyul, O'RQ-547-son)
 hamda O'zbekiston Respublikasi Fuqarolik kodeksining 14-moddasi asosida ushbu
 maxfiylik shartnomasini tuzdik:
 
@@ -690,7 +691,7 @@ TOMONLARNING REKVIZITLARI VA IMZOLARI
 
 TASHKILOT:                                 XODIM:
 ${org.name}                                ${blank(f.xodim_ism)}
-INN: ${org.inn}                            Pasport: ${blank(f.passport, 'AA 0000000')}
+INN: ${org.inn}                            Pasport: ${blank(f.passport, '_______________')}
                                            JSHSHIR: ${blank(f.jshshir, '______________')}
                                            Lavozim: ${blank(f.lavozim)}
 
@@ -724,7 +725,7 @@ Manzil: ${blank(f.org_manzil)}
 
 O'QITAMAN / BUYURAMAN:
 
-Fuqaro ${blank(f.xodim_ism)}, pasport ${blank(f.passport, 'AA 0000000')}, JSHSHIR: ${blank(f.jshshir, '______________')},
+Fuqaro ${blank(f.xodim_ism)}, pasport ${blank(f.passport, '_______________')}, JSHSHIR: ${blank(f.jshshir, '______________')},
 "${blank(f.lavozim)}" lavozimiga${f.bolim ? ` "${f.bolim}" bo'limiga` : ''},
 ${fmtD(f.sana)} sanasidan boshlab,
 ish haqi oyiga ${blank(f.maosh)} so'm miqdorida,

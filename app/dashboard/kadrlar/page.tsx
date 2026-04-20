@@ -362,6 +362,46 @@ const EMP_FIELD_MAP: Record<string, string> = {
   xodim_tel: 'tel',
 }
 
+// Hujjat raqami uchun prefiks va maydon nomi
+const DOC_NUM: Record<string, { field: string; prefix: string }> = {
+  mehnat_shartnoma:      { field: 'shartnoma_raqam', prefix: 'MS' },
+  orindoshlik_shartnoma: { field: 'shartnoma_raqam', prefix: 'OR' },
+  fuqaroviy_shartnoma:   { field: 'shartnoma_raqam', prefix: 'FH' },
+  maxfiylik_shartnoma:   { field: 'shartnoma_raqam', prefix: 'NDA' },
+  buyruq_qabul:          { field: 'buyruq_raqam',    prefix: 'K' },
+  buyruq_boshtash:       { field: 'buyruq_raqam',    prefix: 'B' },
+  tatil_buyruq:          { field: 'buyruq_raqam',    prefix: 'T' },
+  buyruq_lavozim:        { field: 'buyruq_raqam',    prefix: 'L' },
+  buyruq_mukofot:        { field: 'buyruq_raqam',    prefix: 'M' },
+  buyruq_jazo:           { field: 'buyruq_raqam',    prefix: 'J' },
+  safari_buyruq:         { field: 'buyruq_raqam',    prefix: 'XS' },
+  qoshimcha_kelishuv:    { field: 'kelishuv_raqam',  prefix: 'QK' },
+  ishonchnoma:           { field: 'ishonchnoma_raqam', prefix: 'I' },
+}
+
+function generateDocNumber(featureKey: string): string {
+  const cfg = DOC_NUM[featureKey]
+  if (!cfg) return ''
+  const year = new Date().getFullYear()
+  const storageKey = `kadr_doc_${featureKey}_${year}`
+  let next = 1
+  try {
+    next = parseInt(localStorage.getItem(storageKey) || '0', 10) + 1
+  } catch { /* SSR safe */ }
+  return `${cfg.prefix}-${String(next).padStart(3, '0')}/${year}`
+}
+
+function bumpDocCounter(featureKey: string) {
+  const cfg = DOC_NUM[featureKey]
+  if (!cfg) return
+  const year = new Date().getFullYear()
+  const storageKey = `kadr_doc_${featureKey}_${year}`
+  try {
+    const cur = parseInt(localStorage.getItem(storageKey) || '0', 10)
+    localStorage.setItem(storageKey, String(cur + 1))
+  } catch { /* */ }
+}
+
 export default function KadrlarPage() {
   const { activeOrg, hasAiAccess, isFree, openUpgradeModal, employees } = useDashboard()
   const { toast } = useToast()
@@ -384,7 +424,10 @@ export default function KadrlarPage() {
 
   function selectFeature(key: KadrFeature) {
     setSelected(key)
-    setFormData({})
+    const initial: Record<string, string> = {}
+    const cfg = DOC_NUM[key]
+    if (cfg) initial[cfg.field] = generateDocNumber(key)
+    setFormData(initial)
     setResult(null)
     setError('')
     setCopied(false)
@@ -443,6 +486,38 @@ export default function KadrlarPage() {
     }
     if (isFree) { openUpgradeModal(); return }
     if (currentFeature.useAI && !hasAiAccess()) { openUpgradeModal(); return }
+
+    // Required fields validation
+    const missing = currentFeature.fields.filter(f => !f.optional && !(formData[f.key] || '').trim())
+    if (missing.length) {
+      setError(`Quyidagi maydonlarni to'ldiring: ${missing.map(f => f.label.replace(/\s*\(.*?\)\s*$/, '')).join(', ')}`)
+      return
+    }
+    // JSHSHIR format
+    for (const f of currentFeature.fields) {
+      if (f.key.includes('jshshir') && formData[f.key] && !/^\d{14}$/.test(formData[f.key].trim())) {
+        setError(`${f.label}: 14 raqamdan iborat bo'lishi kerak`); return
+      }
+    }
+    // Safari date sanity
+    if (selected === 'safari_buyruq') {
+      const b = formData.safari_bosh, e2 = formData.safari_tugash
+      if (b && e2 && new Date(e2) < new Date(b)) {
+        setError("Safari tugashi boshlanishidan oldin bo'lishi mumkin emas"); return
+      }
+    }
+    // Tatil date sanity
+    if (selected === 'tatil_buyruq') {
+      const b = formData.tatil_boshlanish, e2 = formData.tatil_tugash
+      if (b && e2 && new Date(e2) < new Date(b)) {
+        setError("Ta'til tugashi boshlanishidan oldin bo'lishi mumkin emas"); return
+      }
+    }
+    // Mehnat shartnoma muddatli — tugash sana majburiy
+    if (selected === 'mehnat_shartnoma' && mehnatTur === 'belgilangan_muddatli' && !(formData.tugash_sana || '').trim()) {
+      setError("Muddatli shartnoma uchun tugash sanasini ko'rsating"); return
+    }
+
     setLoading(true); setError(''); setResult(null)
 
     try {
@@ -509,7 +584,10 @@ export default function KadrlarPage() {
           title: docTitle,
           content: text,
           meta,
-        }).then(() => setSavedKey(k => k + 1)).catch(console.error)
+        }).then(() => {
+          setSavedKey(k => k + 1)
+          if (selected) bumpDocCounter(selected)
+        }).catch(console.error)
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Xatolik yuz berdi")
