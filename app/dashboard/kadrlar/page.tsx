@@ -69,8 +69,9 @@ const FEATURES: FeatureConfig[] = [
       { key: 'maosh',         label: "Maosh (so'm)",         placeholder: '5 000 000' },
       { key: 'boshlanish_sana', label: 'Boshlanish sanasi', placeholder: '', type: 'date' },
       { key: 'tugash_sana',   label: 'Tugash sanasi (muddatli uchun)', placeholder: '', type: 'date', optional: true },
-      { key: 'ish_vaqti',     label: 'Ish vaqti (ixtiyoriy)', placeholder: "Kuniga 8 soat, dushanba–juma", optional: true },
-      { key: 'xodim_tel',     label: 'Xodim telefoni (ixtiyoriy)', placeholder: '+998901234567', optional: true },
+      { key: 'ish_vaqti',     label: 'Ish vaqti', placeholder: "Kuniga 8 soat, dushanba–juma", optional: true },
+      { key: 'xodim_tel',     label: 'Xodim telefoni', placeholder: '+998901234567', optional: true },
+      { key: 'xodim_manzil',  label: 'Xodim yashash manzili', placeholder: "Toshkent sh., Yunusobod t., ...", optional: true },
     ],
   },
   {
@@ -89,7 +90,8 @@ const FEATURES: FeatureConfig[] = [
       { key: 'kunlar',     label: 'Ish kunlari',           placeholder: 'dushanba, chorshanba, juma' },
       { key: 'soat_soni',  label: 'Kunlik soat soni',      placeholder: '4' },
       { key: 'boshlanish_sana', label: 'Boshlanish sanasi', placeholder: '', type: 'date' },
-      { key: 'tugash_sana', label: 'Tugash sanasi (ixtiyoriy)', placeholder: '', type: 'date', optional: true },
+      { key: 'tugash_sana', label: 'Tugash sanasi', placeholder: '', type: 'date', optional: true },
+      { key: 'xodim_manzil', label: 'Xodim yashash manzili', placeholder: "Toshkent sh., ...", optional: true },
     ],
   },
   {
@@ -108,7 +110,9 @@ const FEATURES: FeatureConfig[] = [
       { key: 'narx',           label: "Shartnoma narxi (so'm)",  placeholder: '3 000 000' },
       { key: 'boshlanish_sana', label: 'Boshlanish sanasi',      placeholder: '', type: 'date' },
       { key: 'tugash_sana',    label: 'Tugash sanasi',           placeholder: '', type: 'date' },
-      { key: 'tolov_tartibi',  label: "To'lov tartibi (ixtiyoriy)", placeholder: "Ish tugagach 5 kun ichida", optional: true },
+      { key: 'tolov_tartibi',  label: "To'lov tartibi", placeholder: "Ish tugagach 5 kun ichida", optional: true },
+      { key: 'ijrochi_manzil', label: 'Ijrochi yashash manzili', placeholder: "Toshkent sh., ...", optional: true },
+      { key: 'ijrochi_tel',    label: 'Ijrochi telefoni', placeholder: '+998901234567', optional: true },
     ],
   },
   {
