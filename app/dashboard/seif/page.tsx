@@ -17,7 +17,17 @@ type OrgDoc = {
 
 const CATEGORY_KEYS = ['barchasi', 'guvohnoma', 'ustav', 'litsenziya', 'bank', 'soliq', 'boshqa'] as const
 const CATEGORY_ICONS: Record<string, string> = {
-  barchasi: '📂', guvohnoma: '🏛️', ustav: '📜', litsenziya: '✅', bank: '🏦', soliq: '🧾', boshqa: '📁',
+  barchasi: '📂', guvohnoma: '🏛️', ustav: '📜', litsenziya: '🎓', bank: '🏦', soliq: '🧾', boshqa: '📁',
+}
+
+function sanitizeDocName(s: string): string {
+  return (s || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/[\\/<>"|?*]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120)
 }
 
 const MAX_DOCS = 20
@@ -156,9 +166,10 @@ export default function SeifPage() {
         finalName = sanitize(file.name)
       }
 
-      // Use custom name if provided
-      const displayName = uploadName.trim()
-        ? uploadName.trim().replace(/\.pdf$/i, '') + '.pdf'
+      // Use custom name if provided (XSS/control chars sanitized)
+      const cleanCustomName = sanitizeDocName(uploadName)
+      const displayName = cleanCustomName
+        ? cleanCustomName.replace(/\.pdf$/i, '') + '.pdf'
         : finalName
 
       setUploadProgress(T(t.seifPage.uploading2))
@@ -243,8 +254,9 @@ export default function SeifPage() {
   async function saveEdit() {
     if (!editDoc) return
     setEditSaving(true)
-    const newName = editName.trim()
-      ? editName.trim().replace(/\.pdf$/i, '') + '.pdf'
+    const cleanEditName = sanitizeDocName(editName)
+    const newName = cleanEditName
+      ? cleanEditName.replace(/\.pdf$/i, '') + '.pdf'
       : editDoc.name
     const { error } = await supabase.from('org_documents')
       .update({ name: newName, category: editCategory })
@@ -323,9 +335,10 @@ export default function SeifPage() {
               <label className="block text-xs text-gray-400 mb-1">{T(t.seifPage.docNameLabel)}</label>
               <input
                 className={inp}
-                placeholder="Ustav 2024-yil yangilangan"
+                placeholder={`Ustav ${new Date().getFullYear()}-yil yangilangan`}
                 value={uploadName}
                 onChange={e => setUploadName(e.target.value)}
+                maxLength={120}
               />
             </div>
             <div>
@@ -425,7 +438,7 @@ export default function SeifPage() {
             <div className="p-12 text-center">
               <div className="text-5xl mb-3">🔒</div>
               <div className="text-gray-500 text-sm">
-                {T(t.seifPage.empty)}
+                <span className="text-gray-400">{CATEGORY_LABELS[activeCategory] || ''}</span> {T(t.seifPage.empty)}
               </div>
             </div>
           ) : (
@@ -529,6 +542,7 @@ export default function SeifPage() {
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
                 placeholder="Hujjat nomi"
+                maxLength={120}
               />
             </div>
             <div>
