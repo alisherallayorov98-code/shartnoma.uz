@@ -43,7 +43,9 @@ export type Employee = {
   id: string; organization_id: string; ism: string
   jshshir?: string; passport?: string; lavozim?: string
   bolim?: string; maosh?: string; ish_boshi?: string
-  status?: string; tel?: string; created_at: string
+  status?: string; tel?: string
+  tugilgan_sana?: string; manzil?: string
+  created_at: string
 }
 
 export type SpecItem = {

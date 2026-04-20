@@ -489,8 +489,12 @@ CREATE TABLE IF NOT EXISTS public.employees (
   ish_boshi       date,
   status          text DEFAULT 'active',
   tel             text,
+  tugilgan_sana   date,
+  manzil          text,
   created_at      timestamptz DEFAULT now()
 );
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS tugilgan_sana date;
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS manzil        text;
 
 CREATE INDEX IF NOT EXISTS employees_org_idx ON public.employees(organization_id);
 
