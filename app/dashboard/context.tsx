@@ -112,10 +112,21 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [orgDropdown, setOrgDropdown] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
+  const [tick, setTick] = useState(0) // re-evaluates time-based access on interval
+
+  // Re-evaluate subscription/demo expiry every 60s so UI flips when time passes
+  useEffect(() => {
+    const id = setInterval(() => setTick(x => x + 1), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   // ── Computed ──────────────────────────────────────────────────────────────
+  // (tick is referenced so React re-evaluates these every minute)
+  void tick
   const isDemoActive = !!demoAccess && new Date(demoAccess.expires_at) > new Date()
-  const isSubValid = !!subscription && subscription.plan !== 'free' && new Date(subscription.period_end) > new Date()
+  const isSubValid = !!subscription && subscription.plan !== 'free'
+    && subscription.is_active !== false
+    && new Date(subscription.period_end) > new Date()
   const isFree = !isAdmin && !isDemoActive && !isSubValid
 
   const subDaysLeft = isSubValid && subscription?.period_end
@@ -307,6 +318,16 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }, () => { loadSubscription(activeOrg.id) })
       .subscribe()
 
+    // On tab focus or visibility change — re-check subscription state from DB
+    const onFocus = () => {
+      if (document.visibilityState === 'visible') {
+        loadSubscription(activeOrg.id)
+        loadDemoAccess(activeOrg.id)
+      }
+    }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onFocus)
+
     return () => {
       clearTimeout(deferTimer)
       supabase.removeChannel(contractsChannel)
@@ -314,6 +335,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       supabase.removeChannel(orgsChannel)
       supabase.removeChannel(employeesChannel)
       supabase.removeChannel(subsChannel)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onFocus)
     }
   }, [activeOrg?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -331,15 +354,22 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   function canCreateContract(): boolean {
     if (!activeOrg) return false
-    if (!subscription) return contracts.filter(c => c.organization_id === activeOrg.id).length < FREE_LIMIT
-    if (subscription.plan === 'free') return subscription.contracts_used < FREE_LIMIT
-    return subscription.is_active
+    if (isAdmin) return true
+    if (isDemoActive) return true
+    // No subscription OR free plan — limit by FREE_LIMIT
+    if (!subscription || subscription.plan === 'free') {
+      const used = subscription?.plan === 'free' ? subscription.contracts_used : contracts.filter(c => c.organization_id === activeOrg.id).length
+      return used < FREE_LIMIT
+    }
+    // Paid plan — must be both active AND not expired
+    return isSubValid
   }
 
   function hasAiAccess(): boolean {
     if (isAdmin) return true
     if (!subscription) return false
-    return subscription.plan === 'ai_pro' && subscription.is_active
+    if (subscription.plan !== 'ai_pro') return false
+    return isSubValid
   }
 
   function getQuotaInfo(): QuotaInfo | null {
