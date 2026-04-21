@@ -53,11 +53,33 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: npm run build
 
+      - name: Prune dev dependencies
+        # Build tugagandan keyin dev deps (TypeScript, ESLint, @types/*) kerak emas.
+        # node_modules hajmini 2-3x qisqartiradi.
+        run: npm prune --omit=dev
+
       - name: Pack hermetic artifact
         # Server'da npm umuman ishlamaydi — node_modules ham tarballga kiradi.
-        # .next/cache/ — build cache, runtime uchun kerak emas (hajmni 2-3x qisqartiradi).
+        # .next/cache/ — build cache, runtime uchun kerak emas.
+        # node_modules ichidan docs/tests/examples chiqariladi — faqat runtime kodi.
         run: |
-          tar --exclude='.next/cache' -czf deploy.tar.gz \
+          tar \
+            --exclude='.next/cache' \
+            --exclude='node_modules/**/test' \
+            --exclude='node_modules/**/tests' \
+            --exclude='node_modules/**/__tests__' \
+            --exclude='node_modules/**/docs' \
+            --exclude='node_modules/**/doc' \
+            --exclude='node_modules/**/examples' \
+            --exclude='node_modules/**/example' \
+            --exclude='node_modules/**/*.md' \
+            --exclude='node_modules/**/*.markdown' \
+            --exclude='node_modules/**/CHANGELOG*' \
+            --exclude='node_modules/**/LICENSE*' \
+            --exclude='node_modules/**/*.map' \
+            --exclude='node_modules/**/.bin/*.ps1' \
+            --exclude='node_modules/**/.bin/*.cmd' \
+            -czf deploy.tar.gz \
             .next \
             node_modules \
             public \
