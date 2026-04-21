@@ -46,6 +46,11 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Build Next.js (on runner)
+        # NEXT_PUBLIC_* env vars build paytida client bundle'ga embed qilinadi
+        # (Next.js dizayni). Ular runner'da bo'lmasa, static generation crash qiladi.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Pack hermetic artifact
