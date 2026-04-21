@@ -33,6 +33,8 @@ jobs:
     environment:
       name: production
       url: https://kabinetim.uz
+    permissions:
+      contents: write   # GitHub Release yaratish uchun
 
     steps:
       - uses: actions/checkout@v4
@@ -62,47 +64,56 @@ jobs:
 
       - name: Pack hermetic artifact
         # Faqat .next/standalone/ — traced minimal node_modules bilan birga.
-        # Tarball ~25-35MB (oldin ~100-200MB edi).
+        # Tarball ~25-35MB.
         run: |
           tar -czf deploy.tar.gz -C .next standalone
           ls -lh deploy.tar.gz
 
-      - name: Copy artifact to server
-        uses: appleboy/scp-action@v0.1.7
+      - name: Publish artifact to GitHub Release
+        # VPS inbound bandwidth juda past — scp push ishlamaydi.
+        # Buning o'rniga GitHub Release'da joylashtiramiz, server esa
+        # curl orqali o'zi yuklab oladi (VPS outbound tez).
+        uses: softprops/action-gh-release@v2
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "deploy.tar.gz"
-          target: "/tmp/"
+          tag_name: deploy-${{ github.sha }}
+          name: "Deploy ${{ github.sha }}"
+          files: deploy.tar.gz
+          prerelease: true
+          make_latest: 'false'
 
-      - name: Extract & restart on server
+      - name: Pull & restart on server
         uses: appleboy/ssh-action@v1
+        env:
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           command_timeout: 10m
+          envs: SHA,REPO
           script: |
             set -e
             APP_DIR=/home/alisher/shartnoma.uz
             cd "$APP_DIR"
 
-            # Disk holatini log'da ko'rsatish
             df -h /home | tail -n 1
 
+            # GitHub Release'dan artifact'ni yuklab olish (VPS outbound tez)
+            URL="https://github.com/${REPO}/releases/download/deploy-${SHA}/deploy.tar.gz"
+            echo "Downloading: $URL"
+            curl -fL --retry 3 --retry-delay 5 -o /tmp/deploy.tar.gz "$URL"
+            ls -lh /tmp/deploy.tar.gz
+
             # Eski standalone va node_modules o'chirish
-            # .env.local va ecosystem.config.js untracked — tegilmaydi
             rm -rf .next node_modules
             mkdir -p .next
 
             # Yangi standalone'ni ochish — .next/standalone/ hosil bo'ladi
-            # (tarball ichida top-level `standalone/` katalog, -C .next bilan
-            # .next/standalone/ ga joylashadi)
             tar -xzf /tmp/deploy.tar.gz -C .next/
             rm /tmp/deploy.tar.gz
 
-            # PM2 reload — yangilangan ecosystem.config.js ishlatiladi
+            # PM2 reload — ecosystem.config.js ishlatiladi
             pm2 reload ecosystem.config.js --update-env
 
             echo "✅ Deployment complete — $(date)"
