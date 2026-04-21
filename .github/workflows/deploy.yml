@@ -19,7 +19,10 @@ jobs:
           cache: npm
 
       - name: Install deps
-        run: npm ci --no-audit --no-fund
+        # Windows/Linux npm optional peer-dep farqlari tufayli `npm ci` lockni
+        # qat'iy tekshiradi va muvaffaqiyatsiz bo'ladi. `npm install` esa
+        # farqni avtomat to'g'rilaydi.
+        run: npm install --no-audit --no-fund
 
       - name: Type check
         run: npx tsc --noEmit
@@ -54,7 +57,7 @@ jobs:
 
             # Toza install — yarim ochilgan node_modules qoldiqlarini tozalash
             rm -rf node_modules .next
-            npm ci --no-audit --no-fund
+            npm install --no-audit --no-fund
 
             # Next.js build — .env.local serverda mavjud, Supabase credentials shundan olinadi
             npm run build
