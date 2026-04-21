@@ -52,8 +52,11 @@ jobs:
             # Disk holatini log uchun ko'rsatish
             df -h /home | tail -n 1
 
-            # Pull latest code
-            git pull origin main
+            # Fetch + reset (serverdagi tracked fayllarga lokal mod bo'lsa ham
+            # ustma-ust yoziladi; untracked fayllar — .env.local va ecosystem.config.js —
+            # joyida qoladi)
+            git fetch origin main
+            git reset --hard origin/main
 
             # Toza install — yarim ochilgan node_modules qoldiqlarini tozalash
             rm -rf node_modules .next
