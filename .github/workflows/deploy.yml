@@ -19,15 +19,12 @@ jobs:
           cache: npm
 
       - name: Install deps
-        # Windows/Linux npm optional peer-dep farqlari tufayli `npm ci` lockni
-        # qat'iy tekshiradi va muvaffaqiyatsiz bo'ladi. `npm install` esa
-        # farqni avtomat to'g'rilaydi.
         run: npm install --no-audit --no-fund
 
       - name: Type check
         run: npx tsc --noEmit
 
-  # ─── Deploy to Production ───────────────────────────────────────────────────
+  # ─── Build on Runner + Ship Artifact to VPS ─────────────────────────────────
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
@@ -38,42 +35,66 @@ jobs:
       url: https://kabinetim.uz
 
     steps:
-      - name: Deploy via SSH
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install deps (on runner)
+        run: npm install --no-audit --no-fund
+
+      - name: Build Next.js (on runner)
+        run: npm run build
+
+      - name: Pack hermetic artifact
+        # Server'da npm umuman ishlamaydi — node_modules ham tarballga kiradi.
+        # .next/cache/ — build cache, runtime uchun kerak emas (hajmni 2-3x qisqartiradi).
+        run: |
+          tar --exclude='.next/cache' -czf deploy.tar.gz \
+            .next \
+            node_modules \
+            public \
+            package.json \
+            package-lock.json \
+            next.config.ts \
+            middleware.ts
+          ls -lh deploy.tar.gz
+
+      - name: Copy artifact to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "deploy.tar.gz"
+          target: "/tmp/"
+
+      - name: Extract & restart on server
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          command_timeout: 30m
+          command_timeout: 10m
           script: |
             set -e
-            cd /home/alisher/shartnoma.uz
+            APP_DIR=/home/alisher/shartnoma.uz
+            cd "$APP_DIR"
 
-            # Disk holatini log uchun ko'rsatish
+            # Disk holatini log'da ko'rsatish
             df -h /home | tail -n 1
 
-            # Fetch + reset (serverdagi tracked fayllarga lokal mod bo'lsa ham
-            # ustma-ust yoziladi; untracked fayllar — .env.local va ecosystem.config.js —
-            # joyida qoladi)
-            git fetch origin main
-            git reset --hard origin/main
+            # Eski build va deps o'chirish (atomic almashtirish uchun)
+            # .env.local va ecosystem.config.js untracked — tar ichida yo'q, tegmaydi
+            rm -rf .next node_modules
 
-            # Toza install — yarim ochilgan node_modules qoldiqlarini tozalash
-            rm -rf node_modules .next
+            # Yangi artifactni ochish
+            tar -xzf /tmp/deploy.tar.gz -C "$APP_DIR"
+            rm /tmp/deploy.tar.gz
 
-            # npm registry tarmoq timeout'iga moslash — retry + uzaytirilgan timeout
-            # (VPS'da registry.npmjs.org bilan vaqtincha ETIMEDOUT bo'lsa qayta urinadi)
-            npm config set fetch-timeout 600000
-            npm config set fetch-retries 5
-            npm config set fetch-retry-mintimeout 20000
-            npm config set fetch-retry-maxtimeout 120000
-
-            npm install --no-audit --no-fund --prefer-offline
-
-            # Next.js build — .env.local serverda mavjud, Supabase credentials shundan olinadi
-            npm run build
-
-            # Restart via PM2 (process nomi: shartnoma)
+            # PM2 restart — ecosystem.config.js server'da, process nomi: shartnoma
             pm2 restart shartnoma --update-env
 
             echo "✅ Deployment complete — $(date)"
