@@ -4,16 +4,6 @@ import forge from 'node-forge'
 import { createHmac } from 'crypto'
 import { consumeChallenge } from '@/lib/eimzo-challenges'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-const supabaseAnon = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
 function extractStir(cert: forge.pki.Certificate): string {
   // Uzbekistan TIN OID: 1.2.860.3.16.1.2
   for (const attr of cert.subject.attributes) {
@@ -47,6 +37,15 @@ function extractStir(cert: forge.pki.Certificate): string {
 }
 
 async function findOrCreateUser(stir: string) {
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const supabaseAnon = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
   const email = `stir_${stir}@eimzo.local`
   const secret = process.env.EIMZO_SECRET || process.env.NEXTAUTH_SECRET
   if (!secret) throw new Error('EIMZO_SECRET yoki NEXTAUTH_SECRET sozlanmagan')
