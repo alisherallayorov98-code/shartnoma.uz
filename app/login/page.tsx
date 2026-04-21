@@ -93,10 +93,11 @@ export default function LoginPage() {
       setError(m.includes('not confirmed')
         ? T({ uz: 'Email tasdiqlash havolasi yuborilgan. Emailingizni tekshiring.', oz: 'Email тасдиқлаш ҳаволаси юборилган.', ru: 'Письмо подтверждения отправлено. Проверьте почту.' })
         : T(t.login.error))
+      setLoading(false)
     } else {
-      router.push('/dashboard')
+      // Full reload — cookie'lar middleware'ga to'liq yetib borishi uchun
+      window.location.href = '/dashboard'
     }
-    setLoading(false)
   }
 
   async function handleGoogleLogin() {
