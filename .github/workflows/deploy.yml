@@ -1,0 +1,65 @@
+name: CI/CD — shartnoma.uz
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─── Type Check ─────────────────────────────────────────────────────────────
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+  # ─── Deploy to Production ───────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: typecheck
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://kabinetim.uz
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          command_timeout: 30m
+          script: |
+            set -e
+            cd /home/alisher/shartnoma.uz
+
+            # Disk holatini log uchun ko'rsatish
+            df -h /home | tail -n 1
+
+            # Pull latest code
+            git pull origin main
+
+            # Toza install — yarim ochilgan node_modules qoldiqlarini tozalash
+            rm -rf node_modules .next
+            npm ci --no-audit --no-fund
+
+            # Next.js build — .env.local serverda mavjud, Supabase credentials shundan olinadi
+            npm run build
+
+            # Restart via PM2 (process nomi: shartnoma)
+            pm2 restart shartnoma --update-env
+
+            echo "✅ Deployment complete — $(date)"
