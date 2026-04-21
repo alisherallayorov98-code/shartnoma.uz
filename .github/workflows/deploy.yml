@@ -53,40 +53,18 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: npm run build
 
-      - name: Prune dev dependencies
-        # Build tugagandan keyin dev deps (TypeScript, ESLint, @types/*) kerak emas.
-        # node_modules hajmini 2-3x qisqartiradi.
-        run: npm prune --omit=dev
+      - name: Assemble standalone deployment
+        # Next.js standalone tracing .next/static va public ni o'zi ko'chirmaydi.
+        # Ularni standalone ichiga qo'lda ko'chiramiz.
+        run: |
+          cp -r .next/static .next/standalone/.next/
+          cp -r public .next/standalone/
 
       - name: Pack hermetic artifact
-        # Server'da npm umuman ishlamaydi — node_modules ham tarballga kiradi.
-        # .next/cache/ — build cache, runtime uchun kerak emas.
-        # node_modules ichidan docs/tests/examples chiqariladi — faqat runtime kodi.
+        # Faqat .next/standalone/ — traced minimal node_modules bilan birga.
+        # Tarball ~25-35MB (oldin ~100-200MB edi).
         run: |
-          tar \
-            --exclude='.next/cache' \
-            --exclude='node_modules/**/test' \
-            --exclude='node_modules/**/tests' \
-            --exclude='node_modules/**/__tests__' \
-            --exclude='node_modules/**/docs' \
-            --exclude='node_modules/**/doc' \
-            --exclude='node_modules/**/examples' \
-            --exclude='node_modules/**/example' \
-            --exclude='node_modules/**/*.md' \
-            --exclude='node_modules/**/*.markdown' \
-            --exclude='node_modules/**/CHANGELOG*' \
-            --exclude='node_modules/**/LICENSE*' \
-            --exclude='node_modules/**/*.map' \
-            --exclude='node_modules/**/.bin/*.ps1' \
-            --exclude='node_modules/**/.bin/*.cmd' \
-            -czf deploy.tar.gz \
-            .next \
-            node_modules \
-            public \
-            package.json \
-            package-lock.json \
-            next.config.ts \
-            middleware.ts
+          tar -czf deploy.tar.gz -C .next standalone
           ls -lh deploy.tar.gz
 
       - name: Copy artifact to server
@@ -113,15 +91,18 @@ jobs:
             # Disk holatini log'da ko'rsatish
             df -h /home | tail -n 1
 
-            # Eski build va deps o'chirish (atomic almashtirish uchun)
-            # .env.local va ecosystem.config.js untracked — tar ichida yo'q, tegmaydi
+            # Eski standalone va node_modules o'chirish
+            # .env.local va ecosystem.config.js untracked — tegilmaydi
             rm -rf .next node_modules
+            mkdir -p .next
 
-            # Yangi artifactni ochish
-            tar -xzf /tmp/deploy.tar.gz -C "$APP_DIR"
+            # Yangi standalone'ni ochish — .next/standalone/ hosil bo'ladi
+            # (tarball ichida top-level `standalone/` katalog, -C .next bilan
+            # .next/standalone/ ga joylashadi)
+            tar -xzf /tmp/deploy.tar.gz -C .next/
             rm /tmp/deploy.tar.gz
 
-            # PM2 restart — ecosystem.config.js server'da, process nomi: shartnoma
-            pm2 restart shartnoma --update-env
+            # PM2 reload — yangilangan ecosystem.config.js ishlatiladi
+            pm2 reload ecosystem.config.js --update-env
 
             echo "✅ Deployment complete — $(date)"

@@ -25,6 +25,9 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // Standalone output — .next/standalone/ ichiga minimal server + traced
+  // node_modules o'chiriladi. Deploy artifact hajmi 100MB -> ~30MB.
+  output: 'standalone',
   typescript: { ignoreBuildErrors: true },
   compress: true,
   poweredByHeader: false,
