@@ -171,7 +171,7 @@ function generateText(
   }
 
   else if (type === 'dividend') {
-    const d = specific
+    const d = specific as DividendForm
     kunTartibi = `   1-MODDA: "${orgName}" ning ${d.dividend_davr || '___'} davridagi toza foydasini (dividend) taqsimlash masalasini ko'rib chiqish va tegishli qaror qabul qilish.`
 
     muhokama = `1-MASALA: DIVIDEND TAQSIMLASH TO'G'RISIDA

@@ -95,7 +95,8 @@ export default function FakturaBuilder({ org, cps, contracts = [] }: Props) {
           })],
         })
       }
-      function dCell(text: string, align = AlignmentType.RIGHT, bold = false) {
+      type Align = (typeof AlignmentType)[keyof typeof AlignmentType]
+      function dCell(text: string, align: Align = AlignmentType.RIGHT, bold = false) {
         return new TableCell({
           borders: allBord,
           children: [new Paragraph({

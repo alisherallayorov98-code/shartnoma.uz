@@ -138,7 +138,8 @@ export default function TolovGrafigi({ org, cps }: Props) {
           children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 },
             children: [new TextRun({ text, bold: true, size: 18, font: F, color: 'FFFFFF' })] })] })
       }
-      function dCell(text: string, align = AlignmentType.CENTER, shade?: string) {
+      type Align = (typeof AlignmentType)[keyof typeof AlignmentType]
+      function dCell(text: string, align: Align = AlignmentType.CENTER, shade?: string) {
         return new TableCell({ borders: allBord, ...(shade ? { shading: { fill: shade } } : {}),
           children: [new Paragraph({ alignment: align, spacing: { after: 40 },
             children: [new TextRun({ text, size: 19, font: F, color: '000000' })] })] })

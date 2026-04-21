@@ -112,12 +112,13 @@ export default function AktSverki({ org, cps, contracts = [] }: Props) {
         children: [new TextRun({ text: txt, bold, size: 22, font: F, color: '000000' })],
       })
 
-      function hc(text: string, span = 1, align = AlignmentType.CENTER) {
+      type Align = (typeof AlignmentType)[keyof typeof AlignmentType]
+      function hc(text: string, span = 1, align: Align = AlignmentType.CENTER) {
         return new TableCell({ borders: allBord, columnSpan: span, shading: { fill: '1F3864' },
           children: [new Paragraph({ alignment: align, spacing: { after: 40 },
             children: [new TextRun({ text, bold: true, size: 18, font: F, color: 'FFFFFF' })] })] })
       }
-      function dc(text: string, align = AlignmentType.RIGHT, shade?: string) {
+      function dc(text: string, align: Align = AlignmentType.RIGHT, shade?: string) {
         return new TableCell({ borders: allBord, ...(shade ? { shading: { fill: shade } } : {}),
           children: [new Paragraph({ alignment: align, spacing: { after: 40 },
             children: [new TextRun({ text, size: 19, font: F, color: '000000' })] })] })
