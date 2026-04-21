@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useDashboard } from '../context'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -158,9 +159,16 @@ const FEATURES: FeatureConfig[] = [
   },
 ]
 
+const CUSTOM_ROUTES: Partial<Record<BuxFeature, string>> = {
+  faktura_builder:     '/dashboard/buxgalter/faktura',
+  tolov_grafigi_calc:  '/dashboard/buxgalter/tolov-grafigi',
+  akt_sverki:          '/dashboard/buxgalter/akt-sverki',
+}
+
 export default function BuxgalterPage() {
   const { activeOrg, hasAiAccess, isFree, contracts, cps, openUpgradeModal } = useDashboard()
   const { lang } = useLang()
+  const router = useRouter()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const [selected, setSelected] = useState<BuxFeature | null>(null)
   const [formData, setFormData] = useState<Record<string, string>>({})
@@ -210,6 +218,8 @@ export default function BuxgalterPage() {
   const currentFeature = FEATURES.find(f => f.key === selected)
 
   function selectFeature(key: BuxFeature) {
+    const route = CUSTOM_ROUTES[key]
+    if (route) { router.push(route); return }
     setSelected(key)
     setFormData({})
     setResult(null)

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
 import { useDashboard } from '../context'
@@ -91,8 +92,13 @@ export default function YuristPage() {
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
   const { toast } = useToast()
   const { contracts, activeOrg, cps, hasAiAccess, subscription, openUpgradeModal, reloadContracts } = useDashboard()
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
-  const [hubFeature, setHubFeature] = useState<HubFeature>('xulosa')
+  const [hubFeature, setHubFeature] = useState<HubFeature>(() => {
+    const f = searchParams.get('f') as HubFeature | null
+    return (f && ['xulosa','tarjima','tahlil','grammatika','qa','clause','recommend','write','tuzatish'].includes(f)) ? f : 'xulosa'
+  })
   const [hubContract, setHubContract] = useState('')
   const [hubTargetLang, setHubTargetLang] = useState('oz')
   const [hubQuestion, setHubQuestion] = useState('')
@@ -116,6 +122,17 @@ export default function YuristPage() {
   const [saveContractModal, setSaveContractModal] = useState<{ content: string; tur: string; raqam: string; sana: string } | null>(null)
   const [saveContractCp, setSaveContractCp] = useState('')
   const [saveContractLoading, setSaveContractLoading] = useState(false)
+
+  function selectFeature(f: HubFeature) {
+    setHubFeature(f); setHubResult(null); setHubError(''); setHubLoading(false)
+    router.push(`/dashboard/yurist?f=${f}`, { scroll: false })
+  }
+
+  // Handle ?cid param (from contract view page "AI Tahlil" button)
+  useEffect(() => {
+    const cid = searchParams.get('cid')
+    if (cid) setHubContract(cid)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const contractList = contracts.filter(c => c.organization_id === activeOrg?.id)
 
@@ -333,7 +350,7 @@ export default function YuristPage() {
             <button key={f.key}
               onClick={() => {
                 if (locked) { openUpgradeModal(); return }
-                setHubFeature(f.key); setHubResult(null); setHubError(''); setHubLoading(false)
+                selectFeature(f.key)
                 if (!f.needsContract) { setHubContract(''); setHubCp('') }
                 if (f.key === 'write') {
                   setHubWriteDetails(d => ({ ...d, org: activeOrg?.name || '' }))

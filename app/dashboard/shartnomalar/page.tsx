@@ -13,7 +13,6 @@ import { type AppTemplate } from '@/lib/defaultTemplates'
 import dynamic from 'next/dynamic'
 import type { ContractForm } from './_components/ContractModal'
 const ContractModal  = dynamic(() => import('./_components/ContractModal'),  { ssr: false })
-const ViewContractModal = dynamic(() => import('./_components/ViewContractModal'), { ssr: false })
 const AiModal        = dynamic(() => import('./_components/AiModal'),        { ssr: false })
 import { latinToCyrillic } from '@/lib/scriptNorm'
 import { fillPlaceholders, formatAmount } from '@/lib/contractUtils'
@@ -126,9 +125,8 @@ export default function ShartnomalarPage() {
   // ── State ──────────────────────────────────────────────────────────────────
   const { search, setSearch, serverResults, setServerResults } = useContractSearch()
   const [statusFilter, setStatusFilter] = useState('all')
-  const [modal, setModal] = useState<null | 'contract' | 'viewContract'>(null)
+  const [modal, setModal] = useState<null | 'contract'>(null)
   const [contractForm, setContractForm] = useState<ContractForm>(makeEmptyForm(activeOrg?.id || '', orgCityDefault(activeOrg)))
-  const [viewContract, setViewContract] = useState<Contract | null>(null)
   const [saving, setSaving] = useState(false)
   const [customTemplates, setCustomTemplates] = useState<AppTemplate[]>([])
 
@@ -686,7 +684,7 @@ export default function ShartnomalarPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
                   </button>
-                  <button title="Ko'rish" onClick={() => { setViewContract(c); setModal('viewContract') }}
+                  <button title="Ko'rish" onClick={() => router.push(`/dashboard/shartnomalar/${c.id}`)}
                     className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -802,7 +800,7 @@ export default function ShartnomalarPage() {
                         {/* View */}
                         <button
                           title="Ko'rish"
-                          onClick={() => { setViewContract(c); setModal('viewContract') }}
+                          onClick={() => router.push(`/dashboard/shartnomalar/${c.id}`)}
                           className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -979,19 +977,6 @@ export default function ShartnomalarPage() {
         />
       )}
 
-      {/* ── View contract modal ── */}
-      {modal === 'viewContract' && viewContract && (
-        <ViewContractModal
-          viewContract={viewContract}
-          onClose={() => setModal(null)}
-          onGenerateDOCX={generateContractDOCX}
-          onGeneratePDF={generateContractPDF}
-          onSendByTelegram={sendByTelegram}
-          onRunAiAnalysis={runAiAnalysis}
-          onToggleSigned={toggleSigned}
-          isPremium={hasAiAccess()}
-        />
-      )}
 
       {/* ── AI modal ── */}
       {aiModal && (

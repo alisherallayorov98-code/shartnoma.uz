@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useDashboard } from '../context'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -411,8 +412,13 @@ export default function KadrlarPage() {
   const { toast } = useToast()
   const { lang } = useLang()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [activeCat, setActiveCat] = useState<Category>('shartnoma')
-  const [selected, setSelected] = useState<KadrFeature | null>(null)
+  const [selected, setSelected] = useState<KadrFeature | null>(() => {
+    const f = searchParams.get('f') as KadrFeature | null
+    return f && FEATURES.find(feat => feat.key === f) ? f : null
+  })
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [mehnatTur, setMehnatTur] = useState('belgilanmagan_muddatli')
   const [loading, setLoading] = useState(false)
@@ -428,6 +434,7 @@ export default function KadrlarPage() {
 
   function selectFeature(key: KadrFeature) {
     setSelected(key)
+    router.push(`/dashboard/kadrlar?f=${key}`, { scroll: false })
     const initial: Record<string, string> = {}
     const cfg = DOC_NUM[key]
     if (cfg) initial[cfg.field] = generateDocNumber(key)
@@ -444,6 +451,7 @@ export default function KadrlarPage() {
     setSelected(null)
     setResult(null)
     setError('')
+    router.push('/dashboard/kadrlar', { scroll: false })
   }
 
   // ── JSHSHIR lookup ───────���──────────────────────────────────────────────────

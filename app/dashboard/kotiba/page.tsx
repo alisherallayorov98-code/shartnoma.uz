@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useDashboard } from '../context'
 import { useLang } from '@/lib/LanguageContext'
 import { t, tr, type Lang } from '@/lib/i18n'
@@ -22,6 +23,7 @@ const RekvizitlarViewer = dynamic(() => import('./_components/RekvizitlarViewer'
 export default function KotibaPage() {
   const { activeOrg, hasAiAccess, isFree, openUpgradeModal, cps } = useDashboard()
   const { lang } = useLang()
+  const router = useRouter()
   const T = (obj: Record<Lang, string>) => tr(obj, lang)
 
   const [selected, setSelected] = useState<KotibaFeature | null>(null)
@@ -37,6 +39,8 @@ export default function KotibaPage() {
   const currentFeature = FEATURES.find(f => f.key === selected)
 
   function selectFeature(key: KotibaFeature) {
+    if (key === 'bayonnoma') { router.push('/dashboard/kotiba/bayonnoma'); return }
+    if (key === 'buyruq')    { router.push('/dashboard/kotiba/buyruq');    return }
     if (key === 'firmenniy_blank') {
       if (!activeOrg) return
       downloadFirmenniyBlank({
