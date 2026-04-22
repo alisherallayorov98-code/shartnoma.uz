@@ -8,6 +8,7 @@ import ErrorBoundary from './_components/ErrorBoundary'
 import UpgradeModal from './_components/UpgradeModal'
 import ChatWidget from './_components/ChatWidget'
 import { ToastProvider } from '@/lib/toast'
+import { useTheme } from '@/lib/ThemeContext'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
@@ -54,11 +55,12 @@ function LoadingSkeleton() {
 
 function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const { initialLoading, sidebarOpen, setSidebarOpen } = useDashboard()
+  const { theme } = useTheme()
 
   return (
-    <div className="h-screen bg-[#0B1220] flex text-white overflow-hidden">
+    <div className="h-screen bg-[#070E1B] flex overflow-hidden">
       <DashboardSidebar />
-      <div className="flex-1 min-w-0 flex flex-col h-screen">
+      <div data-theme={theme} className="flex-1 min-w-0 flex flex-col h-screen overflow-hidden">
         <TopBar />
         {/* Mobile top bar */}
         <div className="sm:hidden flex items-center gap-3 px-4 h-14 border-b border-[#1E293B] bg-[#0F172A] sticky top-0 z-30">
